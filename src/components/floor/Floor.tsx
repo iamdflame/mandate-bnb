@@ -11,6 +11,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import FloorCanvas, { type FloorBody, type FloorState } from "./FloorCanvas";
+import {
+  BidPanel,
+  OpenMandatePanel,
+  WalletChip,
+  WithdrawButton,
+} from "./Actions";
 import type { FloorMandate, FloorSnapshot } from "@/app/api/floor/route";
 
 const CATEGORY_NAMES = [
@@ -38,6 +44,7 @@ export default function Floor({ initial }: { initial: FloorSnapshot | null }) {
   const [connected, setConnected] = useState(false);
   const [tape, setTape] = useState<TapeEntry[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
+  const [opening, setOpening] = useState(false);
   const previous = useRef<Map<number, FloorMandate>>(new Map());
 
   const stateRef = useRef<FloorState>({
@@ -247,8 +254,18 @@ export default function Floor({ initial }: { initial: FloorSnapshot | null }) {
         <span className="fig" style={{ fontSize: 13, letterSpacing: "0.34em", fontWeight: 500 }}>
           MANDATE
         </span>
-        <span className="label" style={{ textAlign: "right" }}>
-          {connected ? "live" : "reconnecting"} · block {snap?.blockNumber ?? "—"}
+        <span
+          style={{
+            display: "flex",
+            gap: "1.25rem",
+            alignItems: "center",
+            pointerEvents: "auto",
+          }}
+        >
+          <span className="label">
+            {connected ? "live" : "reconnecting"} · block {snap?.blockNumber ?? "—"}
+          </span>
+          <WalletChip />
         </span>
       </header>
 
@@ -305,6 +322,7 @@ export default function Floor({ initial }: { initial: FloorSnapshot | null }) {
           paddingBottom: "1.25rem",
           display: "grid",
           gap: "0.75rem",
+          pointerEvents: "none",
         }}
       >
         <div
@@ -324,6 +342,26 @@ export default function Floor({ initial }: { initial: FloorSnapshot | null }) {
             value={snap ? `${snap.market.slice(0, 10)}…` : "—"}
             mono
           />
+          <div style={{ marginLeft: "auto", display: "flex", gap: "0.6rem", alignItems: "center" }}>
+            <WithdrawButton />
+            <button
+              onClick={() => {
+                setOpening(true);
+                setSelected(null);
+              }}
+              className="label"
+              style={{
+                background: "var(--ink)",
+                border: "1px solid var(--ink)",
+                color: "var(--paper)",
+                padding: "0.4rem 0.9rem",
+                cursor: "pointer",
+                pointerEvents: "auto",
+              }}
+            >
+              open a mandate
+            </button>
+          </div>
         </div>
 
         <div
@@ -360,6 +398,47 @@ export default function Floor({ initial }: { initial: FloorSnapshot | null }) {
         </div>
       </div>
 
+      {opening ? (
+        <aside
+          style={{
+            position: "absolute",
+            right: "var(--gutter)",
+            top: "50%",
+            transform: "translateY(-50%)",
+            zIndex: 3,
+            width: "min(92vw, 22rem)",
+            background: "var(--paper)",
+            border: "1px solid var(--rule)",
+            padding: "1.25rem",
+            display: "grid",
+            gap: "0.6rem",
+          }}
+        >
+          <div className="label">open a mandate</div>
+          <div className="display" style={{ fontSize: "1.4rem", lineHeight: 1.1 }}>
+            Put capital on the floor.
+          </div>
+          <div style={{ marginTop: "0.5rem" }}>
+            <OpenMandatePanel onDone={() => setOpening(false)} />
+          </div>
+          <button
+            onClick={() => setOpening(false)}
+            className="label"
+            style={{
+              justifySelf: "start",
+              marginTop: "0.4rem",
+              background: "transparent",
+              border: 0,
+              color: "var(--ink-45)",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            close
+          </button>
+        </aside>
+      ) : null}
+
       {/* ------------------------------------------------------------ detail */}
       {chosen ? (
         <aside
@@ -393,6 +472,17 @@ export default function Floor({ initial }: { initial: FloorSnapshot | null }) {
           <Row k="epochs" v={`${chosen.epochsSettled}/${chosen.epochsTotal}`} />
           <Row k="strikes" v={`${chosen.strikes}/3`} />
           <Row k="successor" v={short(chosen.successor ?? ZERO)} />
+
+          <div
+            style={{
+              marginTop: "0.6rem",
+              paddingTop: "0.9rem",
+              borderTop: "1px solid var(--ink)",
+            }}
+          >
+            <BidPanel mandate={chosen} />
+          </div>
+
           <button
             onClick={() => setSelected(null)}
             className="label"
