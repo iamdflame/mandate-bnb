@@ -146,8 +146,17 @@ contract MandateMarket is ReentrancyGuard, Ownable {
 
     /// @notice How long a slash is escrowed before the principal may claim it.
     uint64 public challengeWindow = 24 hours;
-    /// @notice Minimum bond, so a bid is never costless.
-    uint96 public minBond = 0.01 ether;
+    /**
+     * @notice Minimum bond, so a bid is never costless.
+     *
+     * @dev Set in the constructor rather than inline. A hardcoded default that
+     *      every deployment then overrides with `setMinBond` means the source
+     *      and the chain disagree about a number that gates every bid, and the
+     *      only way to know which is true is to go and read the chain. The
+     *      deployed value is now an argument, recorded in the deployment
+     *      transaction, and the source states no figure it does not use.
+     */
+    uint96 public minBond;
 
     /**
      * @notice Minimum assayed fineness required to bid. Zero disables the gate.
@@ -228,6 +237,16 @@ contract MandateMarket is ReentrancyGuard, Ownable {
     event AdjudicatorChanged(address indexed previous, address indexed next);
     event Assayed(address indexed agent, uint16 fineness, uint64 at);
     event MinFinenessChanged(uint16 previous, uint16 next);
+    /**
+     * @notice Emitted whenever the bidding floor moves.
+     *
+     * @dev These two setters changed state silently. `minBond` gates every bid
+     *      and `challengeWindow` decides how long a dismissed agent has to
+     *      contest a slash — both are things a watcher needs to see change, and
+     *      neither was observable without polling storage.
+     */
+    event MinBondChanged(uint96 previous, uint96 next);
+    event ChallengeWindowChanged(uint64 previous, uint64 next);
     event Withdrawal(address indexed to, uint256 amount);
 
     // -------------------------------------------------------------- errors --
@@ -259,9 +278,14 @@ contract MandateMarket is ReentrancyGuard, Ownable {
         _;
     }
 
-    constructor(address adjudicator_) Ownable(msg.sender) {
+    /// @param minBond_ Smallest bond a bid may post. Must be non-zero: a
+    ///                  costless bid is the failure this market exists to fix.
+    constructor(address adjudicator_, uint96 minBond_) Ownable(msg.sender) {
+        if (minBond_ == 0) revert BondTooSmall();
         adjudicator = adjudicator_;
+        minBond = minBond_;
         emit AdjudicatorChanged(address(0), adjudicator_);
+        emit MinBondChanged(0, minBond_);
     }
 
     // ---------------------------------------------------------- principals --
@@ -724,10 +748,14 @@ contract MandateMarket is ReentrancyGuard, Ownable {
     }
 
     function setChallengeWindow(uint64 seconds_) external onlyOwner {
+        emit ChallengeWindowChanged(challengeWindow, seconds_);
         challengeWindow = seconds_;
     }
 
     function setMinBond(uint96 wei_) external onlyOwner {
+        // Same rule as the constructor: a costless bid defeats the market.
+        if (wei_ == 0) revert BondTooSmall();
+        emit MinBondChanged(minBond, wei_);
         minBond = wei_;
     }
 

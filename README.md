@@ -60,7 +60,7 @@ categories become four mandate types.
 **Solvency is enforced, not assumed.** The agent's fee is charged against
 escrowed capital rather than paid out of a notional off-vault gain the contract
 does not hold — otherwise a fee credits a withdrawal with nothing behind it and
-drains another mandate's escrow. 37 tests pass, including a 256-run fuzz
+drains another mandate's escrow. 42 tests pass, including a 256-run fuzz
 proving liabilities never exceed the balance under **any** sequence of reported
 alpha.
 
@@ -72,6 +72,20 @@ Other properties the tests pin down:
   contest it before the principal can claim it.
 - Value moves by pull payment. Nothing pushes ether.
 - An incumbent cannot withdraw the bond it has at risk.
+- The bidding floor cannot be set to zero, at deployment or afterwards.
+
+**`minBond` is a constructor argument, not a hardcoded default.** It used to
+read `0.01 ether` in the source while every deployment immediately overrode it
+with `setMinBond`, so the source and the chain disagreed about the number that
+gates every bid and the only way to know which was true was to go and read the
+chain. It is now passed at deployment and recorded in the deployment
+transaction. Both that setter and `setChallengeWindow` also changed state
+silently — no event — so a watcher could not see the bidding floor move or the
+contest period shrink; both now emit.
+
+The live market at [`0xeD331c…1544`](https://bscscan.com/address/0xeD331c44183EFF1e8eDc31f6C60AfDA187681544)
+runs a floor of **0.00004 BNB**, which is small because the funds behind this
+deployment are small. The mechanism is identical at any size.
 
 ```bash
 cd contracts && forge test
@@ -141,6 +155,56 @@ than quietly claiming more.
 `--tamper` moves each committed number by the smallest amount that matters and
 shows every perturbation being rejected: 7 of 7. A verifier that never rejects
 anything is a rubber stamp.
+
+## The agent advantage, measured
+
+[`docs/AGENT_ADVANTAGE_REPORT.md`](docs/AGENT_ADVANTAGE_REPORT.md)
+
+Six tasks run with an agent and without one — two of them security tasks.
+**3 wins, 1 outright loss, 2 mixed**, and the losses lead their own sections.
+
+The hard part of a report like this is the no-agent arm. Every submission can
+assert "a human would take 45 minutes"; none can show it. So no task here is
+allowed to guess. Each no-agent arm is observable:
+
+| | What the no-agent arm actually is |
+|---|---|
+| T1 Rebalancing | Real BSC positions, and whether they are inside their range |
+| T2 Grid | Holding — the benchmark the contract already settles against |
+| T3 Yield | The definitional absence of the rotation |
+| T4 Health factor | **The liquidation penalty Venus publishes and charges** |
+| T5 Security | The agent card, believed — what the directory actually offers |
+| T6 Security | The reputation score the official explorer displays |
+
+**The method was fixed before the results existed, and that is checkable.** The
+specification is deterministic, so anyone can recompute its hash from
+[`src/advantage/lock.ts`](src/advantage/lock.ts); that hash is the calldata of
+[a BSC transaction](https://bscscan.com/tx/0x00b0e484c69fc3f149f437e0d05ae19cad019bb9b69875a66eaec9fbbbe370e4),
+and the block it landed in is the anchor every task measures backward from. The
+window was chosen by the chain, not by us. The runner refuses to execute if the
+spec no longer hashes to what was committed.
+
+That constraint bit immediately. T3's pre-registered metric turned out to have
+no liquidity filter, so "best Venus market" is a dead Terra market paying 2,491%
+APY with **$0 of cash in it**. The tempting move is to add the filter and report
+the sensible number as though it had been the plan. Instead the flawed metric is
+published as specified and the sensible reading sits beside it, labelled.
+
+Findings worth reading:
+
+- **Being early is 53,943× cheaper than being late.** Venus charges a 10%
+  liquidation penalty; a pre-emptive `repayBorrow` costs $0.0093 of gas.
+- **3,000 feedback records on the BSC registry were written by 32 wallets**,
+  99% of them by the 14 flagged as coordinated.
+- **20 of 20 agents look hireable by their card. Zero clear the assay.**
+- **24.2% of live PancakeSwap V3 positions were out of range** — earning
+  nothing — at the anchor block, across 141 pools. *(Exploratory, outside the
+  lock, and labelled as such in the report.)*
+
+```bash
+npm run advantage:lock -- --dry   # recompute the spec hash yourself
+npm run advantage -- run          # re-measure against the same anchor
+```
 
 ## The gate
 
@@ -227,7 +291,7 @@ are being asked to trust somewhere else.
 
 ```bash
 npm install
-cd contracts && forge test && cd ..     # 37 tests, incl. solvency fuzz
+cd contracts && forge test && cd ..     # 42 tests, incl. solvency fuzz
 
 anvil --port 8545 &                     # a local chain
 cd contracts && PRIVATE_KEY=0xac09…ff80 \

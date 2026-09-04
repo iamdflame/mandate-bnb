@@ -20,8 +20,12 @@ contract MandateMarketTest is Test {
     uint16 internal constant FEE = 2_000; // 20% of alpha
     uint16 internal constant SLASH = 2_500; // 25% of bond per failing epoch
 
+    /// @dev The floor the suite deploys against, passed explicitly so the
+    ///      tests exercise the same path a deployment takes.
+    uint96 internal constant MIN_BOND = 0.01 ether;
+
     function setUp() public {
-        market = new MandateMarket(adjudicator);
+        market = new MandateMarket(adjudicator, MIN_BOND);
         vm.deal(principal, 100 ether);
         vm.deal(alice, 100 ether);
         vm.deal(bob, 100 ether);
@@ -623,5 +627,41 @@ contract MandateMarketTest is Test {
             _assertSolvent(1, _parties());
         }
         _assertSolvent(1, _parties());
+    }
+
+    // -------------------------------------------------- minBond as an argument --
+
+    function test_ConstructorSetsMinBond() public {
+        MandateMarket m = new MandateMarket(adjudicator, 0.05 ether);
+        assertEq(m.minBond(), 0.05 ether);
+    }
+
+    /// @dev A costless bid defeats the entire mechanism, so zero is rejected
+    ///      at deployment rather than left to be discovered by a free bid.
+    function test_ConstructorRejectsZeroMinBond() public {
+        vm.expectRevert(MandateMarket.BondTooSmall.selector);
+        new MandateMarket(adjudicator, 0);
+    }
+
+    function test_SetMinBondRejectsZero() public {
+        vm.expectRevert(MandateMarket.BondTooSmall.selector);
+        market.setMinBond(0);
+    }
+
+    /// @dev Both setters used to change state silently. A watcher cannot see a
+    ///      bidding floor move by polling nothing.
+    function test_MinBondChangeIsObservable() public {
+        vm.expectEmit(false, false, false, true);
+        emit MandateMarket.MinBondChanged(MIN_BOND, 0.02 ether);
+        market.setMinBond(0.02 ether);
+        assertEq(market.minBond(), 0.02 ether);
+    }
+
+    function test_ChallengeWindowChangeIsObservable() public {
+        uint64 previous = market.challengeWindow();
+        vm.expectEmit(false, false, false, true);
+        emit MandateMarket.ChallengeWindowChanged(previous, 1 hours);
+        market.setChallengeWindow(1 hours);
+        assertEq(market.challengeWindow(), 1 hours);
     }
 }

@@ -16,13 +16,18 @@ contract Deploy is Script {
     function run() external returns (MandateMarket market) {
         uint256 pk = vm.envUint("PRIVATE_KEY");
         address adjudicator = vm.envOr("ADJUDICATOR", vm.addr(pk));
+        // Explicit, so the deployed floor is recorded in the deployment
+        // transaction rather than being set afterwards by a second call that
+        // leaves the source claiming a number nothing uses.
+        uint96 minBond = uint96(vm.envOr("MIN_BOND_WEI", uint256(0.01 ether)));
 
         vm.startBroadcast(pk);
-        market = new MandateMarket(adjudicator);
+        market = new MandateMarket(adjudicator, minBond);
         vm.stopBroadcast();
 
         console.log("MandateMarket:", address(market));
         console.log("adjudicator  :", adjudicator);
         console.log("owner        :", vm.addr(pk));
+        console.log("minBond wei  :", minBond);
     }
 }
