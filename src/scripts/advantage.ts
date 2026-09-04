@@ -143,7 +143,7 @@ if (wanted("T1") || wanted("T2")) {
       log(`    ${sim.evaluations} evaluations · ${sim.fills} fills`);
       log(`    agent ${sim.agentBnb.toFixed(8)} BNB · hold ${sim.holdBnb.toFixed(8)} BNB`);
       log(`    ${sim.netAdvantageBnb >= 0 ? "WIN" : "LOSS"} — ${sim.netAdvantageBnb >= 0 ? "+" : ""}${sim.netAdvantageBnb.toFixed(8)} BNB against holding`);
-      save("T2", { taskId: "T2", cadenceBlocks, swapGas: 150000, gasPriceWei: gasPrice.toString(), ...sim });
+      save("T2", { taskId: "T2", cadenceBlocks, swaps: path.length, swapGas: 150000, gasPriceWei: gasPrice.toString(), gasSampled: gas.sampled, capitalBnb: Number(spec.inputs.capitalBnb), ...sim });
     }
   }
 }

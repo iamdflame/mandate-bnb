@@ -1,8 +1,11 @@
 {
   "taskId": "T2",
   "cadenceBlocks": 133,
+  "swaps": 4194,
   "swapGas": 150000,
   "gasPriceWei": "52000000",
+  "gasSampled": 142,
+  "capitalBnb": 1,
   "evaluations": 164,
   "fills": 31,
   "startPriceUsd": 724.7605439292361,

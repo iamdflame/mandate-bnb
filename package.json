@@ -28,7 +28,10 @@
     "settle": "tsx src/scripts/settle.ts",
     "grant": "tsx src/scripts/grant.ts",
     "verify": "tsx packages/mandate-verify/src/cli.ts",
-    "verify:isolation": "node packages/mandate-verify/scripts/check-isolation.mjs"
+    "verify:isolation": "node packages/mandate-verify/scripts/check-isolation.mjs",
+    "advantage": "tsx --env-file=.env --env-file=.env.local src/scripts/advantage.ts",
+    "advantage:lock": "tsx --env-file=.env --env-file=.env.local src/scripts/advantage-lock.ts",
+    "advantage:report": "tsx src/scripts/advantage-report.ts"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",
