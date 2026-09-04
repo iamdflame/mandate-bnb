@@ -38,7 +38,8 @@
     "scope-audit": "tsx --env-file=.env --env-file=.env.local src/scripts/scope-audit.ts",
     "keeper": "tsx --env-file=.env --env-file=.env.local src/scripts/keeper.ts",
     "check:config": "tsx src/lib/config.check.ts",
-    "prove-hire": "tsx --env-file=.env --env-file=.env.local src/scripts/prove-hire-flow.ts"
+    "prove-hire": "tsx --env-file=.env --env-file=.env.local src/scripts/prove-hire-flow.ts",
+    "pool-gap": "tsx --env-file=.env --env-file=.env.local src/scripts/pool-gap.ts"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",

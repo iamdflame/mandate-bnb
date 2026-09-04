@@ -501,6 +501,22 @@ declared `agent_wallet` is byte-for-byte its owner's address.
 `/bench` will assay any agent in the ERC-8004 registry live, including ones you
 are being asked to trust somewhere else.
 
+## PancakeSwap
+
+[`docs/PANCAKESWAP.md`](docs/PANCAKESWAP.md)
+
+Two of the four categories put capital to work on PancakeSwap V3 without taking
+custody of it. **24.2% of live V3 positions — 267 of 1,102 across 141 pools —
+were sitting outside their range**, earning nothing, at a block fixed in
+advance by an on-chain input lock.
+
+`npm run pool-gap` answers the research question their brief invited and nobody
+took up: 136,964 swaps across 1,077 pools ranked by turnover, volume crossing
+per unit of standing depth.
+
+The honest half is in the doc too — on the window the lock chose, the
+rebalancing agent would have churned and lost to doing nothing.
+
 ## The site
 
 | Route | What it is |
