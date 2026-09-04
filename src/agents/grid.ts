@@ -13,7 +13,7 @@
  * this category's session key is allowed to call.
  */
 
-import { encodeFunctionData, type Address } from "viem";
+import type { Abi, Address } from "viem";
 import { USDT, V3_ROUTER, WBNB } from "@/lib/chain/prices";
 import { idle, type AgentContext, type Decision, type Strategy } from "./types";
 
@@ -163,9 +163,9 @@ function swap(o: {
     kind: "swap" as const,
     reason: o.reason,
     expect: o.expect,
-    to: V3_ROUTER as Address,
-    data: encodeFunctionData({
-      abi: ROUTER_ABI,
+    call: {
+      address: V3_ROUTER as Address,
+      abi: ROUTER_ABI as unknown as Abi,
       functionName: "exactInputSingle",
       args: [
         {
@@ -178,6 +178,6 @@ function swap(o: {
           sqrtPriceLimitX96: 0n,
         },
       ],
-    }),
+    },
   };
 }

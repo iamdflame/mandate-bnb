@@ -12,7 +12,7 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import type { Address } from "viem";
+import { encodeFunctionData, type Address } from "viem";
 import { CATEGORIES, CATEGORY_LABEL, type Category } from "@/lib/config";
 import { readPool, valueWallet } from "@/lib/chain/prices";
 import { loadMeta } from "@/lib/chain/session";
@@ -100,9 +100,16 @@ export function printDecision(strategy: Strategy, ctx: AgentContext, d: Decision
       console.log(`  action ${i + 1}  ${a.kind.toUpperCase()}`);
       console.log(`    why      ${a.reason}`);
       console.log(`    expect   ${a.expect}`);
-      console.log(`    to       ${a.to}`);
+      console.log(`    to       ${a.call.address}`);
+      console.log(`    call     ${a.call.functionName}`);
       if (a.value) console.log(`    value    ${(Number(a.value) / 1e18).toFixed(8)} BNB`);
-      console.log(`    calldata ${a.data.slice(0, 34)}… (${(a.data.length - 2) / 2} bytes)`);
+      // Derived from the same call that will be sent, not a second encoding.
+      const data = encodeFunctionData({
+        abi: a.call.abi,
+        functionName: a.call.functionName,
+        args: a.call.args as never,
+      });
+      console.log(`    calldata ${data.slice(0, 34)}… (${(data.length - 2) / 2} bytes)`);
     }
   }
   console.log(rule);

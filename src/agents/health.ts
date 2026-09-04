@@ -13,7 +13,7 @@
  * shortfall appearing.
  */
 
-import { encodeFunctionData, type Address } from "viem";
+import type { Abi, Address } from "viem";
 import { marketClient } from "@/lib/chain/market";
 import { idle, type AgentContext, type Decision, type Strategy } from "./types";
 
@@ -121,7 +121,11 @@ const repay = (bnb: number, reason: string) => ({
   kind: "repay" as const,
   reason,
   expect: `borrow balance falls by about ${bnb.toFixed(6)} BNB and headroom rises`,
-  to: VBNB as Address,
   value: BigInt(Math.floor(bnb * 1e18)),
-  data: encodeFunctionData({ abi: VBNB_ABI, functionName: "repayBorrow" }),
+  call: {
+    address: VBNB as Address,
+    abi: VBNB_ABI as unknown as Abi,
+    functionName: "repayBorrow",
+    args: [],
+  },
 });

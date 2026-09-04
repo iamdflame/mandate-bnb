@@ -13,7 +13,7 @@
  *     wallet rather than being trusted not to.
  */
 
-import type { Address, Hex } from "viem";
+import type { Abi, Address } from "viem";
 import type { Category } from "@/lib/config";
 import type { PoolPrice, Valuation } from "@/lib/chain/prices";
 
@@ -35,8 +35,14 @@ export interface Action {
   kind: "swap" | "mint" | "increase" | "decrease" | "collect" | "supply" | "repay";
   /** Why, in one sentence, from the observation that produced it. */
   reason: string;
-  to: Address;
-  data: Hex;
+  /**
+   * The call, structured rather than pre-encoded.
+   *
+   * The SDK's executor takes `{ address, abi, functionName, args }`, and
+   * keeping that form means the calldata shown in a dry run is derived from
+   * the same thing that will be sent rather than a second encoding of it.
+   */
+  call: { address: Address; abi: Abi; functionName: string; args: readonly unknown[] };
   value?: bigint;
   /** What the agent expects to be true afterwards. Checked, not assumed. */
   expect: string;

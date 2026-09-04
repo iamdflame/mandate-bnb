@@ -12,7 +12,7 @@
  * roughly 28.8m blocks a year at 1.095s, which is the multiplier used here.
  */
 
-import { encodeFunctionData, type Address } from "viem";
+import type { Abi, Address } from "viem";
 import { marketClient } from "@/lib/chain/market";
 import { idle, type AgentContext, type Decision, type Strategy } from "./types";
 
@@ -105,9 +105,13 @@ export const yieldStrategy: Strategy = {
           kind: "supply",
           reason: `supply ${deployable.toFixed(6)} BNB to Venus at ${(apr * 100).toFixed(2)}% APR`,
           expect: `vBNB balance rises and idle BNB falls to about ${reserve}`,
-          to: VBNB as Address,
           value: BigInt(Math.floor(deployable * 1e18)),
-          data: encodeFunctionData({ abi: VBNB_ABI, functionName: "mint" }),
+          call: {
+            address: VBNB as Address,
+            abi: VBNB_ABI as unknown as Abi,
+            functionName: "mint",
+            args: [],
+          },
         },
       ],
     };

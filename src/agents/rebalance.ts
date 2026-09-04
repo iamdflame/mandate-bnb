@@ -13,7 +13,7 @@
  * comparison for an LP strategy.
  */
 
-import { encodeFunctionData, type Address } from "viem";
+import type { Abi, Address } from "viem";
 import { marketClient } from "@/lib/chain/market";
 import { idle, type AgentContext, type Decision, type Strategy } from "./types";
 
@@ -161,20 +161,20 @@ export const rebalanceStrategy: Strategy = {
           kind: "decrease",
           reason: `withdraw liquidity from the stale range around tick ${tick}`,
           expect: `position #${tokenId} liquidity falls to zero`,
-          to: POSITION_MANAGER as Address,
-          data: encodeFunctionData({
-            abi: PM_ABI,
+          call: {
+            address: POSITION_MANAGER as Address,
+            abi: PM_ABI as unknown as Abi,
             functionName: "decreaseLiquidity",
             args: [{ tokenId, liquidity, amount0Min: 0n, amount1Min: 0n, deadline }],
-          }),
+          },
         },
         {
           kind: "collect",
           reason: "collect the withdrawn balance and accrued fees",
           expect: "token balances rise by the position value plus fees earned in range",
-          to: POSITION_MANAGER as Address,
-          data: encodeFunctionData({
-            abi: PM_ABI,
+          call: {
+            address: POSITION_MANAGER as Address,
+            abi: PM_ABI as unknown as Abi,
             functionName: "collect",
             args: [
               {
@@ -184,7 +184,7 @@ export const rebalanceStrategy: Strategy = {
                 amount1Max: (1n << 128n) - 1n,
               },
             ],
-          }),
+          },
         },
       ],
     };
