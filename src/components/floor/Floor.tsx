@@ -17,6 +17,7 @@ import {
   WalletChip,
   WithdrawButton,
 } from "./Actions";
+import Standings from "./Standings";
 import type { FloorMandate, FloorSnapshot } from "@/app/api/floor/route";
 
 const CATEGORY_NAMES = [
@@ -45,6 +46,7 @@ export default function Floor({ initial }: { initial: FloorSnapshot | null }) {
   const [tape, setTape] = useState<TapeEntry[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [opening, setOpening] = useState(false);
+  const [book, setBook] = useState(false);
   const previous = useRef<Map<number, FloorMandate>>(new Map());
 
   const stateRef = useRef<FloorState>({
@@ -343,6 +345,20 @@ export default function Floor({ initial }: { initial: FloorSnapshot | null }) {
             mono
           />
           <div style={{ marginLeft: "auto", display: "flex", gap: "0.6rem", alignItems: "center" }}>
+            <button
+              onClick={() => setBook((v) => !v)}
+              className="label"
+              style={{
+                background: "transparent",
+                border: "1px solid var(--rule)",
+                color: "var(--ink-70)",
+                padding: "0.4rem 0.9rem",
+                cursor: "pointer",
+                pointerEvents: "auto",
+              }}
+            >
+              the book
+            </button>
             <WithdrawButton />
             <button
               onClick={() => {
@@ -397,6 +413,8 @@ export default function Floor({ initial }: { initial: FloorSnapshot | null }) {
           )}
         </div>
       </div>
+
+      {book ? <Standings onClose={() => setBook(false)} /> : null}
 
       {opening ? (
         <aside

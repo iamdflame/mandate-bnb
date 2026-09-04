@@ -6,7 +6,12 @@
  * out to every viewer. One reader, many watchers.
  */
 
-import { MANDATE_MARKET_ABI, MARKET_ADDRESS, marketClient, readAllMandates } from "@/lib/chain/market";
+import {
+  MANDATE_MARKET_ABI,
+  MARKET_ADDRESS,
+  marketClient,
+  readLiveMandates,
+} from "@/lib/chain/market";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,15 +45,19 @@ export interface FloorSnapshot {
     underMandate: string;
     bonded: string;
     active: number;
+    /** Every mandate ever opened, including those long since closed. */
+    everOpened: number;
     dismissals: number;
     slashedWei: string;
   };
 }
 
 async function readSnapshot(): Promise<FloorSnapshot> {
-  const [blockNumber, mandates] = await Promise.all([
+  // Only live mandates. Closed ones are book history and reading them all
+  // every tick is what stalled the stream once the market had run a while.
+  const [blockNumber, { live: mandates, total }] = await Promise.all([
     marketClient.getBlockNumber(),
-    readAllMandates(),
+    readLiveMandates(),
   ]);
 
   const successors = await Promise.all(
@@ -119,6 +128,7 @@ async function readSnapshot(): Promise<FloorSnapshot> {
       underMandate: underMandate.toString(),
       bonded: bonded.toString(),
       active,
+      everOpened: total,
       dismissals: 0,
       slashedWei: "0",
     },

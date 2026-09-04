@@ -40,7 +40,7 @@ export const marketClient: PublicClient = createPublicClient({
   chain: marketChain,
   transport: MARKET_RPC.startsWith("ws")
     ? fallback([webSocket(MARKET_RPC), http()])
-    : http(MARKET_RPC, { timeout: 20_000 }),
+    : http(MARKET_RPC, { timeout: 20_000, batch: { wait: 12 } }),
 });
 
 export function walletFor(privateKey: Hex) {
@@ -149,6 +149,54 @@ export async function readAllMandates(): Promise<MandateView[]> {
   const count = await readMandateCount();
   if (count === 0) return [];
   return Promise.all(Array.from({ length: count }, (_, i) => readMandate(i)));
+}
+
+/**
+ * Reads only the mandates that are still live.
+ *
+ * Reading every mandate is O(n) RPC calls per tick, and a market that has been
+ * running for a while has thousands of closed ones. At ~480 mandates that was
+ * roughly 1,400 calls per two-second tick and the stream simply stopped
+ * emitting.
+ *
+ * Mandates are created in sequence and a closed one never reopens, so scanning
+ * backward from the newest finds every live mandate near the head. The scan
+ * stops once it has seen a long enough run of consecutive closed mandates to
+ * be confident nothing live remains behind them.
+ */
+export async function readLiveMandates(
+  opts: { maxScan?: number; closedRunToStop?: number } = {},
+): Promise<{ live: MandateView[]; total: number; scanned: number }> {
+  const total = await readMandateCount();
+  if (total === 0) return { live: [], total: 0, scanned: 0 };
+
+  const maxScan = opts.maxScan ?? 200;
+  const stopAfter = opts.closedRunToStop ?? 48;
+  const live: MandateView[] = [];
+  let closedRun = 0;
+  let scanned = 0;
+
+  // Walk backward in small batches so the calls still parallelise.
+  const BATCH = 12;
+  for (let end = total; end > 0 && scanned < maxScan; end -= BATCH) {
+    const start = Math.max(0, end - BATCH);
+    const ids = Array.from({ length: end - start }, (_, k) => start + k).reverse();
+    const batch = await Promise.all(ids.map((id) => readMandate(id)));
+    scanned += batch.length;
+
+    for (const m of batch) {
+      if (m.state === 0 || m.state === 1) {
+        live.push(m);
+        closedRun = 0;
+      } else {
+        closedRun += 1;
+      }
+    }
+    if (closedRun >= stopAfter) break;
+  }
+
+  live.sort((a, b) => a.id - b.id);
+  return { live, total, scanned };
 }
 
 /** Formats wei as BNB with a fixed number of places, for a ledger column. */

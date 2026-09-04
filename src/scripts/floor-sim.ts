@@ -21,7 +21,7 @@ import {
   bnb,
   marketChain,
   marketClient,
-  readAllMandates,
+  readLiveMandates,
   walletFor,
 } from "@/lib/chain/market";
 
@@ -182,7 +182,7 @@ function personaFor(agentAddress: string): Persona | undefined {
 }
 
 async function settleAll(epochIndex: number) {
-  const mandates = await readAllMandates();
+  const { live: mandates } = await readLiveMandates();
   for (const m of mandates) {
     if (m.state !== 1) continue; // Active only
     if (m.epochsSettled >= m.epochsTotal) continue;
@@ -190,7 +190,10 @@ async function settleAll(epochIndex: number) {
     const persona = personaFor(m.agent);
     if (!persona) continue;
 
-    const mean = persona.mean + persona.drift * epochIndex;
+    // Drift is a tendency, not a ramp. Left uncapped it compounded across
+    // hundreds of epochs into alpha no market would produce.
+    const drift = Math.max(-600, Math.min(600, persona.drift * (epochIndex % 12)));
+    const mean = persona.mean + drift;
     const alpha = Math.max(-9_000, Math.min(9_000, gaussian(mean, persona.sigma)));
 
     try {
@@ -207,12 +210,12 @@ async function settleAll(epochIndex: number) {
 }
 
 async function report() {
-  const mandates = await readAllMandates();
+  const { live: mandates, total } = await readLiveMandates();
   const active = mandates.filter((m) => m.state === 1);
   const capital = mandates.reduce((s, m) => s + m.capital, 0n);
   const bonded = mandates.reduce((s, m) => s + m.bond, 0n);
   log(
-    `— ${active.length}/${mandates.length} mandates active · ` +
+    `— ${active.length} active · ${total} opened all-time · ` +
       `${bnb(capital)} BNB under mandate · ${bnb(bonded)} BNB bonded`,
   );
 }
@@ -221,8 +224,8 @@ async function report() {
 
 log(`floor simulation · chain ${marketChain.id} · market ${MARKET_ADDRESS}`);
 
-const existing = await readAllMandates();
-if (existing.length === 0) {
+const { total: existing } = await readLiveMandates();
+if (existing === 0) {
   log("no mandates yet — opening one per category");
   for (const c of CATEGORIES) {
     await openAndStaff(c, parseEther(String(8 + c * 4)), c);
@@ -236,7 +239,7 @@ if (existing.length === 0) {
  * re-tenders from scratch.
  */
 async function recycle(nextCategory: number) {
-  const mandates = await readAllMandates();
+  const { live: mandates } = await readLiveMandates();
   let opened = 0;
   for (const m of mandates) {
     const finished = m.epochsSettled >= m.epochsTotal;
