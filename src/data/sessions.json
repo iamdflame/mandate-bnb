@@ -1,0 +1,22 @@
+{
+  "2": {
+    "mandateId": 2,
+    "category": "grid-trading",
+    "sessionKey": "0x04e187b9830cddb2b1f56967828188022513dce0ed39abd09d0a58ef72f2d445bda572ac824a318f58ace8a1f91d2a86d9b8c5fdf7441a0a1d9d3e568e5a5c9cae",
+    "walletAddress": "0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90",
+    "capWei": "300000000000000",
+    "expiry": 1788610414,
+    "registered": false,
+    "allowlist": [
+      {
+        "to": "0x13f4ea83d0bd40e75c8222255bc855a974568dd4",
+        "signature": "exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))"
+      },
+      {
+        "to": "0x13f4ea83d0bd40e75c8222255bc855a974568dd4",
+        "signature": "exactInput((bytes,address,uint256,uint256))"
+      }
+    ],
+    "grantedAt": "2026-09-04T12:14:00.913Z"
+  }
+}

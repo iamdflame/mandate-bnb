@@ -28,8 +28,17 @@ import {
 } from "@bnbagent/sdk/wallets";
 import { CATEGORY_LABEL, type Category } from "@/lib/config";
 
-/** Where granted sessions are kept. Key material: never committed. */
+/**
+ * Two homes, because a session has a secret half and a public half.
+ *
+ * The serialized session contains the signer and never leaves the machine that
+ * granted it. Its metadata — the public key, the allowlist, the cap, the
+ * expiry — is all readable on chain by anyone, so it belongs in the repository
+ * where the deployed site can show what authority exists. Keeping both in the
+ * ignored directory meant production could only ever report "observing only".
+ */
 const SESSION_DIR = ".sessions";
+const PUBLIC_INDEX = "src/data/sessions.json";
 
 const norm = (k?: string) => (k?.startsWith("0x") ? k : `0x${k}`) as `0x${string}`;
 
@@ -207,10 +216,9 @@ export async function revokeMandateSession(mandateId: number): Promise<void> {
 
   const meta = loadMeta(mandateId);
   if (meta) {
-    writeFileSync(
-      metaPath(mandateId),
-      JSON.stringify({ ...meta, revokedAt: new Date().toISOString() }, null, 2),
-    );
+    const revoked = { ...meta, revokedAt: new Date().toISOString() };
+    writeFileSync(metaPath(mandateId), JSON.stringify(revoked, null, 2));
+    writePublic(mandateId, revoked);
   }
 }
 
@@ -223,9 +231,30 @@ const metaPath = (id: number) => `${SESSION_DIR}/mandate-${id}.json`;
 
 function persist(id: number, session: unknown, meta: GrantedSession) {
   mkdirSync(dirname(rawPath(id)), { recursive: true });
-  // The serialized session is key material.
+  // The signer. Never committed, never deployed.
   writeFileSync(rawPath(id), serializeSession(session as never), { mode: 0o600 });
   writeFileSync(metaPath(id), JSON.stringify(meta, null, 2));
+  writePublic(id, meta);
+}
+
+/** Public metadata, safe to commit: everything here is already on chain. */
+function writePublic(id: number, meta: GrantedSession & { revokedAt?: string }) {
+  const all = readPublicIndex();
+  all[String(id)] = meta;
+  mkdirSync(dirname(PUBLIC_INDEX), { recursive: true });
+  writeFileSync(PUBLIC_INDEX, JSON.stringify(all, null, 2));
+}
+
+export function readPublicIndex(): Record<string, GrantedSession & { revokedAt?: string }> {
+  if (!existsSync(PUBLIC_INDEX)) return {};
+  try {
+    return JSON.parse(readFileSync(PUBLIC_INDEX, "utf8")) as Record<
+      string,
+      GrantedSession & { revokedAt?: string }
+    >;
+  } catch {
+    return {};
+  }
 }
 
 export function loadRaw(id: number): string | null {
@@ -233,10 +262,19 @@ export function loadRaw(id: number): string | null {
   return existsSync(p) ? readFileSync(p, "utf8") : null;
 }
 
+/**
+ * Session metadata.
+ *
+ * Prefers the local file when granting or acting on this machine, and falls
+ * back to the committed public index so a deployed instance can still show
+ * what authority exists without ever holding the signer.
+ */
 export function loadMeta(id: number): (GrantedSession & { revokedAt?: string }) | null {
   const p = metaPath(id);
-  if (!existsSync(p)) return null;
-  return JSON.parse(readFileSync(p, "utf8")) as GrantedSession & { revokedAt?: string };
+  if (existsSync(p)) {
+    return JSON.parse(readFileSync(p, "utf8")) as GrantedSession & { revokedAt?: string };
+  }
+  return readPublicIndex()[String(id)] ?? null;
 }
 
 /** Session-mode provider for an agent process: execute only, never grant. */
