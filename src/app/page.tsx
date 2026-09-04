@@ -157,8 +157,11 @@ export default function Home() {
             </div>
             <div style={{ gridColumn: "8 / span 5", alignSelf: "end" }}>
               <p className="prose">
-                A ranking no directory can produce, because producing it requires
-                having checked.
+                Ranked by position, not by score: the registry's number and our
+                fineness are different units, and setting 12.07 beside 105 as
+                though they were comparable is exactly the sloppiness this
+                exists to object to. A ranking no directory can produce, because
+                producing it requires having checked.
               </p>
             </div>
           </div>
@@ -175,27 +178,42 @@ export default function Home() {
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--rule)" }}>
                   <Th>agent</Th>
-                  <Th align="right">registry</Th>
-                  <Th align="right">assayed</Th>
+                  <Th align="right">registry rank</Th>
+                  <Th align="right">assayed rank</Th>
+                  <Th align="right">fineness</Th>
                   <Th align="right">mark</Th>
                 </tr>
               </thead>
               <tbody>
-                {overstated.map((a) => (
-                  <tr key={a.tokenId} style={{ borderBottom: "1px solid var(--ink-06)" }}>
+                {overstated.map(({ report, registryRank, assayedRank, drop }) => (
+                  <tr key={report.tokenId} style={{ borderBottom: "1px solid var(--ink-06)" }}>
                     <td style={{ padding: "0.85rem 0.75rem 0.85rem 0" }}>
-                      <Link href={`/agent/${a.tokenId}`} className="link-underline">
-                        {a.name ?? a.tokenId}
+                      <Link href={`/agent/${report.tokenId}`} className="link-underline">
+                        {report.name ?? report.tokenId}
                       </Link>
                     </td>
-                    <td className="fig" style={{ textAlign: "right", padding: "0.85rem 0.75rem", color: "var(--ink-45)" }}>
-                      {a.registryScore ?? "—"}
+                    <td
+                      className="fig"
+                      style={{ textAlign: "right", padding: "0.85rem 0.75rem", color: "var(--ink-45)" }}
+                    >
+                      {registryRank}
                     </td>
                     <td className="fig" style={{ textAlign: "right", padding: "0.85rem 0.75rem" }}>
-                      {a.fineness}
+                      {assayedRank}
+                      {drop > 0 ? (
+                        <span className="label" style={{ marginLeft: 6 }}>
+                          ↓{drop}
+                        </span>
+                      ) : null}
+                    </td>
+                    <td
+                      className="fig"
+                      style={{ textAlign: "right", padding: "0.85rem 0.75rem", color: "var(--ink-45)" }}
+                    >
+                      {report.fineness}
                     </td>
                     <td style={{ textAlign: "right", padding: "0.85rem 0 0.85rem 0.75rem" }}>
-                      <HallmarkBadge report={a} />
+                      <HallmarkBadge report={report} />
                     </td>
                   </tr>
                 ))}

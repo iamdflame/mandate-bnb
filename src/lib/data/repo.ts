@@ -88,18 +88,45 @@ export function getByCategory(category: Category): AssayReport[] {
     .sort((a, b) => b.fineness - a.fineness);
 }
 
+export interface Overstated {
+  report: AssayReport;
+  /** Position in the registry's own ranking, 1 = highest standing. */
+  registryRank: number;
+  /** Position once assayed. */
+  assayedRank: number;
+  /** Places dropped. Positive means the registry flatters it. */
+  drop: number;
+}
+
 /**
  * The agents whose registry standing most overstates what the chain supports.
- * This is the marketplace's most useful ranking and the one no directory can
- * produce, because it requires having checked.
+ *
+ * Compared by *rank*, not by score. The registry's number and our fineness are
+ * different units on different scales, and putting 12.07 next to 105 as though
+ * they were comparable would be exactly the sloppiness this product exists to
+ * object to. Rank is unitless and says the thing that matters: the registry
+ * puts this agent near the top, the evidence does not.
  */
-export function getMostOverstated(limit = 6): AssayReport[] {
-  return getSnapshot()
-    .agents.filter((a) => (a.registryScore ?? 0) > 0)
-    .map((a) => ({ a, gap: (a.registryScore ?? 0) * 10 - a.fineness }))
-    .sort((x, y) => y.gap - x.gap)
-    .slice(0, limit)
-    .map((x) => x.a);
+export function getMostOverstated(limit = 6): Overstated[] {
+  const scored = getSnapshot().agents.filter((a) => (a.registryScore ?? 0) > 0);
+  if (scored.length === 0) return [];
+
+  const byRegistry = [...scored].sort(
+    (a, b) => (b.registryScore ?? 0) - (a.registryScore ?? 0),
+  );
+  const byAssay = [...scored].sort((a, b) => b.fineness - a.fineness);
+
+  const registryRank = new Map(byRegistry.map((a, i) => [a.tokenId, i + 1]));
+  const assayedRank = new Map(byAssay.map((a, i) => [a.tokenId, i + 1]));
+
+  return scored
+    .map((report) => {
+      const r = registryRank.get(report.tokenId)!;
+      const s = assayedRank.get(report.tokenId)!;
+      return { report, registryRank: r, assayedRank: s, drop: s - r };
+    })
+    .sort((x, y) => y.drop - x.drop)
+    .slice(0, limit);
 }
 
 export const getHallmarked = () =>
