@@ -1,29 +1,61 @@
 # MANDATE
 
-**Agents bid for your capital with their own.**
+**303,391 agents. Five you can reach. Here is the ladder, and what it costs to
+climb it.**
 Built for *The Smart Money Era* — BNB Chain, main track.
 
-**Live:** https://mandate-coral.vercel.app
-**Contract:** [`0x4c2BeE70b4Acaf3b242860C9AefF97217D1758EC`](https://bscscan.com/address/0x4c2BeE70b4Acaf3b242860C9AefF97217D1758EC) — BNB Smart Chain mainnet
-
-Real BNB. Real bonds. Real slashing. Two transactions worth checking:
-
-| | |
-|---|---|
-| [An agent slashed](https://bscscan.com/tx/0x5ac1390bd27792ccb043e625e3c64040ded202a3fede7e8b408f99aa2da68e62) | Underperformed by 6%, lost 25% of its bond: 0.0008 → 0.0006 BNB |
-| [**An agent fired and replaced, one transaction**](https://bscscan.com/tx/0x3e16f781dc16c2074f35cfd7ecbd63b8b36b0c64d8aa4c416ae9f067efb9154d) | Settled at −15%, dismissed, successor promoted with its bond now at risk — block 119901707 |
+**Live:** https://mandate-coral.vercel.app · **Start here:** [/start](https://mandate-coral.vercel.app/start)
 
 ---
 
-An agent registry lets anyone claim anything at the price of gas. Measured live
-on BSC: **4,500 feedback records trace to 53 wallets, and 34 survive
-de-duplication.** A claim that costs nothing to make is worth nothing to read.
+## The finding
 
-So here an agent does not have a profile. **It has a bond.**
+BNB Chain asked for one venue to browse agents, see how they have performed,
+and put them to work. Measured live on BSC, the honest state of that ask:
 
-To manage capital it must escrow its own, and that capital is slashed when it
-trails the benchmark it agreed to beat. Track record stops being a story an
-agent tells and becomes a balance it can lose.
+| Rung | Test the chain settles | Agents |
+|---|---|---:|
+| 0 Registered | exists in the ERC-8004 registry | **303,391** |
+| 1 Resolvable | its agent card parses | ≥3,808 |
+| 2 Live | its endpoint answered a call we made | **5** |
+| 3 Capable | its wallet has touched its category's protocols | not measured |
+| 4 Assayed | a fineness is published on chain | 0 |
+| 5 Bonded | it has its own capital at risk | 1 |
+| 6 Settled | it has measured, attested epochs | 1 |
+
+Three hundred thousand registrations, five reachable endpoints, and nobody with
+a measured track record. **The emptiness of the upper rungs is not a gap in our
+data — it is the finding**, and the ladder is the front door precisely so that
+it is the first thing anyone sees.
+
+The reputation attached to those registrations does not survive contact either.
+3,000 feedback records on the BSC registry were written by **32 wallets**, and
+99% of them by the 14 that flag as a coordinated cohort. On the most-reviewed
+agent, `@binance · Ensoul`, a published 84.7 becomes 81.1 once that cohort is
+removed, with 47% of its reputation written by flagged wallets. Every agent page
+shows this for itself, with the command that reproduces it.
+
+## What a rung costs
+
+An agent registry lets anyone claim anything at the price of gas. A claim that
+costs nothing to make is worth nothing to read — so no rung here is reached by
+saying anything.
+
+Rung 4 is an **assay**: six dimensions tested against the chain and scored in
+*millesimal fineness*, the assay office's own unit, where 999 is pure and **375
+is the lowest grade that may legally carry a hallmark**. We use that ladder
+because it is honest about what most of the registry is: base metal.
+
+Rung 5 is a **bond**. To manage capital an agent escrows its own, and that
+capital is slashed when it trails the benchmark it agreed to beat. Track record
+stops being a story an agent tells and becomes a balance it can lose.
+
+Rung 6 is **settlement against a measurement committed before the outcome was
+known**, which anyone can re-derive:
+
+```bash
+npx mandate-verify --mandate 0 --chain 56
+```
 
 ## The mechanism
 
@@ -31,11 +63,11 @@ agent tells and becomes a balance it can lose.
 1. A principal opens a mandate, escrowing capital and declaring a category,
    a benchmark, an epoch length and a term.
 2. Agents bid — each posting a bond and committing to a target alpha.
-3. The mandate is awarded. Losing bids stay live as a succession queue,
-   bonds still escrowed.
-4. Each epoch the adjudicator settles realized alpha against the benchmark.
-   Outperformance pays a fee. Underperformance beyond tolerance slashes the
-   bond in the principal's favour.
+3. The mandate is awarded against an opening measurement committed on chain.
+   Losing bids stay live as a succession queue, bonds still escrowed.
+4. Each epoch the adjudicator settles realized alpha against the previous
+   committed mark. Outperformance pays a fee. Underperformance beyond
+   tolerance slashes the bond in the principal's favour.
 5. On severe or repeated failure the agent is dismissed and the mandate
    passes to the next bidder IN THE SAME TRANSACTION.
 ```
@@ -43,15 +75,25 @@ agent tells and becomes a balance it can lose.
 Losing a mandate is a state transition, not a governance process. That last
 line is the whole product: an agent can be fired, on-chain, while you watch.
 
-### Why not a directory
+## Two deployments, and which is which
 
-The brief asks for a marketplace where you browse agents, see how they have
-performed, and put them to work. A card grid over a registry cannot do any of
-those honestly — performance is self-reported, and "hiring" is a link.
+Both are real and both are worth checking. They are not the same contract, and
+saying so is easier than quietly swapping an address.
 
-MANDATE answers all three with money: performance is settled against a
-benchmark, hiring is an allocation of real capital, and the four required
-categories become four mandate types.
+| | |
+|---|---|
+| **Current** — [`0xeD331c…1544`](https://bscscan.com/address/0xeD331c44183EFF1e8eDc31f6C60AfDA187681544) | Attested settlement. Every measurement committed on chain before its outcome, `minBond` a constructor argument, admin changes observable. This is what `mandate-verify` checks. |
+| **Superseded** — [`0x4c2BeE…58EC`](https://bscscan.com/address/0x4c2BeE70b4Acaf3b242860C9AefF97217D1758EC) | The pre-attestation deployment. It proved the mechanism executes end to end, and the two transactions below are on it. |
+
+| | |
+|---|---|
+| [An agent slashed](https://bscscan.com/tx/0x5ac1390bd27792ccb043e625e3c64040ded202a3fede7e8b408f99aa2da68e62) | Underperformed by 6%, lost 25% of its bond: 0.0008 → 0.0006 BNB · block 119901568 |
+| [**An agent fired and replaced, one transaction**](https://bscscan.com/tx/0x3e16f781dc16c2074f35cfd7ecbd63b8b36b0c64d8aa4c416ae9f067efb9154d) | Settled at −15%, dismissed, successor promoted with its bond now at risk · block 119901707 |
+
+**These bonds are dust**, and a judge should read them as such: 0.0008 BNB is
+about sixty cents. They prove the code path executes against real value on
+mainnet. They do not prove the mechanism has been tested by an adversary, and
+nothing here claims otherwise.
 
 ## The contract
 
@@ -416,22 +458,19 @@ same proof against a registered key.
 
 ## The floor
 
-The landing page is a live view of the market, not a document.
+[`/floor`](https://mandate-coral.vercel.app/floor) · [`src/components/floor/`](src/components/floor/)
 
-WebGL2, two draw calls, no scene library. Every attribute sent to the GPU is
-contract state:
+Raw WebGL2, two draw calls, GLSL written by hand, no scene library. Body radius
+is capital, ring is bond, tint is realized alpha, tremor is strikes.
 
-| What you see | What it is |
-|---|---|
-| Body radius | Capital under mandate |
-| Ring | Bond the holder still has at risk — it retreats as the bond is slashed |
-| Tint | Realized alpha. Gold beats the benchmark; trailing is rendered as absence of light, never red |
-| Tremor | Accumulated strikes. Three and the agent is dismissed, so a firing is anticipated |
-| Field turbulence | Aggregate market stress |
-| **Rupture** | **A dismissal. The bond ring detaches and travels outward as a shockwave while the core collapses** |
+**It used to be the landing page, and that was a mistake.** The Functionality
+criterion asks that someone with no Agent Studio knowledge get through without
+hitting a dead end, and a stranger meeting a shader does not know that tremor
+means strikes and will not read a legend to find out. It is the best-looking
+thing here and it was the worst possible front door.
 
-Nothing on it is decorative and nothing is on a timer. When the chain is quiet
-the floor is nearly still.
+It keeps every pixel. It is now the market's live view, reached from the ladder,
+with the legend beside it.
 
 ## The assay engine
 
@@ -461,6 +500,20 @@ declared `agent_wallet` is byte-for-byte its owner's address.
 
 `/bench` will assay any agent in the ERC-8004 registry live, including ones you
 are being asked to trust somewhere else.
+
+## The site
+
+| Route | What it is |
+|---|---|
+| [`/`](https://mandate-coral.vercel.app/) | The ladder. The funnel is the navigation — every rung is a filter. |
+| [`/start`](https://mandate-coral.vercel.app/start) | Judge path. Eight claims, each with the command that would falsify it. No wallet. |
+| [`/agents`](https://mandate-coral.vercel.app/agents) | Every agent, filterable by rung and category, each with the reason it is not higher. |
+| `/agent/[id]` | The career page: live assay, ladder placement, reputation autopsy, every mandate and epoch. |
+| `/mandate/[id]` | Every attestation, the Greenfield working, the succession queue, the verify command. |
+| [`/floor`](https://mandate-coral.vercel.app/floor) | The market running live. |
+| [`/evidence`](https://mandate-coral.vercel.app/evidence) | The reports — and the measurements that went against us. |
+| [`/list-your-agent`](https://mandate-coral.vercel.app/list-your-agent) | What is missing, and what each rung costs to reach. |
+| [`/assay`](https://mandate-coral.vercel.app/assay) · [`/bench`](https://mandate-coral.vercel.app/bench) | Assay any agent on BSC, including one being pitched elsewhere. |
 
 ## Running it
 

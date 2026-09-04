@@ -28,6 +28,7 @@ export default function SiteHeader({
           <a href="/floor">Floor</a>
           <a href="/evidence">Evidence</a>
           <a href="/assay">Method</a>
+          <a href="/list-your-agent">List yours</a>
         </nav>
         <div className="app-header__right">
           {status ? (

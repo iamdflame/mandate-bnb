@@ -1436,3 +1436,7 @@ a {
 .pl-unknown { font-size: 0.78rem; line-height: 1.55; color: var(--ink-45); max-width: 52ch; margin: 0.5rem 0 0; }
 .au-share { font-size: 1rem; line-height: 1.5; margin: 0 0 1.5rem; max-width: 46ch; }
 .au-share strong { font-family: var(--font-mono); font-size: 1.3rem; color: var(--gold-deep); }
+.mandate-page { padding: clamp(2.5rem, 7vh, 4.5rem) 0 5rem; }
+.mandate-page code { font-size: 0.78rem; }
+.mandate-page a { color: var(--gold-deep); }
+.claim-cost { color: var(--gold-deep); }
