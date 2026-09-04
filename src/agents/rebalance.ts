@@ -94,7 +94,21 @@ const PM_ABI = [
 ] as const;
 
 /** Re-centre once price sits this many ticks outside the range. */
-const DRIFT_TICKS = 200;
+export const DRIFT_TICKS = 200;
+
+/**
+ * How far outside its range a position sits, in ticks. Negative while in range.
+ *
+ * Exported because the Advantage Report evaluates this strategy against real
+ * BSC positions, and a report that reimplemented the rule would be measuring a
+ * copy. Both callers use this one function, so they cannot drift apart.
+ */
+export const driftOf = (tickLower: number, tickUpper: number, tick: number) =>
+  Math.max(tickLower - tick, tick - tickUpper);
+
+/** The production trigger: re-centre once drift exceeds the tolerance. */
+export const shouldRecentre = (tickLower: number, tickUpper: number, tick: number) =>
+  driftOf(tickLower, tickUpper, tick) >= DRIFT_TICKS;
 
 export const rebalanceStrategy: Strategy = {
   id: "rebalancing",
@@ -140,11 +154,9 @@ export const rebalanceStrategy: Strategy = {
     const liquidity = pos[7] as bigint;
     const tick = ctx.price.tick;
 
-    const below = tickLower - tick;
-    const above = tick - tickUpper;
-    const drift = Math.max(below, above);
+    const drift = driftOf(tickLower, tickUpper, tick);
 
-    if (drift < DRIFT_TICKS) {
+    if (!shouldRecentre(tickLower, tickUpper, tick)) {
       const where = tick < tickLower || tick > tickUpper ? "just outside" : "inside";
       return idle(
         `position #${tokenId} is ${where} its range [${tickLower}, ${tickUpper}] at tick ${tick}; drift ${drift} is under the ${DRIFT_TICKS}-tick tolerance`,

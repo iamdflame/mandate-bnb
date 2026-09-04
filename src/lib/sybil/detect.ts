@@ -41,11 +41,17 @@ export interface SybilVerdict {
 }
 
 /** Jaccard similarity above this counts as coordinated co-review. */
-const JACCARD_THRESHOLD = 0.6;
+const DEFAULT_JACCARD = 0.6;
 /** Reviewers whose totals sit this close together are treated as one cohort. */
-const CARDINALITY_TOLERANCE = 0.12;
+const DEFAULT_CARDINALITY_TOLERANCE = 0.12;
 /** Three or more matching profiles is a cohort, not a coincidence. */
-const COHORT_MIN = 3;
+const DEFAULT_COHORT_MIN = 3;
+
+export const SYBIL_DEFAULTS = {
+  jaccard: DEFAULT_JACCARD,
+  cardinalityTolerance: DEFAULT_CARDINALITY_TOLERANCE,
+  cohortMin: DEFAULT_COHORT_MIN,
+};
 
 export function profileReviewers(
   feedbacks: ScanFeedback[],
@@ -91,8 +97,18 @@ export function profileReviewers(
  */
 export function detectCoordination(
   profiles: Map<string, ReviewerProfile>,
-  opts: { ownerAddresses?: Set<string> } = {},
+  opts: {
+    ownerAddresses?: Set<string>;
+    /** Overridable so the Advantage Report can publish threshold sensitivity.
+     *  A finding that only survives one setting of a constant is not a finding. */
+    jaccard?: number;
+    cardinalityTolerance?: number;
+    cohortMin?: number;
+  } = {},
 ): Record<string, string[]> {
+  const JACCARD_THRESHOLD = opts.jaccard ?? DEFAULT_JACCARD;
+  const CARDINALITY_TOLERANCE = opts.cardinalityTolerance ?? DEFAULT_CARDINALITY_TOLERANCE;
+  const COHORT_MIN = opts.cohortMin ?? DEFAULT_COHORT_MIN;
   const flags: Record<string, string[]> = {};
   const add = (addr: string, reason: string) => {
     (flags[addr] ??= []).push(reason);
