@@ -320,12 +320,5 @@ export default function FloorCanvas({
     };
   }, [state]);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden
-      className={className}
-      style={{ display: "block", width: "100%", height: "100%", ...style }}
-    />
-  );
+  return <canvas ref={canvasRef} aria-hidden className={className} style={style} />;
 }

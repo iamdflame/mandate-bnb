@@ -1,0 +1,369 @@
+"use client";
+
+/**
+ * The market, as an application.
+ *
+ * An earlier version put everything in absolutely-positioned overlays on a
+ * full-screen canvas, which left the page with no document flow and therefore
+ * no layout: a dark field with a few unlabelled dots on it, the agent records
+ * hidden behind a corner button, and no way to browse anything. The brief asks
+ * for browse, see how they performed, and put them to work; none of those were
+ * legible.
+ *
+ * So this is ordinary flow, with real sections and real tables. The canvas is
+ * one band inside the page rather than the page itself.
+ */
+
+import { useMemo, useRef, useState } from "react";
+import FloorCanvas, { type FloorBody, type FloorState } from "@/components/floor/FloorCanvas";
+import { BidPanel, OpenMandatePanel, WalletChip, WithdrawButton } from "@/components/floor/Actions";
+import { bnb, useMarket, type TapeEntry } from "@/lib/useMarket";
+import type { FloorMandate } from "@/app/api/floor/route";
+import AgentStandings from "./AgentStandings";
+
+const CATEGORIES = ["Rebalancing", "Grid Trading", "Yield Optimisation", "Health Factor"];
+const STATES = ["Open", "Active", "Closed", "Abandoned"];
+const ZERO = "0x0000000000000000000000000000000000000000";
+
+const short = (a?: string | null) =>
+  a && a !== ZERO ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—";
+const pct = (bps: number) => `${bps > 0 ? "+" : ""}${(bps / 100).toFixed(2)}%`;
+
+export default function MarketApp({ explorer }: { explorer: string }) {
+  const { snapshot, tape, connected, signals } = useMarket();
+  const [filter, setFilter] = useState<number | null>(null);
+  const [sheet, setSheet] = useState<{ kind: "open" } | { kind: "bid"; m: FloorMandate } | null>(
+    null,
+  );
+
+  const mandates = snapshot?.mandates ?? [];
+  const shown = filter === null ? mandates : mandates.filter((m) => m.category === filter);
+  const totals = snapshot?.totals;
+
+  // ---- feed the canvas band without re-rendering it
+  const stateRef = useRef<FloorState>({
+    bodies: [],
+    stress: 0,
+    flow: 0,
+    settlementTick: 0,
+    ruptures: [],
+  });
+
+  const bodies = useMemo<FloorBody[]>(() => {
+    if (!mandates.length) return [];
+    const max = Math.max(...mandates.map((m) => Number(BigInt(m.capitalWei)) / 1e18), 1e-9);
+    return mandates.map((m, i) => {
+      const capital = Number(BigInt(m.capitalWei)) / 1e18;
+      const perEpoch = m.epochsSettled > 0 ? m.cumulativeAlphaBps / m.epochsSettled : 0;
+      const span = mandates.length > 1 ? i / (mandates.length - 1) : 0.5;
+      return {
+        id: m.id,
+        x: -0.74 + span * 1.48,
+        y: 0,
+        radius: 0.16 + 0.2 * Math.sqrt(capital / max),
+        bond: Math.max(0, Math.min(1, m.bondFraction)),
+        alpha: Math.max(-1, Math.min(1, perEpoch / 400)),
+        strikes: Math.min(1, m.strikes / 3),
+      };
+    });
+  }, [mandates]);
+
+  stateRef.current.bodies = bodies;
+  stateRef.current.ruptures = signals.current.ruptures;
+  stateRef.current.settlementTick = signals.current.settlementTick;
+  if (snapshot) {
+    const losing = mandates.filter((m) => m.cumulativeAlphaBps < 0).length;
+    const total = Math.max(mandates.length, 1);
+    stateRef.current.stress = Math.min(1, losing / total);
+    stateRef.current.flow = Math.min(1, (totals?.active ?? 0) / total);
+  }
+
+  return (
+    <div className="app">
+      {/* ------------------------------------------------------------ header */}
+      <header className="app-header">
+        <div className="app-header__inner shell">
+          <a href="/" className="wordmark">
+            MANDATE
+          </a>
+          <nav className="app-nav">
+            <a href="#market">Market</a>
+            <a href="#agents">Agents</a>
+            <a href="/assay">Assay</a>
+            <a
+              href={`${explorer}/address/${snapshot?.market ?? ""}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Contract ↗
+            </a>
+          </nav>
+          <div className="app-header__right">
+            <span className={`pulse ${connected ? "pulse--on" : ""}`} aria-hidden />
+            <span className="label">
+              {connected ? "live" : "connecting"}
+              {snapshot ? ` · ${snapshot.blockNumber}` : ""}
+            </span>
+            <WalletChip />
+          </div>
+        </div>
+      </header>
+
+      {/* -------------------------------------------------------------- hero */}
+      <section className="hero shell">
+        <div className="hero__copy">
+          <h1 className="display">Agents bid for your capital with their own.</h1>
+          <p className="prose hero__lede">
+            An agent here does not have a profile. It has a bond. To manage a
+            mandate it escrows its own capital, and that capital is slashed when
+            it trails the benchmark it agreed to beat. Fail badly enough and it
+            is dismissed on-chain, with the next bidder promoted in the same
+            transaction.
+          </p>
+          <div className="hero__actions">
+            <button className="btn btn--primary" onClick={() => setSheet({ kind: "open" })}>
+              Open a mandate
+            </button>
+            <a
+              className="btn"
+              href={`${explorer}/address/${snapshot?.market ?? ""}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Verify on BscScan ↗
+            </a>
+            <WithdrawButton />
+          </div>
+        </div>
+
+        <figure className="hero__viz">
+          <FloorCanvas state={stateRef} />
+          <figcaption className="label">
+            live · size is capital under mandate, ring is bond still at risk
+          </figcaption>
+        </figure>
+      </section>
+
+      {/* ------------------------------------------------------- stat strip */}
+      <section className="stats shell">
+        <Stat label="under mandate" value={`${bnb(totals?.underMandate)} BNB`} />
+        <Stat label="bonded by agents" value={`${bnb(totals?.bonded)} BNB`} accent />
+        <Stat label="mandates active" value={String(totals?.active ?? 0)} />
+        <Stat label="opened all-time" value={String(totals?.everOpened ?? 0)} />
+        <Stat
+          label="chain"
+          value={snapshot?.chainId === 56 ? "BNB mainnet" : `chain ${snapshot?.chainId ?? "—"}`}
+        />
+      </section>
+
+      {/* ----------------------------------------------------------- market */}
+      <section id="market" className="section shell">
+        <div className="section__head">
+          <div>
+            <div className="label">the market</div>
+            <h2 className="display section__title">Mandates open for contest</h2>
+          </div>
+          <div className="chips">
+            <button
+              className={`chip ${filter === null ? "chip--on" : ""}`}
+              onClick={() => setFilter(null)}
+            >
+              All
+            </button>
+            {CATEGORIES.map((c, i) => (
+              <button
+                key={c}
+                className={`chip ${filter === i ? "chip--on" : ""}`}
+                onClick={() => setFilter(i)}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="tablewrap">
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>function</th>
+                <th className="r">capital</th>
+                <th>holder</th>
+                <th className="r">bond at risk</th>
+                <th className="r">alpha</th>
+                <th className="r">epochs</th>
+                <th className="r">strikes</th>
+                <th>successor</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {shown.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="empty">
+                    {snapshot ? "No mandates in this category." : "Reading the chain…"}
+                  </td>
+                </tr>
+              ) : (
+                shown.map((m) => <MandateRow key={m.id} m={m} onBid={() => setSheet({ kind: "bid", m })} />)
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* ----------------------------------------------------------- agents */}
+      <section id="agents" className="section shell">
+        <div className="section__head">
+          <div>
+            <div className="label">the book</div>
+            <h2 className="display section__title">What each agent has cost itself</h2>
+          </div>
+          <p className="section__note">
+            Reconstructed from contract logs, not reported by the agents. The
+            last two columns cannot be faked.
+          </p>
+        </div>
+        <AgentStandings explorer={explorer} />
+      </section>
+
+      {/* ------------------------------------------------------------- tape */}
+      <section className="section shell">
+        <div className="section__head">
+          <div>
+            <div className="label">the tape</div>
+            <h2 className="display section__title">Settlements as they land</h2>
+          </div>
+        </div>
+        <ol className="tape">
+          {tape.length === 0 ? (
+            <li className="tape__idle">
+              Waiting for the next settlement. Epochs are hourly on the standing
+              mandates, so the tape is deliberately quiet between them.
+            </li>
+          ) : (
+            tape.slice(0, 14).map((t) => <TapeRow key={t.key} t={t} />)
+          )}
+        </ol>
+      </section>
+
+      {/* ----------------------------------------------------------- footer */}
+      <footer className="foot shell">
+        <span className="fig">MANDATE</span>
+        <span className="label">
+          {snapshot ? (
+            <>
+              {snapshot.market} · chain {snapshot.chainId} · block {snapshot.blockNumber}
+            </>
+          ) : (
+            "connecting"
+          )}
+        </span>
+      </footer>
+
+      {/* ------------------------------------------------------------ sheet */}
+      {sheet ? (
+        <div className="sheet" role="dialog" aria-modal="true">
+          <button className="sheet__scrim" aria-label="Close" onClick={() => setSheet(null)} />
+          <div className="sheet__panel">
+            <div className="sheet__head">
+              <div>
+                <div className="label">
+                  {sheet.kind === "open" ? "open a mandate" : `mandate ${sheet.m.id}`}
+                </div>
+                <h3 className="display sheet__title">
+                  {sheet.kind === "open"
+                    ? "Put capital on the floor."
+                    : `Bid for ${CATEGORIES[sheet.m.category]}`}
+                </h3>
+              </div>
+              <button className="btn btn--ghost" onClick={() => setSheet(null)}>
+                Close
+              </button>
+            </div>
+            {sheet.kind === "open" ? (
+              <OpenMandatePanel onDone={() => setSheet(null)} />
+            ) : (
+              <>
+                <dl className="kv">
+                  <Kv k="state" v={STATES[sheet.m.state]} />
+                  <Kv k="capital" v={`${bnb(sheet.m.capitalWei)} BNB`} />
+                  <Kv k="holder" v={short(sheet.m.agent)} />
+                  <Kv k="bond at risk" v={`${bnb(sheet.m.bondWei)} BNB`} />
+                  <Kv k="epochs" v={`${sheet.m.epochsSettled}/${sheet.m.epochsTotal}`} />
+                  <Kv k="successor" v={short(sheet.m.successor)} />
+                </dl>
+                <BidPanel mandate={sheet.m} onDone={() => setSheet(null)} />
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function MandateRow({ m, onBid }: { m: FloorMandate; onBid: () => void }) {
+  const alphaPerEpoch = m.epochsSettled > 0 ? m.cumulativeAlphaBps / m.epochsSettled : 0;
+  return (
+    <tr>
+      <td className="fig dim">{m.id}</td>
+      <td>{CATEGORIES[m.category]}</td>
+      <td className="fig r">{bnb(m.capitalWei)}</td>
+      <td className="fig">{short(m.agent)}</td>
+      <td className="fig r">
+        {bnb(m.bondWei)}
+        {m.bondFraction < 1 && m.bondFraction > 0 ? (
+          <span className="dim"> · {Math.round(m.bondFraction * 100)}%</span>
+        ) : null}
+      </td>
+      <td className={`fig r ${m.cumulativeAlphaBps > 0 ? "up" : m.cumulativeAlphaBps < 0 ? "down" : "dim"}`}>
+        {m.epochsSettled === 0 ? "—" : pct(alphaPerEpoch)}
+      </td>
+      <td className="fig r dim">
+        {m.epochsSettled}/{m.epochsTotal}
+      </td>
+      <td className={`fig r ${m.strikes > 0 ? "warn" : "dim"}`}>{m.strikes}/3</td>
+      <td className="fig dim">{short(m.successor)}</td>
+      <td className="r">
+        <button className="btn btn--sm" onClick={onBid}>
+          {m.state === 1 ? "Queue" : "Bid"}
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+function TapeRow({ t }: { t: TapeEntry }) {
+  const mark =
+    t.tone === "dismissal" ? "✕" : t.tone === "slash" ? "▼" : t.tone === "gain" ? "▲" : "·";
+  return (
+    <li className={`tape__row tape__row--${t.tone}`}>
+      <span className="tape__mark" aria-hidden>
+        {mark}
+      </span>
+      <span className="fig tape__id">#{t.mandateId}</span>
+      <span className="tape__text">{t.text}</span>
+      <span className="label tape__time">{t.at.slice(11, 19)}</span>
+    </li>
+  );
+}
+
+function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className="stat">
+      <div className={`fig stat__value ${accent ? "up" : ""}`}>{value}</div>
+      <div className="label">{label}</div>
+    </div>
+  );
+}
+
+function Kv({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="kv__row">
+      <dt className="label">{k}</dt>
+      <dd className="fig">{v}</dd>
+    </div>
+  );
+}

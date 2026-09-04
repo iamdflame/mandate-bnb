@@ -43,6 +43,29 @@ export const marketClient: PublicClient = createPublicClient({
     : http(MARKET_RPC, { timeout: 20_000, batch: { wait: 12 } }),
 });
 
+/**
+ * Providers that will actually serve eth_getLogs.
+ *
+ * Measured on BSC: bsc-dataseed refuses log queries entirely, answering
+ * "limit exceeded" even for a thousand-block span, while publicnode serves
+ * them without complaint. The read client is fine for calls and stays as it
+ * is; log history needs its own list, tried in order, because a single
+ * provider silently returning nothing looks exactly like an empty history.
+ */
+export const LOG_RPCS = [
+  process.env.LOG_RPC_URL,
+  "https://bsc-rpc.publicnode.com",
+  "https://bsc.drpc.org",
+  MARKET_RPC,
+].filter(Boolean) as string[];
+
+export const logClients: PublicClient[] = LOG_RPCS.map((url) =>
+  createPublicClient({
+    chain: marketChain,
+    transport: http(url, { timeout: 25_000, retryCount: 0 }),
+  }),
+);
+
 export function walletFor(privateKey: Hex) {
   return createWalletClient({
     account: privateKeyToAccount(privateKey),

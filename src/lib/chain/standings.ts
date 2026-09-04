@@ -13,7 +13,7 @@
  */
 
 import { parseAbiItem, type Address, type Log } from "viem";
-import { marketClient, MARKET_ADDRESS } from "./market";
+import { logClients, marketClient, MARKET_ADDRESS } from "./market";
 
 const AWARDED = parseAbiItem(
   "event MandateAwarded(uint256 indexed mandateId, address indexed agent, uint96 bond)",
@@ -72,17 +72,25 @@ async function collect(
 
   while (cursor <= toBlock) {
     const end = cursor + span > toBlock ? toBlock : cursor + span;
-    try {
-      const batch = await marketClient.getLogs({
-        address: MARKET_ADDRESS,
-        events,
-        fromBlock: cursor,
-        toBlock: end,
-      });
-      out.push(...(batch as AnyLog[]));
-    } catch {
-      failures += 1;
+    let got = false;
+    // Try each provider in turn: one refusing the range must not be reported
+    // as an empty history.
+    for (const client of logClients) {
+      try {
+        const batch = await client.getLogs({
+          address: MARKET_ADDRESS,
+          events,
+          fromBlock: cursor,
+          toBlock: end,
+        });
+        out.push(...(batch as AnyLog[]));
+        got = true;
+        break;
+      } catch {
+        continue;
+      }
     }
+    if (!got) failures += 1;
     cursor = end + 1n;
   }
 
@@ -96,6 +104,18 @@ export interface StandingsResult {
   toBlock: string;
 }
 
+/**
+ * The block the market was deployed in.
+ *
+ * Without this the scan guessed a lookback, which on a real chain meant
+ * walking half a million blocks in 9k chunks for a contract that had existed
+ * for an hour: around sixty sequential RPC round trips, and the request timed
+ * out before it returned anything. History starts where the contract does.
+ */
+const DEPLOY_BLOCK = BigInt(
+  process.env.MARKET_DEPLOY_BLOCK ?? process.env.NEXT_PUBLIC_MARKET_DEPLOY_BLOCK ?? 0,
+);
+
 export async function readStandings(
   opts: { lookback?: bigint; span?: bigint } = {},
 ): Promise<StandingsResult> {
@@ -104,9 +124,10 @@ export async function readStandings(
   }
 
   const head = await marketClient.getBlockNumber();
-  const lookback = opts.lookback ?? 500_000n;
-  const from = head > lookback ? head - lookback : 0n;
-  const { logs, complete } = await collect(from, head, opts.span ?? 9_000n);
+  const lookback = opts.lookback ?? 200_000n;
+  const floor = head > lookback ? head - lookback : 0n;
+  const from = DEPLOY_BLOCK > 0n ? DEPLOY_BLOCK : floor;
+  const { logs, complete } = await collect(from, head, opts.span ?? 4_000n);
 
   const byAgent = new Map<string, Standing>();
   const get = (agent: string): Standing => {
