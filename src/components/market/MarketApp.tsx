@@ -20,6 +20,7 @@ import { BidPanel, OpenMandatePanel, WithdrawButton } from "@/components/floor/A
 import { bnb, useMarket, type TapeEntry } from "@/lib/useMarket";
 import type { FloorMandate } from "@/app/api/floor/route";
 import AgentStandings from "./AgentStandings";
+import OperatedAgents from "@/components/agents/OperatedAgents";
 import SiteHeader from "@/components/shell/SiteHeader";
 
 const CATEGORIES = ["Rebalancing", "Grid Trading", "Yield Optimisation", "Health Factor"];
@@ -143,6 +144,22 @@ export default function MarketApp({ explorer }: { explorer: string }) {
           label="chain"
           value={snapshot?.chainId === 56 ? "BNB mainnet" : `chain ${snapshot?.chainId ?? "—"}`}
         />
+      </section>
+
+      {/* --------------------------------------------------- agents we run */}
+      <section id="ours" className="section shell">
+        <div className="section__head">
+          <div>
+            <div className="label">agents we operate</div>
+            <h2 className="display section__title">Four strategies, live on BNB Smart Chain</h2>
+          </div>
+          <p className="section__note">
+            One per required category. Each is evaluated against the chain when
+            this page loads, and each holds a bounded ERC-8183 session rather
+            than anybody&apos;s private key.
+          </p>
+        </div>
+        <OperatedAgents explorer={explorer} />
       </section>
 
       {/* ----------------------------------------------------------- market */}
