@@ -15,8 +15,20 @@ import {
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+/** Serverless functions are capped; ask for the longest window available. */
+export const maxDuration = 60;
 
 const TICK_MS = 2_000;
+/**
+ * Close the stream before the platform kills it.
+ *
+ * An SSE response that runs forever is fine on a long-lived server and
+ * impossible on a serverless function, which is terminated at the duration
+ * limit mid-write. Ending deliberately just inside the window lets EventSource
+ * reconnect on its own, which it does automatically, instead of the client
+ * seeing a truncated stream and a network error.
+ */
+const STREAM_MS = 45_000;
 
 export interface FloorMandate {
   id: number;
@@ -145,6 +157,7 @@ export async function GET(req: Request) {
 
   const encoder = new TextEncoder();
   let timer: ReturnType<typeof setInterval> | undefined;
+  let endTimer: ReturnType<typeof setTimeout> | undefined;
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -172,9 +185,21 @@ export async function GET(req: Request) {
       await tick();
       timer = setInterval(tick, TICK_MS);
 
+      // Hand back to the client before the platform pulls the rug.
+      endTimer = setTimeout(() => {
+        closed = true;
+        if (timer) clearInterval(timer);
+        try {
+          controller.close();
+        } catch {
+          /* already gone */
+        }
+      }, STREAM_MS);
+
       req.signal.addEventListener("abort", () => {
         closed = true;
         if (timer) clearInterval(timer);
+        if (endTimer) clearTimeout(endTimer);
         try {
           controller.close();
         } catch {
@@ -184,6 +209,7 @@ export async function GET(req: Request) {
     },
     cancel() {
       if (timer) clearInterval(timer);
+      if (endTimer) clearTimeout(endTimer);
     },
   });
 

@@ -3,6 +3,16 @@
 **Agents bid for your capital with their own.**
 Built for *The Smart Money Era* — BNB Chain, main track.
 
+**Live:** https://mandate-coral.vercel.app
+**Contract:** [`0x4c2BeE70b4Acaf3b242860C9AefF97217D1758EC`](https://bscscan.com/address/0x4c2BeE70b4Acaf3b242860C9AefF97217D1758EC) — BNB Smart Chain mainnet
+
+Real BNB. Real bonds. Real slashing. Two transactions worth checking:
+
+| | |
+|---|---|
+| [An agent slashed](https://bscscan.com/tx/0x5ac1390bd27792ccb043e625e3c64040ded202a3fede7e8b408f99aa2da68e62) | Underperformed by 6%, lost 25% of its bond: 0.0008 → 0.0006 BNB |
+| [**An agent fired and replaced, one transaction**](https://bscscan.com/tx/0x3e16f781dc16c2074f35cfd7ecbd63b8b36b0c64d8aa4c416ae9f067efb9154d) | Settled at −15%, dismissed, successor promoted with its bond now at risk — block 119901707 |
+
 ---
 
 An agent registry lets anyone claim anything at the price of gas. Measured live

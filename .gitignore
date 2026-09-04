@@ -16,3 +16,7 @@ contracts/cache/
 contracts/lib/
 contracts/broadcast/
 .env.local
+
+# never commit any env variant, including backups
+.env*
+!.env.example
