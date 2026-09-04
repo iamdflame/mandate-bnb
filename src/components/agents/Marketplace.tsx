@@ -13,7 +13,7 @@
  * shown with the evidence behind its classification rather than a bare label.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CATEGORIES, CATEGORY_BLURB, CATEGORY_LABEL, type Category } from "@/lib/config";
 import type { AgentIndex, IndexedAgent } from "@/lib/data/agents";
 
@@ -24,19 +24,31 @@ export default function Marketplace({ index }: { index: AgentIndex }) {
   const [active, setActive] = useState<Category | "all">("all");
   const [shown, setShown] = useState<Record<string, number>>({});
 
-  const needle = query.trim().toLowerCase();
+  const needle = query.trim();
+  const [matched, setMatched] = useState<IndexedAgent[] | null>(null);
+  const [searching, setSearching] = useState(false);
 
-  const matched = useMemo(() => {
-    if (!needle) return null;
-    return index.agents
-      .filter(
-        (a) =>
-          a.tokenId.includes(needle) ||
-          (a.name ?? "").toLowerCase().includes(needle) ||
-          (a.description ?? "").toLowerCase().includes(needle),
-      )
-      .slice(0, 60);
-  }, [needle, index.agents]);
+  // Searches the whole index server-side, debounced. The page only holds the
+  // classified agents it renders.
+  useEffect(() => {
+    if (needle.length < 2) {
+      setMatched(null);
+      return;
+    }
+    setSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/agents/search?q=${encodeURIComponent(needle)}`);
+        const json = (await res.json()) as { agents: IndexedAgent[] };
+        setMatched(json.agents);
+      } catch {
+        setMatched([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 260);
+    return () => clearTimeout(t);
+  }, [needle]);
 
   const byCategory = useMemo(() => {
     const map = {} as Record<Category, IndexedAgent[]>;
@@ -119,7 +131,9 @@ export default function Marketplace({ index }: { index: AgentIndex }) {
             <div>
               <div className="label">search</div>
               <h2 className="display section__title">
-                {matched.length} {matched.length === 1 ? "match" : "matches"} for “{query.trim()}”
+                {searching
+                  ? "Searching…"
+                  : `${matched.length} ${matched.length === 1 ? "match" : "matches"} for “${needle}”`}
               </h2>
             </div>
           </div>
