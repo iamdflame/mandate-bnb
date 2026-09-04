@@ -141,10 +141,22 @@ export async function tokenBalance(token: Address, owner: Address): Promise<bigi
 export interface Valuation {
   /** Total value expressed in BNB. */
   bnb: number;
+  /**
+   * The same, in wei.
+   *
+   * An attestation is committed on chain, so the value it carries has to be
+   * exact. A float is fine for a label and wrong for a commitment — the whole
+   * point of the observation is that two parties derive the identical digest.
+   */
+  weiTotal: bigint;
   /** The same, in dollars, at the reference pool's price. */
   usd: number;
-  parts: { asset: string; amount: number; bnb: number }[];
+  parts: { asset: string; amount: number; bnb: number; wei: bigint }[];
   priceUsd: number;
+  /** The pool's raw price, carried into the attestation so it can be re-read. */
+  sqrtPriceX96: bigint;
+  /** The block the valuation was taken at. Pins re-derivation. */
+  blockNumber: bigint;
   at: string;
 }
 
@@ -156,21 +168,46 @@ export interface Valuation {
  * each converted at the pool price the agent itself trades against.
  */
 export async function valueWallet(owner: Address): Promise<Valuation> {
-  const [native, usdt, price] = await Promise.all([
-    marketClient.getBalance({ address: owner }),
-    tokenBalance(USDT, owner),
-    bnbUsd(),
+  // Everything is read at one block. A valuation assembled from balances read
+  // at different heights is not a measurement of anything.
+  const blockNumber = await marketClient.getBlockNumber();
+  const [native, usdt, pool] = await Promise.all([
+    marketClient.getBalance({ address: owner, blockNumber }),
+    marketClient
+      .readContract({
+        address: USDT,
+        abi: ERC20_ABI,
+        functionName: "balanceOf",
+        args: [owner],
+        blockNumber,
+      })
+      .catch(() => 0n) as Promise<bigint>,
+    readPool(WBNB_USDT_POOL),
   ]);
 
-  const nativeBnb = Number(native) / 1e18;
-  const usdtAmount = Number(usdt) / 1e18;
-  const usdtBnb = price > 0 ? usdtAmount / price : 0;
+  const price = pool.token0PerToken1;
+
+  // USDT is 18-decimal on BSC, so converting to BNB-denominated wei is a ratio
+  // in integer space; no float is allowed to reach the committed total.
+  const priceScaled = BigInt(Math.round(price * 1e18));
+  const usdtWei = priceScaled > 0n ? (usdt * 10n ** 18n) / priceScaled : 0n;
 
   const parts = [
-    { asset: "BNB", amount: nativeBnb, bnb: nativeBnb },
-    { asset: "USDT", amount: usdtAmount, bnb: usdtBnb },
-  ].filter((p) => p.amount > 0);
+    { asset: "BNB", amount: Number(native) / 1e18, bnb: Number(native) / 1e18, wei: native },
+    { asset: "USDT", amount: Number(usdt) / 1e18, bnb: Number(usdtWei) / 1e18, wei: usdtWei },
+  ].filter((p) => p.wei > 0n);
 
-  const bnb = parts.reduce((s, p) => s + p.bnb, 0);
-  return { bnb, usd: bnb * price, parts, priceUsd: price, at: new Date().toISOString() };
+  const weiTotal = parts.reduce((s, p) => s + p.wei, 0n);
+  const bnb = Number(weiTotal) / 1e18;
+
+  return {
+    bnb,
+    weiTotal,
+    usd: bnb * price,
+    parts,
+    priceUsd: price,
+    sqrtPriceX96: pool.sqrtPriceX96,
+    blockNumber,
+    at: new Date().toISOString(),
+  };
 }

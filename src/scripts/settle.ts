@@ -1,15 +1,15 @@
 /**
- * Settles a mandate from measurement.
+ * Settles a mandate from a measurement the chain can check.
  *
- *   npx tsx --env-file=.env src/scripts/settle.ts open <mandateId> <wallet>
- *   npx tsx --env-file=.env src/scripts/settle.ts measure <mandateId>
- *   npx tsx --env-file=.env src/scripts/settle.ts settle <mandateId>
+ *   npm run settle -- measure <mandateId>
+ *   npm run settle -- settle  <mandateId>
  *
- * `measure` reads and prints without sending, which is the check that a figure
- * is real before it is written to a contract that slashes against it.
+ * `measure` reads and prints without sending — the check that a figure is real
+ * before it is written to a contract that slashes against it. There is no
+ * `open` command any more: the opening mark is taken by `award`, on chain.
  */
 
-import type { Address, Hex } from "viem";
+import type { Hex } from "viem";
 import {
   MANDATE_MARKET_ABI,
   MARKET_ADDRESS,
@@ -18,32 +18,28 @@ import {
   readMandate,
   walletFor,
 } from "@/lib/chain/market";
-import { measureAlpha, openBenchmark, readBenchmark, recordEpoch } from "@/lib/settlement";
+import { measureAlpha } from "@/lib/settlement";
 
 const norm = (k?: string) => (k?.startsWith("0x") ? k : `0x${k}`) as Hex;
-const cmd = process.argv[2];
+const cmd = process.argv[2] ?? "measure";
 const id = Number(process.argv[3] ?? 0);
 
-if (cmd === "open") {
-  const wallet = process.argv[4] as Address;
-  if (!wallet) {
-    console.error("usage: settle.ts open <mandateId> <wallet>");
-    process.exit(1);
-  }
-  const b = await openBenchmark(id, wallet);
-  console.log(`benchmark opened for mandate ${id}`);
-  console.log(`  wallet   ${b.wallet}`);
-  console.log(`  value    ${b.openBnb.toFixed(8)} BNB at $${b.openPriceUsd.toFixed(2)}`);
-  process.exit(0);
-}
+const mandate = await readMandate(id);
+const epoch = mandate.epochsSettled;
+const m = await measureAlpha(id, epoch);
 
-const m = await measureAlpha(id);
-console.log(`mandate ${id}`);
+console.log(`mandate ${id} · epoch ${epoch}`);
 console.log(`  ${m.explanation}`);
-if (m.alphaBps !== null) {
-  console.log(`  alpha this epoch: ${m.alphaBps >= 0 ? "+" : ""}${(m.alphaBps / 100).toFixed(2)}%  (${m.alphaBps} bps)`);
-  for (const p of m.valuation.parts) {
-    console.log(`    ${p.asset.padEnd(5)} ${p.amount.toFixed(8)} = ${p.bnb.toFixed(8)} BNB`);
+
+if (m.alphaBps !== null && m.observation) {
+  const pct = (Number(m.alphaBps) / 100).toFixed(2);
+  console.log(`\n  alpha        ${m.alphaBps >= 0n ? "+" : ""}${pct}%  (${m.alphaBps} bps)`);
+  console.log(`  previous     ${fmt(m.previousWei!)} BNB`);
+  console.log(`  now          ${fmt(m.observation.valuationWei)} BNB`);
+  console.log(`  at block     ${m.observation.blockNumber}`);
+  console.log(`  pool price   ${m.observation.priceX96}`);
+  for (const p of m.valuation?.parts ?? []) {
+    console.log(`    ${p.asset.padEnd(5)} ${fmt(p.wei)} BNB`);
   }
 }
 
@@ -52,23 +48,26 @@ if (cmd !== "settle") {
   process.exit(0);
 }
 
-if (m.alphaBps === null) {
+if (m.alphaBps === null || !m.observation) {
   console.error("\nrefusing to settle: alpha is not measurable, and a made-up figure is what this replaced.");
   process.exit(1);
 }
 
-const mandate = await readMandate(id);
 const wallet = walletFor(norm(process.env.PRIVATE_KEY));
 const hash = await wallet.writeContract({
   address: MARKET_ADDRESS,
   abi: MANDATE_MARKET_ABI,
   functionName: "settleEpoch",
-  args: [BigInt(id), BigInt(m.alphaBps)],
+  args: [BigInt(id), m.alphaBps, m.observation],
   chain: marketChain,
   account: wallet.account!,
 } as never);
 const receipt = await marketClient.waitForTransactionReceipt({ hash });
-recordEpoch(id, mandate.epochsSettled, m);
 
-console.log(`\nsettled epoch ${mandate.epochsSettled} at ${(m.alphaBps / 100).toFixed(2)}%`);
+console.log(`\nsettled epoch ${epoch} at ${(Number(m.alphaBps) / 100).toFixed(2)}%`);
 console.log(`  https://bscscan.com/tx/${hash}  (block ${receipt.blockNumber})`);
+console.log(`  the observation is in the log; the contract checked the alpha against it.`);
+
+function fmt(wei: bigint) {
+  return (Number(wei) / 1e18).toFixed(8);
+}

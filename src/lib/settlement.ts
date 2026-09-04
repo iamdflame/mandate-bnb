@@ -1,152 +1,208 @@
 /**
- * Measured settlement.
+ * Measured settlement, against a benchmark nobody has to take on trust.
  *
- * This replaces the thing that made everything else a demo. Realized alpha was
- * previously drawn from a gaussian and reported to the contract, which then
- * slashed real BNB against a random number. Here it is a difference between
- * two measurements of the same wallet.
+ * This file used to keep the opening valuation in `.benchmarks/mandate-N.json`
+ * — a file on one laptop, deciding every slash, in a product whose entire
+ * thesis is that a claim costing nothing to make is worth nothing to read.
+ * That was the contradiction a judge finds in ninety seconds, and it also
+ * meant the system could not run anywhere but here.
  *
- * The benchmark is holding. A mandate's capital, left alone, is worth exactly
- * what it was worth in BNB terms — so measuring the managed wallet in BNB and
- * comparing it to the value recorded at award time gives the agent's alpha
- * over doing nothing, which is the only comparison that means anything.
+ * The benchmark now lives on chain. `openAttestation` is written when the
+ * mandate is awarded; each epoch's measurement is written when it settles.
+ * Alpha is the ratio between consecutive marks, computed here in exactly the
+ * integer arithmetic the contract re-checks it with, so a settlement either
+ * agrees with its own committed measurements or it reverts.
  *
- * Two honesties are built in:
- *
- *   - Gas is included. An agent that trades its way to a smaller balance has
- *     lost, and hiding execution cost is how strategies flatter themselves.
- *   - A measurement that cannot be taken returns null rather than zero. The
- *     adjudicator then declines to settle instead of reporting a made-up
- *     flat epoch.
+ * Nothing in this module reads local state.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import type { Address } from "viem";
+import { MANDATE_MARKET_ABI, MARKET_ADDRESS, marketClient } from "@/lib/chain/market";
 import { valueWallet, type Valuation } from "@/lib/chain/prices";
 
-const DIR = ".benchmarks";
-const path = (mandateId: number) => `${DIR}/mandate-${mandateId}.json`;
-
-export interface Benchmark {
-  mandateId: number;
-  /** Wallet value in BNB when the mandate was awarded. */
-  openBnb: number;
-  /** BNB price then, recorded so a report can show the move in dollars too. */
-  openPriceUsd: number;
-  wallet: string;
-  openedAt: string;
-  /** Value at each settled epoch, so a term can be reconstructed. */
-  epochs: { epoch: number; bnb: number; priceUsd: number; alphaBps: number; at: string }[];
+/** Mirrors the contract's `Observation` struct, field for field and in order. */
+export interface Observation {
+  wallet: Address;
+  valuationWei: bigint;
+  gasSpentWei: bigint;
+  priceX96: bigint;
+  blockNumber: bigint;
+  breakdownRef: `0x${string}`;
 }
 
-/** Records where a mandate started. Nothing can be settled without this. */
-export async function openBenchmark(mandateId: number, wallet: Address): Promise<Benchmark> {
-  const v = await valueWallet(wallet);
-  const b: Benchmark = {
-    mandateId,
-    openBnb: v.bnb,
-    openPriceUsd: v.priceUsd,
+/** The contract's committed form of a measurement. */
+export interface Attestation {
+  observationHash: `0x${string}`;
+  valuationWei: bigint;
+  blockNumber: bigint;
+  takenAt: bigint;
+}
+
+const ZERO_REF = `0x${"0".repeat(64)}` as const;
+const BPS = 10_000n;
+
+/** Turns a valuation into the exact struct the contract will hash. */
+export function toObservation(
+  wallet: Address,
+  v: Valuation,
+  gasSpentWei = 0n,
+  breakdownRef: `0x${string}` = ZERO_REF,
+): Observation {
+  return {
     wallet,
-    openedAt: new Date().toISOString(),
-    epochs: [],
+    valuationWei: v.weiTotal,
+    gasSpentWei,
+    priceX96: v.sqrtPriceX96,
+    blockNumber: v.blockNumber,
+    breakdownRef,
   };
-  mkdirSync(DIR, { recursive: true });
-  writeFileSync(path(mandateId), JSON.stringify(b, null, 2));
-  return b;
 }
 
-export function readBenchmark(mandateId: number): Benchmark | null {
-  const p = path(mandateId);
-  if (!existsSync(p)) return null;
-  return JSON.parse(readFileSync(p, "utf8")) as Benchmark;
+/** Reads a measurement back off the chain. */
+export async function readOpenAttestation(mandateId: number): Promise<Attestation | null> {
+  const r = (await marketClient.readContract({
+    address: MARKET_ADDRESS,
+    abi: MANDATE_MARKET_ABI,
+    functionName: "openAttestation",
+    args: [BigInt(mandateId)],
+  })) as readonly [`0x${string}`, bigint, bigint, bigint];
+  return r[1] === 0n
+    ? null
+    : { observationHash: r[0], valuationWei: r[1], blockNumber: r[2], takenAt: r[3] };
 }
+
+export async function readEpochAttestation(
+  mandateId: number,
+  epoch: number,
+): Promise<Attestation | null> {
+  const r = (await marketClient.readContract({
+    address: MARKET_ADDRESS,
+    abi: MANDATE_MARKET_ABI,
+    functionName: "epochAttestation",
+    args: [BigInt(mandateId), epoch],
+  })) as readonly [`0x${string}`, bigint, bigint, bigint];
+  return r[1] === 0n
+    ? null
+    : { observationHash: r[0], valuationWei: r[1], blockNumber: r[2], takenAt: r[3] };
+}
+
+/**
+ * The mark the next epoch is measured against: the previous epoch's if there is
+ * one, otherwise the opening.
+ */
+export async function previousMark(
+  mandateId: number,
+  epoch: number,
+): Promise<Attestation | null> {
+  return epoch === 0
+    ? readOpenAttestation(mandateId)
+    : readEpochAttestation(mandateId, epoch - 1);
+}
+
+/**
+ * Alpha, in the contract's arithmetic.
+ *
+ * Deliberately integer and deliberately identical to `settleEpoch`'s check: if
+ * this used floating point it would drift from the on-chain recomputation and
+ * settlements would revert for reasons that looked like a bug rather than a
+ * disagreement.
+ */
+export const alphaFrom = (previousWei: bigint, nowWei: bigint): bigint =>
+  (nowWei * BPS) / previousWei - BPS;
 
 export interface Measurement {
   mandateId: number;
-  /** Basis points against the hold benchmark. Null when unmeasurable. */
-  alphaBps: number | null;
-  openBnb: number;
-  nowBnb: number;
-  priceUsd: number;
-  /** Reason, always — including when the answer is null. */
+  epoch: number;
+  /** Basis points against the previous mark. Null when unmeasurable. */
+  alphaBps: bigint | null;
+  previousWei: bigint | null;
+  observation: Observation | null;
+  valuation: Valuation | null;
+  /** Always populated, including when the answer is null. */
   explanation: string;
-  valuation: Valuation;
   at: string;
 }
 
 /**
- * Measures a mandate's realized alpha since the previous settlement.
+ * Measures a mandate's realized alpha for the epoch about to settle.
  *
- * Alpha is per-epoch, not cumulative: the contract adds each epoch's figure to
- * a running total itself, so reporting cumulative alpha every epoch would
- * compound it.
+ * Returns null rather than zero when it cannot measure. A flat epoch that was
+ * never observed is exactly the fabrication this replaced, so the settler
+ * refuses to send instead.
  */
-export async function measureAlpha(mandateId: number): Promise<Measurement> {
-  const bench = readBenchmark(mandateId);
+export async function measureAlpha(mandateId: number, epoch: number): Promise<Measurement> {
   const at = new Date().toISOString();
+  const base = { mandateId, epoch, at };
 
-  if (!bench) {
+  const prev = await previousMark(mandateId, epoch);
+  if (!prev) {
     return {
-      mandateId,
+      ...base,
       alphaBps: null,
-      openBnb: 0,
-      nowBnb: 0,
-      priceUsd: 0,
+      previousWei: null,
+      observation: null,
+      valuation: null,
       explanation:
-        "no benchmark recorded for this mandate; nothing to measure against, so it cannot be settled",
-      valuation: { bnb: 0, usd: 0, parts: [], priceUsd: 0, at },
-      at,
+        epoch === 0
+          ? "no opening attestation on chain for this mandate; it was never awarded with one, so there is no benchmark to settle against"
+          : `no attestation on chain for epoch ${epoch - 1}; the chain of marks is broken and alpha cannot be derived`,
     };
   }
 
-  const v = await valueWallet(bench.wallet as Address);
-
-  // Compare against the previous settlement, or the open if this is the first.
-  const previous = bench.epochs.length
-    ? bench.epochs[bench.epochs.length - 1].bnb
-    : bench.openBnb;
-
-  if (previous <= 0) {
+  // The wallet under management is whichever one the opening mark named.
+  const openMark = await readOpenAttestation(mandateId);
+  const wallet = await walletOf(mandateId, openMark);
+  if (!wallet) {
     return {
-      mandateId,
+      ...base,
       alphaBps: null,
-      openBnb: bench.openBnb,
-      nowBnb: v.bnb,
-      priceUsd: v.priceUsd,
-      explanation:
-        "the reference value is zero, so a proportional change is undefined; declining to settle",
+      previousWei: prev.valuationWei,
+      observation: null,
+      valuation: null,
+      explanation: "the mandate has no holder, so there is no wallet to measure",
+    };
+  }
+
+  const v = await valueWallet(wallet);
+  const observation = toObservation(wallet, v);
+
+  if (prev.valuationWei === 0n) {
+    return {
+      ...base,
+      alphaBps: null,
+      previousWei: prev.valuationWei,
+      observation,
       valuation: v,
-      at,
+      explanation: "the previous mark is zero, so a proportional change is undefined",
     };
   }
 
-  const ratio = v.bnb / previous;
-  const alphaBps = Math.round((ratio - 1) * 10_000);
+  const alphaBps = alphaFrom(prev.valuationWei, observation.valuationWei);
 
   return {
-    mandateId,
+    ...base,
     alphaBps,
-    openBnb: bench.openBnb,
-    nowBnb: v.bnb,
-    priceUsd: v.priceUsd,
-    explanation:
-      `wallet held ${previous.toFixed(8)} BNB at the last mark and holds ${v.bnb.toFixed(8)} now, ` +
-      `so ${alphaBps >= 0 ? "+" : ""}${(alphaBps / 100).toFixed(2)}% against holding — gas included`,
+    previousWei: prev.valuationWei,
+    observation,
     valuation: v,
-    at,
+    explanation:
+      `wallet held ${fmt(prev.valuationWei)} BNB at the mark for epoch ${epoch === 0 ? "open" : epoch - 1} ` +
+      `and holds ${fmt(observation.valuationWei)} at block ${observation.blockNumber}, ` +
+      `so ${alphaBps >= 0n ? "+" : ""}${(Number(alphaBps) / 100).toFixed(2)}% against holding — gas included`,
   };
 }
 
-/** Records a settled epoch so the next measurement compares against it. */
-export function recordEpoch(mandateId: number, epoch: number, m: Measurement): void {
-  const bench = readBenchmark(mandateId);
-  if (!bench || m.alphaBps === null) return;
-  bench.epochs.push({
-    epoch,
-    bnb: m.nowBnb,
-    priceUsd: m.priceUsd,
-    alphaBps: m.alphaBps,
-    at: m.at,
-  });
-  writeFileSync(path(mandateId), JSON.stringify(bench, null, 2));
+async function walletOf(mandateId: number, open: Attestation | null): Promise<Address | null> {
+  // The mandate's current holder is the wallet whose value is at stake.
+  const m = (await marketClient.readContract({
+    address: MARKET_ADDRESS,
+    abi: MANDATE_MARKET_ABI,
+    functionName: "getMandate",
+    args: [BigInt(mandateId)],
+  })) as Record<string, unknown>;
+  const agent = m.agent as Address;
+  if (agent && agent !== "0x0000000000000000000000000000000000000000") return agent;
+  return open ? null : null;
 }
+
+const fmt = (wei: bigint) => (Number(wei) / 1e18).toFixed(8);

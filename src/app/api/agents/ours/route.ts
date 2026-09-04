@@ -14,7 +14,7 @@ import type { Address } from "viem";
 import { CATEGORIES, CATEGORY_LABEL } from "@/lib/config";
 import { STRATEGIES, buildContext } from "@/agents/registry";
 import { loadMeta } from "@/lib/chain/session";
-import { readBenchmark } from "@/lib/settlement";
+import { readOpenAttestation } from "@/lib/settlement";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,9 +57,10 @@ export async function GET() {
               revoked: Boolean((session as { revokedAt?: string }).revokedAt),
             }
           : null,
-        benchmark: readBenchmark(mandateId)
-          ? { openBnb: readBenchmark(mandateId)!.openBnb, epochs: readBenchmark(mandateId)!.epochs.length }
-          : null,
+        // The opening mark now comes from the chain, not a local file.
+        benchmark: await readOpenAttestation(mandateId)
+          .then((a) => (a ? { openBnb: Number(a.valuationWei) / 1e18, block: String(a.blockNumber) } : null))
+          .catch(() => null),
       };
 
       try {

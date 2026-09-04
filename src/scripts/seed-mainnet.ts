@@ -22,6 +22,8 @@ import {
   walletFor,
 } from "@/lib/chain/market";
 import { assayAgent } from "@/lib/assay";
+import { toObservation } from "@/lib/settlement";
+import { valueWallet } from "@/lib/chain/prices";
 
 const CMD = process.argv[2] ?? "plan";
 
@@ -168,8 +170,17 @@ async function run() {
       }
     }
 
-    await send(owner, "award", [BigInt(id), 0n]);
-    log(`  awarded to agent 0; agent 1 waits in the succession queue`);
+    // The opening mark is taken here, on chain, at award. There is no local
+    // benchmark to lose and nothing to write down afterwards.
+    const opening = toObservation(
+      agents[0].account!.address,
+      await valueWallet(agents[0].account!.address),
+    );
+    await send(owner, "award", [BigInt(id), 0n, opening]);
+    log(
+      `  awarded to agent 0 · opening mark ${bnb(opening.valuationWei)} BNB ` +
+        `at block ${opening.blockNumber}`,
+    );
   }
 
   await status();
@@ -237,8 +248,12 @@ async function fast() {
     await send(a, "bid", [BigInt(id), 200 + i * 100], BOND);
     log(`  agent ${i} bid ${bnb(BOND)} BNB`);
   }
-  await send(owner, "award", [BigInt(id), 0n]);
-  log(`  awarded to agent 0 · successor queued`);
+  const opening = toObservation(
+    agents[0].account!.address,
+    await valueWallet(agents[0].account!.address),
+  );
+  await send(owner, "award", [BigInt(id), 0n, opening]);
+  log(`  awarded to agent 0 · successor queued · opening mark ${bnb(opening.valuationWei)} BNB`);
   await status();
 }
 
