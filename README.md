@@ -134,8 +134,9 @@ epoch 1  +0.00% against epoch 0  ·  tier 2
 
 A process with no access to our machine read BSC at the pinned block and
 arrived at the identical figure, to the wei. Older epochs report **tier 1**,
-because free BSC nodes serve only 94–124 blocks of historical state (measured,
-not assumed) — and the tool says so rather than quietly claiming more.
+because free BSC nodes serve only 95–124 blocks of historical state — about
+45 seconds at BSC's measured 0.45 s block time — and the tool says so rather
+than quietly claiming more.
 
 `--tamper` moves each committed number by the smallest amount that matters and
 shows every perturbation being rejected: 7 of 7. A verifier that never rejects

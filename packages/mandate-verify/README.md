@@ -68,19 +68,25 @@ The reported tier is the weakest any settled epoch reached.
 
 ### How far back public nodes actually serve state
 
-Measured on 2026-09-04 by bisecting `eth_getBalance` depth on each endpoint:
+Measured on 2026-09-04 by bisecting `eth_getBalance` depth on each endpoint,
+with the elapsed time taken from the two block headers rather than converted
+from an assumed block time — BSC blocks are **0.45 s**, and assuming 0.75 s
+overstates the window by two thirds:
 
-| Endpoint | State depth | Roughly |
-|---|---|---|
-| `bsc-dataseed1.binance.org` | 124 blocks | 1.6 min |
-| `bsc.blockrazor.xyz` | 112 blocks | 1.4 min |
-| `bsc-rpc.publicnode.com` | 94 blocks | 1.2 min |
-| `1rpc.io/bnb` | 15 blocks | 11 s |
+| Endpoint | State depth | Elapsed |
+|---|---:|---:|
+| `bsc.blockrazor.xyz` | 124 blocks | 56 s |
+| `bsc-dataseed1.binance.org` | 122 blocks | 55 s |
+| `1rpc.io/bnb` | 109 blocks | 49 s |
+| `bsc-rpc.publicnode.com` | 95 blocks | 43 s |
+| `bsc.meowrpc.com`, `bsc.drpc.org` | — | rate limited before answering |
 
-So tier 2 is reachable for about ninety seconds after an epoch settles, and
-tier 3 needs an archive node. This is a property of free BSC infrastructure,
-not of the design — the commitments are permanent either way, which is why
-tier 1 is the floor and not the ceiling.
+So tier 2 is reachable for **roughly 45 seconds** after an epoch settles, and
+tier 3 needs an archive node. Depth drifts between probes — `1rpc.io` returned
+15 blocks on an earlier run — so treat the window as tens of seconds, not a
+guarantee. This is a property of free BSC infrastructure rather than of the
+design: the commitments are permanent either way, which is why tier 1 is the
+floor and not the ceiling.
 
 ---
 
@@ -111,7 +117,7 @@ Reproduce it:
 
 ```bash
 npm run settle -- settle 0                # in the application, settles the next epoch
-npx mandate-verify --mandate 0 --chain 56 # within ~90 seconds, for tier 2
+npx mandate-verify --mandate 0 --chain 56 # within ~45 seconds, for tier 2
 ```
 
 Epoch 0 settled earlier and now reports tier 1: its block is past every free
