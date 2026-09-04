@@ -26,7 +26,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | B2 | Market self-dealt with dust | **PARTIAL** | still one operator; bonds still ~$0.06. Needs R9 |
 | B3 | `minBond` source/chain divergence | **DONE** | constructor argument; events on both setters |
 | B4 | Alpha reported, not derived; adjudicator is us | **PARTIAL** | contract re-derives alpha from two commitments and reverts on disagreement. No second opinion yet → R1.3 |
-| B5 | README argues with the brief | **TODO** | "Why not a directory" still at README:46 |
+| B5 | README argues with the brief | **DONE** | opens with the ladder; the directory is swallowed, not rejected |
 | B6 | Floor is beautiful, not a marketplace | **DONE** | moved to `/floor`; the ladder is the front door |
 
 ### Category C — rubric gaps
@@ -35,10 +35,10 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 |---|---|---|---|
 | C1 | 265 of 301,996 classified | **TODO** | `agents.json` holds 3,402 |
 | C2 | 1.9 MB static JSON | **TODO** | 1,976,377 bytes, captured 2026-09-04T11:20Z |
-| C3 | No self-service listing | **TODO** | no `/list-your-agent` |
+| C3 | No self-service listing | **DONE** | `/list-your-agent` — what each rung costs |
 | C4 | Agent diversity structurally unequal | **PARTIAL** | 4 categories now have mandates + sessions; only grid has settled epochs |
 | C5 | Zero app tests, zero CI | **TODO** | 0 test files, no `.github/` |
-| C6 | No agent career page | **PARTIAL** | `/agent/[tokenId]` exists; no mandate/epoch/slash history |
+| C6 | No agent career page | **DONE** | mandates, epochs, fees, slashes, dismissals, each with its tx |
 
 ### Category D — adoption blockers
 
@@ -70,12 +70,12 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 
 | # | Problem | State |
 |---|---|---|
-| F1 | README fights the brief | **TODO** |
-| F2 | Best asset buried in RESEARCH.md | **TODO** |
+| F1 | README fights the brief | **DONE** |
+| F2 | Best asset buried in RESEARCH.md | **DONE** — the funnel is the front door |
 | F3 | No demo video | **BLOCKED** — I cannot record video |
 | F4 | No judge-start path | **DONE** — `/start`, 8 claims each with its falsifier |
 | F5 | No stated failures | **DONE** — Advantage Report losses in bold; `scope-audit` refuses us |
-| F6 | Fineness metaphor undefined on contact | **TODO** |
+| F6 | Fineness metaphor undefined on contact | **DONE** — defined where first used |
 
 ---
 
@@ -84,7 +84,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | Item | State |
 |---|---|
 | Trust Ladder as information architecture (rungs 0–6) | **DONE** — `src/lib/ladder.ts`, rendered at `/` |
-| Tagline shift | **TODO** |
+| Tagline shift | **DONE** |
 
 ---
 
@@ -108,7 +108,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | R2.2 | Multi-signal, confidence-scored, auditable, contestable classification | **PARTIAL** — on-chain evidence signal now works (see R2 note) |
 | R2.3 | Exclusion reason for every excluded agent | **TODO** |
 | R2.4 | Reproduce the indexer footgun | **DONE** — tested, **false**; publishing the negative result instead |
-| R2.5 | Reputation autopsy per agent | **TODO** |
+| R2.5 | Reputation autopsy per agent | **DONE** — on every agent page |
 
 ### R3 — Altana
 
@@ -142,7 +142,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | # | Item | State |
 |---|---|---|
 | R7 | PancakeSwap doc + pool-gap scanner | **TODO** |
-| R8 | Information architecture (9 routes) | **PARTIAL** — `/`, `/start`, `/agents`, `/floor`, `/evidence` done; `/list-your-agent`, `/mandate/[id]`, career page outstanding |
+| R8 | Information architecture (9 routes) | **DONE** — all nine |
 | R9 | Supply side: listing, shadow mandates, underwriting, bond tiers | **TODO** |
 | R10 | Contract v2 (11 items) | **TODO** |
 | R11 | Data pipeline | **TODO** |
@@ -156,9 +156,9 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 
 **Remaining (21):** VEYRA proof table · VEYRA refund path · PositionCrew block-pinned reads · PositionCrew stated exclusions · PositionCrew CI badges · PositionCrew no-wallet trial · Agripinaa surplus-vs-limit bps · Agripinaa receipt JSON · Agripinaa MEV protection · SMEAI `/start` · SMEAI video (**blocked**) · SMEAI "calls every agent" headline · Docket anonymised seats · Docket "what is not true yet" · KaizenScope census-as-JSON · KaizenScope buyer-signs-each-step · MandateX exclusion reasons · Kawal write-back · Onplaced trust decay.
 
-## PART V — net-new innovation (2 of 10)
+## PART V — net-new innovation (3 of 10)
 
-**Done:** #9 published verifier · #4 assay-derived session scope.
+**Done:** #9 published verifier · #4 assay-derived session scope · #6 reputation autopsy pages.
 **Remaining:** underwriting/co-bonding · shadow mandates · succession queue surface · per-category benchmarks · reputation autopsy · registry write-back · pool-gap scanner · adverse-results policy.
 
 ## PART VI — the adoption case (0 of 8)
