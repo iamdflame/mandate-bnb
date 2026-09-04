@@ -20,3 +20,6 @@ contracts/broadcast/
 # never commit any env variant, including backups
 .env*
 !.env.example
+
+# granted session keys — key material
+.sessions/
