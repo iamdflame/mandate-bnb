@@ -156,6 +156,51 @@ than quietly claiming more.
 shows every perturbation being rejected: 7 of 7. A verifier that never rejects
 anything is a rubber stamp.
 
+## The working, on Greenfield
+
+[`src/lib/chain/greenfield.ts`](src/lib/chain/greenfield.ts) · bucket `mandate-attestations`
+
+The contract commits `observationHash` and emits the observation whole, so the
+*arithmetic* of a settlement is checkable from the chain alone — that is why
+`mandate-verify` needs no external service. What an event cannot carry is the
+working: every token balance, the pool state the valuation used, the gas, the
+block.
+
+Putting that on chain costs more than it is worth. Putting it on our own server
+would make the evidence ours to withdraw. So it goes to **BNB Greenfield**,
+BNB Chain's own storage, and each object's content hashes to the `breakdownRef`
+the observation records.
+
+```bash
+npm run greenfield -- check
+```
+
+fetches every object back over the storage provider's public gateway, hashes it,
+and compares against what the chain says:
+
+```
+reading back from https://greenfield-sp.lumibot.org:443
+
+  ✓ mandate-0/open.json     0x1ea61d6bb51b98d1… matches the chain
+  ✓ mandate-0/epoch-0.json  0x578e5063cea35d49… matches the chain
+  ✓ mandate-0/epoch-1.json  0x9adb2257420b3c64… matches the chain
+
+3 verified · 0 mismatched · 0 unreachable
+```
+
+Uploading evidence nobody reads back is filing, not proof — so `check` is the
+command that matters, and it exits non-zero on a mismatch.
+
+**Two SDK bugs are worked around explicitly**, because the next person will hit
+them. `@bnb-chain/greenfield-js-sdk`'s ESM build imports without file
+extensions, which Node's resolver rejects outright, so it is loaded through
+CommonJS. And on Node, for `application/json`, the SDK sends `file.toString()`
+— which for a `File` is the string `"[object File]"`, thirteen bytes, while the
+request has already declared the real length. Every JSON upload fails as *"file
+payload size is inconsistent with the parameter payload size"*. The body is
+therefore a plain object with an honest `size` and a `toString()` that returns
+the content.
+
 ## The agent advantage, measured
 
 [`docs/AGENT_ADVANTAGE_REPORT.md`](docs/AGENT_ADVANTAGE_REPORT.md)

@@ -32,10 +32,12 @@
     "advantage": "tsx --env-file=.env --env-file=.env.local src/scripts/advantage.ts",
     "advantage:lock": "tsx --env-file=.env --env-file=.env.local src/scripts/advantage-lock.ts",
     "advantage:report": "tsx src/scripts/advantage-report.ts",
-    "prove-session": "tsx --env-file=.env --env-file=.env.local src/scripts/prove-session-scope.ts"
+    "prove-session": "tsx --env-file=.env --env-file=.env.local src/scripts/prove-session-scope.ts",
+    "greenfield": "tsx --env-file=.env --env-file=.env.local src/scripts/greenfield.ts"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",
+    "@bnb-chain/greenfield-js-sdk": "^2.2.2",
     "@bnbagent/sdk": "^0.5.5",
     "drizzle-orm": "^0.45.2",
     "next": "^15.5.25",
