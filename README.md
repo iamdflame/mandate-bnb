@@ -501,6 +501,41 @@ declared `agent_wallet` is byte-for-byte its owner's address.
 `/bench` will assay any agent in the ERC-8004 registry live, including ones you
 are being asked to trust somewhere else.
 
+## Paying for things — x402 / b402
+
+[`src/lib/x402/`](src/lib/x402/) · `npm run prove-x402`
+
+A mandate is a heavy way to buy something: a bond, a term, an adjudicator, and
+a principal willing to escrow capital. Most of what this marketplace knows is
+worth less than that ceremony. **x402 is the light path** — a request, a 402, a
+signed payment, an answer.
+
+| Endpoint | Price |
+|---|---|
+| `GET /api/x402/agent/:id/status` | 0.01 USD1 — the full assay |
+| `POST /api/x402/agent/:id/simulate` | 0.02 USD1 — what a strategy would do right now, nothing sent |
+
+```
+✓ an unpaid request is refused with a payable challenge   402 · 0.01 USD1
+✓ a forged signature is rejected                          signature does not recover
+✓ a signed payment settles on chain and returns the goods 183/1000 · settled 0x9c99a1dc…
+✓ the same authorization cannot be spent twice            already used
+
+4/4 hold — and the buyer spent no BNB.
+```
+
+That last line is the point. The buyer holds 0.0000098 BNB, nowhere near enough
+to send a transaction; it signs an EIP-3009 authorization and **the seller
+submits the transfer**. Hiring here does not require the buyer to hold the
+chain's gas token at all.
+
+**It is priced in USD1, not USDT, and that is not a preference.** x402's `exact`
+scheme settles through `transferWithAuthorization`, and neither BSC USDT nor
+BSC USDC implements EIP-3009 — checked directly: both lack `authorizationState`
+and `DOMAIN_SEPARATOR`. Pricing this rail in USDT would have produced a
+challenge no client could ever satisfy. USD1's EIP-712 domain was confirmed by
+recomputing the separator and matching the one the contract returns.
+
 ## Writing back to the registry
 
 [`src/lib/chain/reputation.ts`](src/lib/chain/reputation.ts) · registry

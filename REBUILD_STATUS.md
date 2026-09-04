@@ -15,8 +15,8 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | A1 | No Agent Advantage Report → ineligible for TermiX $10k | **DONE** | `docs/AGENT_ADVANTAGE_REPORT.md`, 6 tasks, lock anchored on BSC |
 | A2 | Sessions not registered in KeyStore | **DONE** | 4 sessions `registered: true`, each with its authorising tx |
 | A3 | One session, one category | **DONE** | 4 mandates, 4 categories, 4 sessions |
-| A4 | No PancakeSwap track submission | **TODO** | no `docs/PANCAKESWAP.md` |
-| A5 | No x402 / b402 rail | **TODO** | no implementation anywhere in `src/` |
+| A4 | No PancakeSwap track submission | **DONE** | `docs/PANCAKESWAP.md` + pool-gap scanner |
+| A5 | No x402 / b402 rail | **DONE** | two paid endpoints, 4/4 proven on mainnet |
 
 ### Category B — thesis contradictions
 
@@ -48,7 +48,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | D2 | Single operator, no key ceremony | **TODO** |
 | D3 | No incident/failure path | **TODO** |
 | D4 | No economic sustainability model | **TODO** — no protocol fee in the contract |
-| D5 | Nothing written back to the substrate | **TODO** |
+| D5 | Nothing written back to the substrate | **DONE** — six assays in the Reputation Registry |
 | D6 | No licence/brand/team/ADOPTION.md | **TODO** |
 
 ### Category E — engineering
@@ -117,16 +117,16 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | R3.1 | Register every session in KeyStore | **DONE** |
 | R3.2 | Four live sessions, one per category | **DONE** |
 | R3.3 | `prove-session-scope.ts`, 8 assertions | **DONE** — 5 proven, 0 failed, 3 inconclusive (Altana relay fault) |
-| R3.4 | User-facing revocation in the product | **TODO** |
-| R3.5 | Wire revocation to dismissal | **TODO** |
-| R3.6 | `hireErc8183Agent` on the buyer side | **TODO** |
+| R3.4 | User-facing revocation in the product | **DONE** — `/authority` |
+| R3.5 | Wire revocation to dismissal | **DONE** — `npm run keeper` |
+| R3.6 | `hireErc8183Agent` on the buyer side | **DONE** — `npm run prove-hire`, 5 proven |
 
 ### R4 — x402 / b402 · R5 — write-back
 
 | # | Item | State |
 |---|---|---|
-| R4 | b402 selling, buying, low-friction hire path | **TODO** |
-| R5 | ★ Write assays back to the Reputation Registry | **TODO** |
+| R4 | b402 selling, buying, low-friction hire path | **DONE** |
+| R5 | ★ Write assays back to the Reputation Registry | **DONE** |
 
 ### R6 — Advantage Report
 
@@ -141,7 +141,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 
 | # | Item | State |
 |---|---|---|
-| R7 | PancakeSwap doc + pool-gap scanner | **TODO** |
+| R7 | PancakeSwap doc + pool-gap scanner | **DONE** |
 | R8 | Information architecture (9 routes) | **DONE** — all nine |
 | R9 | Supply side: listing, shadow mandates, underwriting, bond tiers | **TODO** |
 | R10 | Contract v2 (11 items) | **TODO** |
