@@ -45,6 +45,7 @@ export default function Floor({ initial }: { initial: FloorSnapshot | null }) {
     stress: 0,
     flow: 0,
     settlementTick: 0,
+    ruptures: [],
   });
 
   // ---- live feed
@@ -81,13 +82,22 @@ export default function Floor({ initial }: { initial: FloorSnapshot | null }) {
           });
         }
         if (m.agent.toLowerCase() !== before.agent.toLowerCase()) {
+          const wasHeld = before.agent !== ZERO;
+          const isHeld = m.agent !== ZERO;
+
+          // Only a change of holder is a dismissal. A mandate moving from
+          // unheld to held is an award, and firing the shockwave for it
+          // reported a firing that never happened.
+          if (wasHeld) stateRef.current.ruptures.push(m.id);
+
           entries.push({
             key: `${m.id}-a${m.epochsSettled}-${m.agent}`,
-            text:
-              m.agent === ZERO
-                ? `mandate ${m.id} · ${short(before.agent)} dismissed · no successor`
-                : `mandate ${m.id} · ${short(before.agent)} dismissed · ${short(m.agent)} takes over`,
-            tone: "event",
+            text: !wasHeld
+              ? `mandate ${m.id} · awarded to ${short(m.agent)}`
+              : isHeld
+                ? `mandate ${m.id} · ${short(before.agent)} dismissed · ${short(m.agent)} takes over`
+                : `mandate ${m.id} · ${short(before.agent)} dismissed · no successor`,
+            tone: wasHeld ? "event" : "neutral",
             at: next.at,
           });
         }

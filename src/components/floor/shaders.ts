@@ -104,10 +104,10 @@ void main() {
   float hot = smoothstep(0.62, 0.92, f) * uStress;
   col = mix(col, uGold, hot * 0.30);
 
-  // Settlement pulse, radiating from the centre of the floor.
+  // A settlement lifts the whole field very slightly, so the room registers
+  // that something happened without a ring appearing from nowhere.
   float d = length(vec2((uv.x - 0.5) * aspect, uv.y - 0.5));
-  float ring = smoothstep(0.02, 0.0, abs(d - (1.0 - uPulse) * 0.9));
-  col += uGold * ring * uPulse * 0.20;
+  col += uGold * uPulse * 0.020 * smoothstep(1.1, 0.1, d);
 
   // Vignette, and a little grain so flat regions do not band on 8-bit panels.
   col *= 1.0 - 0.35 * smoothstep(0.35, 1.05, d);
@@ -133,6 +133,7 @@ layout(location = 3) in float aBond;      // 0..1 of bond remaining
 layout(location = 4) in float aAlpha;     // -1..1 recent performance
 layout(location = 5) in float aStrikes;   // 0..1 distress
 layout(location = 6) in float aFlash;     // 1 on settlement, decays
+layout(location = 7) in float aRupture;   // 1 on dismissal, decays
 
 out vec2  vLocal;
 out float vBond;
@@ -140,12 +141,14 @@ out float vAlpha;
 out float vStrikes;
 out float vFlash;
 out float vRadius;
+out float vRupture;
 
 uniform vec2  uResolution;
 uniform float uTime;
 
 void main() {
   vLocal   = aCorner;
+  vRupture = aRupture;
   vBond    = aBond;
   vAlpha   = aAlpha;
   vStrikes = aStrikes;
@@ -160,8 +163,11 @@ void main() {
     cos(uTime * 31.0 + aPosition.y * 40.0)
   ) * tremor;
 
+  // A dismissal throws the body outward before it settles back, and the quad
+  // has to grow to contain the shockwave or it clips at the old radius.
+  float burst = 1.0 + aRupture * 1.9;
   float aspect = uResolution.x / max(uResolution.y, 1.0);
-  vec2 scaled = aCorner * aRadius * vec2(1.0 / aspect, 1.0);
+  vec2 scaled = aCorner * aRadius * burst * vec2(1.0 / aspect, 1.0);
   gl_Position = vec4(aPosition + scaled + shake, 0.0, 1.0);
 }`;
 
@@ -174,6 +180,7 @@ in float vAlpha;
 in float vStrikes;
 in float vFlash;
 in float vRadius;
+in float vRupture;
 
 out vec4 outColor;
 
@@ -186,14 +193,19 @@ void main() {
   float d = length(vLocal);
   if (d > 1.0) discard;
 
+  // The quad is inflated during a rupture; rescale so the body keeps its true
+  // size while the shockwave uses the extra room.
+  float burst = 1.0 + vRupture * 1.9;
+  float bd = d * burst;
+
   // Core: capital under mandate.
-  float core = smoothstep(0.66, 0.34, d) * 0.85;
+  float core = smoothstep(0.66, 0.34, bd) * 0.85;
   // Bond ring: how much of the agent's own capital is still at risk. It
   // retreats as the bond is slashed, so a slashed agent is visibly thinner.
   float ringR = 0.68 + vBond * 0.24;
-  float ring = smoothstep(0.035, 0.0, abs(d - ringR)) * vBond;
+  float ring = smoothstep(0.035, 0.0, abs(bd - ringR)) * vBond;
   // Halo.
-  float halo = smoothstep(1.0, 0.55, d) * 0.20;
+  float halo = smoothstep(1.0, 0.55, bd) * 0.20;
 
   vec3 col = mix(uGround, uInk, 0.85);
   col = mix(col, uInk * 0.92, core);
@@ -209,13 +221,24 @@ void main() {
   col += uInk * halo * 0.55;
 
   // Settlement flash.
-  col += uGold * vFlash * smoothstep(1.0, 0.2, d) * 0.45;
+  col += uGold * vFlash * smoothstep(1.0, 0.2, bd) * 0.45;
 
   // Distress: the rim frays.
-  float fray = vStrikes * 0.5 * (0.5 + 0.5 * sin(uTime * 18.0 + d * 30.0));
-  float edge = smoothstep(1.0, 0.92, d);
+  float fray = vStrikes * 0.5 * (0.5 + 0.5 * sin(uTime * 18.0 + bd * 30.0));
+  float edge = smoothstep(1.0, 0.92, bd);
   col = mix(col, uGround, edge * fray);
 
-  float a = clamp(core + ring + halo + vFlash * 0.4, 0.0, 1.0);
+  // Dismissal. The bond ring is what breaks: it detaches and travels outward
+  // as a shockwave while the core collapses, because what an agent loses when
+  // it is fired is precisely the capital it had staked.
+  float shock = 0.0;
+  if (vRupture > 0.0) {
+    float front = (1.0 - vRupture) * 1.75 + 0.2;
+    shock = smoothstep(0.16, 0.0, abs(d - front)) * vRupture;
+    col += uGold * shock * 1.4;
+    col = mix(col, uGround, vRupture * smoothstep(0.5, 0.0, bd) * 0.55);
+  }
+
+  float a = clamp(core + ring + halo + vFlash * 0.4 + shock, 0.0, 1.0);
   outColor = vec4(col, a);
 }`;

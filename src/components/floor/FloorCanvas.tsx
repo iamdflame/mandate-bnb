@@ -36,9 +36,11 @@ export interface FloorState {
   flow: number;
   /** Bumped when a settlement lands, to fire the pulse. */
   settlementTick: number;
+  /** Mandate ids dismissed since the last frame consumed them. */
+  ruptures: number[];
 }
 
-const FLOATS_PER_BODY = 7; // x, y, radius, bond, alpha, strikes, flash
+const FLOATS_PER_BODY = 8; // x, y, radius, bond, alpha, strikes, flash, rupture
 const MAX_BODIES = 256;
 
 function compile(gl: WebGL2RenderingContext, type: number, source: string) {
@@ -152,7 +154,7 @@ export default function FloorCanvas({
     gl.enableVertexAttribArray(1);
     gl.vertexAttribPointer(1, 2, gl.FLOAT, false, stride, 0);
     gl.vertexAttribDivisor(1, 1);
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 6; i++) {
       const loc = 2 + i;
       gl.enableVertexAttribArray(loc);
       gl.vertexAttribPointer(loc, 1, gl.FLOAT, false, stride, (2 + i) * 4);
@@ -216,6 +218,9 @@ export default function FloorCanvas({
     // Per-body flash decay lives here rather than in React, so a settlement
     // does not cost a re-render.
     const flash = new Float32Array(MAX_BODIES);
+    // Keyed by mandate id, not slot index: bodies reorder as mandates open and
+    // close, and a shockwave must stay with the mandate it belongs to.
+    const rupture = new Map<number, number>();
     let lastTick = -1;
     let pulse = 0;
     let raf = 0;
@@ -236,9 +241,18 @@ export default function FloorCanvas({
         pulse = 1;
         for (let i = 0; i < Math.min(bodies.length, MAX_BODIES); i++) flash[i] = 1;
       }
+      if (s?.ruptures.length) {
+        for (const id of s.ruptures) rupture.set(id, 1);
+        s.ruptures.length = 0;
+      }
       pulse = Math.max(0, pulse - dt * 0.7);
       for (let i = 0; i < MAX_BODIES; i++) {
         flash[i] = Math.max(0, flash[i] - dt * 1.6);
+      }
+      for (const [id, v] of rupture) {
+        const next = v - dt * 0.75;
+        if (next <= 0) rupture.delete(id);
+        else rupture.set(id, next);
       }
 
       // ---- field
@@ -267,6 +281,7 @@ export default function FloorCanvas({
           instanceData[o + 4] = b.alpha;
           instanceData[o + 5] = b.strikes;
           instanceData[o + 6] = flash[i];
+          instanceData[o + 7] = rupture.get(b.id) ?? 0;
         }
         gl.useProgram(bodyProgram);
         gl.bindVertexArray(bodyVao);
