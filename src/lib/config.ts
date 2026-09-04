@@ -96,6 +96,54 @@ export const CATEGORY_EVIDENCE: Record<Category, readonly string[]> = {
   ],
 };
 
+/**
+ * Capabilities that leave no trace at the contract you called.
+ *
+ * Measured on live BSC: over 3,000 blocks the PancakeSwap V3 SwapRouter and
+ * the V2 Router emit **zero** logs. They are pass-through contracts — the
+ * `Swap` event comes from the pool, not the router. So scanning for logs
+ * emitted *by* a router finds nothing however much an agent trades, and every
+ * grid-trading agent was being recorded as having touched nothing.
+ *
+ * That is silent and total: with `granted ⊆ proven` it would deny authority to
+ * every grid agent forever, for a reason that has nothing to do with the agent.
+ *
+ * These probes look instead for the evidence a swap actually leaves: a pool's
+ * `Swap` event naming the wallet as the recipient.
+ */
+export interface EventProbe {
+  /** keccak of the event signature. */
+  topic0: string;
+  /** Which indexed position carries the wallet. */
+  position: 1 | 2 | 3;
+  /** Attributed to this protocol when found. */
+  protocol: string;
+  label: string;
+}
+
+export const CATEGORY_EVENT_PROBES: Record<Category, readonly EventProbe[]> = {
+  "grid-trading": [
+    {
+      // Swap(address indexed sender, address indexed recipient, int256, int256,
+      //      uint160, uint128, int24, uint128, uint128)
+      topic0: "0x19b47279256b2a23a1665c810c8d55a1758940ee09377d4f8d26497a3577dc83",
+      position: 2,
+      protocol: PROTOCOLS.pancakeV3Router,
+      label: "PancakeSwap V3 swap, wallet as recipient",
+    },
+    {
+      // Swap(address indexed sender, uint, uint, uint, uint, address indexed to)
+      topic0: "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822",
+      position: 2,
+      protocol: PROTOCOLS.pancakeV2Router,
+      label: "PancakeSwap V2 swap, wallet as recipient",
+    },
+  ],
+  rebalancing: [],
+  "yield-optimisation": [],
+  "health-factor": [],
+};
+
 export const PROTOCOL_LABEL: Record<string, string> = {
   [PROTOCOLS.pancakeV3Router]: "PancakeSwap V3 Router",
   [PROTOCOLS.pancakeV2Router]: "PancakeSwap V2 Router",

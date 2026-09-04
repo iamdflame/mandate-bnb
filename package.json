@@ -33,7 +33,9 @@
     "advantage:lock": "tsx --env-file=.env --env-file=.env.local src/scripts/advantage-lock.ts",
     "advantage:report": "tsx src/scripts/advantage-report.ts",
     "prove-session": "tsx --env-file=.env --env-file=.env.local src/scripts/prove-session-scope.ts",
-    "greenfield": "tsx --env-file=.env --env-file=.env.local src/scripts/greenfield.ts"
+    "greenfield": "tsx --env-file=.env --env-file=.env.local src/scripts/greenfield.ts",
+    "earn-capability": "tsx --env-file=.env --env-file=.env.local src/scripts/earn-capability.ts",
+    "scope-audit": "tsx --env-file=.env --env-file=.env.local src/scripts/scope-audit.ts"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",

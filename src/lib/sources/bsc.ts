@@ -105,23 +105,76 @@ export interface ProtocolTouch {
 export const ARCHIVE_RPC = process.env.ARCHIVE_RPC_URL ?? "";
 export const hasArchive = Boolean(ARCHIVE_RPC);
 
-/** Log-scanning client: the archive provider when configured, else drpc. */
-const logClient = createPublicClient({
-  chain: IS_TESTNET ? bscTestnet : bsc,
-  transport: http(ARCHIVE_RPC || "https://bsc.drpc.org", {
-    timeout: 30_000,
-    retryCount: 1,
+/**
+ * Log-scanning clients, tried in order.
+ *
+ * There used to be one, pointed at drpc, and drpc rate-limits a public caller
+ * within a handful of requests. Every capability scan then came back
+ * "incomplete", which is honest but useless: the assay could never conclude
+ * anything, and `granted ⊆ proven` refused every grant on the strength of an
+ * infrastructure failure rather than a fact about the agent.
+ *
+ * Measured across public BSC endpoints: blxrbdn serves eth_getLogs over a
+ * range, publicnode serves recent ranges only, and most refuse outright.
+ */
+const LOG_ENDPOINTS = [
+  ARCHIVE_RPC,
+  "https://bsc.rpc.blxrbdn.com",
+  "https://bsc-rpc.publicnode.com",
+  "https://bsc.drpc.org",
+].filter(Boolean) as string[];
+
+const logClients = LOG_ENDPOINTS.map((url) =>
+  createPublicClient({
+    chain: IS_TESTNET ? bscTestnet : bsc,
+    transport: http(url, { timeout: 30_000, retryCount: 0 }),
   }),
-});
+);
+
+/**
+ * Trailing nulls in a topic filter are not neutral.
+ *
+ * Measured against a swap known to be in range: `[sig, null, wallet, null]`
+ * returns nothing, `[sig, null, wallet]` returns the log. Providers read the
+ * array's length as "the event has at least this many topics", so a padded
+ * filter quietly excludes every event with fewer.
+ *
+ * This scanner built a four-element array and filled one slot, so every
+ * capability query it has ever made carried trailing nulls — and silently
+ * under-reported. Nothing errored; the answers were just smaller than the
+ * truth, which is the worst way for a check like this to be wrong.
+ */
+const trimTopics = (topics: (string | null)[]): (string | null)[] => {
+  let end = topics.length;
+  while (end > 0 && topics[end - 1] === null) end--;
+  return topics.slice(0, end);
+};
 
 export async function findProtocolTouches(
   wallet: string,
   protocols: readonly string[],
-  opts: { lookbackBlocks?: bigint; chunk?: bigint; maxHits?: number } = {},
+  opts: {
+    lookbackBlocks?: bigint;
+    chunk?: bigint;
+    maxHits?: number;
+    /**
+     * Probes for protocols that emit nothing themselves. A router is a
+     * pass-through: the event comes from the pool. Without these, trading
+     * through one is invisible however much of it you do.
+     */
+    eventProbes?: readonly {
+      topic0: string;
+      position: 1 | 2 | 3;
+      protocol: string;
+      label: string;
+    }[];
+  } = {},
 ): Promise<{ touches: ProtocolTouch[]; scannedBlocks: bigint; complete: boolean }> {
   // Free providers refuse anything wider than 10k blocks.
   const lookback = opts.lookbackBlocks ?? (hasArchive ? 2_000_000n : 9_500n);
   const chunk = opts.chunk ?? 9_500n;
+  /** Measured: blxrbdn allows 5,000 blocks for a query with no address filter. */
+  const probeChunk = chunk > 4_999n ? 4_999n : chunk;
   const maxHits = opts.maxHits ?? 12;
 
   const head = await publicClient.getBlockNumber();
@@ -141,28 +194,36 @@ export async function findProtocolTouches(
       if (touches.length >= maxHits) break;
       const topics: (string | null)[] = [null, null, null, null];
       topics[position] = padded;
-      let logs: RawLog[] = [];
-      try {
-        // viem's typed getLogs models topics as an event-derived tuple, which
-        // cannot express "any signature, this address in position N". The raw
-        // RPC call can, so it is used directly.
-        logs = (await logClient.request({
-          method: "eth_getLogs",
-          params: [
-            {
-              address: addresses,
-              fromBlock: `0x${from.toString(16)}`,
-              toBlock: `0x${to.toString(16)}`,
-              topics,
-            },
-          ],
-        } as never)) as unknown as RawLog[];
-      } catch {
-        // Provider refused the range, or a transient failure. Record it: a
-        // failed scan is "unknown", never "no evidence".
+      const trimmed = trimTopics(topics);
+      // viem's typed getLogs models topics as an event-derived tuple, which
+      // cannot express "any signature, this address in position N". The raw
+      // RPC call can, so it is used directly.
+      const request = {
+        method: "eth_getLogs",
+        params: [
+          {
+            address: addresses,
+            fromBlock: `0x${from.toString(16)}`,
+            toBlock: `0x${to.toString(16)}`,
+            topics: trimmed,
+          },
+        ],
+      };
+
+      let logs: RawLog[] | null = null;
+      for (const client of logClients) {
+        try {
+          logs = (await client.request(request as never)) as unknown as RawLog[];
+          break;
+        } catch {
+          continue;
+        }
+      }
+
+      if (logs === null) {
+        // Every provider refused. That is "unknown", never "no evidence" —
+        // the distinction the whole assay rests on.
         failures += 1;
-        // Free endpoints refuse or time out on every wide range, so one
-        // refusal settles it. Bail rather than retrying 150 doomed chunks.
         if (!hasArchive) {
           return { touches: dedupe(touches), scannedBlocks: scanned, complete: false };
         }
@@ -177,6 +238,52 @@ export async function findProtocolTouches(
         });
       }
     }
+
+    // Second pass: protocols that emit nothing of their own. Any emitter, but
+    // a specific event signature with the wallet in a known indexed slot.
+    const probeFrom = to - probeChunk > floor ? to - probeChunk : floor;
+    for (const probe of opts.eventProbes ?? []) {
+      if (touches.length >= maxHits) break;
+      const probeTopics: (string | null)[] = [probe.topic0, null, null, null];
+      probeTopics[probe.position] = padded;
+      const trimmedProbe = trimTopics(probeTopics);
+      let probeLogs: RawLog[] | null = null;
+      for (const client of logClients) {
+        try {
+          probeLogs = (await client.request({
+            method: "eth_getLogs",
+            params: [
+              {
+                fromBlock: `0x${probeFrom.toString(16)}`,
+                toBlock: `0x${to.toString(16)}`,
+                topics: trimmedProbe,
+              },
+            ],
+          } as never)) as unknown as RawLog[];
+          break;
+        } catch {
+          continue;
+        }
+      }
+      if (probeLogs === null) {
+        failures += 1;
+        if (!hasArchive) {
+          return { touches: dedupe(touches), scannedBlocks: scanned, complete: false };
+        }
+        continue;
+      }
+      for (const log of probeLogs) {
+        // Attributed to the protocol the probe stands for, not to the pool
+        // that happened to emit it.
+        touches.push({
+          protocol: probe.protocol.toLowerCase(),
+          txHash: log.transactionHash ?? "",
+          blockNumber: Number(BigInt(log.blockNumber ?? "0x0")),
+          logIndex: Number(BigInt(log.logIndex ?? "0x0")),
+        });
+      }
+    }
+
     scanned += to - from;
     to = from;
   }

@@ -11,6 +11,8 @@
  */
 import { CATEGORIES, type Category } from "@/lib/config";
 import { grantMandateSession, revokeMandateSession, loadMeta } from "@/lib/chain/session";
+import { isRefused, scopeFromChain } from "@/lib/chain/scope";
+import { readMandate } from "@/lib/chain/market";
 
 const cmd = process.argv[2];
 
@@ -39,7 +41,28 @@ console.log(`  cap      ${(Number(capWei) / 1e18).toFixed(8)} BNB`);
 console.log(`  expires  in ${Math.round(ttl / 3600)}h`);
 console.log(`  keystore ${register ? "registered (~$0.50)" : "ephemeral (free)"}`);
 
-const s = await grantMandateSession({ mandateId: id, category, capWei, ttlSeconds: ttl, register });
+// granted ⊆ proven. The allowlist is derived from what the chain has shown
+// this agent doing, so a grant cannot exceed the evidence for it.
+const mandate = await readMandate(id);
+const holder = mandate.agent;
+if (!holder || /^0x0+$/.test(holder)) {
+  console.error(`\nmandate ${id} has no holder, so there is no agent whose capability could be proven.`);
+  process.exit(1);
+}
+
+console.log(`\n  deriving scope from the chain for ${holder}…`);
+const scope = await scopeFromChain(holder, category);
+
+if (isRefused(scope)) {
+  console.error(`\n  REFUSED — ${scope.reason}`);
+  console.error(`  ${scope.remedy}\n`);
+  process.exit(1);
+}
+
+console.log(`  ${scope.rationale}\n`);
+for (const w of scope.withheld) console.log(`    withheld  ${w.signature.split("(")[0]} — ${w.because}`);
+
+const s = await grantMandateSession({ mandateId: id, scope, capWei, ttlSeconds: ttl, register });
 
 console.log(`\ngranted`);
 console.log(`  session key ${s.sessionKey}`);

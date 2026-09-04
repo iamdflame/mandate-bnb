@@ -26,6 +26,8 @@ import {
   revokeMandateSession,
   CATEGORY_CALLS,
 } from "@/lib/chain/session";
+import { isRefused, scopeFromChain } from "@/lib/chain/scope";
+import { walletFor } from "@/lib/chain/market";
 
 /** A mandate id no real mandate will collide with. */
 const PROBE_ID = 999_001;
@@ -135,9 +137,30 @@ if (!REGISTER) {
 }
 
 // ---------------------------------------------------------------- 1. granted
+// A session cannot be granted without a proof, so the probe needs one too.
+const probeAgent = walletFor(
+  (process.env.AGENT_A_KEY?.startsWith("0x")
+    ? process.env.AGENT_A_KEY
+    : `0x${process.env.AGENT_A_KEY}`) as `0x${string}`,
+).account!.address;
+
+const scope = await scopeFromChain(probeAgent, CATEGORY);
+if (isRefused(scope)) {
+  console.log(`  \x1b[33mgranted ⊆ proven refused this grant before it was made\x1b[0m`);
+  console.log(`    agent  ${probeAgent}`);
+  console.log(`    reason ${scope.reason}`);
+  console.log(`    remedy ${scope.remedy}`);
+  console.log(
+    `\n  That is the invariant working, and it means the session-enforcement`,
+  );
+  console.log(`  assertions below cannot run: there is no authority to test.\n`);
+  process.exit(2);
+}
+console.log(`  scope: ${scope.rationale}\n`);
+
 const granted = await grantMandateSession({
   mandateId: PROBE_ID,
-  category: CATEGORY,
+  scope,
   capWei: CAP_WEI,
   ttlSeconds: 600,
   register: REGISTER,

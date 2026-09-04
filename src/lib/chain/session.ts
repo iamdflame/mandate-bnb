@@ -27,6 +27,8 @@ import {
   type StrictAgentCallPermission,
 } from "@bnbagent/sdk/wallets";
 import { CATEGORY_LABEL, type Category } from "@/lib/config";
+// Type-only, so the mutual reference with scope.ts is erased at runtime.
+import type { ProvenScope } from "./scope";
 import { logClients, marketClient } from "./market";
 
 /**
@@ -131,7 +133,15 @@ export const CATEGORY_CALLS: Record<Category, StrictAgentCallPermission[]> = {
 
 export interface GrantOptions {
   mandateId: number;
-  category: Category;
+  /**
+   * What the agent has been *shown* able to do.
+   *
+   * Not a category. A `ProvenScope` can only be produced by `scopeFromAssay`,
+   * so there is no way to reach this function without an assay having run —
+   * `granted ⊆ proven` is a property of the type, not a check that has to be
+   * remembered.
+   */
+  scope: ProvenScope;
   /** Spend cap. Never larger than the capital under mandate. */
   capWei: bigint;
   /** Seconds from now until the session dies. */
@@ -171,6 +181,16 @@ export interface GrantedSession {
   /** The account's own identifier for this key, from the Authorize log. */
   registrationKeyHash?: string;
   allowlist: { to: string; signature: string }[];
+  /**
+   * Calls the category permits that this agent was not given.
+   *
+   * Recorded because the interesting half of a permission set is what is
+   * missing from it, and because a principal should be able to see that the
+   * narrowing happened rather than take it on trust.
+   */
+  withheld?: { to: string; signature: string; because: string }[];
+  provenProtocols?: string[];
+  scopeRationale?: string;
   grantedAt: string;
 }
 
@@ -251,7 +271,8 @@ export async function grantMandateSession(opts: GrantOptions): Promise<GrantedSe
     // that makes delegation safe: an agent can lose what it was given and
     // nothing beyond it.
     tokenSpend: { limit: opts.capWei },
-    extraCalls: CATEGORY_CALLS[opts.category],
+    // Derived from the assay, never from the category the agent claims.
+    extraCalls: opts.scope.calls,
   });
 
   // Pinned before the grant so the search window is exact.
@@ -270,7 +291,7 @@ export async function grantMandateSession(opts: GrantOptions): Promise<GrantedSe
 
   const granted: GrantedSession = {
     mandateId: opts.mandateId,
-    category: opts.category,
+    category: opts.scope.category,
     // publicKey is the on-chain identifier, and what revocation is keyed on.
     sessionKey: session.publicKey,
     walletAddress: session.walletAddress,
@@ -284,7 +305,11 @@ export async function grantMandateSession(opts: GrantOptions): Promise<GrantedSe
           registrationKeyHash: proof.keyHash,
         }
       : {}),
-    allowlist: CATEGORY_CALLS[opts.category].map((c) => ({ to: c.to, signature: c.signature })),
+    allowlist: opts.scope.calls.map((c) => ({ to: c.to, signature: c.signature })),
+    /** What the category permits but this agent has not earned. */
+    withheld: opts.scope.withheld,
+    provenProtocols: opts.scope.proven,
+    scopeRationale: opts.scope.rationale,
     grantedAt: new Date().toISOString(),
   };
 

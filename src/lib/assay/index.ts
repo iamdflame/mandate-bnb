@@ -9,6 +9,7 @@
  */
 
 import {
+  CATEGORY_EVENT_PROBES,
   CATEGORY_EVIDENCE,
   CATEGORY_LABEL,
   PROTOCOL_LABEL,
@@ -307,6 +308,7 @@ async function capabilityAssay(ctx: AssayContext): Promise<AssayResult> {
       score: 0,
       weight: WEIGHTS.capability,
       evidence,
+      proven: { protocols: [], complete: true, scannedBlocks: "0" },
     };
   }
 
@@ -314,6 +316,7 @@ async function capabilityAssay(ctx: AssayContext): Promise<AssayResult> {
   const { touches, scannedBlocks, complete } = await findProtocolTouches(
     ctx.wallet.address,
     expected,
+    { eventProbes: CATEGORY_EVENT_PROBES[category as Category] },
   );
 
   evidence.push({
@@ -345,6 +348,7 @@ async function capabilityAssay(ctx: AssayContext): Promise<AssayResult> {
         score: 0,
         weight: WEIGHTS.capability,
         evidence,
+        proven: { protocols: [], complete: false, scannedBlocks: scannedBlocks.toString() },
       };
     }
     return {
@@ -356,6 +360,7 @@ async function capabilityAssay(ctx: AssayContext): Promise<AssayResult> {
       score: 0,
       weight: WEIGHTS.capability,
       evidence,
+      proven: { protocols: [], complete: true, scannedBlocks: scannedBlocks.toString() },
     };
   }
 
@@ -368,7 +373,8 @@ async function capabilityAssay(ctx: AssayContext): Promise<AssayResult> {
     });
   }
 
-  const distinct = new Set(touches.map((t) => t.protocol)).size;
+  const provenProtocols = [...new Set(touches.map((t) => t.protocol.toLowerCase()))];
+  const distinct = provenProtocols.length;
   const score = Math.min(1, 0.55 + distinct * 0.15 + Math.min(touches.length, 10) * 0.03);
 
   return {
@@ -380,6 +386,7 @@ async function capabilityAssay(ctx: AssayContext): Promise<AssayResult> {
     score,
     weight: WEIGHTS.capability,
     evidence,
+    proven: { protocols: provenProtocols, complete, scannedBlocks: scannedBlocks.toString() },
   };
 }
 

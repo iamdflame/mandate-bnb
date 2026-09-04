@@ -327,6 +327,88 @@ refusing for the right one unless you check, so refusals are now classified
 against a baseline and anything that fails the way an in-scope call fails is
 reported as proving nothing.
 
+### granted ⊆ proven
+
+The assay decided whether an agent could **bid**. It said nothing about what
+the agent could **do**, because the allowlist was a hardcoded constant per
+category — so an agent that had never touched the position manager could still
+be handed `mint` on it, on the strength of the word "rebalancing" appearing in
+its own self-description. That is take-my-word-for-it, sitting inside the
+mechanism built to refuse it.
+
+The allowlist is now the intersection of two sets:
+
+```
+granted = the category's canonical calls  ∩  protocols the chain shows it using
+```
+
+and the invariant holds *by construction*, because the grant is built from the
+proof rather than checked against it afterwards. It is enforced by the type
+system rather than by an assertion someone can forget: `ProvenScope` carries a
+symbol its module does not export, so nothing outside that file can construct
+one, and `grantMandateSession` accepts nothing else. **A grant that has not
+been through an assay does not compile** — when the rule landed, both existing
+callers stopped building.
+
+Refusal is the default when evidence is *unknown*, not just when it is absent.
+An incomplete scan is not proof of absence, and a provider timing out must
+never become a silent denial dressed up as a policy decision.
+
+#### It refuses us
+
+```
+$ npm run scope-audit
+
+  category                 session    derived today
+  Rebalancing              mandate 1  REFUSED — not shown using any Rebalancing contract
+  Grid Trading             mandate 0  2/2 calls
+  Yield Optimisation       mandate 2  REFUSED — not shown using any Yield contract
+  Health Factor Monitoring mandate 3  REFUSED — not shown using any Health Factor contract
+
+  3 of 4 categories would be refused for this agent today.
+```
+
+The four live sessions predate the invariant. Re-derived under it, three of
+four are refused, because our own agent has demonstrated exactly one of the
+four capabilities. That is published rather than quietly fixed.
+
+#### Earning it
+
+```
+$ npm run earn-capability -- grid-trading
+
+  before   REFUSED — this agent has not been shown using any Grid Trading contract
+  swapping 0.0004 BNB for USDT through the V3 router
+  swapped  https://bscscan.com/tx/0x55add56703fb08f0e002df2758136e19abca84168d61b3347d4d992e7bf7fb7c
+  after    2 of 2 Grid Trading calls granted, on PancakeSwap V3 Router
+```
+
+One real mainnet swap, and the authority becomes derivable. Capability first,
+authority second. An earlier attempt swapped on the **V2** router and was still
+refused — correctly, because `grid.ts` calls V3, and evidence of using a
+different venue does not transfer.
+
+#### Two bugs this exposed
+
+Building the invariant surfaced a defect that had been silently corrupting the
+assay, and would have turned into a systematic denial:
+
+- **The routers emit no logs at all.** Measured over 3,000 blocks of live BSC:
+  PancakeSwap's V3 SwapRouter and V2 Router emit **zero** events — they are
+  pass-through contracts, and the `Swap` comes from the pool. The capability
+  scan looked for logs emitted *by* the contract you called, so
+  `CATEGORY_EVIDENCE["grid-trading"]` listed three log-silent addresses and **no
+  grid agent could ever prove capability**, however much it traded. Fixed with
+  event probes that look for the trace a swap actually leaves: a pool's `Swap`
+  naming the wallet as recipient.
+- **Trailing nulls in a topic filter silently return nothing.**
+  `[sig, null, wallet, null]` returns zero results where `[sig, null, wallet]`
+  returns the log — providers read the array's length as "the event has at
+  least this many topics". The scanner built a four-element array and filled
+  one slot, so **every capability query it had ever made carried trailing nulls
+  and under-reported.** Nothing errored; the answers were just smaller than the
+  truth, which is the worst way for a check like this to be wrong.
+
 **Not yet KeyStore-registered.** Registration is what makes a session publicly
 verifiable by a counterparty, and it costs about $0.50 in BNB per session.
 Enforcement is identical either way; visibility is not. `--register` runs the

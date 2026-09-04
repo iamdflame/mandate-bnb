@@ -40,6 +40,19 @@ export interface AssayResult {
   evidence: Evidence[];
   /** Milliseconds spent, surfaced in the live bench. */
   ms?: number;
+  /**
+   * What the chain actually showed this agent touching.
+   *
+   * Only the capability assay sets this, and it is the input to the session
+   * scope: authority is derived from it rather than from the category the
+   * agent claims. `complete` matters as much as the list — a scan the provider
+   * refused proves nothing, and must never be read as "touched nothing".
+   */
+  proven?: {
+    protocols: string[];
+    complete: boolean;
+    scannedBlocks: string;
+  };
 }
 
 /**
