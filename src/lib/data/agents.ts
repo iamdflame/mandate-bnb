@@ -19,6 +19,8 @@ export interface IndexedAgent {
   imageUrl: string | null;
   protocols: string[];
   x402: boolean;
+  /** Rung 2: the registry says this endpoint answered. Absent in older snapshots. */
+  endpointVerified?: boolean;
   registryScore: number | null;
   feedbacks: number;
   avgScore: number | null;
@@ -26,6 +28,12 @@ export interface IndexedAgent {
   category: Category | null;
   confidence: number;
   matched: string[];
+  /** When this row was last refreshed from the registry. */
+  lastSeen?: string;
+  /** Ladder rung, attached at render time. Not part of the stored index. */
+  rung?: number;
+  /** Why it sits there rather than higher. */
+  rungReason?: string;
 }
 
 export interface AgentIndex {
@@ -37,6 +45,8 @@ export interface AgentIndex {
     indexed: number;
     classified: number;
     byCategory: Record<Category, number>;
+    /** Rows refreshed in the most recent run; the rest are carried. */
+    refreshed?: number;
   };
   agents: IndexedAgent[];
 }

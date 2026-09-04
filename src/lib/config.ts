@@ -62,6 +62,23 @@ export const CATEGORY_BLURB: Record<Category, string> = {
  * agent's wallet has ever actually touched the contracts its claimed category
  * implies. Addresses are lowercased for comparison.
  */
+/**
+ * The ladder's rung names.
+ *
+ * Here rather than in `lib/rung.ts` because client components render them, and
+ * that module reaches the chain and the filesystem — importing it from the
+ * browser bundle pulled `node:fs` in and broke the build.
+ */
+export const RUNG_NAMES = [
+  "Registered",
+  "Resolvable",
+  "Live",
+  "Capable",
+  "Assayed",
+  "Bonded",
+  "Settled",
+] as const;
+
 export const PROTOCOLS = {
   pancakeV3Router: "0x13f4ea83d0bd40e75c8222255bc855a974568dd4",
   pancakeV2Router: "0x10ed43c718714eb63d5aa57b78b54704e256024e",

@@ -14,14 +14,23 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { CATEGORIES, CATEGORY_BLURB, CATEGORY_LABEL, type Category } from "@/lib/config";
+import { CATEGORIES, CATEGORY_BLURB, CATEGORY_LABEL, RUNG_NAMES, type Category } from "@/lib/config";
 import type { AgentIndex, IndexedAgent } from "@/lib/data/agents";
 
 const PAGE = 12;
 
-export default function Marketplace({ index }: { index: AgentIndex }) {
+export default function Marketplace({
+  index,
+  initialCategory = "all",
+  initialRung = "all",
+}: {
+  index: AgentIndex;
+  initialCategory?: Category | "all";
+  initialRung?: number | "all";
+}) {
   const [query, setQuery] = useState("");
-  const [active, setActive] = useState<Category | "all">("all");
+  const [active, setActive] = useState<Category | "all">(initialCategory);
+  const [rung, setRung] = useState<number | "all">(initialRung);
   const [shown, setShown] = useState<Record<string, number>>({});
 
   const needle = query.trim();
@@ -50,10 +59,24 @@ export default function Marketplace({ index }: { index: AgentIndex }) {
     return () => clearTimeout(t);
   }, [needle]);
 
+  // Rung filters before category, because the ladder is the organising idea:
+  // "show me everything on rung 2" is a more useful question than any
+  // category slice of a population nobody has verified.
+  const pool = useMemo(
+    () => (rung === "all" ? index.agents : index.agents.filter((a) => (a.rung ?? 0) === rung)),
+    [index.agents, rung],
+  );
+
+  const rungCounts = useMemo(() => {
+    const counts = new Map<number, number>();
+    for (const a of index.agents) counts.set(a.rung ?? 0, (counts.get(a.rung ?? 0) ?? 0) + 1);
+    return counts;
+  }, [index.agents]);
+
   const byCategory = useMemo(() => {
     const map = {} as Record<Category, IndexedAgent[]>;
     for (const c of CATEGORIES) {
-      map[c] = index.agents
+      map[c] = pool
         .filter((a) => a.category === c)
         .sort(
           (a, b) =>
@@ -63,46 +86,60 @@ export default function Marketplace({ index }: { index: AgentIndex }) {
         );
     }
     return map;
-  }, [index.agents]);
+  }, [pool]);
 
   const sections = active === "all" ? CATEGORIES : [active];
   const { registered, withEndpoint, withFeedback } = index.registry;
 
   return (
     <>
-      {/* -------------------------------------------------------------- hero */}
-      <section className="hero shell">
-        <div className="hero__copy">
-          <h1 className="display">Every agent on BNB Chain, tested before it is listed.</h1>
-          <p className="prose hero__lede">
-            {registered.toLocaleString()} agents are registered on BNB Smart Chain.
-            {" "}
-            {withFeedback.toLocaleString()} carry any feedback at all, and{" "}
-            <strong>{withEndpoint}</strong> have an endpoint that answers. This
-            marketplace shows you which is which, then lets you put one to work
-            against a bond it can lose.
-          </p>
+      {/* ------------------------------------------------------------ header */}
+      <section className="reg-head shell">
+        <p className="eyebrow">The registry</p>
+        <h1 className="reg-title">
+          All {index.registry.registered.toLocaleString()} agents, each on the
+          rung its evidence earns.
+        </h1>
+        <p className="reg-sub">
+          {index.counts.indexed.toLocaleString()} have been fetched and parsed
+          so far; the rest are unindexed, not disproven. Nothing here is ranked
+          by what an agent says about itself — see{" "}
+          <a href="/">the ladder</a> for what each rung tests.
+        </p>
 
-          <label className="search">
-            <span className="label">search {index.counts.indexed.toLocaleString()} indexed agents</span>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="name, description, or token id"
-              aria-label="Search agents"
-            />
-          </label>
-        </div>
-
-        <div className="funnel">
-          <FunnelRow label="registered on BSC" value={registered} of={registered} />
-          <FunnelRow label="carry any feedback" value={withFeedback} of={registered} />
-          <FunnelRow label="endpoint answers" value={withEndpoint} of={registered} accent />
-          <p className="label funnel__note">
-            measured live · {new Date(index.capturedAt).toISOString().slice(0, 16).replace("T", " ")} UTC
-          </p>
-        </div>
+        <label className="search">
+          <span className="label">
+            search {index.counts.indexed.toLocaleString()} indexed agents
+          </span>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="name, description, or token id"
+            aria-label="Search agents"
+          />
+        </label>
       </section>
+
+      {/* ------------------------------------------------------------- rungs */}
+      <div className="catbar catbar--rungs shell">
+        <button
+          className={`chip ${rung === "all" ? "chip--on" : ""}`}
+          onClick={() => setRung("all")}
+        >
+          Every rung
+        </button>
+        {[0, 1, 2, 3, 4, 5, 6].map((n) => (
+          <button
+            key={n}
+            className={`chip ${rung === n ? "chip--on" : ""}`}
+            onClick={() => setRung(n)}
+            disabled={(rungCounts.get(n) ?? 0) === 0}
+          >
+            {n} {RUNG_NAMES[n]}
+            <span className="chip__n">{rungCounts.get(n) ?? 0}</span>
+          </button>
+        ))}
+      </div>
 
       {/* ------------------------------------------------------------ chips */}
       <div className="catbar shell">

@@ -4,7 +4,8 @@
  * BNB Chain asked for a front door to every agent on BSC. The honest objection
  * — that a directory lets anyone claim anything at the price of gas — was
  * previously answered by refusing to build a directory. That was intellectually
- * right and strategically wrong: it left 301,784 agents with nowhere to appear.
+ * right and strategically wrong: it left every registered agent with nowhere
+ * to appear.
  *
  * So every agent appears, and none of them are ranked by what they say. Each
  * sits on a rung, and every rung is a *test the chain can settle*:
@@ -222,7 +223,7 @@ export async function readLadder(): Promise<LadderReading> {
       population: settled,
       fromRegistry: 0,
       discontinuity:
-        "Zero registry agents have ever settled an epoch here. That gap, between 301,784 registrations and nobody with a measured track record, is the whole reason this market exists.",
+        `Zero registry agents have ever settled an epoch here. That gap, between ${registry.registered.toLocaleString()} registrations and nobody with a measured track record, is the whole reason this market exists.`,
       source: "Distinct agents with at least one settled epoch.",
       verify: "npx mandate-verify --mandate 0 --chain 56",
     },

@@ -122,8 +122,8 @@ export default function StartPage() {
         <section className="start-next">
           <h2 className="section-title">Then</h2>
           <p className="section-sub">
-            The <Link href="/">ladder</Link> is the front door — 301,784 agents,
-            each on the rung its evidence earns. The{" "}
+            The <Link href="/">ladder</Link> is the front door — every
+            registered agent on the rung its evidence earns. The{" "}
             <Link href="/floor">floor</Link> is the market running live. The{" "}
             <Link href="/evidence">evidence</Link> page holds the reports,
             including the measurements that went against us.

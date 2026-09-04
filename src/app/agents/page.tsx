@@ -2,40 +2,67 @@ import type { Metadata } from "next";
 import SiteHeader from "@/components/shell/SiteHeader";
 import Marketplace from "@/components/agents/Marketplace";
 import { getAgentIndex } from "@/lib/data/agents";
+import { placeAgent, readMarketSets } from "@/lib/rung";
+import { CATEGORIES, type Category } from "@/lib/config";
 
-export const metadata: Metadata = {
-  title: "Every agent on BSC — MANDATE",
-  description:
-    "All 301,784 agents registered on BNB Smart Chain, each on the rung its evidence earns. Filter by rung, category and freshness.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { registry } = getAgentIndex();
+  return {
+    title: "Every agent on BSC — MANDATE",
+    description: `All ${registry.registered.toLocaleString()} agents registered on BNB Smart Chain, each on the rung its evidence earns. Filter by rung and category.`,
+  };
+}
 
-export default function AgentsPage() {
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export default async function AgentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ rung?: string; category?: string }>;
+}) {
+  const params = await searchParams;
   const full = getAgentIndex();
+  const sets = await readMarketSets();
 
-  // Ship only the classified agents the page actually renders. The full index
-  // is ~2MB and would otherwise be serialised into the RSC payload for every
-  // visitor; search runs server-side against the rest.
+  // Ship only what the page renders. The full index is ~2 MB and would
+  // otherwise be serialised into the RSC payload for every visitor; search
+  // runs server-side against the rest.
+  const placed = full.agents.map((a) => {
+    const place = placeAgent(a, sets);
+    return {
+      ...a,
+      description: a.description ? a.description.slice(0, 240) : null,
+      rung: place.rung,
+      rungReason: place.reason,
+    };
+  });
+
   const index = {
     ...full,
-    agents: full.agents
-      .filter((a) => a.category)
-      .map((a) => ({
-        ...a,
-        description: a.description ? a.description.slice(0, 240) : null,
-      })),
+    // Classified agents, plus everything above rung 1 whether classified or
+    // not. The ladder reports five agents on rung 2; a list that shipped only
+    // classified rows would show two of them and quietly contradict it.
+    agents: placed.filter((a) => a.category || a.rung >= 2),
   };
+
+  const rung = params.rung !== undefined && /^[0-6]$/.test(params.rung) ? Number(params.rung) : "all";
+  const category =
+    params.category && (CATEGORIES as readonly string[]).includes(params.category)
+      ? (params.category as Category)
+      : "all";
 
   return (
     <div className="app">
       <SiteHeader
-        live={index.counts.indexed > 0}
+        live={sets.read}
         status={`${full.counts.indexed.toLocaleString()} indexed`}
       />
-      <Marketplace index={index} />
+      <Marketplace index={index} initialRung={rung} initialCategory={category} />
       <footer className="foot shell">
         <span className="fig">MANDATE</span>
         <span className="label">
-          registry data from 8004scan · chain data from BNB Smart Chain ·
+          registry data from 8004scan · rung placement derived, never claimed ·
           {" "}
           {full.counts.indexed.toLocaleString()} agents indexed in {full.apiCalls} API calls
         </span>

@@ -12,7 +12,7 @@
  *   npx tsx --env-file=.env src/scripts/index-agents.ts [maxPerQuery]
  */
 
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { CATEGORIES, CATEGORY_LABEL, type Category } from "@/lib/config";
 import { countAgents, listAgents, type ScanAgentSummary } from "@/lib/sources/scan";
@@ -47,9 +47,24 @@ const SWEEPS: { label: string; params: Parameters<typeof listAgents>[0] }[] = [
 ];
 
 const found = new Map<string, ScanAgentSummary>();
+/**
+ * Token ids returned by the verified-endpoint sweep.
+ *
+ * `is_endpoint_verified` only exists on the detail endpoint, so asking per
+ * agent would cost one call each. The sweep already asks the registry for
+ * exactly this set, and it was being thrown away — the index knew which agents
+ * were reachable and did not write it down, so rung 2 could not be shown per
+ * agent, only as a total.
+ */
+const endpointVerified = new Set<string>();
 let calls = 0;
 
-async function page(params: Parameters<typeof listAgents>[0], max: number, label: string) {
+async function page(
+  params: Parameters<typeof listAgents>[0],
+  max: number,
+  label: string,
+  collect?: Set<string>,
+) {
   let offset = 0;
   let added = 0;
   while (offset < max) {
@@ -66,6 +81,7 @@ async function page(params: Parameters<typeof listAgents>[0], max: number, label
     for (const a of items) {
       if (!found.has(a.token_id)) {
         found.set(a.token_id, a);
+        collect?.add(a.token_id);
         added += 1;
       }
     }
@@ -85,7 +101,12 @@ calls += 3;
 log(`registry: ${registered} registered · ${withFeedback} rated · ${withEndpoint} reachable`);
 
 for (const s of SWEEPS) {
-  const n = await page(s.params, PER_QUERY, s.label);
+  const n = await page(
+    s.params,
+    PER_QUERY,
+    s.label,
+    s.label === "verified endpoints" ? endpointVerified : undefined,
+  );
   log(`sweep ${s.label}: +${n} (total ${found.size})`);
 }
 
@@ -109,6 +130,8 @@ export interface IndexedAgent {
   imageUrl: string | null;
   protocols: string[];
   x402: boolean;
+  /** Rung 2: the registry says this endpoint answered. */
+  endpointVerified: boolean;
   registryScore: number | null;
   feedbacks: number;
   avgScore: number | null;
@@ -128,6 +151,7 @@ const agents: IndexedAgent[] = [...found.values()].map((a) => {
     imageUrl: a.image_url,
     protocols: a.supported_protocols ?? [],
     x402: Boolean(a.x402_supported),
+    endpointVerified: endpointVerified.has(a.token_id),
     registryScore: a.total_score,
     feedbacks: a.total_feedbacks ?? 0,
     avgScore: a.average_score,
@@ -138,8 +162,39 @@ const agents: IndexedAgent[] = [...found.values()].map((a) => {
   };
 });
 
+/**
+ * Merge with what is already indexed, rather than replacing it.
+ *
+ * A single timed-out search used to shrink the index: one run covered 3,402
+ * agents, the next covered 2,837 because the "vault" query aborted, and 565
+ * agents silently vanished from the site. Coverage is not supposed to be a
+ * function of whether one HTTP request happened to succeed.
+ *
+ * Each agent carries `lastSeen`, so a row that has not been refreshed recently
+ * is visibly stale rather than quietly presented as current. Freshness per
+ * agent is what R2.1 asks for, and it is only possible if old rows survive.
+ */
+const runAt = new Date().toISOString();
+const merged = new Map<string, IndexedAgent & { lastSeen: string }>();
+
+try {
+  const prior = JSON.parse(readFileSync(OUT, "utf8")) as {
+    agents?: (IndexedAgent & { lastSeen?: string })[];
+  };
+  for (const a of prior.agents ?? []) {
+    merged.set(a.tokenId, { ...a, lastSeen: a.lastSeen ?? "unknown" });
+  }
+} catch {
+  // No prior index, or an unreadable one. Starting from this run is correct.
+}
+
+const carried = merged.size;
+for (const a of agents) merged.set(a.tokenId, { ...a, lastSeen: runAt });
+
+const allAgents = [...merged.values()];
+
 const byCategory = Object.fromEntries(
-  CATEGORIES.map((c) => [c, agents.filter((a) => a.category === c).length]),
+  CATEGORIES.map((c) => [c, allAgents.filter((a) => a.category === c).length]),
 ) as Record<Category, number>;
 
 const payload = {
@@ -148,11 +203,13 @@ const payload = {
   apiCalls: calls,
   registry: { registered, withEndpoint, withFeedback },
   counts: {
-    indexed: agents.length,
-    classified: agents.filter((a) => a.category).length,
+    indexed: allAgents.length,
+    classified: allAgents.filter((a) => a.category).length,
     byCategory,
+    /** Seen in this run. The rest are carried, with their own lastSeen. */
+    refreshed: agents.length,
   },
-  agents: agents.sort(
+  agents: allAgents.sort(
     (a, b) => b.feedbacks - a.feedbacks || (b.registryScore ?? 0) - (a.registryScore ?? 0),
   ),
 };
@@ -161,7 +218,8 @@ mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify(payload));
 
 console.log(`\nwrote ${OUT}`);
-console.log(`  indexed    ${agents.length} agents in ${calls} API calls`);
+console.log(`  indexed    ${allAgents.length} agents in ${calls} API calls`);
+console.log(`  refreshed  ${agents.length} this run · ${allAgents.length - agents.length} carried from ${carried} previously indexed`);
 console.log(`  classified ${payload.counts.classified}`);
 for (const c of CATEGORIES) {
   console.log(`    ${CATEGORY_LABEL[c].padEnd(26)} ${byCategory[c]}`);

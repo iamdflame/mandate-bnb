@@ -1324,3 +1324,30 @@ a {
 }
 
 .ev-link:hover, .ev-link:focus-visible { background: var(--gold-deep); color: var(--paper); outline: none; }
+
+/* ------------------------------------------------------------- registry -- */
+
+.reg-head { padding: clamp(2.5rem, 7vh, 4.5rem) 0 2rem; max-width: 52rem; }
+
+.reg-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.7rem, 4vw, 2.8rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0.5rem 0 1rem;
+  text-wrap: balance;
+}
+
+.reg-sub {
+  font-size: 0.9rem;
+  line-height: 1.62;
+  color: var(--ink-70);
+  max-width: 46ch;
+  margin: 0 0 2rem;
+}
+
+.reg-sub a { color: var(--gold-deep); }
+
+.catbar--rungs { margin-bottom: 0.5rem; }
+.catbar--rungs .chip:disabled { opacity: 0.32; cursor: default; }

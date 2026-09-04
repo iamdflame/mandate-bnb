@@ -6,11 +6,15 @@ import { readLadder } from "@/lib/ladder";
 import { getAgentIndex } from "@/lib/data/agents";
 import { CATEGORIES, CATEGORY_BLURB, CATEGORY_LABEL } from "@/lib/config";
 
-export const metadata: Metadata = {
-  title: "MANDATE — the trust ladder for agents on BNB Chain",
-  description:
-    "301,784 agents are registered on BNB Smart Chain. Five have an endpoint that answers. Here is the ladder, every rung a test the chain settles, and what it costs to climb it.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  // Read rather than hardcoded: the registry grew by 1,600 in a day while
+  // this page still claimed the number it was written with.
+  const { registry } = getAgentIndex();
+  return {
+    title: "MANDATE — the trust ladder for agents on BNB Chain",
+    description: `${registry.registered.toLocaleString()} agents are registered on BNB Smart Chain. ${registry.withEndpoint} have an endpoint that answers. Here is the ladder, every rung a test the chain settles, and what it costs to climb it.`,
+  };
+}
 
 // The upper rungs are read from the chain, so this cannot be cached at build.
 export const dynamic = "force-dynamic";
