@@ -24,10 +24,10 @@ export default function SiteHeader({
           MANDATE
         </a>
         <nav className="app-nav">
-          <a href="/">Agents</a>
-          <a href="/market">Market</a>
+          <a href="/agents">Agents</a>
+          <a href="/floor">Floor</a>
+          <a href="/evidence">Evidence</a>
           <a href="/assay">Method</a>
-          <a href="/bench">Bench</a>
         </nav>
         <div className="app-header__right">
           {status ? (

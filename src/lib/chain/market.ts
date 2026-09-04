@@ -54,6 +54,11 @@ export const marketClient: PublicClient = createPublicClient({
  */
 export const LOG_RPCS = [
   process.env.LOG_RPC_URL,
+  // Measured across thirteen public BSC endpoints: this is the one that
+  // serves eth_getLogs over a range. publicnode now answers "Archive requests
+  // require a personal token" for anything more than a few hours old, and
+  // drpc rate-limits a public caller within a handful of requests.
+  "https://bsc.rpc.blxrbdn.com",
   "https://bsc-rpc.publicnode.com",
   "https://bsc.drpc.org",
   MARKET_RPC,

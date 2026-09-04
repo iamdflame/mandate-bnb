@@ -27,7 +27,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | B3 | `minBond` source/chain divergence | **DONE** | constructor argument; events on both setters |
 | B4 | Alpha reported, not derived; adjudicator is us | **PARTIAL** | contract re-derives alpha from two commitments and reverts on disagreement. No second opinion yet → R1.3 |
 | B5 | README argues with the brief | **TODO** | "Why not a directory" still at README:46 |
-| B6 | Floor is beautiful, not a marketplace | **TODO** | WebGL still the landing page |
+| B6 | Floor is beautiful, not a marketplace | **DONE** | moved to `/floor`; the ladder is the front door |
 
 ### Category C — rubric gaps
 
@@ -73,7 +73,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | F1 | README fights the brief | **TODO** |
 | F2 | Best asset buried in RESEARCH.md | **TODO** |
 | F3 | No demo video | **BLOCKED** — I cannot record video |
-| F4 | No judge-start path | **TODO** |
+| F4 | No judge-start path | **DONE** — `/start`, 8 claims each with its falsifier |
 | F5 | No stated failures | **DONE** — Advantage Report losses in bold; `scope-audit` refuses us |
 | F6 | Fineness metaphor undefined on contact | **TODO** |
 
@@ -83,7 +83,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 
 | Item | State |
 |---|---|
-| Trust Ladder as information architecture (rungs 0–6) | **TODO** |
+| Trust Ladder as information architecture (rungs 0–6) | **DONE** — `src/lib/ladder.ts`, rendered at `/` |
 | Tagline shift | **TODO** |
 
 ---
@@ -142,7 +142,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | # | Item | State |
 |---|---|---|
 | R7 | PancakeSwap doc + pool-gap scanner | **TODO** |
-| R8 | Information architecture (9 routes) | **TODO** — 5 of 9 exist, none are the new ones |
+| R8 | Information architecture (9 routes) | **PARTIAL** — `/`, `/start`, `/agents`, `/floor`, `/evidence` done; `/list-your-agent`, `/mandate/[id]`, career page outstanding |
 | R9 | Supply side: listing, shadow mandates, underwriting, bond tiers | **TODO** |
 | R10 | Contract v2 (11 items) | **TODO** |
 | R11 | Data pipeline | **TODO** |

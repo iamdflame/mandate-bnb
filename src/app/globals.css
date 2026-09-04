@@ -945,3 +945,382 @@ a {
   border-top: 1px solid var(--ink-06);
   padding-top: 0.6rem;
 }
+
+/* ---------------------------------------------------------------- ladder --
+   The funnel as the front door. Rungs are links, not decoration.
+*/
+
+.ladder {
+  padding: clamp(3rem, 9vh, 7rem) 0 clamp(2rem, 5vh, 4rem);
+}
+
+.ladder-head {
+  max-width: 46rem;
+  margin-bottom: clamp(2.5rem, 6vh, 4.5rem);
+}
+
+.ladder-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2rem, 5.2vw, 3.9rem);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  margin: 0.6rem 0 1.4rem;
+  text-wrap: balance;
+}
+
+.ladder-title em {
+  font-style: normal;
+  color: var(--gold-deep);
+}
+
+.ladder-sub {
+  font-size: 0.95rem;
+  line-height: 1.62;
+  color: var(--ink-70);
+  max-width: 42rem;
+  margin: 0;
+}
+
+.rungs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.rung {
+  border-bottom: 1px solid var(--rule);
+}
+
+.rung-link {
+  display: grid;
+  grid-template-columns: 3.25rem 1fr;
+  gap: clamp(0.75rem, 2vw, 1.75rem);
+  padding: clamp(1.1rem, 2.6vh, 1.75rem) 0;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 0.35s var(--ease);
+}
+
+.rung-link:hover,
+.rung-link:focus-visible {
+  background: var(--ink-06);
+  outline: none;
+}
+
+.rung-n {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-25);
+  padding-top: 0.42rem;
+  letter-spacing: 0.08em;
+}
+
+.rung-body {
+  display: block;
+  min-width: 0;
+}
+
+.rung-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.rung-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.5vw, 1.6rem);
+  line-height: 1.1;
+}
+
+.rung-count {
+  font-family: var(--font-mono);
+  font-size: clamp(0.95rem, 2.2vw, 1.35rem);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.rung-count--unknown {
+  font-size: 0.78rem;
+  color: var(--ink-25);
+  letter-spacing: 0.04em;
+}
+
+.rung-atleast {
+  color: var(--ink-25);
+  margin-right: 0.1em;
+}
+
+.rung-bar {
+  display: block;
+  height: 2px;
+  background: var(--ink-06);
+  margin: 0.85rem 0 0.8rem;
+  overflow: hidden;
+}
+
+.rung-fill {
+  display: block;
+  height: 100%;
+  background: var(--gold-deep);
+  transition: width 0.9s var(--ease);
+}
+
+.rung-test {
+  display: block;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--ink);
+  max-width: 52ch;
+}
+
+.rung-source {
+  display: block;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--ink-45);
+  max-width: 62ch;
+  margin-top: 0.4rem;
+}
+
+.rung-break {
+  display: block;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--ink);
+  max-width: 58ch;
+  margin-top: 0.7rem;
+  padding-left: 0.85rem;
+  border-left: 2px solid var(--gold-deep);
+}
+
+.rung-verify {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-45);
+  background: var(--ink-06);
+  padding: 0.2rem 0.45rem;
+  margin-top: 0.7rem;
+  border-radius: 2px;
+}
+
+.ladder-foot {
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--ink-45);
+  margin-top: 1.6rem;
+  max-width: 56ch;
+}
+
+/* --------------------------------------------------- categories & paths -- */
+
+.cats,
+.paths {
+  padding: clamp(2.5rem, 7vh, 5rem) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  line-height: 1.15;
+  margin: 0 0 0.6rem;
+}
+
+.section-sub {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--ink-70);
+  max-width: 48ch;
+  margin: 0 0 2rem;
+}
+
+.cat-grid,
+.path-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.cat,
+.path {
+  display: block;
+  height: 100%;
+  padding: 1.4rem 1.3rem 1.5rem;
+  background: var(--paper);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 0.35s var(--ease);
+}
+
+.cat:hover,
+.cat:focus-visible,
+.path:hover,
+.path:focus-visible {
+  background: var(--paper-2);
+  outline: none;
+}
+
+.cat-count {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 1.7rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--gold-deep);
+  line-height: 1;
+}
+
+.cat-name,
+.path-name {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  margin-top: 0.5rem;
+}
+
+.cat-blurb,
+.path-blurb {
+  display: block;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--ink-45);
+  margin-top: 0.45rem;
+}
+
+/* ------------------------------------------------------------ start path -- */
+
+.start { padding: clamp(3rem, 8vh, 6rem) 0 5rem; max-width: 52rem; }
+
+.start-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.9rem, 4.6vw, 3.2rem);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  margin: 0.6rem 0 1.2rem;
+}
+
+.start-sub {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--ink-70);
+  max-width: 46ch;
+  margin: 0 0 3rem;
+}
+
+.claims { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+
+.claim {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  gap: 1rem;
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.claim-n {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-25);
+  padding-top: 0.2rem;
+}
+
+.claim-text {
+  font-size: 1.02rem;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 44ch;
+}
+
+.claim-note {
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--ink-45);
+  margin: 0.5rem 0 0;
+  max-width: 56ch;
+}
+
+.claim-check,
+.claim-link {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  margin-top: 0.75rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 2px;
+  background: var(--ink-06);
+  color: var(--ink-70);
+  text-decoration: none;
+  transition: background-color 0.3s var(--ease), color 0.3s var(--ease);
+}
+
+.claim-link:hover,
+.claim-link:focus-visible { background: var(--gold-deep); color: var(--paper); outline: none; }
+
+.start-next { margin-top: 3rem; }
+.start-next a { color: var(--gold-deep); }
+
+/* --------------------------------------------------------------- evidence -- */
+
+.ev-page { padding: clamp(3rem, 8vh, 6rem) 0 5rem; }
+.ev-head { margin-top: 3.5rem; }
+.ev-head--adverse { color: var(--gold-deep); }
+
+.ev-grid {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+}
+
+.ev {
+  background: var(--paper);
+  padding: 1.5rem 1.4rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.ev-title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.12rem;
+  line-height: 1.2;
+  margin: 0 0 0.6rem;
+}
+
+.ev-body {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--ink-70);
+  margin: 0 0 auto;
+}
+
+.ev-cmd,
+.ev-link {
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 0.73rem;
+  margin-top: 1rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 2px;
+  background: var(--ink-06);
+  color: var(--ink-70);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.ev-link:hover, .ev-link:focus-visible { background: var(--gold-deep); color: var(--paper); outline: none; }
