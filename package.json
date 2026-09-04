@@ -26,7 +26,9 @@
     "index": "tsx src/scripts/index-agents.ts",
     "agent": "tsx src/agents/run.ts",
     "settle": "tsx src/scripts/settle.ts",
-    "grant": "tsx src/scripts/grant.ts"
+    "grant": "tsx src/scripts/grant.ts",
+    "verify": "tsx packages/mandate-verify/src/cli.ts",
+    "verify:isolation": "node packages/mandate-verify/scripts/check-isolation.mjs"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",

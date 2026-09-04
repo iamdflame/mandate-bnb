@@ -28,4 +28,6 @@ contracts/broadcast/
 .agent-state/
 
 # per-mandate benchmark marks
-.benchmarks/
+
+# built verifier package
+packages/mandate-verify/dist/

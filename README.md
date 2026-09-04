@@ -60,7 +60,7 @@ categories become four mandate types.
 **Solvency is enforced, not assumed.** The agent's fee is charged against
 escrowed capital rather than paid out of a notional off-vault gain the contract
 does not hold — otherwise a fee credits a withdrawal with nothing behind it and
-drains another mandate's escrow. 31 tests pass, including a 256-run fuzz
+drains another mandate's escrow. 37 tests pass, including a 256-run fuzz
 proving liabilities never exceed the balance under **any** sequence of reported
 alpha.
 
@@ -77,11 +77,69 @@ Other properties the tests pin down:
 cd contracts && forge test
 ```
 
-**The honest seam:** realized alpha on positions held off-vault cannot be
-derived on-chain, so an adjudicator reports it. That trust is bounded three
-ways — the adjudicator can never move capital to itself, slashes are escrowed
-before they can be claimed, and dismissals are contestable. The settlement
-oracle is the assay engine described below.
+**The honest seam, and how far it has been closed.** Realized alpha on
+positions held off-vault cannot be computed on-chain, so someone has to
+measure. That used to mean an adjudicator asserting a number. It now means an
+adjudicator *committing a measurement* — see [The benchmark](#the-benchmark) —
+and the contract re-deriving alpha from two consecutive commitments and
+reverting if the report disagrees with them by more than a basis point of
+rounding:
+
+```solidity
+int256 expected = (int256(uint256(obs.valuationWei)) * int256(uint256(MAX_BPS)))
+    / int256(uint256(prev.valuationWei)) - int256(uint256(MAX_BPS));
+if (drift > 1 || drift < -1) revert AlphaContradictsObservation();
+```
+
+What is left of the seam is the choice of *which wallet* and *when*, not the
+arithmetic. That residue is bounded four ways — the adjudicator can never move
+capital to itself, slashes are escrowed before they can be claimed, dismissals
+are contestable, and every measurement is public before its outcome is known.
+
+## The benchmark
+
+Every slash and every fee turns on one number: what the managed wallet was
+worth, then and now. For a while that number lived in `.benchmarks/mandate-N.json`
+on a laptop — an unverifiable assertion, in a product built to punish
+unverifiable assertions. That was the contradiction, and it is gone.
+
+`award()` now requires an **opening observation** and `settleEpoch()` requires
+an epoch observation: the wallet, the block it was read at, what it was worth,
+the pool price it was valued with, the gas spent getting there. Each is hashed
+into storage *and emitted whole in the log*, so the preimage is public and no
+external service sits in the verification path.
+
+```bash
+npx mandate-verify --mandate 0 --chain 56
+```
+
+[`packages/mandate-verify`](packages/mandate-verify) is a separate package that
+reads **nothing but the chain** — no database, no API, no environment variable,
+no file we control. That constraint is enforced by a build step, not promised:
+
+```
+✓ isolated: 2 files, 1 dependency (viem), no filesystem, no environment, no operator host
+```
+
+It recovers each measurement from the logs, re-hashes it against the
+commitment, recomputes alpha in its own integer arithmetic, and — where the
+node still serves that block — re-reads balances and pool state to derive the
+valuation from scratch. On mainnet mandate 0 it reports:
+
+```
+epoch 1  +0.00% against epoch 0  ·  tier 2
+  ✓ settled alpha matches the marks        0 bps, re-derived independently from epoch 0
+  ✓ valuation re-derived from chain state  310045900000000 wei read back at block 119924716
+```
+
+A process with no access to our machine read BSC at the pinned block and
+arrived at the identical figure, to the wei. Older epochs report **tier 1**,
+because free BSC nodes serve only 94–124 blocks of historical state (measured,
+not assumed) — and the tool says so rather than quietly claiming more.
+
+`--tamper` moves each committed number by the smallest amount that matters and
+shows every perturbation being rejected: 7 of 7. A verifier that never rejects
+anything is a rubber stamp.
 
 ## The gate
 
@@ -168,7 +226,7 @@ are being asked to trust somewhere else.
 
 ```bash
 npm install
-cd contracts && forge test && cd ..     # 31 tests, incl. solvency fuzz
+cd contracts && forge test && cd ..     # 37 tests, incl. solvency fuzz
 
 anvil --port 8545 &                     # a local chain
 cd contracts && PRIVATE_KEY=0xac09…ff80 \
@@ -190,6 +248,9 @@ and the same script drives mainnet.
 | `npm run funnel` | Today's three numbers |
 | `npm run adjudicator` | Assays agents and publishes fineness on chain |
 | `npm run contracts:test` | The contract suite |
+| `npm run settle -- settle 0` | Measures and settles the next epoch of a mandate |
+| `npm run verify -- -m 0 -c 56` | Re-derives a settlement from the chain alone |
+| `npm run verify:isolation` | Proves the verifier can read nothing but the chain |
 
 ### Configuration
 
@@ -200,7 +261,7 @@ and the same script drives mainnet.
 | `MARKET_RPC_URL` | RPC for the market |
 | `SCAN_API_KEY` | 8004scan Pro tier: 30 → 500 req/min |
 | `DATABASE_URL` | Postgres for the assay indexer (optional) |
-| `ARCHIVE_RPC_URL` | Widens the capability scan to full history (optional) |
+| `ARCHIVE_RPC_URL` | Widens the capability scan to full history, and lifts `mandate-verify` to tier 3 (optional) |
 
 ## Stack
 
