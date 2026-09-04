@@ -18,7 +18,7 @@
  */
 
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 import {
   AltanaWalletProvider,
   defaultAgentPermissions,
@@ -38,7 +38,15 @@ import { CATEGORY_LABEL, type Category } from "@/lib/config";
  * ignored directory meant production could only ever report "observing only".
  */
 const SESSION_DIR = ".sessions";
-const PUBLIC_INDEX = "src/data/sessions.json";
+const PUBLIC_INDEX_REL = "src/data/sessions.json";
+/**
+ * Resolved from the working directory, matching the other data readers.
+ *
+ * A bare relative path resolves against wherever the process happens to be,
+ * which on a serverless function is not the project root — the file was
+ * deployed and simply never found, so every agent reported "observing only".
+ */
+const PUBLIC_INDEX = join(process.cwd(), PUBLIC_INDEX_REL);
 
 const norm = (k?: string) => (k?.startsWith("0x") ? k : `0x${k}`) as `0x${string}`;
 
