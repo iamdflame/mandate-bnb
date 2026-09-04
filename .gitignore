@@ -26,3 +26,6 @@ contracts/broadcast/
 
 # agent strategy state
 .agent-state/
+
+# per-mandate benchmark marks
+.benchmarks/

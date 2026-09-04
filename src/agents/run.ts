@@ -16,6 +16,7 @@ import { encodeFunctionData, type Address } from "viem";
 import { CATEGORIES, CATEGORY_LABEL, type Category } from "@/lib/config";
 import { readPool, valueWallet } from "@/lib/chain/prices";
 import { loadMeta } from "@/lib/chain/session";
+import { executeDecision, printExecution } from "./execute";
 import type { AgentContext, Decision, Strategy } from "./types";
 import { gridStrategy } from "./grid";
 import { healthStrategy } from "./health";
@@ -174,7 +175,11 @@ if (!session) {
   process.exit(1);
 }
 
-console.error(
-  "live execution through the session key is wired in the next step; " +
-    "the actions above are what it will send.",
-);
+if (session.expiry <= Math.floor(Date.now() / 1000)) {
+  console.error("refusing to act: this session has expired. grant a new one.");
+  process.exit(1);
+}
+
+const report = await executeDecision(mandateId, wallet, decision);
+printExecution(report);
+console.log();

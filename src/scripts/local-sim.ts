@@ -1,5 +1,15 @@
 /**
- * Drives the market so the floor has something real to show.
+ * LOCAL DEVELOPMENT ONLY — the alpha here is invented.
+ *
+ * This drives a market on anvil so the interface has something moving to
+ * render while it is being built. The performance it reports is drawn from a
+ * gaussian, which is fine against a throwaway chain and is exactly what
+ * `src/lib/settlement.ts` exists to replace on a real one: there, alpha is the
+ * difference between two on-chain valuations of the same wallet.
+ *
+ * It refuses to run against BSC. A simulator pointed at mainnet would slash
+ * real bonds against random numbers, which is the single worst thing this
+ * codebase could do.
  *
  * This is not mock data. It opens real mandates, posts real bonds from real
  * agent accounts, settles real epochs and slashes real balances against a
@@ -24,6 +34,14 @@ import {
   readLiveMandates,
   walletFor,
 } from "@/lib/chain/market";
+
+if (marketChain.id === 56 || marketChain.id === 97) {
+  console.error(
+    `refusing to run: this simulator invents alpha and is pointed at chain ${marketChain.id}.\n` +
+      "use src/scripts/settle.ts, which measures, for anything that is not anvil.",
+  );
+  process.exit(1);
+}
 
 if (!MARKET_ADDRESS) {
   console.error("MARKET_ADDRESS is not set. Deploy the contract first:");

@@ -21,10 +21,11 @@
     "abi": "python3 -c \"import json;a=json.load(open('contracts/out/MandateMarket.sol/MandateMarket.json'));open('src/lib/chain/abi.ts','w').write('/**\\n * MandateMarket ABI and bytecode, generated from the Foundry artifact.\\n *\\n * Regenerate with: npm run abi\\n */\\n\\nexport const MANDATE_MARKET_ABI = '+json.dumps(a['abi'],indent=2)+' as const;\\n\\nexport const MANDATE_MARKET_BYTECODE = '+json.dumps(a['bytecode']['object'])+' as \\`0x\\${string}\\`;\\n')\"",
     "contracts:build": "cd contracts && forge build",
     "contracts:test": "cd contracts && forge test",
-    "floor": "tsx src/scripts/floor-sim.ts",
+    "floor": "tsx src/scripts/local-sim.ts",
     "adjudicator": "tsx src/scripts/adjudicator.ts",
     "index": "tsx src/scripts/index-agents.ts",
-    "agent": "tsx src/agents/run.ts"
+    "agent": "tsx src/agents/run.ts",
+    "settle": "tsx src/scripts/settle.ts"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",
