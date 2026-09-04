@@ -27,6 +27,7 @@ import {
   type StrictAgentCallPermission,
 } from "@bnbagent/sdk/wallets";
 import { CATEGORY_LABEL, type Category } from "@/lib/config";
+import { logClients, marketClient } from "./market";
 
 /**
  * Two homes, because a session has a secret half and a public half.
@@ -157,8 +158,76 @@ export interface GrantedSession {
   capWei: string;
   expiry: number;
   registered: boolean;
+  /**
+   * The transaction that authorised this key on chain.
+   *
+   * `registered: true` on its own is a boolean in a JSON file on one machine —
+   * the same unverifiable assertion this whole product exists to object to. So
+   * registration is not reported without the transaction that proves it, found
+   * by reading the chain rather than taken from the SDK's word.
+   */
+  registrationTx?: string;
+  registrationBlock?: number;
+  /** The account's own identifier for this key, from the Authorize log. */
+  registrationKeyHash?: string;
   allowlist: { to: string; signature: string }[];
   grantedAt: string;
+}
+
+/**
+ * The account's key-authorisation event.
+ *
+ * Found by inspecting a known registration rather than from an ABI: the
+ * delegated account emits exactly one of these per grant, carrying the key's
+ * hash in its indexed argument. Altana derives that hash in a way this code
+ * does not reproduce, so the hash is recorded rather than recomputed — which
+ * is the honest form of "here is the evidence, check it yourself".
+ */
+export const AUTHORIZE_TOPIC =
+  "0x3d3a48be5a98628ecf98a6201185102da78bbab8f63a4b2d6b9eef354f5131f5" as const;
+
+/**
+ * Finds the transaction that authorised a key on the account.
+ *
+ * The principal's wallet carries an EIP-7702 delegation, so the grant is not
+ * sent *from* it — the relay submits and the delegated account pays. Searching
+ * for a transaction from the principal finds nothing; the account appears as a
+ * log emitter instead, which is what this looks for.
+ *
+ * Retried, because a log index that has not caught up yet returns an empty
+ * result that is indistinguishable from "no registration happened" — and
+ * recording no evidence when evidence exists is the failure mode that matters
+ * here.
+ */
+export async function findRegistrationTx(
+  wallet: string,
+  fromBlock: bigint,
+  attempts = 5,
+): Promise<{ tx: string; block: number; keyHash: string } | null> {
+  for (let round = 0; round < attempts; round++) {
+    for (const client of logClients) {
+      try {
+        const head = await client.getBlockNumber();
+        const logs = await client.getLogs({
+          address: wallet as `0x${string}`,
+          fromBlock,
+          toBlock: head,
+        });
+        const auth = logs.filter((l) => l.topics[0] === AUTHORIZE_TOPIC).at(-1);
+        if (auth?.transactionHash) {
+          return {
+            tx: auth.transactionHash,
+            block: Number(auth.blockNumber),
+            keyHash: auth.topics[1] ?? "",
+          };
+        }
+      } catch {
+        continue;
+      }
+    }
+    await new Promise((r) => setTimeout(r, 1500 * (round + 1)));
+  }
+  return null;
 }
 
 export function adminProvider(privateKey = process.env.PRIVATE_KEY) {
@@ -185,11 +254,19 @@ export async function grantMandateSession(opts: GrantOptions): Promise<GrantedSe
     extraCalls: CATEGORY_CALLS[opts.category],
   });
 
+  // Pinned before the grant so the search window is exact.
+  const before = await marketClient.getBlockNumber().catch(() => 0n);
+
   const session = await admin.grantSession({
     permissions,
     expiry,
     register: opts.register ?? false,
   });
+
+  const proof =
+    opts.register && before > 0n
+      ? await findRegistrationTx(session.walletAddress, before).catch(() => null)
+      : null;
 
   const granted: GrantedSession = {
     mandateId: opts.mandateId,
@@ -200,6 +277,13 @@ export async function grantMandateSession(opts: GrantOptions): Promise<GrantedSe
     capWei: opts.capWei.toString(),
     expiry,
     registered: Boolean(opts.register),
+    ...(proof
+      ? {
+          registrationTx: proof.tx,
+          registrationBlock: proof.block,
+          registrationKeyHash: proof.keyHash,
+        }
+      : {}),
     allowlist: CATEGORY_CALLS[opts.category].map((c) => ({ to: c.to, signature: c.signature })),
     grantedAt: new Date().toISOString(),
   };

@@ -1,12 +1,12 @@
 {
-  "2": {
-    "mandateId": 2,
+  "0": {
+    "mandateId": 0,
     "category": "grid-trading",
-    "sessionKey": "0x04e187b9830cddb2b1f56967828188022513dce0ed39abd09d0a58ef72f2d445bda572ac824a318f58ace8a1f91d2a86d9b8c5fdf7441a0a1d9d3e568e5a5c9cae",
+    "sessionKey": "0x047f5c137667eae9a0eb647d8b2b2b61f86ed4415546aea7fcfaf278da6e36af037c0879e83c0fb4b0cab03a57b873e280b4b5562f10bd6480cefe7191dc2f2497",
     "walletAddress": "0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90",
     "capWei": "300000000000000",
-    "expiry": 1788610414,
-    "registered": false,
+    "expiry": 1788623933,
+    "registered": true,
     "allowlist": [
       {
         "to": "0x13f4ea83d0bd40e75c8222255bc855a974568dd4",
@@ -17,6 +17,94 @@
         "signature": "exactInput((bytes,address,uint256,uint256))"
       }
     ],
-    "grantedAt": "2026-09-04T12:14:00.913Z"
+    "grantedAt": "2026-09-04T15:59:19.833Z",
+    "registrationTx": "0x8fdeed048f624dcd4aa724d8de0ccf5de2714dc6fc973f59fef4f7aaad8a2dd4",
+    "registrationBlock": 119946731,
+    "registrationKeyHash": "0xde642e11eee27f02114b2bddc51f549d5cb0d53f72b433edc0247b83041ccfb5",
+    "registrationMatch": "by position in the account's authorisation sequence, not by key"
+  },
+  "1": {
+    "mandateId": 1,
+    "category": "rebalancing",
+    "sessionKey": "0x049be0f7493ce0fcc575126ef4edbe8ea7f77c8e27c17df467e9e7ce86e8540ea717f3982abb4d6c090b0c5aed445d509c985891a06ab26b7a0f8e49479e363116",
+    "walletAddress": "0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90",
+    "capWei": "300000000000000",
+    "expiry": 1788624225,
+    "registered": true,
+    "registrationTx": "0x4e2b37e2cfa7384d1fb67d58c1f25e7e75523585b3bf242da5f86a49912503b6",
+    "registrationBlock": 119947373,
+    "allowlist": [
+      {
+        "to": "0x46a15b0b27311cedf172ab29e4f4766fbe7f4364",
+        "signature": "mint((address,address,uint24,int24,int24,uint256,uint256,uint256,uint256,address,uint256))"
+      },
+      {
+        "to": "0x46a15b0b27311cedf172ab29e4f4766fbe7f4364",
+        "signature": "increaseLiquidity((uint256,uint256,uint256,uint256,uint256,uint256))"
+      },
+      {
+        "to": "0x46a15b0b27311cedf172ab29e4f4766fbe7f4364",
+        "signature": "decreaseLiquidity((uint256,uint128,uint256,uint256,uint256))"
+      },
+      {
+        "to": "0x46a15b0b27311cedf172ab29e4f4766fbe7f4364",
+        "signature": "collect((uint256,address,uint128,uint128))"
+      }
+    ],
+    "grantedAt": "2026-09-04T16:04:09.946Z"
+  },
+  "2": {
+    "mandateId": 2,
+    "category": "yield-optimisation",
+    "sessionKey": "0x0416bf3506308c5bcda164340195ab57c5626733bd931f9583ba4746eabdcfa75536d50ca9a941437ff1c1f553c1e8f6f15643b9813a8668f0109da58057bfbd39",
+    "walletAddress": "0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90",
+    "capWei": "300000000000000",
+    "expiry": 1788624255,
+    "registered": true,
+    "allowlist": [
+      {
+        "to": "0x556b9306565093c855aea9ae92a594704c2cd59e",
+        "signature": "harvest(uint256,address)"
+      },
+      {
+        "to": "0xa07c5b74c9b40447a954e1466938b865b6bbea36",
+        "signature": "mint()"
+      },
+      {
+        "to": "0xa07c5b74c9b40447a954e1466938b865b6bbea36",
+        "signature": "redeemUnderlying(uint256)"
+      }
+    ],
+    "grantedAt": "2026-09-04T16:04:41.566Z",
+    "registrationTx": "0xece8192dfd4e493a198da7c401d72f3c2e5d868a098f1dfa6ad6e79ceda948b9",
+    "registrationBlock": 119947439,
+    "registrationKeyHash": "0x9959d53810ac3264100b31d24b4585bc1936350d6ff51fae338478143c0b65a3",
+    "registrationMatch": "by position in the account's authorisation sequence, not by key"
+  },
+  "3": {
+    "mandateId": 3,
+    "category": "health-factor",
+    "sessionKey": "0x04195ea33dc9201c67427c4a36751b66e7ee257963a80a359ff0490cf50c85fb9ef09d6649eb87f853e2bb193d86bc6e0ba72f6ed7834d4cc1dc6759c92ade6e0f",
+    "walletAddress": "0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90",
+    "capWei": "300000000000000",
+    "expiry": 1788624285,
+    "registered": true,
+    "registrationTx": "0xce7529a69475c2dac4f6534ffed62b5d3864f179c9467cfc1ad44d63334adba2",
+    "registrationBlock": 119947508,
+    "allowlist": [
+      {
+        "to": "0xa07c5b74c9b40447a954e1466938b865b6bbea36",
+        "signature": "mint()"
+      },
+      {
+        "to": "0xa07c5b74c9b40447a954e1466938b865b6bbea36",
+        "signature": "repayBorrow()"
+      },
+      {
+        "to": "0xfd36e2c2a6789db23113685031d7f16329158384",
+        "signature": "enterMarkets(address[])"
+      }
+    ],
+    "grantedAt": "2026-09-04T16:05:10.707Z"
   }
 }
