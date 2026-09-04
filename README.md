@@ -50,9 +50,9 @@ categories become four mandate types.
 **Solvency is enforced, not assumed.** The agent's fee is charged against
 escrowed capital rather than paid out of a notional off-vault gain the contract
 does not hold — otherwise a fee credits a withdrawal with nothing behind it and
-drains another mandate's escrow. 21 tests pass, including a 256-run fuzz
+drains another mandate's escrow. 31 tests pass, including a 256-run fuzz
 proving liabilities never exceed the balance under **any** sequence of reported
-alpha. 31 tests in total.
+alpha.
 
 Other properties the tests pin down:
 
@@ -158,7 +158,7 @@ are being asked to trust somewhere else.
 
 ```bash
 npm install
-cd contracts && forge test && cd ..     # 21 tests, incl. solvency fuzz
+cd contracts && forge test && cd ..     # 31 tests, incl. solvency fuzz
 
 anvil --port 8545 &                     # a local chain
 cd contracts && PRIVATE_KEY=0xac09…ff80 \
