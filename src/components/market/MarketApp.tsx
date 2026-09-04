@@ -14,12 +14,13 @@
  * one band inside the page rather than the page itself.
  */
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import FloorCanvas, { type FloorBody, type FloorState } from "@/components/floor/FloorCanvas";
-import { BidPanel, OpenMandatePanel, WalletChip, WithdrawButton } from "@/components/floor/Actions";
+import { BidPanel, OpenMandatePanel, WithdrawButton } from "@/components/floor/Actions";
 import { bnb, useMarket, type TapeEntry } from "@/lib/useMarket";
 import type { FloorMandate } from "@/app/api/floor/route";
 import AgentStandings from "./AgentStandings";
+import SiteHeader from "@/components/shell/SiteHeader";
 
 const CATEGORIES = ["Rebalancing", "Grid Trading", "Yield Optimisation", "Health Factor"];
 const STATES = ["Open", "Active", "Closed", "Abandoned"];
@@ -35,6 +36,18 @@ export default function MarketApp({ explorer }: { explorer: string }) {
   const [sheet, setSheet] = useState<{ kind: "open" } | { kind: "bid"; m: FloorMandate } | null>(
     null,
   );
+  /** Set when arriving from an agent page via "put to work". */
+  const [hiring, setHiring] = useState<string | null>(null);
+
+  // Completes the journey the brief asks for: land, find an agent by category,
+  // put it to work. Arriving with ?agent= opens the mandate sheet directly
+  // rather than dropping the visitor on a table with no idea what to do next.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("agent");
+    if (!id) return;
+    setHiring(id);
+    setSheet({ kind: "open" });
+  }, []);
 
   const mandates = snapshot?.mandates ?? [];
   const shown = filter === null ? mandates : mandates.filter((m) => m.category === filter);
@@ -80,34 +93,10 @@ export default function MarketApp({ explorer }: { explorer: string }) {
 
   return (
     <div className="app">
-      {/* ------------------------------------------------------------ header */}
-      <header className="app-header">
-        <div className="app-header__inner shell">
-          <a href="/" className="wordmark">
-            MANDATE
-          </a>
-          <nav className="app-nav">
-            <a href="#market">Market</a>
-            <a href="#agents">Agents</a>
-            <a href="/assay">Assay</a>
-            <a
-              href={`${explorer}/address/${snapshot?.market ?? ""}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Contract ↗
-            </a>
-          </nav>
-          <div className="app-header__right">
-            <span className={`pulse ${connected ? "pulse--on" : ""}`} aria-hidden />
-            <span className="label">
-              {connected ? "live" : "connecting"}
-              {snapshot ? ` · ${snapshot.blockNumber}` : ""}
-            </span>
-            <WalletChip />
-          </div>
-        </div>
-      </header>
+      <SiteHeader
+        live={connected}
+        status={`${connected ? "live" : "connecting"}${snapshot ? ` · ${snapshot.blockNumber}` : ""}`}
+      />
 
       {/* -------------------------------------------------------------- hero */}
       <section className="hero shell">
@@ -274,7 +263,9 @@ export default function MarketApp({ explorer }: { explorer: string }) {
                 </div>
                 <h3 className="display sheet__title">
                   {sheet.kind === "open"
-                    ? "Put capital on the floor."
+                    ? hiring
+                      ? `Put agent ${hiring} to work.`
+                      : "Put capital on the floor."
                     : `Bid for ${CATEGORIES[sheet.m.category]}`}
                 </h3>
               </div>
@@ -283,7 +274,20 @@ export default function MarketApp({ explorer }: { explorer: string }) {
               </button>
             </div>
             {sheet.kind === "open" ? (
-              <OpenMandatePanel onDone={() => setSheet(null)} />
+              <>
+                {hiring ? (
+                  <p className="sheet__note">
+                    You are opening a mandate agent{" "}
+                    <a href={`/agent/${hiring}`} className="link-underline fig">
+                      {hiring}
+                    </a>{" "}
+                    can bid for. Escrow the capital here; the agent then posts
+                    its own bond against it, and loses that bond if it trails
+                    the benchmark.
+                  </p>
+                ) : null}
+                <OpenMandatePanel onDone={() => setSheet(null)} />
+              </>
             ) : (
               <>
                 <dl className="kv">

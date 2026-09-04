@@ -1,0 +1,259 @@
+"use client";
+
+/**
+ * The marketplace.
+ *
+ * This is the front door the brief asks for: land, find an agent by category,
+ * put it to work. An earlier version made the capital market the homepage,
+ * which meant a visitor looking for agents found three mandates and two
+ * anonymous wallets instead.
+ *
+ * The four categories are surfaced at equal depth by construction — each is a
+ * section with the same controls and the same columns — and every agent is
+ * shown with the evidence behind its classification rather than a bare label.
+ */
+
+import { useMemo, useState } from "react";
+import { CATEGORIES, CATEGORY_BLURB, CATEGORY_LABEL, type Category } from "@/lib/config";
+import type { AgentIndex, IndexedAgent } from "@/lib/data/agents";
+
+const PAGE = 12;
+
+export default function Marketplace({ index }: { index: AgentIndex }) {
+  const [query, setQuery] = useState("");
+  const [active, setActive] = useState<Category | "all">("all");
+  const [shown, setShown] = useState<Record<string, number>>({});
+
+  const needle = query.trim().toLowerCase();
+
+  const matched = useMemo(() => {
+    if (!needle) return null;
+    return index.agents
+      .filter(
+        (a) =>
+          a.tokenId.includes(needle) ||
+          (a.name ?? "").toLowerCase().includes(needle) ||
+          (a.description ?? "").toLowerCase().includes(needle),
+      )
+      .slice(0, 60);
+  }, [needle, index.agents]);
+
+  const byCategory = useMemo(() => {
+    const map = {} as Record<Category, IndexedAgent[]>;
+    for (const c of CATEGORIES) {
+      map[c] = index.agents
+        .filter((a) => a.category === c)
+        .sort(
+          (a, b) =>
+            b.confidence - a.confidence ||
+            b.feedbacks - a.feedbacks ||
+            (b.registryScore ?? 0) - (a.registryScore ?? 0),
+        );
+    }
+    return map;
+  }, [index.agents]);
+
+  const sections = active === "all" ? CATEGORIES : [active];
+  const { registered, withEndpoint, withFeedback } = index.registry;
+
+  return (
+    <>
+      {/* -------------------------------------------------------------- hero */}
+      <section className="hero shell">
+        <div className="hero__copy">
+          <h1 className="display">Every agent on BNB Chain, tested before it is listed.</h1>
+          <p className="prose hero__lede">
+            {registered.toLocaleString()} agents are registered on BNB Smart Chain.
+            {" "}
+            {withFeedback.toLocaleString()} carry any feedback at all, and{" "}
+            <strong>{withEndpoint}</strong> have an endpoint that answers. This
+            marketplace shows you which is which, then lets you put one to work
+            against a bond it can lose.
+          </p>
+
+          <label className="search">
+            <span className="label">search {index.counts.indexed.toLocaleString()} indexed agents</span>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="name, description, or token id"
+              aria-label="Search agents"
+            />
+          </label>
+        </div>
+
+        <div className="funnel">
+          <FunnelRow label="registered on BSC" value={registered} of={registered} />
+          <FunnelRow label="carry any feedback" value={withFeedback} of={registered} />
+          <FunnelRow label="endpoint answers" value={withEndpoint} of={registered} accent />
+          <p className="label funnel__note">
+            measured live · {new Date(index.capturedAt).toISOString().slice(0, 16).replace("T", " ")} UTC
+          </p>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------ chips */}
+      <div className="catbar shell">
+        <button
+          className={`chip ${active === "all" ? "chip--on" : ""}`}
+          onClick={() => setActive("all")}
+        >
+          All categories
+        </button>
+        {CATEGORIES.map((c) => (
+          <button
+            key={c}
+            className={`chip ${active === c ? "chip--on" : ""}`}
+            onClick={() => setActive(c)}
+          >
+            {CATEGORY_LABEL[c]}
+            <span className="chip__n">{index.counts.byCategory[c] ?? 0}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* ----------------------------------------------------------- search */}
+      {matched ? (
+        <section className="section shell">
+          <div className="section__head">
+            <div>
+              <div className="label">search</div>
+              <h2 className="display section__title">
+                {matched.length} {matched.length === 1 ? "match" : "matches"} for “{query.trim()}”
+              </h2>
+            </div>
+          </div>
+          <AgentGrid agents={matched} />
+        </section>
+      ) : (
+        sections.map((c) => {
+          const all = byCategory[c];
+          const n = shown[c] ?? PAGE;
+          return (
+            <section key={c} id={c} className="section shell">
+              <div className="section__head">
+                <div>
+                  <div className="label">{CATEGORY_LABEL[c]}</div>
+                  <h2 className="display section__title">{CATEGORY_BLURB[c]}</h2>
+                </div>
+                <p className="section__note">
+                  {all.length} agents describe themselves this way. Classification
+                  is derived from each agent&apos;s own words, and shown with the
+                  terms that produced it.
+                </p>
+              </div>
+
+              {all.length === 0 ? (
+                <p className="empty-note">
+                  Nothing in the index describes itself as {CATEGORY_LABEL[c].toLowerCase()} yet.
+                </p>
+              ) : (
+                <>
+                  <AgentGrid agents={all.slice(0, n)} />
+                  {n < all.length ? (
+                    <button
+                      className="btn more"
+                      onClick={() => setShown((s) => ({ ...s, [c]: n + PAGE * 2 }))}
+                    >
+                      Show {Math.min(PAGE * 2, all.length - n)} more
+                    </button>
+                  ) : null}
+                </>
+              )}
+            </section>
+          );
+        })
+      )}
+    </>
+  );
+}
+
+function AgentGrid({ agents }: { agents: IndexedAgent[] }) {
+  return (
+    <div className="agrid">
+      {agents.map((a) => (
+        <AgentCard key={a.tokenId} a={a} />
+      ))}
+    </div>
+  );
+}
+
+function AgentCard({ a }: { a: IndexedAgent }) {
+  const desc = (a.description ?? "").trim();
+  return (
+    <article className="acard">
+      <header className="acard__head">
+        <h3 className="acard__name">{a.name?.trim() || `Agent ${a.tokenId}`}</h3>
+        <span className="fig acard__id">#{a.tokenId}</span>
+      </header>
+
+      <p className="acard__desc">
+        {desc ? (desc.length > 190 ? `${desc.slice(0, 190)}…` : desc) : "No description on file."}
+      </p>
+
+      {a.matched.length ? (
+        <p className="acard__why">
+          <span className="label">classified on</span> {a.matched.slice(0, 3).join(", ")}
+        </p>
+      ) : null}
+
+      <dl className="acard__stats">
+        <div>
+          <dt className="label">registry</dt>
+          <dd className="fig">{a.registryScore ?? "—"}</dd>
+        </div>
+        <div>
+          <dt className="label">feedback</dt>
+          <dd className="fig">{a.feedbacks}</dd>
+        </div>
+        <div>
+          <dt className="label">protocols</dt>
+          <dd className="fig">{a.protocols.length ? a.protocols.join("·") : "—"}</dd>
+        </div>
+        <div>
+          <dt className="label">x402</dt>
+          <dd className="fig">{a.x402 ? "yes" : "—"}</dd>
+        </div>
+      </dl>
+
+      <div className="acard__actions">
+        <a className="btn btn--sm" href={`/agent/${a.tokenId}`}>
+          Assay
+        </a>
+        <a className="btn btn--sm btn--primary" href={`/market?agent=${a.tokenId}`}>
+          Put to work
+        </a>
+      </div>
+    </article>
+  );
+}
+
+function FunnelRow({
+  label,
+  value,
+  of,
+  accent,
+}: {
+  label: string;
+  value: number;
+  of: number;
+  accent?: boolean;
+}) {
+  // A linear bar renders 5-of-301,784 as nothing at all, which hides the point.
+  // Log scale keeps three orders of magnitude legible in one column.
+  const pct = of > 0 ? Math.max(1.5, (Math.log10(Math.max(value, 1)) / Math.log10(of)) * 100) : 0;
+  return (
+    <div className="funnel__row">
+      <div className="funnel__meta">
+        <span className="label">{label}</span>
+        <span className={`fig funnel__v ${accent ? "up" : ""}`}>{value.toLocaleString()}</span>
+      </div>
+      <div className="funnel__track">
+        <div
+          className={`funnel__fill ${accent ? "funnel__fill--accent" : ""}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}

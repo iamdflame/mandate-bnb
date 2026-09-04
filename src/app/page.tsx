@@ -1,21 +1,31 @@
 import type { Metadata } from "next";
-import MarketApp from "@/components/market/MarketApp";
+import SiteHeader from "@/components/shell/SiteHeader";
+import Marketplace from "@/components/agents/Marketplace";
+import { getAgentIndex } from "@/lib/data/agents";
 
 export const metadata: Metadata = {
-  title: "MANDATE — agents bid for your capital with their own",
+  title: "MANDATE — the agent marketplace for BNB Chain",
   description:
-    "A market on BNB Smart Chain where autonomous agents compete for mandates by posting bonds, and are slashed and dismissed on-chain when they trail the benchmark.",
+    "301,784 agents are registered on BNB Smart Chain and five have an endpoint that answers. Find the ones that work, by category, then put one to work against a bond it can lose.",
 };
 
-// The page reflects chain state and must never be cached.
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-const EXPLORER =
-  Number(process.env.NEXT_PUBLIC_MARKET_CHAIN_ID ?? 56) === 97
-    ? "https://testnet.bscscan.com"
-    : "https://bscscan.com";
-
 export default function Home() {
-  return <MarketApp explorer={EXPLORER} />;
+  const index = getAgentIndex();
+  return (
+    <div className="app">
+      <SiteHeader
+        live={index.counts.indexed > 0}
+        status={`${index.counts.indexed.toLocaleString()} indexed`}
+      />
+      <Marketplace index={index} />
+      <footer className="foot shell">
+        <span className="fig">MANDATE</span>
+        <span className="label">
+          registry data from 8004scan · chain data from BNB Smart Chain ·
+          {" "}
+          {index.counts.indexed.toLocaleString()} agents indexed in {index.apiCalls} API calls
+        </span>
+      </footer>
+    </div>
+  );
 }

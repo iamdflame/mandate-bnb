@@ -303,7 +303,7 @@ function CategoryCard({
 }) {
   return (
     <Link
-      href={`/category/${id}`}
+      href={`/#${id}`}
       style={{
         background: "var(--paper)",
         padding: "clamp(1.5rem, 3vw, 2.5rem)",

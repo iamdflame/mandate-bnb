@@ -22,7 +22,8 @@
     "contracts:build": "cd contracts && forge build",
     "contracts:test": "cd contracts && forge test",
     "floor": "tsx src/scripts/floor-sim.ts",
-    "adjudicator": "tsx src/scripts/adjudicator.ts"
+    "adjudicator": "tsx src/scripts/adjudicator.ts",
+    "index": "tsx src/scripts/index-agents.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",
