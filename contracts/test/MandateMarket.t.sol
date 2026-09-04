@@ -393,6 +393,109 @@ contract MandateMarketTest is Test {
         market.withdraw();
     }
 
+    // ---------------------------------------------------- the assay gate --
+
+    function test_GateIsOffByDefault() public {
+        assertEq(market.minFineness(), 0);
+        uint256 id = _open(10 ether);
+        _bid(id, alice, 1 ether, 300); // never assayed, still admitted
+        assertEq(market.bidCount(id), 1);
+    }
+
+    function test_UnassayedAgentCannotBidOnceGateIsOn() public {
+        market.setMinFineness(375);
+        uint256 id = _open(10 ether);
+        vm.prank(alice);
+        vm.expectRevert(MandateMarket.NotAssayed.selector);
+        market.bid{value: 1 ether}(id, 300);
+    }
+
+    function test_BaseMetalAgentIsBarred() public {
+        market.setMinFineness(375);
+        vm.prank(adjudicator);
+        market.publishAssay(alice, 133); // the BORT case: never transacted
+
+        uint256 id = _open(10 ether);
+        vm.prank(alice);
+        vm.expectRevert(MandateMarket.BelowFineness.selector);
+        market.bid{value: 1 ether}(id, 300);
+    }
+
+    function test_HallmarkedAgentMayBid() public {
+        market.setMinFineness(375);
+        vm.prank(adjudicator);
+        market.publishAssay(alice, 585);
+
+        uint256 id = _open(10 ether);
+        _bid(id, alice, 1 ether, 300);
+        assertEq(market.bidCount(id), 1);
+        assertEq(market.fineness(alice), 585);
+        assertGt(market.assayedAt(alice), 0);
+    }
+
+    function test_StandingCanBeRevoked() public {
+        market.setMinFineness(375);
+        vm.prank(adjudicator);
+        market.publishAssay(alice, 585);
+        uint256 id = _open(10 ether);
+        _bid(id, alice, 1 ether, 300);
+
+        // Its endpoint dies; the next sweep demotes it.
+        vm.prank(adjudicator);
+        market.publishAssay(alice, 120);
+
+        uint256 other = _open(5 ether);
+        vm.prank(alice);
+        vm.expectRevert(MandateMarket.BelowFineness.selector);
+        market.bid{value: 1 ether}(other, 300);
+    }
+
+    function test_OnlyAdjudicatorPublishesAssays() public {
+        vm.prank(alice);
+        vm.expectRevert(MandateMarket.NotAdjudicator.selector);
+        market.publishAssay(alice, 999); // an agent cannot grade itself
+    }
+
+    function test_FinenessIsBounded() public {
+        vm.prank(adjudicator);
+        vm.expectRevert(MandateMarket.BadParameters.selector);
+        market.publishAssay(alice, 1001);
+    }
+
+    function test_BatchPublishRequiresMatchingLengths() public {
+        address[] memory agents = new address[](2);
+        uint16[] memory values = new uint16[](1);
+        agents[0] = alice;
+        agents[1] = bob;
+        values[0] = 500;
+        vm.prank(adjudicator);
+        vm.expectRevert(MandateMarket.BadParameters.selector);
+        market.publishAssays(agents, values);
+    }
+
+    function test_BatchPublishAdmitsSeveral() public {
+        address[] memory agents = new address[](2);
+        uint16[] memory values = new uint16[](2);
+        agents[0] = alice;
+        agents[1] = bob;
+        values[0] = 585;
+        values[1] = 750;
+        vm.prank(adjudicator);
+        market.publishAssays(agents, values);
+
+        market.setMinFineness(375);
+        uint256 id = _open(10 ether);
+        _bid(id, alice, 1 ether, 300);
+        _bid(id, bob, 1 ether, 200);
+        assertEq(market.bidCount(id), 2);
+    }
+
+    function test_AdjudicatorStillCannotMoveCapitalViaAssays() public {
+        vm.prank(adjudicator);
+        market.publishAssay(adjudicator, 1000);
+        assertEq(market.withdrawable(adjudicator), 0);
+    }
+
     // --------------------------------------------------------------- fuzz --
 
     /// @notice Solvency must hold for any sequence of reported alpha.

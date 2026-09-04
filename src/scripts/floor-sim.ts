@@ -161,17 +161,37 @@ async function openAndStaff(category: number, capital: bigint, holderIndex: numb
 
   // Every agent bids. Losing bids stay live as the succession queue, which is
   // what makes dismissal instant rather than a re-tender.
-  for (const a of AGENTS) {
-    await send(a.wallet, "bid", [BigInt(id), a.target], a.bond);
-    log(`  ${a.name} bids ${formatEther(a.bond)} BNB @ +${(a.target / 100).toFixed(2)}%`);
+  //
+  // An agent below the market's assay bar is refused here by the contract, so
+  // a bid that reverts is the gate working rather than a failure to handle.
+  const admitted: number[] = [];
+  for (const [i, a] of AGENTS.entries()) {
+    try {
+      await send(a.wallet, "bid", [BigInt(id), a.target], a.bond);
+      admitted.push(i);
+      log(`  ${a.name} bids ${formatEther(a.bond)} BNB @ +${(a.target / 100).toFixed(2)}%`);
+    } catch (error) {
+      const why = /0xff79d86d/.test(String(error))
+        ? "below the assay bar"
+        : /0xb3f487f9/.test(String(error))
+          ? "never assayed"
+          : String(error).slice(0, 60);
+      log(`  ${a.name} refused — ${why}`);
+    }
+  }
+  if (admitted.length === 0) {
+    log("  no agent cleared the bar; mandate stays open");
+    return id;
   }
 
   // A different manager per mandate. Awarding purely on the highest committed
   // target hands every mandate to the same agent, which is a market with one
   // participant — the succession queue is where the competition lives.
-  const idx = holderIndex % AGENTS.length;
-  await send(principal, "award", [BigInt(id), BigInt(idx)]);
-  log(`  awarded to ${AGENTS[idx].name}`);
+  // Bid indices are positions in the mandate's queue, which only contains
+  // agents the gate admitted — not positions in AGENTS.
+  const slot = holderIndex % admitted.length;
+  await send(principal, "award", [BigInt(id), BigInt(slot)]);
+  log(`  awarded to ${AGENTS[admitted[slot]].name}`);
   return id;
 }
 
@@ -224,13 +244,26 @@ async function report() {
 
 log(`floor simulation · chain ${marketChain.id} · market ${MARKET_ADDRESS}`);
 
-const { total: existing } = await readLiveMandates();
-if (existing === 0) {
-  log("no mandates yet — opening one per category");
-  for (const c of CATEGORIES) {
-    await openAndStaff(c, parseEther(String(8 + c * 4)), c);
+/**
+ * Keeps a target number of mandates live.
+ *
+ * Seeding only when the book is completely empty leaves the floor bare the
+ * moment a stray mandate exists that this principal cannot recycle.
+ */
+const TARGET_LIVE = 4;
+
+async function topUp(seed: number) {
+  const { live } = await readLiveMandates();
+  const mine = live.filter(
+    (m) => m.principal.toLowerCase() === principal.account!.address.toLowerCase(),
+  );
+  for (let i = mine.length; i < TARGET_LIVE; i++) {
+    const c = (seed + i) % 4;
+    await openAndStaff(c, parseEther(String(6 + Math.floor(Math.random() * 14))), i);
   }
 }
+
+await topUp(0);
 
 /**
  * Retires finished mandates and opens replacements, so the floor is a running
@@ -240,8 +273,12 @@ if (existing === 0) {
  */
 async function recycle(nextCategory: number) {
   const { live: mandates } = await readLiveMandates();
+  const me = principal.account!.address.toLowerCase();
   let opened = 0;
   for (const m of mandates) {
+    // Only the principal that opened a mandate can close it, so anything
+    // opened by another account is none of this loop's business.
+    if (m.principal.toLowerCase() !== me) continue;
     const finished = m.epochsSettled >= m.epochsTotal;
     const stalled = m.state === 0; // dismissed with nobody to take over
     if (m.state === 2 || m.state === 3) continue;
@@ -265,6 +302,7 @@ for (;;) {
   log(`epoch ${epoch}`);
   await settleAll(epoch);
   await recycle(epoch);
+  await topUp(epoch);
   await report();
   epoch += 1;
 

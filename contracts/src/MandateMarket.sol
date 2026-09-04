@@ -112,6 +112,23 @@ contract MandateMarket is ReentrancyGuard, Ownable {
     /// @notice Minimum bond, so a bid is never costless.
     uint96 public minBond = 0.01 ether;
 
+    /**
+     * @notice Minimum assayed fineness required to bid. Zero disables the gate.
+     *
+     * Fineness is millesimal purity, the assay-office unit: 999 is pure and 375
+     * is the lowest grade that may carry a hallmark. It is published here by
+     * the adjudicator from an off-chain assay of the agent's registry claims
+     * against the chain — endpoint liveness, custody separation, whether the
+     * wallet has ever transacted, whether it has ever touched the protocols its
+     * category implies.
+     *
+     * Without this gate the two halves of the system never meet: an agent that
+     * has provably never sent a transaction could still bid for real capital
+     * purely by posting a bond. A bond proves an agent has something to lose;
+     * fineness proves it is capable of doing the job at all. Both are required.
+     */
+    uint16 public minFineness;
+
     /// @notice Reports realized alpha. Cannot move principal capital to itself.
     address public adjudicator;
 
@@ -124,6 +141,10 @@ contract MandateMarket is ReentrancyGuard, Ownable {
     mapping(uint256 => mapping(uint32 => PendingSlash)) public pendingSlash;
     /// @notice Pull-payment balances.
     mapping(address => uint256) public withdrawable;
+    /// @notice Assayed fineness per agent, 0-1000, published by the adjudicator.
+    mapping(address => uint16) public fineness;
+    /// @notice When that assay was published, so staleness is visible on chain.
+    mapping(address => uint64) public assayedAt;
 
     // -------------------------------------------------------------- events --
 
@@ -150,6 +171,8 @@ contract MandateMarket is ReentrancyGuard, Ownable {
     event SlashResolved(uint256 indexed mandateId, uint32 indexed epoch, bool upheld, uint96 amount);
     event MandateClosed(uint256 indexed mandateId, uint96 returned);
     event AdjudicatorChanged(address indexed previous, address indexed next);
+    event Assayed(address indexed agent, uint16 fineness, uint64 at);
+    event MinFinenessChanged(uint16 previous, uint16 next);
     event Withdrawal(address indexed to, uint256 amount);
 
     // -------------------------------------------------------------- errors --
@@ -170,6 +193,8 @@ contract MandateMarket is ReentrancyGuard, Ownable {
     error TransferFailed();
     error WindowOpen();
     error AlreadyResolved();
+    error NotAssayed();
+    error BelowFineness();
 
     modifier onlyAdjudicator() {
         if (msg.sender != adjudicator) revert NotAdjudicator();
@@ -278,6 +303,14 @@ contract MandateMarket is ReentrancyGuard, Ownable {
         Mandate storage m = _mandates[mandateId];
         if (m.state != State.Open) revert BadState();
         if (msg.value < minBond) revert BondTooSmall();
+
+        // A bond proves the agent has something to lose. Fineness proves it can
+        // do the work at all. Requiring only the first would let a wallet that
+        // has never sent a transaction bid for real capital.
+        if (minFineness > 0) {
+            if (assayedAt[msg.sender] == 0) revert NotAssayed();
+            if (fineness[msg.sender] < minFineness) revert BelowFineness();
+        }
 
         bidIndex = _bids[mandateId].length;
         _bids[mandateId].push(
@@ -402,6 +435,34 @@ contract MandateMarket is ReentrancyGuard, Ownable {
         }
     }
 
+    /**
+     * @notice Publishes an agent's assayed fineness.
+     * @dev Adjudicator-only, and deliberately not a value transfer: this can
+     *      admit an agent to the market or bar it, but it can never move
+     *      capital. Re-publishing is expected — an agent that lets its endpoint
+     *      die should lose its standing.
+     */
+    function publishAssay(address agent, uint16 fineness_) external onlyAdjudicator {
+        if (fineness_ > 1000) revert BadParameters();
+        fineness[agent] = fineness_;
+        assayedAt[agent] = uint64(block.timestamp);
+        emit Assayed(agent, fineness_, uint64(block.timestamp));
+    }
+
+    /// @notice Publishes several assays at once, for an indexer sweep.
+    function publishAssays(address[] calldata agents, uint16[] calldata values)
+        external
+        onlyAdjudicator
+    {
+        if (agents.length != values.length) revert BadParameters();
+        for (uint256 i = 0; i < agents.length; i++) {
+            if (values[i] > 1000) revert BadParameters();
+            fineness[agents[i]] = values[i];
+            assayedAt[agents[i]] = uint64(block.timestamp);
+            emit Assayed(agents[i], values[i], uint64(block.timestamp));
+        }
+    }
+
     /// @notice Resolves a contested slash. Upheld pays the principal; overturned returns the bond.
     function resolveSlash(uint256 mandateId, uint32 epoch, bool upheld) external onlyOwner nonReentrant {
         PendingSlash storage p = pendingSlash[mandateId][epoch];
@@ -522,6 +583,13 @@ contract MandateMarket is ReentrancyGuard, Ownable {
 
     function setMinBond(uint96 wei_) external onlyOwner {
         minBond = wei_;
+    }
+
+    /// @notice Sets the assay bar for bidding. 375 is the lowest hallmarkable grade.
+    function setMinFineness(uint16 next) external onlyOwner {
+        if (next > 1000) revert BadParameters();
+        emit MinFinenessChanged(minFineness, next);
+        minFineness = next;
     }
 
     // ----------------------------------------------------------------- views --
