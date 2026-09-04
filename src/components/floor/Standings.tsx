@@ -13,7 +13,13 @@
 import { useEffect, useState } from "react";
 import type { Standing, StandingsResult } from "@/lib/chain/standings";
 
-const bnb = (wei: string, dp = 2) => (Number(BigInt(wei)) / 1e18).toFixed(dp);
+/** Precision follows magnitude; a fixed 2dp renders real mainnet sums as zero. */
+const bnb = (wei: string) => {
+  const n = Number(BigInt(wei)) / 1e18;
+  if (n === 0) return "0";
+  const places = n >= 100 ? 1 : n >= 1 ? 2 : n >= 0.01 ? 3 : n >= 0.0001 ? 5 : 7;
+  return n.toFixed(places);
+};
 const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 const pct = (bps: number) => `${bps > 0 ? "+" : ""}${(bps / 100).toFixed(2)}%`;
 

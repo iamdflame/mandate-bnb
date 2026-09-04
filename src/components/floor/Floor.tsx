@@ -29,7 +29,21 @@ const CATEGORY_NAMES = [
 const STATE_NAMES = ["Open", "Active", "Closed", "Abandoned"];
 const ZERO = "0x0000000000000000000000000000000000000000";
 
-const bnb = (wei: string, dp = 3) => (Number(BigInt(wei)) / 1e18).toFixed(dp);
+/**
+ * Formats wei with enough precision to be worth reading.
+ *
+ * A fixed 2-3 places renders every real mainnet amount as "0.00": a mandate of
+ * 0.0025 BNB is a genuine position, not zero. Precision therefore follows
+ * magnitude, so small real balances stay legible without giving large ones a
+ * meaningless tail.
+ */
+const bnb = (wei: string, dp?: number) => {
+  const n = Number(BigInt(wei)) / 1e18;
+  if (dp !== undefined) return n.toFixed(dp);
+  if (n === 0) return "0";
+  const places = n >= 100 ? 1 : n >= 1 ? 2 : n >= 0.01 ? 3 : n >= 0.0001 ? 5 : 7;
+  return n.toFixed(places);
+};
 const short = (a: string) => (a && a !== ZERO ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—");
 const pct = (bps: number) => `${bps > 0 ? "+" : ""}${(bps / 100).toFixed(2)}%`;
 
@@ -220,7 +234,7 @@ export default function Floor({ initial }: { initial: FloorSnapshot | null }) {
               aria-label={`Mandate ${m.id}, ${CATEGORY_NAMES[m.category]}, ${bnb(m.capitalWei)} BNB`}
             >
               <span style={{ display: "block", fontSize: 13, letterSpacing: "-0.02em" }}>
-                {bnb(m.capitalWei, 2)}
+                {bnb(m.capitalWei)}
               </span>
               <span
                 className="label"
@@ -336,8 +350,8 @@ export default function Floor({ initial }: { initial: FloorSnapshot | null }) {
             paddingTop: "0.85rem",
           }}
         >
-          <Figure label="under mandate" value={`${bnb(totals?.underMandate ?? "0", 2)} BNB`} />
-          <Figure label="bonded by agents" value={`${bnb(totals?.bonded ?? "0", 2)} BNB`} accent />
+          <Figure label="under mandate" value={`${bnb(totals?.underMandate ?? "0")} BNB`} />
+          <Figure label="bonded by agents" value={`${bnb(totals?.bonded ?? "0")} BNB`} accent />
           <Figure label="mandates active" value={String(totals?.active ?? 0)} />
           <Figure
             label="contract"
