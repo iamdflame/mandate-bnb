@@ -104,6 +104,12 @@ export const CATEGORY_EVIDENCE: Record<Category, readonly string[]> = {
   "yield-optimisation": [
     PROTOCOLS.pancakeMasterChefV3,
     PROTOCOLS.venusComptroller,
+    // vBNB was missing while the category granted calls on it, so those calls
+    // could never be earned: `granted ⊆ proven` intersects the category's
+    // calls with the protocols its evidence list looks for, and a target
+    // absent from the evidence is permanently unprovable. Enforced now by
+    // contracts/../config.test — every granted target must be searchable.
+    PROTOCOLS.venusVBNB,
     PROTOCOLS.aaveV3Pool,
   ],
   "health-factor": [

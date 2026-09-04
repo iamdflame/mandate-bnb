@@ -46,6 +46,16 @@ const ROUTER_ABI = parseAbi([
   "function multicall(uint256 deadline, bytes[] data) payable returns (bytes[] results)",
 ]);
 
+/**
+ * Venus, for the yield and health-factor categories.
+ *
+ * vBNB itself emits nothing in an ordinary window — measured, zero logs across
+ * 4,000 blocks — but the Comptroller emits a supplier-indexed distribution
+ * event on every mint, which is what the capability scan actually sees.
+ */
+const VBNB = "0xA07c5b74C9B40447a954e1466938b865b6BBea36" as const;
+const VBNB_ABI = parseAbi(["function mint() payable"]);
+
 const category = (process.argv[2] ?? "grid-trading") as Category;
 const AMOUNT = parseEther(process.env.EARN_AMOUNT ?? "0.0004");
 
@@ -65,10 +75,12 @@ if (!isRefused(before)) {
   process.exit(0);
 }
 
-if (category !== "grid-trading") {
-  console.error(`\n  only grid-trading is wired here; it needs one V3 router swap.\n`);
+if (category !== "grid-trading" && category !== "yield-optimisation" && category !== "health-factor") {
+  console.error(`\n  ${category} is not wired here yet.\n`);
   process.exit(1);
 }
+
+const viaVenus = category === "yield-optimisation" || category === "health-factor";
 
 // Top the agent up if it cannot cover the swap and its gas.
 const gasPrice = await marketClient.getGasPrice();
@@ -86,6 +98,45 @@ if (balance < need) {
   await marketClient.waitForTransactionReceipt({ hash: h });
   balance = await marketClient.getBalance({ address: ME });
   console.log(`  agent balance ${formatEther(balance)} BNB`);
+}
+
+if (viaVenus) {
+  console.log(`\n  supplying ${formatEther(AMOUNT)} BNB to Venus vBNB`);
+  try {
+    await marketClient.simulateContract({
+      address: VBNB,
+      abi: VBNB_ABI,
+      functionName: "mint",
+      value: AMOUNT,
+      account: agent.account!,
+    });
+  } catch (e) {
+    console.error(`\n  simulation reverted, nothing sent:\n  ${String(e).slice(0, 220)}\n`);
+    process.exit(1);
+  }
+  const h = await agent.writeContract({
+    address: VBNB,
+    abi: VBNB_ABI,
+    functionName: "mint",
+    value: AMOUNT,
+    chain: marketChain,
+    account: agent.account!,
+  });
+  const rr = await marketClient.waitForTransactionReceipt({ hash: h });
+  console.log(`  ${rr.status === "success" ? "supplied" : "REVERTED"}  https://bscscan.com/tx/${h}`);
+  if (rr.status !== "success") process.exit(1);
+
+  console.log(`\n  re-deriving scope from the chain…`);
+  const now = await scopeFromChain(ME as Address, category);
+  if (isRefused(now)) {
+    console.log(`  after    still refused — ${now.reason}`);
+    console.log(`  (the log index may not have caught up; re-run in a moment)\n`);
+    process.exit(3);
+  }
+  console.log(`  after    ${now.rationale}`);
+  for (const c of now.calls) console.log(`    ${c.to}  ${c.signature}`);
+  console.log();
+  process.exit(0);
 }
 
 const deadline = BigInt(Math.floor(Date.now() / 1000) + 900);

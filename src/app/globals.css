@@ -1470,3 +1470,5 @@ a {
 .auth-revoke:hover:not(:disabled) { background: var(--gold-deep); color: var(--paper); }
 .auth-revoke:disabled { opacity: 0.5; cursor: default; }
 .auth-note { font-size: 0.82rem; line-height: 1.6; margin-top: 1.5rem; padding: 0.8rem 1rem; background: var(--ink-06); border-left: 2px solid var(--gold-deep); }
+.auth-revoked { font-size: 0.8rem; line-height: 1.55; color: var(--ink-45); margin: 0 0 0.75rem; padding-left: 0.8rem; border-left: 2px solid var(--gold-deep); }
+.auth-revoked a { color: var(--gold-deep); }

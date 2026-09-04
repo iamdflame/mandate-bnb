@@ -29,7 +29,7 @@ import {
 import { CATEGORY_LABEL, type Category } from "@/lib/config";
 // Type-only, so the mutual reference with scope.ts is erased at runtime.
 import type { ProvenScope } from "./scope";
-import { logClients, marketClient } from "./market";
+import { logClients, marketClient, MARKET_ADDRESS } from "./market";
 
 /**
  * Two homes, because a session has a secret half and a public half.
@@ -159,6 +159,16 @@ export interface GrantOptions {
 }
 
 export interface GrantedSession {
+  /**
+   * The market the mandate id refers to.
+   *
+   * Sessions were keyed by mandate id alone, and a mandate id is only unique
+   * within one deployment. Running the keeper against a superseded contract
+   * matched its "mandate 2" to the live market's mandate 2 and revoked a
+   * registered session that had nothing to do with the dismissal. An id
+   * without its contract is not an identifier.
+   */
+  market: string;
   mandateId: number;
   category: Category;
   /** The session key's public address — this is what signs the agent's trades. */
@@ -192,6 +202,17 @@ export interface GrantedSession {
   provenProtocols?: string[];
   scopeRationale?: string;
   grantedAt: string;
+  /**
+   * Why the session ended.
+   *
+   * Revocation and dismissal were described as the same act and were two
+   * separate things: the contract removed an agent from a mandate and the
+   * key it held stayed live. A fired agent with working credentials is not a
+   * fired agent. The keeper closes that, and this records which dismissal
+   * caused which revocation so the pair can be checked rather than asserted.
+   */
+  revokedBecause?: string;
+  dismissalTx?: string;
 }
 
 /**
@@ -290,6 +311,7 @@ export async function grantMandateSession(opts: GrantOptions): Promise<GrantedSe
       : null;
 
   const granted: GrantedSession = {
+    market: MARKET_ADDRESS,
     mandateId: opts.mandateId,
     category: opts.scope.category,
     // publicKey is the on-chain identifier, and what revocation is keyed on.
@@ -324,7 +346,10 @@ export async function grantMandateSession(opts: GrantOptions): Promise<GrantedSe
  * from the mandate, and this removes its ability to act at all. Doing only the
  * first would leave a fired agent still holding a live key.
  */
-export async function revokeMandateSession(mandateId: number): Promise<void> {
+export async function revokeMandateSession(
+  mandateId: number,
+  cause?: { because: string; dismissalTx?: string },
+): Promise<void> {
   const admin = adminProvider();
   const stored = loadRaw(mandateId);
   if (!stored) throw new Error(`no session on file for mandate ${mandateId}`);
@@ -333,7 +358,11 @@ export async function revokeMandateSession(mandateId: number): Promise<void> {
 
   const meta = loadMeta(mandateId);
   if (meta) {
-    const revoked = { ...meta, revokedAt: new Date().toISOString() };
+    const revoked = {
+      ...meta,
+      revokedAt: new Date().toISOString(),
+      ...(cause ? { revokedBecause: cause.because, dismissalTx: cause.dismissalTx } : {}),
+    };
     writeFileSync(metaPath(mandateId), JSON.stringify(revoked, null, 2));
     writePublic(mandateId, revoked);
   }

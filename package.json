@@ -35,7 +35,9 @@
     "prove-session": "tsx --env-file=.env --env-file=.env.local src/scripts/prove-session-scope.ts",
     "greenfield": "tsx --env-file=.env --env-file=.env.local src/scripts/greenfield.ts",
     "earn-capability": "tsx --env-file=.env --env-file=.env.local src/scripts/earn-capability.ts",
-    "scope-audit": "tsx --env-file=.env --env-file=.env.local src/scripts/scope-audit.ts"
+    "scope-audit": "tsx --env-file=.env --env-file=.env.local src/scripts/scope-audit.ts",
+    "keeper": "tsx --env-file=.env --env-file=.env.local src/scripts/keeper.ts",
+    "check:config": "tsx src/lib/config.check.ts"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",

@@ -33,6 +33,9 @@ export async function GET() {
       scopeRationale: s.scopeRationale ?? null,
       grantedAt: s.grantedAt,
       revokedAt: s.revokedAt ?? null,
+      revokedBecause: s.revokedBecause ?? null,
+      dismissalTx: s.dismissalTx ?? null,
+      market: s.market ?? null,
     }))
     .sort((a, b) => a.mandateId - b.mandateId);
 

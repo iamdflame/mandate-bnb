@@ -28,6 +28,8 @@ interface Session {
   scopeRationale: string | null;
   grantedAt: string;
   revokedAt: string | null;
+  revokedBecause: string | null;
+  dismissalTx: string | null;
 }
 
 const short = (a: string) => `${a.slice(0, 10)}…${a.slice(-6)}`;
@@ -169,6 +171,21 @@ export default function Authority({ explorer }: { explorer: string }) {
                 </div>
               ) : null}
             </div>
+
+            {s.revokedAt ? (
+              <p className="auth-revoked">
+                Revoked {new Date(s.revokedAt).toISOString().slice(0, 16).replace("T", " ")} UTC
+                {s.revokedBecause ? ` — ${s.revokedBecause}` : ""}
+                {s.dismissalTx ? (
+                  <>
+                    {" · "}
+                    <a href={`${explorer}/tx/${s.dismissalTx}`} rel="noreferrer">
+                      the dismissal that caused it
+                    </a>
+                  </>
+                ) : null}
+              </p>
+            ) : null}
 
             {s.registrationTx ? (
               <p className="au-foot">

@@ -21,7 +21,8 @@
     "registrationTx": "0x8fdeed048f624dcd4aa724d8de0ccf5de2714dc6fc973f59fef4f7aaad8a2dd4",
     "registrationBlock": 119946731,
     "registrationKeyHash": "0xde642e11eee27f02114b2bddc51f549d5cb0d53f72b433edc0247b83041ccfb5",
-    "registrationMatch": "by position in the account's authorisation sequence, not by key"
+    "registrationMatch": "by position in the account's authorisation sequence, not by key",
+    "market": "0xeD331c44183EFF1e8eDc31f6C60AfDA187681544"
   },
   "1": {
     "mandateId": 1,
@@ -51,21 +52,22 @@
         "signature": "collect((uint256,address,uint128,uint128))"
       }
     ],
-    "grantedAt": "2026-09-04T16:04:09.946Z"
+    "grantedAt": "2026-09-04T16:04:09.946Z",
+    "market": "0xeD331c44183EFF1e8eDc31f6C60AfDA187681544"
   },
   "2": {
+    "market": "0xeD331c44183EFF1e8eDc31f6C60AfDA187681544",
     "mandateId": 2,
     "category": "yield-optimisation",
-    "sessionKey": "0x0416bf3506308c5bcda164340195ab57c5626733bd931f9583ba4746eabdcfa75536d50ca9a941437ff1c1f553c1e8f6f15643b9813a8668f0109da58057bfbd39",
+    "sessionKey": "0x04941d7e64f0245d9694f0a9545ba8e2e486c15e42d6fbfef2ba67475362a3eff403187a474539554c33ed9a271a78648a47afd465d036d4f86e6241268f076fd9",
     "walletAddress": "0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90",
     "capWei": "300000000000000",
-    "expiry": 1788624255,
+    "expiry": 1788634616,
     "registered": true,
+    "registrationTx": "0x1e92b3f1b1447510af49e17e9d047fc103025a03a14be0dbb9ce8d3700753eb4",
+    "registrationBlock": 119970457,
+    "registrationKeyHash": "0x9e2be2b1f28bb2ce2a03c3272578abf59339bc7cba1fdd29acd700b702f12f59",
     "allowlist": [
-      {
-        "to": "0x556b9306565093c855aea9ae92a594704c2cd59e",
-        "signature": "harvest(uint256,address)"
-      },
       {
         "to": "0xa07c5b74c9b40447a954e1466938b865b6bbea36",
         "signature": "mint()"
@@ -75,11 +77,19 @@
         "signature": "redeemUnderlying(uint256)"
       }
     ],
-    "grantedAt": "2026-09-04T16:04:41.566Z",
-    "registrationTx": "0xece8192dfd4e493a198da7c401d72f3c2e5d868a098f1dfa6ad6e79ceda948b9",
-    "registrationBlock": 119947439,
-    "registrationKeyHash": "0x9959d53810ac3264100b31d24b4585bc1936350d6ff51fae338478143c0b65a3",
-    "registrationMatch": "by position in the account's authorisation sequence, not by key"
+    "withheld": [
+      {
+        "to": "0x556b9306565093c855aea9ae92a594704c2cd59e",
+        "signature": "harvest(uint256,address)",
+        "because": "no interaction with PancakeSwap MasterChef V3 in 120,000 blocks"
+      }
+    ],
+    "provenProtocols": [
+      "0xfd36e2c2a6789db23113685031d7f16329158384",
+      "0xa07c5b74c9b40447a954e1466938b865b6bbea36"
+    ],
+    "scopeRationale": "2 of 3 Yield Optimisation calls granted, on Venus vBNB; 1 withheld because the chain has not shown this agent using PancakeSwap MasterChef V3",
+    "grantedAt": "2026-09-04T18:57:22.045Z"
   },
   "3": {
     "mandateId": 3,
@@ -105,6 +115,7 @@
         "signature": "enterMarkets(address[])"
       }
     ],
-    "grantedAt": "2026-09-04T16:05:10.707Z"
+    "grantedAt": "2026-09-04T16:05:10.707Z",
+    "market": "0xeD331c44183EFF1e8eDc31f6C60AfDA187681544"
   }
 }
