@@ -25,7 +25,8 @@
     "adjudicator": "tsx src/scripts/adjudicator.ts",
     "index": "tsx src/scripts/index-agents.ts",
     "agent": "tsx src/agents/run.ts",
-    "settle": "tsx src/scripts/settle.ts"
+    "settle": "tsx src/scripts/settle.ts",
+    "grant": "tsx src/scripts/grant.ts"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",
