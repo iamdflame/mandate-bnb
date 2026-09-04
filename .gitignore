@@ -23,3 +23,6 @@ contracts/broadcast/
 
 # granted session keys — key material
 .sessions/
+
+# agent strategy state
+.agent-state/
