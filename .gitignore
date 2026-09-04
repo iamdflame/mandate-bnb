@@ -9,3 +9,10 @@ next-env.d.ts
 .vercel
 .DS_Store
 /drizzle/meta
+
+# Foundry
+contracts/out/
+contracts/cache/
+contracts/lib/
+contracts/broadcast/
+.env.local
