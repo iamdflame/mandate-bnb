@@ -7,7 +7,22 @@ against what was settled.
 npx mandate-verify --mandate 0 --chain 56
 ```
 
-Exits `0` only if every check passes. Any mismatch exits `1`.
+| Exit | Meaning |
+|---:|---|
+| `0` | every check passed |
+| `1` | a real mismatch — the settled numbers disagree with the committed ones |
+| `3` | **inconclusive** — no node would serve the evidence |
+
+The third one matters. Most public BSC endpoints refuse `eth_getLogs` over any
+real range, and which ones refuse *changes*: `publicnode` served these queries
+happily and now answers `Archive requests require a personal token` for
+anything a few hours old. An earlier build swallowed that refusal and reported
+a perfectly sound mainnet mandate as **FAILED**.
+
+So this tries a list of endpoints, and a window that every one of them refuses
+is recorded as a gap rather than as an empty result. A missing log and an
+unreadable log are not the same claim, and only one of them is about the
+mandate.
 
 ---
 

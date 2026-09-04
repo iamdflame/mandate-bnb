@@ -53,9 +53,28 @@ export const DEFAULT_MARKET: Record<number, Address> = {
   56: "0xeD331c44183EFF1e8eDc31f6C60AfDA187681544",
 };
 
+/**
+ * Read endpoints, tried in order.
+ *
+ * Most public BSC nodes refuse `eth_getLogs` over any real range, and the ones
+ * that serve it change: publicnode answered these queries happily and now
+ * returns "Archive requests require a personal token" for anything a few hours
+ * old. So there is a list rather than an endpoint, and — more importantly — a
+ * provider that refuses is never allowed to look like an empty answer.
+ */
+export const DEFAULT_RPCS: Record<number, string[]> = {
+  56: [
+    "https://bsc.rpc.blxrbdn.com",
+    "https://bsc-dataseed1.binance.org",
+    "https://bsc.blockrazor.xyz",
+    "https://bsc-rpc.publicnode.com",
+  ],
+  97: ["https://bsc-testnet-rpc.publicnode.com", "https://bsc-testnet.public.blastapi.io"],
+};
+
 export const DEFAULT_RPC: Record<number, string> = {
-  56: "https://bsc-rpc.publicnode.com",
-  97: "https://bsc-testnet-rpc.publicnode.com",
+  56: DEFAULT_RPCS[56]![0]!,
+  97: DEFAULT_RPCS[97]![0]!,
 };
 
 export interface Observation {
@@ -110,7 +129,11 @@ export interface VerifyResult {
   tier: Tier;
   ok: boolean;
   failures: string[];
+  /** Things that could not be checked, as distinct from things that failed. */
+  unresolved: string[];
   scanned: { fromBlock: bigint; toBlock: bigint };
+  logGaps: number;
+  logWindows: number;
   notes: string[];
 }
 
@@ -143,8 +166,14 @@ export const alphaFrom = (previousWei: bigint, nowWei: bigint): bigint =>
 
 export function makeClient(chainId: number, rpc?: string): PublicClient {
   const chain = chainId === 97 ? bscTestnet : bsc;
-  const url = rpc ?? DEFAULT_RPC[chainId] ?? DEFAULT_RPC[56];
+  const url = rpc ?? DEFAULT_RPC[chainId] ?? DEFAULT_RPC[56]!;
   return createPublicClient({ chain, transport: http(url, { timeout: 30_000, retryCount: 2 }) });
+}
+
+/** Every endpoint worth trying for logs, caller's choice first. */
+export function makeClients(chainId: number, rpc?: string): PublicClient[] {
+  const urls = [rpc, ...(DEFAULT_RPCS[chainId] ?? DEFAULT_RPCS[56]!)].filter(Boolean) as string[];
+  return [...new Set(urls)].map((u) => makeClient(chainId, u));
 }
 
 const abs = (v: bigint) => (v < 0n ? -v : v);
@@ -214,51 +243,83 @@ async function readAttestation(
  * block to a little past the last — so nothing has to be configured and the
  * scan stays small however old the market gets.
  */
+/**
+ * One log window, across every provider until one answers.
+ *
+ * Returns null when they all refuse. That distinction is the whole point: an
+ * empty array means "this range contains no such event", and null means "no
+ * node would tell me". Collapsing the second into the first is how a verifier
+ * reports a sound mandate as broken, which this did until a provider started
+ * charging for log history.
+ */
+async function windowLogs(
+  clients: PublicClient[],
+  market: Address,
+  event: typeof OBSERVED | typeof SETTLED,
+  mandateId: number,
+  from: bigint,
+  to: bigint,
+): Promise<unknown[] | null> {
+  let refusals = 0;
+  for (const client of clients) {
+    try {
+      return (await client.getLogs({
+        address: market,
+        event: event as never,
+        args: { mandateId: BigInt(mandateId) } as never,
+        fromBlock: from,
+        toBlock: to,
+      })) as unknown[];
+    } catch {
+      refusals++;
+    }
+  }
+  return refusals === clients.length ? null : [];
+}
+
 async function collectLogs(
-  client: PublicClient,
+  clients: PublicClient[],
   market: Address,
   mandateId: number,
   from: bigint,
   to: bigint,
-): Promise<{ observed: Map<number, Observation>; settled: Map<number, bigint>; scanned: [bigint, bigint] }> {
+): Promise<{
+  observed: Map<number, Observation>;
+  settled: Map<number, bigint>;
+  scanned: [bigint, bigint];
+  /** Windows no provider would serve. Any gap makes a missing log unprovable. */
+  gaps: number;
+  windows: number;
+}> {
   const observed = new Map<number, Observation>();
   const settled = new Map<number, bigint>();
   // Public providers cap log ranges, so the window is walked rather than asked for whole.
   const span = 4_000n;
+  let gaps = 0;
+  let windows = 0;
   for (let cursor = from; cursor <= to; cursor += span) {
     const end = cursor + span - 1n > to ? to : cursor + span - 1n;
+    windows++;
     const [obs, set] = await Promise.all([
-      client
-        .getLogs({
-          address: market,
-          event: OBSERVED,
-          args: { mandateId: BigInt(mandateId) },
-          fromBlock: cursor,
-          toBlock: end,
-        })
-        .catch(() => []),
-      client
-        .getLogs({
-          address: market,
-          event: SETTLED,
-          args: { mandateId: BigInt(mandateId) },
-          fromBlock: cursor,
-          toBlock: end,
-        })
-        .catch(() => []),
+      windowLogs(clients, market, OBSERVED, mandateId, cursor, end),
+      windowLogs(clients, market, SETTLED, mandateId, cursor, end),
     ]);
+    if (obs === null || set === null) {
+      gaps++;
+      continue;
+    }
     for (const l of obs) {
-      const a = l.args as { epoch?: number; observation?: Observation };
+      const a = (l as { args: { epoch?: number; observation?: Observation } }).args;
       if (a.epoch === undefined || !a.observation) continue;
       observed.set(Number(a.epoch), a.observation);
     }
     for (const l of set) {
-      const a = l.args as { epoch?: number; realizedAlphaBps?: bigint };
+      const a = (l as { args: { epoch?: number; realizedAlphaBps?: bigint } }).args;
       if (a.epoch === undefined || a.realizedAlphaBps === undefined) continue;
       settled.set(Number(a.epoch), a.realizedAlphaBps);
     }
   }
-  return { observed, settled, scanned: [from, to] };
+  return { observed, settled, scanned: [from, to], gaps, windows };
 }
 
 export interface VerifyOptions {
@@ -278,8 +339,10 @@ export async function verifyMandate(opts: VerifyOptions): Promise<VerifyResult> 
   if (!market) throw new Error(`no known market on chain ${chainId}; pass --market`);
 
   const client = makeClient(chainId, opts.rpc);
+  const logReaders = makeClients(chainId, opts.rpc);
   const archiveClient = opts.archive ? makeClient(chainId, opts.archive) : null;
   const failures: string[] = [];
+  const unresolved: string[] = [];
   const notes: string[] = [];
 
   const count = (await client.readContract({
@@ -315,8 +378,8 @@ export async function verifyMandate(opts: VerifyOptions): Promise<VerifyResult> 
     ? min(blocks.reduce((a, b) => (a > b ? a : b)) + margin, head)
     : head;
 
-  const { observed, settled, scanned } = await collectLogs(
-    client,
+  const { observed, settled, scanned, gaps, windows } = await collectLogs(
+    logReaders,
     market,
     opts.mandateId,
     from < 0n ? 0n : from,
@@ -337,6 +400,11 @@ export async function verifyMandate(opts: VerifyOptions): Promise<VerifyResult> 
         obs ? `emitted in an Observed log at block ${obs.blockNumber}` : "not found in the logs",
       ),
     );
+    if (!obs && gaps > 0) {
+      unresolved.push(
+        `opening: no provider would serve ${gaps} of ${windows} log windows, so a missing preimage cannot be told from an unreadable one`,
+      );
+    }
     if (obs) {
       const h = hashObservation(obs);
       checks.push(
@@ -361,7 +429,13 @@ export async function verifyMandate(opts: VerifyOptions): Promise<VerifyResult> 
         ),
       );
     }
-    for (const c of checks) if (!c.ok) failures.push(`opening: ${c.name} — ${c.detail}`);
+    for (const c of checks) {
+      if (c.ok) continue;
+      // A check that failed only because the logs were unreadable is not a
+      // finding about the mandate.
+      if (!obs && gaps > 0) continue;
+      failures.push(`opening: ${c.name} — ${c.detail}`);
+    }
     opening = { attestation: openAtt, observation: obs, checks };
   }
 
@@ -447,7 +521,17 @@ export async function verifyMandate(opts: VerifyOptions): Promise<VerifyResult> 
       }
     }
 
-    for (const c of checks) if (!c.ok) failures.push(`epoch ${e}: ${c.name} — ${c.detail}`);
+    const blindHere = (!obs || settledAlpha === null) && gaps > 0;
+    if (blindHere) {
+      unresolved.push(
+        `epoch ${e}: ${gaps} of ${windows} log windows were refused by every provider, so this epoch could not be checked`,
+      );
+    }
+    for (const c of checks) {
+      if (c.ok) continue;
+      if (blindHere) continue;
+      failures.push(`epoch ${e}: ${c.name} — ${c.detail}`);
+    }
     if (tier < weakest) weakest = tier;
 
     epochs.push({
@@ -481,9 +565,12 @@ export async function verifyMandate(opts: VerifyOptions): Promise<VerifyResult> 
     opening,
     epochs,
     tier: weakest,
-    ok: failures.length === 0,
+    ok: failures.length === 0 && unresolved.length === 0,
     failures,
+    unresolved,
     scanned: { fromBlock: scanned[0], toBlock: scanned[1] },
+    logGaps: gaps,
+    logWindows: windows,
     notes,
   };
 }

@@ -18,6 +18,27 @@ const srcDir = join(root, "src");
 
 /** The only third-party code allowed to reach the verification path. */
 const ALLOWED = new Set(["viem", "viem/chains", "viem/utils", "viem/accounts"]);
+
+/**
+ * Hosts this package may talk to: public BSC RPC endpoints, and nothing else.
+ *
+ * An explicit list rather than a prefix pattern. The pattern version allowed
+ * anything beginning "bsc-" and rejected "bsc.rpc.blxrbdn.com", which is both
+ * too loose and too tight — it would have waved through a lookalike domain
+ * while blocking a real node.
+ */
+const ALLOWED_HOSTS = new Set([
+  "bsc.rpc.blxrbdn.com",
+  "bsc-dataseed1.binance.org",
+  "bsc.blockrazor.xyz",
+  "bsc-rpc.publicnode.com",
+  "bsc-testnet-rpc.publicnode.com",
+  "bsc-testnet.public.blastapi.io",
+  "bscscan.com",
+  "www.npmjs.com",
+  "github.com",
+]);
+const HOST_RE = /https?:\/\/([a-z0-9.-]+)/gi;
 const BUILTINS = new Set([...builtinModules, ...builtinModules.map((m) => `node:${m}`)]);
 
 const files = [];
@@ -56,11 +77,21 @@ for (const file of files) {
   for (const [pattern, why] of [
     [/process\.env\.(?!NO_COLOR\b)[A-Z_]+/g, "reads an environment variable the operator controls"],
     [/\bfs\.|readFileSync|writeFileSync/g, "touches the filesystem"],
-    [/https?:\/\/(?!bsc-|1rpc|binance|bscscan)/g, "contacts a host that is not a public BSC node"],
+    [HOST_RE, "contacts a host that is not on the public-BSC-node allowlist"],
   ]) {
     pattern.lastIndex = 0;
     let m;
-    while ((m = pattern.exec(source))) violations.push(`${rel}: ${why} — "${m[0]}"`);
+    while ((m = pattern.exec(source))) {
+      // Host checks compare the captured hostname against the allowlist;
+      // everything else is a violation on sight.
+      if (pattern === HOST_RE) {
+        const host = (m[1] ?? "").toLowerCase();
+        if (ALLOWED_HOSTS.has(host)) continue;
+        violations.push(`${rel}: ${why} — "${host}"`);
+        continue;
+      }
+      violations.push(`${rel}: ${why} — "${m[0]}"`);
+    }
   }
 }
 

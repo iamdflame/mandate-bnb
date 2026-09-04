@@ -140,12 +140,27 @@ function render(r: VerifyResult): void {
   for (const n of r.notes) console.log(`\n  ${yellow("note")}  ${n}`);
 
   console.log();
-  if (r.ok) {
-    console.log(`  ${green(bold(`VERIFIED (tier ${r.tier})`))}`);
-    console.log(dim(`  ${explainTier(r.tier)}`));
-  } else {
+  if (r.failures.length > 0) {
     console.log(`  ${red(bold("FAILED"))}`);
     for (const f of r.failures) console.log(`    ${red("·")} ${f}`);
+    if (r.unresolved.length) {
+      console.log(`  ${yellow("and could not be checked at all:")}`);
+      for (const u of r.unresolved) console.log(`    ${yellow("·")} ${u}`);
+    }
+  } else if (r.unresolved.length > 0) {
+    // Not verified, and not a finding against the mandate either.
+    console.log(`  ${yellow(bold("INCONCLUSIVE"))}`);
+    for (const u of r.unresolved) console.log(`    ${yellow("·")} ${u}`);
+    console.log(
+      dim(
+        `\n  Nothing here says the mandate is wrong. It says no node would serve\n` +
+          `  the evidence. Pass --rpc <url> with a provider that answers eth_getLogs\n` +
+          `  over a range, or --archive <url> for older epochs.`,
+      ),
+    );
+  } else {
+    console.log(`  ${green(bold(`VERIFIED (tier ${r.tier})`))}`);
+    console.log(dim(`  ${explainTier(r.tier)}`));
   }
   console.log();
 }
@@ -263,7 +278,10 @@ async function main() {
   let tamperOk = true;
   if (a.tamper && !a.json) tamperOk = tamperTest(r);
 
-  process.exit(r.ok && tamperOk ? 0 : 1);
+  // 0 verified · 1 a real mismatch · 3 nothing could be read. Conflating the
+  // last two would let a broken RPC look like a broken mandate.
+  if (r.failures.length > 0 || !tamperOk) process.exit(1);
+  process.exit(r.unresolved.length > 0 ? 3 : 0);
 }
 
 main().catch((e) => fail(e instanceof Error ? e.message : String(e)));
