@@ -87,6 +87,43 @@ contract MandateMarket is ReentrancyGuard, Ownable {
         bool spent; // promoted to holder, or withdrawn
     }
 
+    /**
+     * @notice A measurement of a managed wallet, committed on chain.
+     *
+     * The number that decides every slash used to live in a JSON file on the
+     * operator's machine — an unverifiable assertion, in a product built to
+     * punish unverifiable assertions. An observation is that measurement made
+     * public and pinned: the wallet, the block it was read at, what it was
+     * worth, the pool price used to value it, and the gas spent getting there.
+     *
+     * The struct is emitted whole in an event and its hash is stored, so a
+     * third party needs nothing from us to check the arithmetic — and, at a
+     * recent enough block, can re-read the same state and derive it again.
+     */
+    struct Observation {
+        address wallet;
+        /// @notice Wallet value in wei, BNB-denominated.
+        uint96 valuationWei;
+        /// @notice Gas the agent spent over the epoch. Included so alpha is net.
+        uint96 gasSpentWei;
+        /// @notice Pool sqrtPriceX96 the valuation used.
+        uint160 priceX96;
+        /// @notice The BSC block this was read at. Pins re-derivation.
+        uint64 blockNumber;
+        /// @notice Greenfield object holding the full per-token breakdown.
+        bytes32 breakdownRef;
+    }
+
+    /// @notice The commitment kept on chain for an observation.
+    struct Attestation {
+        bytes32 observationHash;
+        /// @dev Kept alongside the hash so the contract can check the reported
+        ///      alpha against consecutive measurements without the preimage.
+        uint96 valuationWei;
+        uint64 blockNumber;
+        uint64 takenAt;
+    }
+
     /// @notice A slash held through the challenge window before the principal may claim it.
     struct PendingSlash {
         uint96 amount;
@@ -141,6 +178,11 @@ contract MandateMarket is ReentrancyGuard, Ownable {
     mapping(uint256 => mapping(uint32 => PendingSlash)) public pendingSlash;
     /// @notice Pull-payment balances.
     mapping(address => uint256) public withdrawable;
+    /// @notice The opening measurement a mandate is settled against.
+    mapping(uint256 => Attestation) public openAttestation;
+    /// @notice Per-epoch measurements. Alpha is a ratio of consecutive entries.
+    mapping(uint256 => mapping(uint32 => Attestation)) public epochAttestation;
+
     /// @notice Assayed fineness per agent, 0-1000, published by the adjudicator.
     mapping(address => uint16) public fineness;
     /// @notice When that assay was published, so staleness is visible on chain.
@@ -165,6 +207,19 @@ contract MandateMarket is ReentrancyGuard, Ownable {
         int256 realizedAlphaBps,
         uint96 feePaid,
         uint96 slashed
+    );
+    /**
+     * @notice The full measurement, in the log, not merely its hash.
+     *
+     * Emitting the preimage means verification needs no external service: the
+     * numbers are on chain, and the hash stored beside them proves they are
+     * the ones that were committed to.
+     */
+    event Observed(
+        uint256 indexed mandateId,
+        uint32 indexed epoch,
+        bytes32 observationHash,
+        Observation observation
     );
     event AgentDismissed(uint256 indexed mandateId, address indexed agent, string reason);
     event SlashContested(uint256 indexed mandateId, uint32 indexed epoch, address indexed agent);
@@ -195,6 +250,9 @@ contract MandateMarket is ReentrancyGuard, Ownable {
     error AlreadyResolved();
     error NotAssayed();
     error BelowFineness();
+    error NoOpeningAttestation();
+    error StaleObservation();
+    error AlphaContradictsObservation();
 
     modifier onlyAdjudicator() {
         if (msg.sender != adjudicator) revert NotAdjudicator();
@@ -255,12 +313,50 @@ contract MandateMarket is ReentrancyGuard, Ownable {
         emit MandateOpened(mandateId, msg.sender, category, uint96(msg.value), epochsTotal);
     }
 
-    /// @notice Awards an open mandate to one of its bidders. Losing bids remain queued.
-    function award(uint256 mandateId, uint256 bidIndex) external nonReentrant {
+    /**
+     * @notice Awards an open mandate, recording what the managed wallet was
+     *         worth at the moment authority passed.
+     *
+     * The opening measurement is required rather than optional. Without it
+     * there is no denominator, and an epoch settled against a benchmark that
+     * was written down afterwards is not a benchmark.
+     */
+    function award(uint256 mandateId, uint256 bidIndex, Observation calldata opening)
+        external
+        nonReentrant
+    {
         Mandate storage m = _mandates[mandateId];
         if (msg.sender != m.principal) revert NotPrincipal();
         if (m.state != State.Open) revert BadState();
+        // A measurement from a block that has not happened, or one too old to
+        // still describe the wallet, is not an opening balance.
+        if (opening.blockNumber > block.number || opening.valuationWei == 0) {
+            revert StaleObservation();
+        }
+
+        bytes32 h = hashObservation(opening);
+        openAttestation[mandateId] = Attestation({
+            observationHash: h,
+            valuationWei: opening.valuationWei,
+            blockNumber: opening.blockNumber,
+            takenAt: uint64(block.timestamp)
+        });
+        emit Observed(mandateId, type(uint32).max, h, opening);
+
         _award(mandateId, m, bidIndex);
+    }
+
+    /**
+     * @notice The commitment for an observation.
+     * @dev Public so a verifier can recompute it from the emitted preimage
+     *      using this contract's own definition rather than its own guess.
+     */
+    function hashObservation(Observation calldata o) public pure returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                o.wallet, o.valuationWei, o.gasSpentWei, o.priceX96, o.blockNumber, o.breakdownRef
+            )
+        );
     }
 
     /**
@@ -356,7 +452,7 @@ contract MandateMarket is ReentrancyGuard, Ownable {
      * @param realizedAlphaBps Performance against the benchmark, in bps.
      *        Positive beat it; negative trailed it.
      */
-    function settleEpoch(uint256 mandateId, int256 realizedAlphaBps)
+    function settleEpoch(uint256 mandateId, int256 realizedAlphaBps, Observation calldata obs)
         external
         onlyAdjudicator
         nonReentrant
@@ -371,6 +467,15 @@ contract MandateMarket is ReentrancyGuard, Ownable {
 
         uint32 epoch = m.epochsSettled;
         address agent = m.agent;
+
+        // The reported alpha must agree with the adjudicator's own measurements.
+        //
+        // This does not make the adjudicator trustworthy — it can still report a
+        // false valuation. It makes it *consistent*: it can no longer commit to
+        // two numbers and then report a third that they do not imply. The lie,
+        // if there is one, is now a public claim about wallet value at a named
+        // block, which anyone can check against the chain.
+        _requireAlphaMatchesObservations(mandateId, epoch, realizedAlphaBps, obs);
 
         m.epochsSettled = epoch + 1;
         m.lastSettledAt = uint64(block.timestamp);
@@ -433,6 +538,47 @@ contract MandateMarket is ReentrancyGuard, Ownable {
         } else if (m.bond == 0) {
             _dismiss(mandateId, m, "bond exhausted");
         }
+    }
+
+    /**
+     * @dev Stores the epoch measurement and rejects an alpha the measurements
+     *      do not imply.
+     *
+     * Alpha is the proportional change from the previous mark — the opening
+     * attestation for the first epoch, the prior epoch's thereafter. A single
+     * basis point of tolerance absorbs integer rounding; anything wider would
+     * be a place to hide a thumb on the scale.
+     */
+    function _requireAlphaMatchesObservations(
+        uint256 mandateId,
+        uint32 epoch,
+        int256 realizedAlphaBps,
+        Observation calldata obs
+    ) private {
+        if (obs.blockNumber > block.number || obs.valuationWei == 0) revert StaleObservation();
+
+        Attestation memory prev =
+            epoch == 0 ? openAttestation[mandateId] : epochAttestation[mandateId][epoch - 1];
+        if (prev.observationHash == bytes32(0) || prev.valuationWei == 0) {
+            revert NoOpeningAttestation();
+        }
+        // Measurements must move forward in block height, or an adjudicator
+        // could re-report an older, more flattering reading.
+        if (obs.blockNumber < prev.blockNumber) revert StaleObservation();
+
+        int256 expected = (int256(uint256(obs.valuationWei)) * int256(uint256(MAX_BPS)))
+            / int256(uint256(prev.valuationWei)) - int256(uint256(MAX_BPS));
+        int256 drift = realizedAlphaBps - expected;
+        if (drift > 1 || drift < -1) revert AlphaContradictsObservation();
+
+        bytes32 h = hashObservation(obs);
+        epochAttestation[mandateId][epoch] = Attestation({
+            observationHash: h,
+            valuationWei: obs.valuationWei,
+            blockNumber: obs.blockNumber,
+            takenAt: uint64(block.timestamp)
+        });
+        emit Observed(mandateId, epoch, h, obs);
     }
 
     /**
