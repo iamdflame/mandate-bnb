@@ -501,6 +501,42 @@ declared `agent_wallet` is byte-for-byte its owner's address.
 `/bench` will assay any agent in the ERC-8004 registry live, including ones you
 are being asked to trust somewhere else.
 
+## Writing back to the registry
+
+[`src/lib/chain/reputation.ts`](src/lib/chain/reputation.ts) · registry
+[`0x8004baa1…9b63`](https://bscscan.com/address/0x8004baa17c55a88189ae136b182e5fda19de9b63)
+
+Our own research says the ERC-8004 Reputation Registry is manufactured: 3,000
+records written by 32 wallets, 99% of them by the 14 that flag as a coordinated
+cohort. The easy response is to route around it and publish a better number
+somewhere else, which is what every other reader of this registry does.
+
+**We write back instead.** Every assay goes in as feedback anyone can reproduce
+from public chain state, so the registry gets more honest whether or not our
+front door is adopted — including for competitors reading the same data.
+
+```bash
+npm run writeback -- 2410
+```
+
+Six published so far. The first is the registry's own most-reviewed agent:
+
+| Agent | Registry says | Our assay |
+|---|---|---|
+| `2410` @binance · Ensoul | 84.7 from 100 feedbacks | **183/1000, base metal** — no endpoint, no custody separation |
+| `302257`, `302258` | — | 433/1000, 9 carat |
+| `7612`, `304493` | — | 405/1000, 9 carat |
+| `705` | — | 318/1000, base metal |
+
+Every record carries the tag `mandate-assay`, so a reader who does not trust us
+can filter all of ours out in one pass. That is deliberate: a contribution that
+cannot be excluded is not a contribution, it is noise.
+
+Neither the registry address nor its calldata shape is documented anywhere we
+could find. Both were recovered from the chain — a real feedback record's
+transaction named the contract, and its selector resolved to
+`giveFeedback(uint256,int128,uint8,string,string,string,string,bytes32)`.
+
 ## PancakeSwap
 
 [`docs/PANCAKESWAP.md`](docs/PANCAKESWAP.md)
