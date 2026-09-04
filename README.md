@@ -52,7 +52,7 @@ escrowed capital rather than paid out of a notional off-vault gain the contract
 does not hold — otherwise a fee credits a withdrawal with nothing behind it and
 drains another mandate's escrow. 21 tests pass, including a 256-run fuzz
 proving liabilities never exceed the balance under **any** sequence of reported
-alpha.
+alpha. 31 tests in total.
 
 Other properties the tests pin down:
 
@@ -72,6 +72,39 @@ derived on-chain, so an adjudicator reports it. That trust is bounded three
 ways — the adjudicator can never move capital to itself, slashes are escrowed
 before they can be claimed, and dismissals are contestable. The settlement
 oracle is the assay engine described below.
+
+## The gate
+
+A bond proves an agent has something to lose. It does not prove the agent can
+do the job — a wallet that has never sent a transaction can still post one.
+
+So `bid()` also requires an **assayed fineness** above the market's bar. The
+adjudicator publishes it on chain from an off-chain assay of the agent's
+registry claims against BSC: is the endpoint live, is custody actually
+separated, has the wallet ever transacted, has it ever touched the protocols
+its category implies.
+
+Run against real BSC agents and published on chain:
+
+| agent | fineness | | |
+|---|---:|---|---|
+| `304493` | **405** | hallmarked | endpoint verified |
+| `153776` | 133 | base metal | never sent a transaction |
+| `330536` | 318 | base metal | |
+| `325413` | 318 | base metal | |
+
+With the bar at 300, agent `153776` — the *"Epic-tier autonomous trading agent"*
+— reverts with `BelowFineness` and the running market logs a refusal on every
+mandate it tries to bid for. **At the principled bar of 375, the lowest
+hallmarkable grade, only one of the four qualifies at all.**
+
+Publishing an assay can admit or bar an agent but can never move capital, and
+standing is revocable: an agent that lets its endpoint die is demoted on the
+next sweep.
+
+```bash
+npm run adjudicator -- --demo
+```
 
 ## The floor
 
@@ -145,6 +178,7 @@ and the same script drives mainnet.
 | `npm run assay -- 153776` | Assays one agent in the terminal |
 | `npm run sybil` | Reproduces the reputation finding from live BSC |
 | `npm run funnel` | Today's three numbers |
+| `npm run adjudicator` | Assays agents and publishes fineness on chain |
 | `npm run contracts:test` | The contract suite |
 
 ### Configuration
