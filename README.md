@@ -239,6 +239,54 @@ next sweep.
 npm run adjudicator -- --demo
 ```
 
+## Bounded authority
+
+[`src/lib/chain/session.ts`](src/lib/chain/session.ts)
+
+A bond makes an agent accountable for outcomes. It does not make it incapable
+of anything outside its brief. That second half is an **ERC-8183 session key**
+via Altana: the principal keeps its own keys and hands the agent a scoped one
+carrying a spend cap no larger than the mandate's capital, an expiry that ends
+with the term, and a call allowlist bound to **target *and* selector**.
+
+Per-selector matters. An agent permitted to swap through the PancakeSwap V3
+router must not thereby be permitted to call `sweepToken` on it.
+
+```bash
+npm run prove-session
+```
+
+grants a throwaway session, attacks it, revokes it, and attacks it again —
+because a claim about what an agent *cannot* do is worth nothing unheld.
+
+```
+✓ 4. an out-of-scope target is refused          refused by policy — UnauthorizedCall
+✓ 5. the wrong selector on an allowed target    refused by policy — UnauthorizedCall
+✓ 7. revocation completes and is recorded
+? 6. a call above the spend cap is refused      inconclusive
+```
+
+**5 proven · 0 failed · 3 inconclusive.** The refusals that matter carry a
+named `UnauthorizedCall`, returned before any simulation. The inconclusive ones
+are inconclusive because Altana's relay answers every *simulated* call with
+`-32602: please assign a tracer` — its upstream node has none configured — so
+nothing reaches a policy decision and a refusal there cannot be credited to the
+cap.
+
+An earlier version of that script reported 7 of 8. It was wrong: it matched a
+regex over the whole error string, which embeds the request body, and the
+permission payload contains the word `limit`, so nearly any failure looked like
+a policy refusal. It was counting calls that failed for unrelated reasons as
+proof the cap held. Refusing for the wrong reason is indistinguishable from
+refusing for the right one unless you check, so refusals are now classified
+against a baseline and anything that fails the way an in-scope call fails is
+reported as proving nothing.
+
+**Not yet KeyStore-registered.** Registration is what makes a session publicly
+verifiable by a counterparty, and it costs about $0.50 in BNB per session.
+Enforcement is identical either way; visibility is not. `--register` runs the
+same proof against a registered key.
+
 ## The floor
 
 The landing page is a live view of the market, not a document.
