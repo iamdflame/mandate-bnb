@@ -1,0 +1,42 @@
+{
+  "name": "assay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The assay office for on-chain agents. Registry claim vs chain truth, with the proof attached.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "NODE_ENV=production next build",
+    "start": "NODE_ENV=production next start",
+    "worker": "tsx src/worker/index.ts",
+    "worker:dev": "tsx watch src/worker/index.ts",
+    "assay": "tsx src/scripts/assay.ts",
+    "db:push": "drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
+    "typecheck": "tsc --noEmit",
+    "snapshot": "tsx src/scripts/snapshot.ts",
+    "sybil": "tsx src/scripts/sybil-check.ts",
+    "funnel": "tsx src/scripts/funnel.ts",
+    "shots": "tsx src/scripts/shots.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "next": "^15.5.25",
+    "postgres": "^3.4.9",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "viem": "^2.56.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.4",
+    "drizzle-kit": "^0.31.10",
+    "playwright-core": "^1.62.1",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
