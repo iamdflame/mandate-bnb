@@ -316,7 +316,13 @@ async function capabilityAssay(ctx: AssayContext): Promise<AssayResult> {
   const { touches, scannedBlocks, complete } = await findProtocolTouches(
     ctx.wallet.address,
     expected,
-    { eventProbes: CATEGORY_EVENT_PROBES[category as Category] },
+    {
+      eventProbes: CATEGORY_EVENT_PROBES[category as Category],
+      // Deliberately narrower than the window a grant uses. This runs while
+      // someone watches a page, and the finding text always names the number
+      // of blocks searched, so a shorter search is reported rather than hidden.
+      lookbackBlocks: 30_000n,
+    },
   );
 
   evidence.push({

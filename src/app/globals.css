@@ -1440,3 +1440,33 @@ a {
 .mandate-page code { font-size: 0.78rem; }
 .mandate-page a { color: var(--gold-deep); }
 .claim-cost { color: var(--gold-deep); }
+
+/* ------------------------------------------------------------- authority -- */
+
+.auth { border-top: 1px solid var(--rule); padding: 2rem 0; }
+.auth--dead { opacity: 0.55; }
+.auth-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.auth-key { font-family: var(--font-mono); font-size: 1rem; font-weight: 400; margin: 0.3rem 0 0; }
+.auth-key a { color: var(--gold-deep); }
+.auth-rationale { font-size: 0.85rem; line-height: 1.6; color: var(--ink-70); max-width: 62ch; margin: 0 0 1.25rem; }
+
+.auth-calls { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1.5rem; margin-bottom: 1.25rem; }
+.auth-list { list-style: none; margin: 0.5rem 0 0; padding: 0; font-size: 0.8rem; line-height: 1.75; }
+.auth-list code { font-size: 0.72rem; color: var(--ink-45); margin-right: 0.4rem; }
+.auth-list--withheld { color: var(--ink-45); }
+.auth-list--withheld li { text-decoration: line-through; text-decoration-color: var(--ink-25); }
+.auth-because { display: block; font-size: 0.72rem; color: var(--ink-45); text-decoration: none; margin-top: 0.1rem; }
+
+.auth-actions { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin-top: 1rem; }
+.auth-token {
+  font-family: var(--font-mono); font-size: 0.78rem; padding: 0.45rem 0.6rem;
+  border: 1px solid var(--rule); background: var(--paper-2); color: var(--ink); border-radius: 2px;
+}
+.auth-revoke {
+  font-family: var(--font-mono); font-size: 0.78rem; padding: 0.5rem 1rem;
+  border: 1px solid var(--gold-deep); background: transparent; color: var(--gold-deep);
+  border-radius: 2px; cursor: pointer; transition: background-color 0.3s var(--ease), color 0.3s var(--ease);
+}
+.auth-revoke:hover:not(:disabled) { background: var(--gold-deep); color: var(--paper); }
+.auth-revoke:disabled { opacity: 0.5; cursor: default; }
+.auth-note { font-size: 0.82rem; line-height: 1.6; margin-top: 1.5rem; padding: 0.8rem 1rem; background: var(--ink-06); border-left: 2px solid var(--gold-deep); }

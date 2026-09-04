@@ -144,6 +144,9 @@ const logClients = LOG_ENDPOINTS.map((url) =>
  * under-reported. Nothing errored; the answers were just smaller than the
  * truth, which is the worst way for a check like this to be wrong.
  */
+/** How many refused windows before the scan is declared incomplete. */
+const MAX_FAILED_WINDOWS = 6;
+
 const trimTopics = (topics: (string | null)[]): (string | null)[] => {
   let end = topics.length;
   while (end > 0 && topics[end - 1] === null) end--;
@@ -170,9 +173,11 @@ export async function findProtocolTouches(
     }[];
   } = {},
 ): Promise<{ touches: ProtocolTouch[]; scannedBlocks: bigint; complete: boolean }> {
-  // Free providers refuse anything wider than 10k blocks.
-  const lookback = opts.lookbackBlocks ?? (hasArchive ? 2_000_000n : 9_500n);
-  const chunk = opts.chunk ?? 9_500n;
+  // Measured, not assumed: blxrbdn serves 4,000-block address-filtered
+  // queries reliably and refuses 9,500. The old default asked for 9,500,
+  // succeeded on the first window and was refused on the second.
+  const lookback = opts.lookbackBlocks ?? (hasArchive ? 2_000_000n : 120_000n);
+  const chunk = opts.chunk ?? 4_000n;
   /** Measured: blxrbdn allows 5,000 blocks for a query with no address filter. */
   const probeChunk = chunk > 4_999n ? 4_999n : chunk;
   const maxHits = opts.maxHits ?? 12;
@@ -190,46 +195,58 @@ export async function findProtocolTouches(
   while (to > floor && touches.length < maxHits) {
     const from = to - chunk > floor ? to - chunk : floor;
     // The wallet may occupy any indexed position, so probe each separately.
-    for (const position of [1, 2, 3] as const) {
-      if (touches.length >= maxHits) break;
-      const topics: (string | null)[] = [null, null, null, null];
-      topics[position] = padded;
-      const trimmed = trimTopics(topics);
-      // viem's typed getLogs models topics as an event-derived tuple, which
-      // cannot express "any signature, this address in position N". The raw
-      // RPC call can, so it is used directly.
-      const request = {
-        method: "eth_getLogs",
-        params: [
-          {
-            address: addresses,
-            fromBlock: `0x${from.toString(16)}`,
-            toBlock: `0x${to.toString(16)}`,
-            topics: trimmed,
-          },
-        ],
-      };
-
-      let logs: RawLog[] | null = null;
-      for (const client of logClients) {
-        try {
-          logs = (await client.request(request as never)) as unknown as RawLog[];
-          break;
-        } catch {
-          continue;
+    // The wallet may occupy any indexed position, so all three are probed.
+    // Sequentially this was three round trips per window and thirty windows
+    // took forty-five seconds, which is too slow to run while someone watches
+    // an agent page assay itself. They are independent queries, so they go
+    // together.
+    const positionResults = await Promise.all(
+      ([1, 2, 3] as const).map(async (position) => {
+        const topics: (string | null)[] = [null, null, null, null];
+        topics[position] = padded;
+        const trimmed = trimTopics(topics);
+        // viem's typed getLogs models topics as an event-derived tuple, which
+        // cannot express "any signature, this address in position N". The raw
+        // RPC call can, so it is used directly.
+        const request = {
+          method: "eth_getLogs",
+          params: [
+            {
+              address: addresses,
+              fromBlock: `0x${from.toString(16)}`,
+              toBlock: `0x${to.toString(16)}`,
+              topics: trimmed,
+            },
+          ],
+        };
+        for (const client of logClients) {
+          try {
+            return (await client.request(request as never)) as unknown as RawLog[];
+          } catch {
+            continue;
+          }
         }
-      }
+        return null;
+      }),
+    );
 
+    for (const logs of positionResults) {
       if (logs === null) {
-        // Every provider refused. That is "unknown", never "no evidence" —
-        // the distinction the whole assay rests on.
+        // Every provider refused this window. That is "unknown", never "no
+        // evidence" — the distinction the whole assay rests on.
+        //
+        // It used to end the scan outright, which was right when there was one
+        // provider and every wide range failed. With failover, one refused
+        // window is usually a rate limit, and abandoning the scan turned a
+        // momentary 429 into "this agent has no capability" — which, now that
+        // `granted ⊆ proven` reads this, is a silent denial of authority.
         failures += 1;
-        if (!hasArchive) {
+        if (failures > MAX_FAILED_WINDOWS) {
           return { touches: dedupe(touches), scannedBlocks: scanned, complete: false };
         }
         continue;
       }
-      for (const log of logs ?? []) {
+      for (const log of logs) {
         touches.push({
           protocol: String(log.address).toLowerCase(),
           txHash: log.transactionHash ?? "",
@@ -242,32 +259,36 @@ export async function findProtocolTouches(
     // Second pass: protocols that emit nothing of their own. Any emitter, but
     // a specific event signature with the wallet in a known indexed slot.
     const probeFrom = to - probeChunk > floor ? to - probeChunk : floor;
-    for (const probe of opts.eventProbes ?? []) {
-      if (touches.length >= maxHits) break;
-      const probeTopics: (string | null)[] = [probe.topic0, null, null, null];
-      probeTopics[probe.position] = padded;
-      const trimmedProbe = trimTopics(probeTopics);
-      let probeLogs: RawLog[] | null = null;
-      for (const client of logClients) {
-        try {
-          probeLogs = (await client.request({
-            method: "eth_getLogs",
-            params: [
-              {
-                fromBlock: `0x${probeFrom.toString(16)}`,
-                toBlock: `0x${to.toString(16)}`,
-                topics: trimmedProbe,
-              },
-            ],
-          } as never)) as unknown as RawLog[];
-          break;
-        } catch {
-          continue;
+    const probeResults = await Promise.all(
+      (opts.eventProbes ?? []).map(async (probe) => {
+        const probeTopics: (string | null)[] = [probe.topic0, null, null, null];
+        probeTopics[probe.position] = padded;
+        const trimmedProbe = trimTopics(probeTopics);
+        for (const client of logClients) {
+          try {
+            const r = (await client.request({
+              method: "eth_getLogs",
+              params: [
+                {
+                  fromBlock: `0x${probeFrom.toString(16)}`,
+                  toBlock: `0x${to.toString(16)}`,
+                  topics: trimmedProbe,
+                },
+              ],
+            } as never)) as unknown as RawLog[];
+            return { probe, logs: r };
+          } catch {
+            continue;
+          }
         }
-      }
+        return { probe, logs: null };
+      }),
+    );
+
+    for (const { probe, logs: probeLogs } of probeResults) {
       if (probeLogs === null) {
         failures += 1;
-        if (!hasArchive) {
+        if (failures > MAX_FAILED_WINDOWS) {
           return { touches: dedupe(touches), scannedBlocks: scanned, complete: false };
         }
         continue;

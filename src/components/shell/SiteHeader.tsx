@@ -26,6 +26,7 @@ export default function SiteHeader({
         <nav className="app-nav">
           <a href="/agents">Agents</a>
           <a href="/floor">Floor</a>
+          <a href="/authority">Authority</a>
           <a href="/evidence">Evidence</a>
           <a href="/assay">Method</a>
           <a href="/list-your-agent">List yours</a>

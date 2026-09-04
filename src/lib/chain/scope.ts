@@ -104,7 +104,13 @@ export async function scopeFromChain(
   const { touches, scannedBlocks, complete } = await findProtocolTouches(
     agent,
     CATEGORY_EVIDENCE[category],
-    { eventProbes: CATEGORY_EVENT_PROBES[category] },
+    {
+      // Wider than the assay's window: this decides what an agent is allowed
+      // to do with someone's capital, and a narrower search would refuse
+      // authority for want of looking rather than for want of evidence.
+      eventProbes: CATEGORY_EVENT_PROBES[category],
+      lookbackBlocks: 120_000n,
+    },
   );
   return deriveScope(agent, category, {
     protocols: [...new Set(touches.map((t) => t.protocol.toLowerCase()))],
