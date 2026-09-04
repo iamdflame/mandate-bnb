@@ -31,7 +31,8 @@
     "verify:isolation": "node packages/mandate-verify/scripts/check-isolation.mjs",
     "advantage": "tsx --env-file=.env --env-file=.env.local src/scripts/advantage.ts",
     "advantage:lock": "tsx --env-file=.env --env-file=.env.local src/scripts/advantage-lock.ts",
-    "advantage:report": "tsx src/scripts/advantage-report.ts"
+    "advantage:report": "tsx src/scripts/advantage-report.ts",
+    "prove-session": "tsx --env-file=.env --env-file=.env.local src/scripts/prove-session-scope.ts"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",
