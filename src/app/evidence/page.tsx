@@ -125,7 +125,27 @@ const NOT_YET: Item[] = [
   },
   {
     title: "Bonds are small enough that nobody has attacked them",
-    body: "The mechanism is identical at any size and the sums currently at risk are under a dollar. Nothing here has been tested by an adversary with a reason to try.",
+    body: "The mechanism is identical at any size and the sums currently at risk are under a dollar. Nothing here has been tested by an adversary with a reason to try. Retiring this objection needs one mandate at roughly 1 BNB capital and 0.25 BNB bond, settled honestly and published either way — about 1.25 BNB more than the operator wallet currently holds.",
+  },
+  {
+    title: "Production reads a committed file, not a database",
+    body: "The Postgres read path is built and the agent index is migrated, but no instance is attached to the deployment — DATABASE_URL points at localhost — so the live site serves a snapshot. Every page states its source rather than implying freshness it does not have. This is a provisioning decision, not an engineering one.",
+  },
+  {
+    title: "The registry sweep cannot run continuously, because it has nowhere to write",
+    body: "Coverage is 3,808 of 303,391 and shown as such on the register and in the public API. A rolling sweep at the anonymous 25 requests a minute would add roughly 36,000 agents a day — but a serverless run has no durable place to put the result until a database is attached. The sweep is blocked behind the same gap as the paragraph above, and saying so is more useful than a counter that never moves.",
+  },
+  {
+    title: "The owner of every contract is a single key",
+    body: "v2 adds a two-step adjudicator handover and the roles are documented, but the owner is one externally-owned account rather than a multisig. That is the largest single point of failure in this design, it is an owner's choice rather than a contract's, and it has not been made.",
+  },
+  {
+    title: "Market history is read from logs, not from an index",
+    body: "Events are read with provider failover and any gaps are reported rather than smoothed over. There is no subgraph, so this does not scale past a few hundred mandates — stated in docs/DATA.md rather than discovered later.",
+  },
+  {
+    title: "There is no demo video",
+    body: "A ninety-second unnarrated screen recording is a listed deliverable and it does not exist. Everything it would show can be run instead: /start is the same path, end to end, in commands.",
   },
 ];
 

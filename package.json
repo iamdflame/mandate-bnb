@@ -56,7 +56,8 @@
     "restate": "tsx src/scripts/restate.ts",
     "assay-bond": "tsx --env-file=.env --env-file=.env.local src/scripts/deploy-assay-bond.ts",
     "register-self": "tsx --env-file=.env --env-file=.env.local src/scripts/register-self.ts",
-    "replay": "tsx --env-file=.env --env-file=.env.local src/scripts/replay.ts"
+    "replay": "tsx --env-file=.env --env-file=.env.local src/scripts/replay.ts",
+    "resolve-challenge": "tsx --env-file=.env --env-file=.env.local src/scripts/resolve-challenge.ts"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",

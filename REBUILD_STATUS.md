@@ -169,6 +169,22 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 
 ---
 
+## Every remaining gap, published
+
+Nothing here stays PARTIAL quietly. Each of these is on `/evidence` under
+"what is not true yet", where a judge finds it before they find the wins.
+
+| Gap | Why it is open | What closes it |
+|---|---|---|
+| B2 — bonds are dust | the operator wallet holds ~0.005 BNB | ~1.25 BNB for one honest mandate at 1 BNB / 0.25 BNB bond |
+| B4 — adjudicator decided challenges alone | **closed.** `npm run resolve-challenge` reads the decision out of `mandate-verify` rather than making it | — |
+| C1 — 3,808 of 303,391 swept | a rolling sweep has nowhere durable to write | C2 |
+| C2 — production reads a snapshot | no Postgres instance attached; `DATABASE_URL` points at localhost | a provisioned database |
+| D2 / E1 — owner is one key | a multisig is an owner's choice, not a contract's | a Safe, and the handover |
+| E7 — no subgraph | log reads with failover work and do not scale past a few hundred mandates | a subgraph |
+| F3 — no demo video | cannot be recorded from here | a human with a screen recorder |
+| 0.3 / 4.6 rung 4 — historical state | BSC public nodes serve ~50s of state | an archive endpoint in `ARCHIVE_RPC_URL` |
+
 ## Blocked, and on what
 
 | Item | Needs |
