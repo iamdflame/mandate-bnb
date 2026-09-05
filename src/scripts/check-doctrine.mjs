@@ -210,6 +210,84 @@ const walk = (dir) => {
 walk("src");
 note(cardish.length === 0, "density: no card classes", cardish.join("\n      "));
 
+/* ------------------------------------------------------------- vocabulary */
+
+/*
+  Every class a component asks for must exist in the stylesheet.
+
+  A class name that was never defined fails silently and completely: the
+  element renders with browser defaults, which on a table means no hairlines,
+  no 44px rows, no tabular column edge — the exact opposite of the house style,
+  shipped looking like an unstyled document. Nothing errors, nothing warns, and
+  the type checker has no opinion, so it reaches production and is only caught
+  by someone looking at a screenshot.
+
+  This happened: an office page asked for `.ledger-table`, `.table-wrap` and
+  `.visually-hidden` when the vocabulary is `.floor-table`, `.tablewrap` and
+  `.sr-only`. It was deployed before a screenshot showed it.
+*/
+const defined = new Set();
+for (const m of css.matchAll(/\.(-?[_a-zA-Z][\w-]*)/g)) defined.add(m[1]);
+
+/* Names that legitimately never appear in globals.css. */
+const EXTERNAL = /^(?:mermaid|katex|hljs|leaflet|maplibregl|token|language-)/;
+
+/*
+  Hooks that carry no styling of their own, on purpose.
+  
+  Each renders correctly by inheriting from a styled parent, and each is here
+  because it was checked rather than because the list was inconvenient. They
+  are kept as names so a stylesheet can reach them later and so the markup says
+  what each block is. A class added in error looks identical to the checker,
+  which is why removing one from this list must mean looking at the element.
+*/
+const UNSTYLED_HOOKS = new Set([
+  // Block wrappers whose every child is styled.
+  "autopsy",
+  "bench",
+  "hire",
+  "replay",
+  // SVG roots, sized by their own attributes and by the parent's layout.
+  "category-mark",
+  "date-letter",
+  "fineness-mark",
+  "office-mark",
+  "sponsor-mark",
+  // Inherit from a styled ancestor: .obs__stamp, .att__row, .api__body.
+  "obs__age",
+  "att__match",
+  "api__ep",
+]);
+
+const undefinedClasses = new Map();
+const walkTsx = (dir) => {
+  for (const e of readdirSync(dir)) {
+    const p = join(dir, e);
+    if (statSync(p).isDirectory()) {
+      walkTsx(p);
+      continue;
+    }
+    if (!/\.tsx$/.test(p)) continue;
+    const src = readFileSync(p, "utf8");
+    // Only literal className strings: a computed one cannot be checked here
+    // and must not be guessed at.
+    for (const m of src.matchAll(/className=\{?"([^"]+)"/g)) {
+      for (const name of m[1].split(/\s+/)) {
+        if (!name || name.includes("$") || EXTERNAL.test(name)) continue;
+        if (UNSTYLED_HOOKS.has(name)) continue;
+        if (defined.has(name)) continue;
+        if (!undefinedClasses.has(name)) undefinedClasses.set(name, p);
+      }
+    }
+  }
+};
+walkTsx("src");
+note(
+  undefinedClasses.size === 0,
+  "vocabulary: every class used is defined",
+  [...undefinedClasses].map(([n, f]) => `.${n}  (${f})`).join("\n      "),
+);
+
 /* --------------------------------------------------------------- fineness */
 
 /*

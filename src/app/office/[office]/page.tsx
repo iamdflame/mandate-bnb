@@ -111,8 +111,8 @@ export default async function OfficePage({
           <h1 className="section-title office-head__title">{CATEGORY_LABEL[c]}</h1>
           <p className="office-head__blurb">{CATEGORY_BLURB[c]}</p>
           <p className="section-sub office-head__method">
-            {method.act} Measured against <strong>{method.benchmark.toLowerCase()}</strong>, on{" "}
-            {method.venue}.
+            {method.act} Measured on {method.venue}, against{" "}
+            <strong>{method.benchmark.replace(/\.$/, "").toLowerCase()}</strong>.
           </p>
           <div className="office-head__figs">
             <Observation
@@ -154,9 +154,9 @@ export default async function OfficePage({
               page — nothing here is illustrated when it does not exist.
             </p>
           ) : (
-            <div className="table-wrap">
-              <table className="ledger-table">
-                <caption className="visually-hidden">
+            <div className="tablewrap">
+              <table className="floor-table">
+                <caption className="sr-only">
                   Mandates in the {CATEGORY_LABEL[c]} office
                 </caption>
                 <thead>

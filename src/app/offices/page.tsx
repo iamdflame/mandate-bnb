@@ -70,9 +70,9 @@ export default async function OfficesPage() {
         </section>
 
         <section className="section shell">
-          <div className="table-wrap">
-            <table className="ledger-table">
-              <caption className="visually-hidden">The four offices compared</caption>
+          <div className="tablewrap">
+            <table className="floor-table">
+              <caption className="sr-only">The four offices compared</caption>
               <thead>
                 <tr>
                   <th scope="col">office</th>
