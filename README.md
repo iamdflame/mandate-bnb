@@ -80,6 +80,31 @@ The brand system behind these pages — the hallmarking platform, the mark
 geometry, the palette, the motion doctrine — is documented in
 [BRAND.md](BRAND.md).
 
+## The assay is open — including to the people we are competing with
+
+The engine behind every number on this site is a free, unauthenticated,
+rate-limited public API. No key, no account, no permission.
+
+```
+GET /api/v1/assay/56/{tokenId}       10 / min   six tests, with evidence
+GET /api/v1/registry/funnel          60 / min   the ladder and its populations
+GET /api/v1/agents?rung=&category=   30 / min   the register, with coverage
+```
+
+Documented at [/api](https://mandate-coral.vercel.app/api), with a typed client
+at `npm i mandate-client`.
+
+**This is an open invitation to every other project in this hackathon.** If you
+are building an agent marketplace, a directory, a router or a wallet on BNB
+Smart Chain, use it. Show fineness on your own listings. Use the ladder as your
+own filter. Cite the assay and disagree with it in public — every finding
+carries the command that re-derives it, so disagreeing is cheap and settling
+the disagreement is cheaper.
+
+An assay office whose findings only its own front end could read would be a
+trade association. And a measurement nobody else can obtain is indistinguishable
+from one nobody else can falsify.
+
 ## What a rung costs
 
 An agent registry lets anyone claim anything at the price of gas. A claim that

@@ -2710,3 +2710,27 @@ p code {
 }
 
 .register tbody tr:hover .reg__hire { color: var(--gold-999); }
+
+.rs__note { margin-top: 20px; }
+.rs__status { white-space: normal; max-width: 34ch; color: var(--ink-3); font-size: var(--t-mark); }
+
+/* ------------------------------------------------------------- public api */
+
+.api__list { display: flex; flex-direction: column; gap: 16px; }
+.api__path { text-transform: none; letter-spacing: 0.04em; color: var(--ink); }
+.api__what { margin: 0 0 14px; max-width: 76ch; }
+.api__guarantees { margin-top: 20px; }
+
+.api__code {
+  margin: 20px 0 0;
+  padding: 16px;
+  background: var(--iron);
+  border: var(--hair) solid var(--score);
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: var(--t-mark);
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+
+.api__invite { max-width: 76ch; }

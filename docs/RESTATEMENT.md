@@ -3,7 +3,7 @@
 Every settled epoch this project has ever produced on BNB Smart Chain, re-run
 through the corrected valuation engine.
 
-Generated 2026-09-05T16:36:09.529Z · reader `https://bsc-dataseed.bnbchain.org` · archive **not available**
+Generated 2026-09-05T16:42:51.512Z · reader `https://bsc-dataseed.bnbchain.org` · archive **not available**
 
 ## What was wrong
 

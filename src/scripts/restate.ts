@@ -358,7 +358,47 @@ async function main() {
   }
 
   writeFileSync(out, lines.join("\n"));
-  console.log(`wrote ${out}`);
+
+  /*
+    The same findings as data.
+
+    The page renders from this rather than from the prose, so the site and the
+    document cannot drift apart: re-running the script updates both, and there
+    is no transcription step where a number could be quietly rounded.
+  */
+  const json = {
+    generatedAt: new Date().toISOString(),
+    reader: readRpc,
+    archive: archive ?? null,
+    totals: {
+      settledEpochs: rows.length,
+      rederived: rederived.length,
+      blocked: blocked.length,
+      slashes: slashed.length,
+      slashedWei: totalSlashed.toString(),
+    },
+    epochs: rows.map((r) => ({
+      market: r.market,
+      marketName: r.marketName,
+      mandateId: r.mandateId,
+      epoch: r.epoch,
+      agent: r.agent,
+      toleranceBps: r.toleranceBps,
+      attestedBlock: r.attestedBlock?.toString() ?? null,
+      reportedWei: r.reportedWei?.toString() ?? null,
+      previousWei: r.previousWei?.toString() ?? null,
+      reportedAlphaBps: r.reportedAlphaBps === null ? null : Number(r.reportedAlphaBps),
+      correctedWei: r.correctedWei?.toString() ?? null,
+      correctedAlphaBps: r.correctedAlphaBps === null ? null : Number(r.correctedAlphaBps),
+      blockedBy: r.blockedBy,
+      slashWei: r.slashWei.toString(),
+      slashResolved: r.slashResolved,
+      slashContested: r.slashContested,
+    })),
+  };
+  writeFileSync("src/data/restatement.json", JSON.stringify(json, null, 2) + "\n");
+
+  console.log(`wrote ${out} and src/data/restatement.json`);
   console.log(`  settled epochs   ${rows.length}`);
   console.log(`  re-derived       ${rederived.length}`);
   console.log(`  blocked          ${blocked.length}`);
