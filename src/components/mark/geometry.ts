@@ -114,6 +114,12 @@ export function seedOf(input: string): number {
   return h >>> 0;
 }
 
+/**
+ * 23 letters, not 26.
+ *
+ * I, O and U are omitted, as they are in the real date-letter cycles, because
+ * at punch size they are indistinguishable from 1, 0 and V.
+ */
 const ALPHABET = "ABCDEFGHJKLMNPQRSTVWXYZ";
 
 /** The letters struck inside a sponsor's mark, from the same seed. */
@@ -128,7 +134,7 @@ export function sponsorShield(chainId: number, tokenId: string): string {
   return SPONSOR_SHIELDS[seedOf(`${chainId}:${tokenId}`) % SPONSOR_SHIELDS.length]!;
 }
 
-/** The date letter for an assay, cycling A–Z by epoch. */
+/** The date letter for an assay, cycling through the 23-letter alphabet. */
 export function dateLetter(epoch: number): { letter: string; shield: string } {
   const i = Math.abs(Math.floor(epoch));
   return {

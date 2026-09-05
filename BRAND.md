@@ -190,6 +190,10 @@ Real date letters change annually; a market settling epochs in minutes needs a
 shorter cycle to be informative, so ours is weekly. Long enough that the letter
 means something, short enough that staleness is visible.
 
+The cycle runs on 23 letters, not 26: **I, O and U are omitted**, as they are in
+the real system, because at punch size they are too easily confused with 1, 0
+and V. The same alphabet drives the sponsor's mark.
+
 ### 3.5 The sponsor's mark
 
 ```
