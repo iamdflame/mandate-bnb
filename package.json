@@ -44,7 +44,9 @@
     "prove-x402": "tsx --env-file=.env --env-file=.env.local src/scripts/prove-x402.ts",
     "abi:v2": "tsx src/scripts/abi-v2.ts",
     "v2": "tsx --env-file=.env --env-file=.env.local src/scripts/v2-lifecycle.ts",
-    "smoke": "tsx src/scripts/smoke.ts"
+    "smoke": "tsx src/scripts/smoke.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",
@@ -64,7 +66,8 @@
     "drizzle-kit": "^0.31.10",
     "playwright-core": "^1.62.1",
     "tsx": "^4.23.13",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.0"
   },
   "engines": {
     "node": ">=20"

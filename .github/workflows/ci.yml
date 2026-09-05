@@ -64,6 +64,9 @@ jobs:
       - name: Every granted call must be provable
         run: npm run check:config
 
+      - name: Unit tests
+        run: npm test
+
       - name: Build
         env:
           # Pinned: an exported NODE_ENV=development in a shell silently
