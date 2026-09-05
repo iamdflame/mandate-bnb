@@ -22,7 +22,7 @@ import { MARKET_ABI, verifyMandate } from "./verify.js";
  * which means the path under test is exactly the shipped one.
  */
 
-type Mandate = { agent: `0x${string}`; epochsSettled: number };
+type Mandate = { agent: `0x${string}`; epochsSettled: number; attested?: boolean };
 
 /** A node that serves one mandate and no logs. */
 function nodeServing(m: Mandate) {
@@ -67,12 +67,13 @@ function nodeServing(m: Mandate) {
           return reply(
             encodeFunctionResult({ abi: MARKET_ABI, functionName, result: mandate as never }),
           );
-        // No attestation was ever written, for either mandate under test.
+        const empty = [`0x${"00".repeat(32)}`, 0n, 0n, 0n];
+        const stored = [`0x${"ab".repeat(32)}`, 1_000_000_000_000_000n, 120_000_000n, 1_760_000_000n];
         return reply(
           encodeFunctionResult({
             abi: MARKET_ABI,
             functionName: functionName as "openAttestation",
-            result: [`0x${"00".repeat(32)}`, 0n, 0n, 0n] as never,
+            result: (m.attested ? stored : empty) as never,
           }),
         );
       }
@@ -112,6 +113,55 @@ test("an awarded mandate with nothing committed still fails", async () => {
   });
 
   expect(r.awarded).toBe(true);
+  expect(r.failures).toContain(
+    "no opening attestation: nothing was committed for this mandate to be judged against",
+  );
+});
+
+
+/**
+ * The other half of the same principle, and the more dangerous half.
+ *
+ * This node stores attestations and serves no logs, which is exactly what BNB
+ * Smart Chain looks like from a public provider today: contract storage answers
+ * every time, and of the three allowed log providers one refuses `eth_getLogs`
+ * over any range, one rejects the parameters, and one returns an empty array
+ * for windows that demonstrably contain events.
+ *
+ * Read as a finding, that absence convicts a mandate of having no preimage
+ * behind a commitment it does hold. Read correctly, it says nobody would show
+ * us the logs. The verifier now separates the two by what a check had to read:
+ * contract state can convict, a missing event cannot.
+ *
+ * This must not be mistaken for the verifier going quiet. Tampering is caught
+ * by comparing values that are present — the hash against its commitment, the
+ * settled alpha against what the marks imply — and those still fail loudly.
+ * `--tamper` rejects 8 of 8 perturbations on mandate 0 with this change in.
+ */
+test("a log nobody will serve is unresolved, never a failure", async () => {
+  const r = await verifyAgainst({
+    agent: "0xd6d11Aa5046dc5C7BE8d63B9223b60D7AD94cBe9",
+    epochsSettled: 2,
+    attested: true,
+  });
+
+  expect(r.awarded).toBe(true);
+  // The attestations are in storage, so nothing here is a finding against it.
+  expect(r.failures).toEqual([]);
+  expect(r.unresolved.length).toBeGreaterThan(0);
+  expect(r.unresolved.some((u) => u.includes("preimage"))).toBe(true);
+});
+
+test("state the chain does answer still convicts", async () => {
+  // No attestation in storage on an awarded mandate. Storage is served by every
+  // node, so this absence is the chain speaking rather than a provider
+  // declining, and it remains the gravest finding the verifier has.
+  const r = await verifyAgainst({
+    agent: "0xd6d11Aa5046dc5C7BE8d63B9223b60D7AD94cBe9",
+    epochsSettled: 0,
+    attested: false,
+  });
+
   expect(r.failures).toContain(
     "no opening attestation: nothing was committed for this mandate to be judged against",
   );

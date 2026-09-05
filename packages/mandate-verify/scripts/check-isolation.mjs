@@ -54,6 +54,7 @@ const TEST_HOSTS = new Set(["127.0.0.1", "localhost"]);
  * while blocking a real node.
  */
 const ALLOWED_HOSTS = new Set([
+  "bsc.drpc.org",
   "bsc.rpc.blxrbdn.com",
   "bsc-dataseed1.binance.org",
   "bsc.blockrazor.xyz",
@@ -80,14 +81,31 @@ const IMPORT = /(?:^|\n)\s*(?:import|export)[\s\S]*?from\s+["']([^"']+)["']/g;
 const DYNAMIC = /\bimport\(\s*["']([^"']+)["']\s*\)/g;
 const REQUIRE = /\brequire\(\s*["']([^"']+)["']\s*\)/g;
 
+/**
+ * Comments, blanked for the import scan only.
+ *
+ * The import pattern spans newlines to catch multi-line import statements,
+ * which means an `import` anywhere above a quoted phrase in prose matches the
+ * two together — a comment containing the words *from "the comparison came out
+ * wrong"* was read as a dependency by that name. An import cannot occur inside
+ * a comment, so removing them costs the check nothing.
+ *
+ * The environment, filesystem and host scans still read comments. A URL in a
+ * comment is not a network call, but the whole point of the host rule is that
+ * naming an endpoint is a deliberate act, and it stays deliberate here.
+ */
+const stripComments = (src) =>
+  src.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " ")).replace(/\/\/[^\n]*/g, "");
+
 const violations = [];
 for (const file of files) {
   const source = readFileSync(file, "utf8");
+  const code = stripComments(source);
   const rel = file.slice(root.length + 1);
   for (const re of [IMPORT, DYNAMIC, REQUIRE]) {
     re.lastIndex = 0;
     let m;
-    while ((m = re.exec(source))) {
+    while ((m = re.exec(code))) {
       const spec = m[1];
       if (spec.startsWith(".")) {
         // Relative imports may not climb out of this package.

@@ -15,6 +15,8 @@
 import { formatEther } from "viem";
 import {
   DEFAULT_MARKET,
+  DEPLOYMENTS,
+  deploymentLabel,
   hashObservation,
   alphaFrom,
   verifyMandate,
@@ -45,6 +47,8 @@ interface Args {
   mandate: number | null;
   chain: number;
   market?: `0x${string}`;
+  /** Short name for one of this office's deployments: v2, v1 or v0. */
+  deployment?: string;
   rpc?: string;
   archive?: string;
   json: boolean;
@@ -65,6 +69,22 @@ interface Args {
   deployBlock?: bigint;
 }
 
+/**
+ * A deployment label to an address.
+ *
+ * Refuses an unknown label rather than falling through to the default: someone
+ * typing `--deployment v3` means a contract this build has never heard of, and
+ * silently verifying a different one would answer a question nobody asked.
+ */
+function resolveDeployment(label: string | undefined): `0x${string}` | undefined {
+  if (!label) return undefined;
+  const hit = DEPLOYMENTS[label.toLowerCase()];
+  if (!hit) {
+    fail(`unknown deployment "${label}"; this office has run ${Object.keys(DEPLOYMENTS).join(", ")}`);
+  }
+  return hit as `0x${string}`;
+}
+
 function parse(argv: string[]): Args {
   const a: Args = { mandate: null, chain: 56, json: false, tamper: false, help: false };
   for (let i = 0; i < argv.length; i++) {
@@ -77,6 +97,7 @@ function parse(argv: string[]): Args {
     if (k === "--mandate" || k === "-m") a.mandate = Number(v());
     else if (k === "--chain" || k === "-c") a.chain = Number(v());
     else if (k === "--market") a.market = v() as `0x${string}`;
+    else if (k === "--deployment" || k === "-d") a.deployment = v();
     else if (k === "--rpc") a.rpc = v();
     else if (k === "--archive") a.archive = v();
     else if (k === "--json") a.json = true;
@@ -101,6 +122,8 @@ ${bold("mandate-verify")} — re-derive a MANDATE settlement from the chain alon
 
   --mandate, -m <n>   mandate id to verify            (required)
   --chain, -c <id>    56 mainnet (default), 97 testnet
+  --deployment, -d    v2 (default, canonical), v1, v0 — this office has run
+                      three markets and all three still hold settled mandates
   --market <address>  market contract; defaults to the known deployment
   --rpc <url>         node to read from
   --archive <url>     node serving historical state, for tier 3
@@ -130,7 +153,10 @@ function line(ok: boolean, name: string, detail: string): string {
 function render(r: VerifyResult): void {
   const scanned = `${r.scanned.fromBlock}–${r.scanned.toBlock}`;
   console.log();
-  console.log(bold(`  mandate ${r.mandateId}`) + dim(`  ·  ${r.market}  ·  chain ${r.chainId}`));
+  console.log(
+    bold(`  mandate ${r.mandateId}`) +
+      dim(`  ·  ${deploymentLabel(r.market)}  ${r.market}  ·  chain ${r.chainId}`),
+  );
   console.log(
     dim(
       `  agent ${r.agent}\n  ${bnb(r.capitalWei)} under management against a ${bnb(r.bondWei)} bond` +
@@ -316,7 +342,7 @@ async function main() {
   let r: VerifyResult;
   try {
     r = await verifyMandate({
-      market: a.market,
+      market: a.market ?? resolveDeployment(a.deployment),
       mandateId: a.mandate,
       chainId: a.chain,
       rpc: a.rpc,

@@ -27,8 +27,20 @@ export const MARKET_ABI = parseAbi([
   "function mandateCount() view returns (uint256)",
 ]);
 
+/**
+ * The v0/v1 observation event.
+ *
+ * Kept alongside the v2 shape rather than replaced: all three deployments hold
+ * mandates with settled epochs, and a verifier that only understands the newest
+ * one silently stops being able to check the history it was built to check.
+ */
 const OBSERVED = parseAbiItem(
   "event Observed(uint256 indexed mandateId, uint32 indexed epoch, bytes32 observationHash, (address wallet, uint96 valuationWei, uint96 gasSpentWei, uint160 priceX96, uint64 blockNumber, bytes32 breakdownRef) observation)",
+);
+
+/** The v2 observation event, which carries the benchmark it was judged against. */
+const OBSERVED_V2 = parseAbiItem(
+  "event Observed(uint256 indexed mandateId, uint32 indexed epoch, bytes32 observationHash, (address wallet, uint96 valuationWei, uint96 gasSpentWei, uint160 priceX96, uint64 blockNumber, bytes32 breakdownRef, uint96 benchmarkWei) observation)",
 );
 
 const SETTLED = parseAbiItem(
@@ -49,8 +61,34 @@ const BPS = 10_000n;
 export const OPEN_EPOCH = 4_294_967_295;
 
 /** Known deployments, so the common case needs no configuration. */
+/**
+ * Every market this office has run, by label.
+ *
+ * There are three live deployments on BNB Smart Chain and all three hold
+ * mandates with settled epochs. The site linked one in its footer, printed a
+ * second on another page, named a third in its README, and this file defaulted
+ * to a fourth answer — so "the market contract" meant something different
+ * depending on where you read it.
+ *
+ * Naming them is the fix. `--deployment v1` is the short form; `--market` still
+ * takes any address, because a fork should be able to verify its own market.
+ */
+export const DEPLOYMENTS: Record<string, Address> = {
+  v2: "0x6052C0ab83a99Fb37aC598c23b8E369fB21C71B2",
+  v1: "0xeD331c44183EFF1e8eDc31f6C60AfDA187681544",
+  v0: "0x4c2BeE70b4Acaf3b242860C9AefF97217D1758EC",
+};
+
+/** Which contract an address is, for the header. Unknown addresses say so. */
+export function deploymentLabel(address: Address): string {
+  const hit = Object.entries(DEPLOYMENTS).find(
+    ([, a]) => a.toLowerCase() === address.toLowerCase(),
+  );
+  return hit ? hit[0] : "unrecognised market";
+}
+
 export const DEFAULT_MARKET: Record<number, Address> = {
-  56: "0xeD331c44183EFF1e8eDc31f6C60AfDA187681544",
+  56: DEPLOYMENTS.v2!,
 };
 
 /**
@@ -72,6 +110,22 @@ export const DEFAULT_RPCS: Record<number, string[]> = {
   97: ["https://bsc-testnet-rpc.publicnode.com", "https://bsc-testnet.public.blastapi.io"],
 };
 
+/**
+ * Providers for `eth_getLogs`, which is a different capability from calls.
+ *
+ * Measured across thirteen public BSC endpoints: drpc is the only one that
+ * answers a ranged log query correctly. blxrbdn returns an empty array for
+ * ranges it declines to serve, dataseed refuses outright, publicnode and
+ * blockrazor reject the parameters. drpc also rate-limits a public caller
+ * within a handful of requests, so it leads this list and does not appear in
+ * the call list at all — put it in front of `mandateCount()` and the rate limit
+ * arrives before the verification does.
+ */
+export const DEFAULT_LOG_RPCS: Record<number, string[]> = {
+  56: ["https://bsc.drpc.org", ...DEFAULT_RPCS[56]!],
+  97: DEFAULT_RPCS[97]!,
+};
+
 export const DEFAULT_RPC: Record<number, string> = {
   56: DEFAULT_RPCS[56]![0]!,
   97: DEFAULT_RPCS[97]![0]!,
@@ -84,6 +138,14 @@ export interface Observation {
   priceX96: bigint;
   blockNumber: bigint;
   breakdownRef: `0x${string}`;
+  /**
+   * The benchmark the epoch was judged against, added in v2.
+   *
+   * Absent on v1 and v0 observations, which is not a missing field but a
+   * different struct: the two shapes hash differently and their events have
+   * different topics.
+   */
+  benchmarkWei?: bigint;
 }
 
 export interface Attestation {
@@ -99,6 +161,22 @@ export interface Check {
   name: string;
   ok: boolean;
   detail: string;
+  /**
+   * What the check would have to read to be wrong, and therefore what its
+   * failure is allowed to mean.
+   *
+   * `state` is contract storage, read by `eth_call`. Every node serves it, so
+   * a failed state check is a finding: the chain positively says otherwise.
+   *
+   * `log` is an event. A failed log check means "we did not find it", and on
+   * BSC that is not the same sentence as "it was not emitted" — of the public
+   * providers one refuses `eth_getLogs` over any range, one rejects the
+   * parameters outright, and one answers an empty array for windows that
+   * demonstrably contain events. An empty answer from a provider that will not
+   * admit it is empty because it declined is indistinguishable from an honest
+   * nothing, so absence of a log can never convict.
+   */
+  evidence: "state" | "log";
 }
 
 export interface EpochResult {
@@ -153,19 +231,38 @@ export interface VerifyResult {
  * would be caught instead of mirrored.
  */
 export function hashObservation(o: Observation): `0x${string}` {
-  return keccak256(
-    encodeAbiParameters(
-      [
-        { type: "address" },
-        { type: "uint96" },
-        { type: "uint96" },
-        { type: "uint160" },
-        { type: "uint64" },
-        { type: "bytes32" },
-      ],
-      [o.wallet, o.valuationWei, o.gasSpentWei, o.priceX96, o.blockNumber, o.breakdownRef],
-    ),
-  );
+  /*
+    Two struct shapes, because there are two live contract generations.
+
+    v2 added `benchmarkWei` to the observation, which changes both the event
+    topic and the preimage. Hashing a v2 observation with the v1 layout
+    produces a hash that matches nothing, and the verifier would report that a
+    committed value had been altered — the most serious accusation it can make,
+    against a contract that had done nothing wrong.
+
+    The shape is chosen by what the log actually carried, never by which
+    contract we think we are talking to.
+  */
+  const v2 = o.benchmarkWei !== undefined;
+  const types = [
+    { type: "address" },
+    { type: "uint96" },
+    { type: "uint96" },
+    { type: "uint160" },
+    { type: "uint64" },
+    { type: "bytes32" },
+    ...(v2 ? [{ type: "uint96" }] : []),
+  ];
+  const values = [
+    o.wallet,
+    o.valuationWei,
+    o.gasSpentWei,
+    o.priceX96,
+    o.blockNumber,
+    o.breakdownRef,
+    ...(v2 ? [o.benchmarkWei as bigint] : []),
+  ];
+  return keccak256(encodeAbiParameters(types as never, values as never));
 }
 
 /** Alpha in basis points, in the same integer arithmetic the contract uses. */
@@ -179,13 +276,51 @@ export function makeClient(chainId: number, rpc?: string): PublicClient {
 }
 
 /** Every endpoint worth trying for logs, caller's choice first. */
+/**
+ * Log readers, tried in order until one returns something.
+ *
+ * An explicitly named node is used alone. Someone passing `--rpc` has told the
+ * verifier which node to trust — usually their own, often precisely because
+ * they do not want the query going anywhere else — and quietly asking four
+ * public providers alongside it would both contradict that instruction and
+ * broadcast which mandate is being examined. Without the flag, the public list
+ * is used, because no single public BSC endpoint answers reliably.
+ */
 export function makeClients(chainId: number, rpc?: string): PublicClient[] {
-  const urls = [rpc, ...(DEFAULT_RPCS[chainId] ?? DEFAULT_RPCS[56]!)].filter(Boolean) as string[];
+  const urls = rpc
+    ? [rpc]
+    : (DEFAULT_LOG_RPCS[chainId] ?? DEFAULT_LOG_RPCS[56]!);
   return [...new Set(urls)].map((u) => makeClient(chainId, u));
 }
 
+/**
+ * The observation an attestation actually committed to.
+ *
+ * Where several were emitted for one epoch, the commitment picks it out: the
+ * hash was written to storage before the outcome was known, and only one
+ * preimage can produce it. That is the whole mechanism, used here for what it
+ * is rather than trusting log ordering.
+ *
+ * When nothing matches, the first is returned so the mismatch is reported
+ * against a concrete value rather than vanishing into "not found" — a
+ * contradicted commitment is a finding and must stay one.
+ */
+function pickPreimage(
+  candidates: Observation[] | undefined,
+  committed: `0x${string}` | undefined,
+): Observation | null {
+  if (!candidates || candidates.length === 0) return null;
+  if (!committed) return candidates[0]!;
+  return candidates.find((o) => hashObservation(o) === committed) ?? candidates[0]!;
+}
+
 const abs = (v: bigint) => (v < 0n ? -v : v);
-const check = (name: string, ok: boolean, detail: string): Check => ({ name, ok, detail });
+const check = (
+  name: string,
+  ok: boolean,
+  detail: string,
+  evidence: Check["evidence"] = "state",
+): Check => ({ name, ok, detail, evidence });
 
 /**
  * Re-reads a wallet's value at a past block, from chain state alone.
@@ -247,26 +382,49 @@ async function readAttestation(
 async function windowLogs(
   clients: PublicClient[],
   market: Address,
-  event: typeof OBSERVED | typeof SETTLED,
+  event: typeof OBSERVED | typeof OBSERVED_V2 | typeof SETTLED,
   mandateId: number,
   from: bigint,
   to: bigint,
 ): Promise<unknown[] | null> {
+  /*
+    Keep asking until something is found, rather than trusting the first
+    answer.
+
+    This returned whatever the first provider said, and the first provider on
+    BSC answers an empty array for ranges it has decided not to serve — no
+    error, no indication that it declined. So a window that demonstrably
+    contains an Observed event came back empty, the loop stopped, and the
+    verifier went on to report that a mandate had no preimage behind a
+    commitment it does hold.
+
+    Preferring a non-empty answer is sound rather than merely convenient: a
+    provider can omit an event, but it cannot invent one that hashes to a
+    commitment already stored on chain. Every log this returns is checked
+    against that commitment, so the worst a lying provider can do is fail the
+    check it was trying to pass. Omission is the only real attack, and asking
+    more providers is exactly the defence against it.
+  */
   let refusals = 0;
+  let empties = 0;
   for (const client of clients) {
     try {
-      return (await client.getLogs({
+      const logs = (await client.getLogs({
         address: market,
         event: event as never,
         args: { mandateId: BigInt(mandateId) } as never,
         fromBlock: from,
         toBlock: to,
       })) as unknown[];
+      if (logs.length > 0) return logs;
+      empties++;
     } catch {
       refusals++;
     }
   }
-  return refusals === clients.length ? null : [];
+  // Nobody would serve it at all: unknown, which is not the same as empty.
+  if (empties === 0) return null;
+  return [];
 }
 
 async function collectLogs(
@@ -276,14 +434,22 @@ async function collectLogs(
   from: bigint,
   to: bigint,
 ): Promise<{
-  observed: Map<number, Observation>;
+  /**
+   * Every observation seen for an epoch, not just the last.
+   *
+   * An epoch can carry more than one Observed log — a re-observation, a
+   * retried transaction, or an event deliberately emitted to muddy the record.
+   * Keeping one arbitrarily and comparing it against the commitment made the
+   * verifier accuse a contract of tampering because a duplicate existed.
+   */
+  observed: Map<number, Observation[]>;
   settled: Map<number, bigint>;
   scanned: [bigint, bigint];
   /** Windows no provider would serve. Any gap makes a missing log unprovable. */
   gaps: number;
   windows: number;
 }> {
-  const observed = new Map<number, Observation>();
+  const observed = new Map<number, Observation[]>();
   const settled = new Map<number, bigint>();
   // Public providers cap log ranges, so the window is walked rather than asked for whole.
   const span = 4_000n;
@@ -292,18 +458,23 @@ async function collectLogs(
   for (let cursor = from; cursor <= to; cursor += span) {
     const end = cursor + span - 1n > to ? to : cursor + span - 1n;
     windows++;
-    const [obs, set] = await Promise.all([
+    const [obsV1, obsV2, set] = await Promise.all([
       windowLogs(clients, market, OBSERVED, mandateId, cursor, end),
+      windowLogs(clients, market, OBSERVED_V2, mandateId, cursor, end),
       windowLogs(clients, market, SETTLED, mandateId, cursor, end),
     ]);
-    if (obs === null || set === null) {
+    if ((obsV1 === null && obsV2 === null) || set === null) {
       gaps++;
       continue;
     }
+    const obs = [...(obsV1 ?? []), ...(obsV2 ?? [])];
     for (const l of obs) {
       const a = (l as { args: { epoch?: number; observation?: Observation } }).args;
       if (a.epoch === undefined || !a.observation) continue;
-      observed.set(Number(a.epoch), a.observation);
+      const key = Number(a.epoch);
+      const list = observed.get(key) ?? [];
+      list.push(a.observation);
+      observed.set(key, list);
     }
     for (const l of set) {
       const a = (l as { args: { epoch?: number; realizedAlphaBps?: bigint } }).args;
@@ -406,13 +577,14 @@ export async function verifyMandate(opts: VerifyOptions): Promise<VerifyResult> 
       );
     }
   } else {
-    const obs = observed.get(OPEN_EPOCH) ?? null;
+    const obs = pickPreimage(observed.get(OPEN_EPOCH), openAtt.observationHash);
     const checks: Check[] = [];
     checks.push(
       check(
         "opening preimage present",
         !!obs,
         obs ? `emitted in an Observed log at block ${obs.blockNumber}` : "not found in the logs",
+        "log",
       ),
     );
     if (!obs && gaps > 0) {
@@ -446,9 +618,10 @@ export async function verifyMandate(opts: VerifyOptions): Promise<VerifyResult> 
     }
     for (const c of checks) {
       if (c.ok) continue;
-      // A check that failed only because the logs were unreadable is not a
-      // finding about the mandate.
-      if (!obs && gaps > 0) continue;
+      if (c.evidence === "log") {
+        unresolved.push(`opening: ${c.name} — ${c.detail}`);
+        continue;
+      }
       failures.push(`opening: ${c.name} — ${c.detail}`);
     }
     opening = { attestation: openAtt, observation: obs, checks };
@@ -461,16 +634,26 @@ export async function verifyMandate(opts: VerifyOptions): Promise<VerifyResult> 
   for (let e = 0; e < epochsSettled; e++) {
     const checks: Check[] = [];
     const att = epochAtts[e];
-    const obs = observed.get(e) ?? null;
+    const obs = pickPreimage(observed.get(e), att?.observationHash);
     const settledAlpha = settled.has(e) ? settled.get(e)! : null;
 
     checks.push(check("attestation stored", !!att, att ? `${att.valuationWei} wei at block ${att.blockNumber}` : "storage holds nothing for this epoch"));
-    checks.push(check("preimage in the logs", !!obs, obs ? `wallet ${obs.wallet}` : "no Observed log for this epoch"));
+    checks.push(
+      check(
+        "preimage in the logs",
+        !!obs,
+        obs ? `wallet ${obs.wallet}` : "no Observed log for this epoch",
+        "log",
+      ),
+    );
     checks.push(
       check(
         "settlement event found",
         settledAlpha !== null,
-        settledAlpha !== null ? `EpochSettled reported ${settledAlpha} bps` : "no EpochSettled log in the scanned window",
+        settledAlpha !== null
+          ? `EpochSettled reported ${settledAlpha} bps`
+          : "no EpochSettled log in the scanned window",
+        "log",
       ),
     );
 
@@ -493,7 +676,21 @@ export async function verifyMandate(opts: VerifyOptions): Promise<VerifyResult> 
       checks.push(check("alpha derivable", false, `${previousLabel} is unavailable, so the ratio cannot be formed`));
     } else if (settledAlpha === null) {
       checks.push(check("alpha derivable", true, `the two marks imply ${implied} bps`));
-      checks.push(check("settled alpha matches the marks", false, "no settlement event to compare against"));
+      /*
+        There is nothing to compare against, which is a different sentence from
+        "the comparison came out wrong". The settlement event is a log, so its
+        absence carries a log's authority — none. When the event is present and
+        the alpha contradicts what the marks imply, the same check convicts,
+        which is how `--tamper` catches an inflated alpha.
+      */
+      checks.push(
+        check(
+          "settled alpha matches the marks",
+          false,
+          "no settlement event to compare against",
+          "log",
+        ),
+      );
     } else {
       // The contract tolerates a basis point of integer rounding; so does this.
       const ok = abs(settledAlpha - implied) <= 1n;
@@ -536,15 +733,17 @@ export async function verifyMandate(opts: VerifyOptions): Promise<VerifyResult> 
       }
     }
 
-    const blindHere = (!obs || settledAlpha === null) && gaps > 0;
-    if (blindHere) {
+    if (gaps > 0 && (!obs || settledAlpha === null)) {
       unresolved.push(
-        `epoch ${e}: ${gaps} of ${windows} log windows were refused by every provider, so this epoch could not be checked`,
+        `epoch ${e}: ${gaps} of ${windows} log windows were refused by every provider`,
       );
     }
     for (const c of checks) {
       if (c.ok) continue;
-      if (blindHere) continue;
+      if (c.evidence === "log") {
+        unresolved.push(`epoch ${e}: ${c.name} — ${c.detail}`);
+        continue;
+      }
       failures.push(`epoch ${e}: ${c.name} — ${c.detail}`);
     }
     if (tier < weakest) weakest = tier;

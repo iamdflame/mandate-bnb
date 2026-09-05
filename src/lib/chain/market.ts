@@ -19,13 +19,35 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { bsc, bscTestnet, foundry } from "viem/chains";
 import { MANDATE_MARKET_ABI } from "./abi";
+import { MARKET_V2 } from "./deployments";
 
-export const MARKET_ADDRESS = (process.env.NEXT_PUBLIC_MARKET_ADDRESS ??
-  process.env.MARKET_ADDRESS ??
-  "") as Address;
+/**
+ * The market this site reads and writes by default.
+ *
+ * This used to fall back to the empty string, and production had an env var
+ * still pointing at the first deployment. Between them the footer linked
+ * `bscscan.com/address/` with no address at all on one page and a superseded
+ * contract on another — a "verify this yourself" link that verified nothing,
+ * on the site whose entire argument is that claims must be checkable.
+ *
+ * There is no empty fallback now. An unset environment resolves to the
+ * canonical deployment rather than to a broken link, and a value that is not
+ * one of ours is still honoured (a fork should be able to point this at its own
+ * market) but is reported as unrecognised rather than silently labelled.
+ */
+export const MARKET_ADDRESS = (process.env.NEXT_PUBLIC_MARKET_ADDRESS ||
+  process.env.MARKET_ADDRESS ||
+  MARKET_V2) as Address;
 
+/*
+  Defaults to BNB Smart Chain, matching the default address above.
+
+  It defaulted to 31337 while the address defaulted to empty, so an unset
+  environment produced a coherent-looking client pointed at a local chain that
+  was not running. Local development sets both explicitly.
+*/
 const MARKET_CHAIN_ID = Number(
-  process.env.NEXT_PUBLIC_MARKET_CHAIN_ID ?? process.env.MARKET_CHAIN_ID ?? 31337,
+  process.env.NEXT_PUBLIC_MARKET_CHAIN_ID ?? process.env.MARKET_CHAIN_ID ?? 56,
 );
 
 const MARKET_RPC =
