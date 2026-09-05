@@ -75,15 +75,68 @@ npx mandate-verify --mandate 0 --chain 56
 Losing a mandate is a state transition, not a governance process. That last
 line is the whole product: an agent can be fired, on-chain, while you watch.
 
-## Two deployments, and which is which
+## Settlement that costs something to get wrong
 
-Both are real and both are worth checking. They are not the same contract, and
-saying so is easier than quietly swapping an address.
+[`contracts/src/MandateMarketV2.sol`](contracts/src/MandateMarketV2.sol) ·
+[`0x2BAD8DF3…DE38`](https://bscscan.com/address/0x2BAD8DF36AE86459e350b8074fCe6Ec1B5C6DE38)
+
+V1 shipped with one honest weakness, written in its own source: alpha on
+off-vault positions cannot be derived on chain, so an adjudicator reported it.
+Attestations made that report **consistent** — the contract re-derives alpha
+from two committed marks and reverts if the number disagrees — but a determined
+adjudicator could still commit a false valuation, and **reporting was free**.
+
+V2 changes what it costs to be wrong.
+
+```
+1. Settlement is proposed, not applied. The proposer stakes.
+2. Anyone may challenge inside the window by staking at least as much and
+   submitting a contradicting measurement FOR THE SAME BLOCK.
+3. Unchallenged, it finalises and the stake returns.
+4. Challenged, neither the fee nor the slash moves, and the loser's
+   stake goes to the winner.
+```
+
+Run end to end on mainnet, mandate 1, including a real challenge:
 
 | | |
 |---|---|
-| **Current** — [`0xeD331c…1544`](https://bscscan.com/address/0xeD331c44183EFF1e8eDc31f6C60AfDA187681544) | Attested settlement. Every measurement committed on chain before its outcome, `minBond` a constructor argument, admin changes observable. This is what `mandate-verify` checks. |
-| **Superseded** — [`0x4c2BeE…58EC`](https://bscscan.com/address/0x4c2BeE70b4Acaf3b242860C9AefF97217D1758EC) | The pre-attestation deployment. It proved the mechanism executes end to end, and the two transactions below are on it. |
+| Proposed −5.68% with a 0.00002 BNB stake | [`0x40b4b6c1…`](https://bscscan.com/tx/0x40b4b6c184e4a2b91bb1291a6950c69c63378eb45b432b0b32b493c9786d77ee) |
+| **Contradicted for the same block** (119980473) | [`0x2f1f332f…`](https://bscscan.com/tx/0x2f1f332f7f6bc70567e0803b1d4515b14e636ffae184dd525f308cf05768b25b) |
+| Epochs settled while contested: **0 — nothing moved** | |
+| Resolved, 0.00004 BNB pot to the winner | [`0xff37511e…`](https://bscscan.com/tx/0xff37511e02518613becd58a2789c2b0380126ccc856196e0a301d9736f544dc8) |
+| Second epoch finalised unchallenged, stake returned | [`0x0485a1f6…`](https://bscscan.com/tx/0x0485a1f6b698cbf00ea6d6a84ae40dbac0d5a03e1f3619d90ff7d56786714555) |
+
+**The contract still cannot decide what a wallet was worth.** It can make the
+assertion expensive, make the contradiction public, and stop value moving while
+two parties disagree. That is a smaller claim than "trustless" and it is the
+true one, so it is the one the source makes.
+
+*The alpha above is negative because this demonstration measures the agent's
+own wallet, and that wallet paid a bond, a stake and gas between the two marks.
+In a deployment the managed wallet and the agent's operating wallet are not the
+same address.*
+
+Also in v2: **BEP-20 mandates** (`uint96` BNB excluded most real capital),
+**per-category benchmarks** (a measurement carries its own benchmark, so a yield
+agent earning 3% while 5% sat available has negative alpha — under `Hold` this
+reduces exactly to v1's ratio), **per-mandate risk parameters**, a **protocol
+fee** capped at 5%, a **pause guard** that leaves withdrawals open, **bid
+expiry**, `challengeWindow < epochLength` enforced at open, and a **two-step
+adjudicator handover**.
+
+**70 tests pass** — 42 from v1, 28 new. The solvency invariant survives BEP-20
+and staking; two new invariants join it at 2,000 fuzz runs each: a resolved
+challenge pays out exactly the two stakes and can never mint a third, and
+attestations can never move backwards in block height.
+
+## Three deployments, and which is which
+
+| | |
+|---|---|
+| **V2** — [`0x2BAD8DF3…DE38`](https://bscscan.com/address/0x2BAD8DF36AE86459e350b8074fCe6Ec1B5C6DE38) | Staked, challengeable settlement. BEP-20, per-category benchmarks, protocol fee, pause, bid expiry. |
+| **V1** — [`0xeD331c…1544`](https://bscscan.com/address/0xeD331c44183EFF1e8eDc31f6C60AfDA187681544) | Attested settlement. What `mandate-verify` currently checks. |
+| **Superseded** — [`0x4c2BeE…58EC`](https://bscscan.com/address/0x4c2BeE70b4Acaf3b242860C9AefF97217D1758EC) | Pre-attestation. It proved the mechanism executes end to end, and the two transactions below are on it. |
 
 | | |
 |---|---|

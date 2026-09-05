@@ -25,7 +25,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | B1 | ★ Benchmark lives in a local directory | **DONE** | `.benchmarks/` deleted; attestations on chain + Greenfield |
 | B2 | Market self-dealt with dust | **PARTIAL** | still one operator; bonds still ~$0.06. Needs R9 |
 | B3 | `minBond` source/chain divergence | **DONE** | constructor argument; events on both setters |
-| B4 | Alpha reported, not derived; adjudicator is us | **PARTIAL** | contract re-derives alpha from two commitments and reverts on disagreement. No second opinion yet → R1.3 |
+| B4 | Alpha reported, not derived; adjudicator is us | **PARTIAL→v2** | v2 makes reporting cost a stake and lets anyone contradict it for the same block. The contract still cannot decide wallet value; it can freeze the money and price the lie |
 | B5 | README argues with the brief | **DONE** | opens with the ladder; the directory is swallowed, not rejected |
 | B6 | Floor is beautiful, not a marketplace | **DONE** | moved to `/floor`; the ladder is the front door |
 
@@ -55,12 +55,12 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 
 | # | Problem | State |
 |---|---|---|
-| E1 | Adjudicator single EOA | **PARTIAL** — `setAdjudicator` exists, no multisig |
-| E2 | `challengeWindow` may exceed `epochLength` | **TODO** |
-| E3 | `uint96` BNB-only capital | **TODO** |
-| E4 | No pause / circuit breaker | **TODO** |
-| E5 | Strikes + catastrophic alpha are constants | **TODO** |
-| E6 | No bid expiry | **TODO** |
+| E1 | Adjudicator single EOA | **PARTIAL** — v2 adds two-step handover; multisig is an owner choice, not a contract one |
+| E2 | `challengeWindow` may exceed `epochLength` | **DONE** — enforced at open in v2 |
+| E3 | `uint96` BNB-only capital | **DONE** — BEP-20 mandates in v2 |
+| E4 | No pause / circuit breaker | **DONE** — v2, withdrawals stay open |
+| E5 | Strikes + catastrophic alpha are constants | **DONE** — per-mandate in v2 |
+| E6 | No bid expiry | **DONE** — v2, and expired bids are skipped on succession |
 | E7 | No event indexer / subgraph | **TODO** |
 | E8 | No documented rate-limit strategy | **PARTIAL** — limiter exists, undocumented |
 | E9 | No deploy runbook | **TODO** |
@@ -96,7 +96,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 |---|---|---|
 | R1.1 | Attestations committed on chain at award | **DONE** |
 | R1.2 | Preimages on Greenfield | **DONE** — 3 objects, read back and hash-checked |
-| R1.3 | Optimistic settlement + challenge bonds | **TODO** |
+| R1.3 | Optimistic settlement + challenge bonds | **DONE** — v2, staked proposals, deployed |
 | R1.4 | `npx mandate-verify`, published | **DONE** — `mandate-verify@0.2.0` on npm |
 | R1.5 | Local state → Postgres + Greenfield | **PARTIAL** |
 
@@ -144,7 +144,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | R7 | PancakeSwap doc + pool-gap scanner | **DONE** |
 | R8 | Information architecture (9 routes) | **DONE** — all nine |
 | R9 | Supply side: listing, shadow mandates, underwriting, bond tiers | **TODO** |
-| R10 | Contract v2 (11 items) | **TODO** |
+| R10 | Contract v2 (11 items) | **DONE** — 70 tests, deployed to mainnet |
 | R11 | Data pipeline | **TODO** |
 | R12 | CI, uptime, reliability | **TODO** |
 
