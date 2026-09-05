@@ -1,6 +1,7 @@
 "use client";
 
 import OfficeMark from "@/components/mark/OfficeMark";
+import { MANDATE_TOKEN_ID } from "@/lib/config";
 import { WalletChip } from "@/components/floor/Actions";
 
 const NAV = [
@@ -12,6 +13,8 @@ const NAV = [
   { href: "/assay", label: "Method" },
   { href: "/api", label: "API" },
   { href: "/list-your-agent", label: "List yours" },
+  // Our own entry, at whatever rung it earns.
+  { href: `/agent/${MANDATE_TOKEN_ID}`, label: "Us" },
 ];
 
 /**

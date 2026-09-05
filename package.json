@@ -54,7 +54,8 @@
     "value": "tsx src/scripts/value-wallet.ts",
     "test:fork": "anvil --fork-url ${BSC_RPC_URL:-https://bsc-dataseed.bnbchain.org} --port 8549 --silent & sleep 20; FORK_RPC_URL=http://127.0.0.1:8549 vitest run src/lib/chain/valuation/; kill %1",
     "restate": "tsx src/scripts/restate.ts",
-    "assay-bond": "tsx --env-file=.env --env-file=.env.local src/scripts/deploy-assay-bond.ts"
+    "assay-bond": "tsx --env-file=.env --env-file=.env.local src/scripts/deploy-assay-bond.ts",
+    "register-self": "tsx --env-file=.env --env-file=.env.local src/scripts/register-self.ts"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",

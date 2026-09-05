@@ -80,6 +80,27 @@ The brand system behind these pages — the hallmarking platform, the mark
 geometry, the palette, the motion doctrine — is documented in
 [BRAND.md](BRAND.md).
 
+## We are in our own register
+
+MANDATE is registered as an ERC-8004 agent on BNB Smart Chain — **token 336161**,
+minted in [`0x02e254…6ebf`](https://bscscan.com/tx/0x02e254124a6df77468ee703148ad2caaa38c0396301a1e0d8044b63c147b6ebf)
+at block 120,148,918 — and it is listed in its own register at whatever rung it
+earns.
+
+If our endpoint stops answering, our fineness drops and the register shows it.
+If we fail our own capability check, no hallmark is struck for us. There is no
+exemption to apply, because the instrument does not know who it is pointed at.
+
+The registration card is written to be tested rather than to score: every claim
+in it is one this project's own assay checks within minutes, and a card that
+overstated its skills would fail its author's capability check in public.
+
+**One honest consequence, already visible.** Our assay reads the registry
+through 8004scan, and a registration minutes old is not yet indexed — so
+assaying ourselves currently returns a 404 rather than a fineness. That is a
+real dependency on a third party, and it is stated here rather than waited out
+quietly.
+
 ## The assay is open — including to the people we are competing with
 
 The engine behind every number on this site is a free, unauthenticated,

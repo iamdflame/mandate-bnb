@@ -19,6 +19,7 @@ const ROUTES: Row[] = [
   { kind: "route", label: "Evidence", hint: "including what went against us", href: "/evidence" },
   { kind: "route", label: "The method", hint: "the six tests and their weights", href: "/assay" },
   { kind: "route", label: "Public API", hint: "free, unauthenticated, open to competitors", href: "/api" },
+  { kind: "route", label: "MANDATE itself", hint: "our own entry, at whatever rung we earn", href: "/agent/336161" },
   { kind: "route", label: "Restatement", hint: "we measured our own agents wrong", href: "/evidence/restatement" },
   { kind: "route", label: "The bench", hint: "assay any agent, live", href: "/bench" },
   { kind: "route", label: "List your agent", hint: "how to climb a rung", href: "/list-your-agent" },

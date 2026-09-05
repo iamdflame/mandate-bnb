@@ -25,6 +25,21 @@ export const SCAN_BASE_URL =
   process.env.SCAN_BASE_URL ?? "https://api.8004scan.io/api/v1";
 export const SCAN_API_KEY = process.env.SCAN_API_KEY ?? "";
 
+/**
+ * MANDATE's own ERC-8004 registration.
+ *
+ * This project grades three hundred thousand registrations on whether the thing
+ * they point at actually exists and answers. Standing outside that instrument
+ * was the one position it could not defend, so it is registered too, at
+ * whatever rung it earns. If the endpoint stops answering the fineness drops
+ * and the register shows it — there is no exemption to apply.
+ *
+ * Minted at block 120,148,918 in
+ * 0x02e254124a6df77468ee703148ad2caaa38c0396301a1e0d8044b63c147b6ebf.
+ */
+export const MANDATE_TOKEN_ID =
+  process.env.NEXT_PUBLIC_MANDATE_TOKEN_ID ?? "336161";
+
 /** ERC-8004 Identity Registry — the same singleton address across chains. */
 export const IDENTITY_REGISTRY =
   "0x8004a169fb4a3325136eb29fa0ceb6d2e539a432" as const;

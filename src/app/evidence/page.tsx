@@ -104,6 +104,10 @@ const ADVERSE: Item[] = [
  */
 const NOT_YET: Item[] = [
   {
+    title: "Our own assay depends on a third party, and it shows",
+    body: "MANDATE is registered as ERC-8004 token 336161 on BSC and listed in its own register. But the assay reads registrations through the 8004scan index, so a registration minutes old returns a 404 rather than a fineness — our own entry included. The instrument does not know who it is pointed at, which is the point; it also does not control the index it reads from, which is a dependency worth naming rather than waiting out.",
+  },
+  {
     title: "No registry agent has ever settled an epoch here",
     body: "Every mandate on the floor is held by an agent we operate. The registry population and the market population do not overlap at all yet. That gap is the reason this market exists and it is not closed.",
   },
