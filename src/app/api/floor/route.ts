@@ -6,12 +6,8 @@
  * out to every viewer. One reader, many watchers.
  */
 
-import {
-  MANDATE_MARKET_ABI,
-  MARKET_ADDRESS,
-  marketClient,
-  readLiveMandates,
-} from "@/lib/chain/market";
+import { MANDATE_MARKET_ABI, MARKET_ADDRESS, marketClient } from "@/lib/chain/market";
+import { readBook, bookToSnapshot } from "@/lib/chain/book";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -45,6 +41,9 @@ export interface FloorMandate {
   epochsTotal: number;
   strikes: number;
   successor: string | null;
+  /** Which deployment this row came from: v2, v1 or v0. */
+  deployment?: string;
+  deploymentAddress?: string;
 }
 
 export interface FloorSnapshot {
@@ -65,12 +64,25 @@ export interface FloorSnapshot {
 }
 
 async function readSnapshot(): Promise<FloorSnapshot> {
-  // Only live mandates. Closed ones are book history and reading them all
-  // every tick is what stalled the stream once the market had run a while.
-  const [blockNumber, { live: mandates, total }] = await Promise.all([
-    marketClient.getBlockNumber(),
-    readLiveMandates(),
-  ]);
+  /*
+    The whole book, not one contract's share of it.
+
+    The page is now server-rendered from every deployment this office has run,
+    so a stream that read only the canonical market would have replaced eight
+    rows with one the instant it connected — the floor filling in correctly and
+    then emptying itself in front of the visitor, which is worse than never
+    having rendered.
+
+    Successors and original bids are still read from the canonical contract,
+    because those are the only rows anyone can act on.
+  */
+  const book = await readBook();
+  const base = bookToSnapshot(book);
+  const mandates = book.rows
+    .filter((r) => r.state === 0 || r.state === 1)
+    .filter((r) => r.deployment.status === "canonical");
+  const total = book.opened;
+  const blockNumber = book.blockNumber ?? 0n;
 
   const successors = await Promise.all(
     mandates.map((m) =>
@@ -97,53 +109,35 @@ async function readSnapshot(): Promise<FloorSnapshot> {
           args: [BigInt(m.id)],
         })) as readonly { agent: string; bond: bigint }[];
         const held = bids.find((b) => b.agent.toLowerCase() === m.agent.toLowerCase());
-        return held?.bond ?? m.bond;
+        return held?.bond ?? m.bondWei;
       } catch {
-        return m.bond;
+        return m.bondWei;
       }
     }),
   );
 
-  let underMandate = 0n;
-  let bonded = 0n;
-  let active = 0;
-
-  const out: FloorMandate[] = mandates.map((m, i) => {
-    underMandate += m.capital;
-    bonded += m.bond;
-    if (m.state === 1) active += 1;
-    const original = originals[i] ?? m.bond;
-    return {
-      id: m.id,
-      category: m.category,
-      state: m.state,
-      principal: m.principal,
-      agent: m.agent,
-      capitalWei: m.capital.toString(),
-      bondWei: m.bond.toString(),
-      bondFraction: original > 0n ? Number((m.bond * 1000n) / original) / 1000 : 0,
-      cumulativeAlphaBps: Number(m.cumulativeAlphaBps),
-      epochsSettled: m.epochsSettled,
-      epochsTotal: m.epochsTotal,
-      strikes: m.strikes,
-      successor: (successors[i] as string | null) ?? null,
-    };
-  });
+  // Enrich the canonical rows with what only the canonical contract can say,
+  // and leave every other deployment's row exactly as the book read it.
+  const extra = new Map(
+    mandates.map((m, i) => {
+      const original = originals[i] ?? m.bondWei;
+      return [
+        m.id,
+        {
+          bondFraction: original > 0n ? Number((m.bondWei * 1000n) / original) / 1000 : 0,
+          successor: (successors[i] as string | null) ?? null,
+        },
+      ] as const;
+    }),
+  );
 
   return {
-    at: new Date().toISOString(),
-    chainId: marketClient.chain?.id ?? 0,
-    market: MARKET_ADDRESS,
+    ...base,
     blockNumber: blockNumber.toString(),
-    mandates: out,
-    totals: {
-      underMandate: underMandate.toString(),
-      bonded: bonded.toString(),
-      active,
-      everOpened: total,
-      dismissals: 0,
-      slashedWei: "0",
-    },
+    mandates: base.mandates.map((row) =>
+      row.deployment === "v2" && extra.has(row.id) ? { ...row, ...extra.get(row.id)! } : row,
+    ),
+    totals: { ...base.totals, everOpened: total },
   };
 }
 

@@ -43,8 +43,17 @@ export interface MarketState {
   settlementTick: number;
 }
 
-export function useMarket() {
-  const [snapshot, setSnapshot] = useState<FloorSnapshot | null>(null);
+/**
+ * @param initial A snapshot read on the server, so the first render has rows.
+ *
+ * Without it the floor's state began as `null` and only filled inside an
+ * effect, which does not run during server rendering — so the HTML said
+ * "0 mandates active" and "Reading the chain…" while three ledgers said Active.
+ * The stream still takes over as soon as it connects; this is what the page
+ * says before it does.
+ */
+export function useMarket(initial?: FloorSnapshot | null) {
+  const [snapshot, setSnapshot] = useState<FloorSnapshot | null>(initial ?? null);
   const [tape, setTape] = useState<TapeEntry[]>([]);
   const [connected, setConnected] = useState(false);
   const previous = useRef<Map<number, FloorMandate>>(new Map());

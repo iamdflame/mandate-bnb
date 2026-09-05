@@ -2978,3 +2978,17 @@ p code {
 @media (max-width: 640px) {
   .claim__row { grid-template-columns: 1fr; gap: 8px; }
 }
+
+/**
+ * The deployment a mandate belongs to.
+ *
+ * Mandate 0 exists on all three of this office's markets, so a bare id is
+ * ambiguous in the one table that shows them together. Set in the register's
+ * quietest metal: it qualifies the number without competing with it.
+ */
+.mandate-row__dep {
+  font-family: var(--mono);
+  font-size: var(--t-mark);
+  letter-spacing: 0.06em;
+  color: var(--ink-4);
+}

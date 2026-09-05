@@ -18,6 +18,19 @@ const config: NextConfig = {
    * failed in production while working perfectly from the CLI. The Greenfield
    * SDK has the same shape.
    */
+  /**
+   * Names people type, and names we used to use.
+   *
+   * The nav labels /assay as "Method", so a visitor who types /method — or
+   * follows an older link — hit a 404 on a site whose case is that its method
+   * is the product. A dead end is worse than a redirect.
+   */
+  async redirects() {
+    return [
+      { source: "/method", destination: "/assay", permanent: false },
+      { source: "/offices", destination: "/agents", permanent: false },
+    ];
+  },
   serverExternalPackages: [
     "@bnbagent/sdk",
     "@altananetwork/sdk",

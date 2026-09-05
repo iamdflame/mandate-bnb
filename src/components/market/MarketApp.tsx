@@ -18,11 +18,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import FloorCanvas, { type FloorBody, type FloorState } from "@/components/floor/FloorCanvas";
 import { BidPanel, OpenMandatePanel, WithdrawButton } from "@/components/floor/Actions";
 import { bnb, useMarket, type TapeEntry } from "@/lib/useMarket";
+import type { FloorSnapshot } from "@/app/api/floor/route";
 import type { FloorMandate } from "@/app/api/floor/route";
 import AgentStandings from "./AgentStandings";
 import OperatedAgents from "@/components/agents/OperatedAgents";
 import Legend from "@/components/floor/Legend";
 import SiteHeader from "@/components/shell/SiteHeader";
+import { CANONICAL, addressUrl } from "@/lib/chain/deployments";
 
 const CATEGORIES = ["Rebalancing", "Grid Trading", "Yield Optimisation", "Health Factor"];
 const STATES = ["Open", "Active", "Closed", "Abandoned"];
@@ -32,8 +34,15 @@ const short = (a?: string | null) =>
   a && a !== ZERO ? `${a.slice(0, 6)}…${a.slice(-4)}` : "—";
 const pct = (bps: number) => `${bps > 0 ? "+" : ""}${(bps / 100).toFixed(2)}%`;
 
-export default function MarketApp({ explorer }: { explorer: string }) {
-  const { snapshot, tape, connected, signals } = useMarket();
+export default function MarketApp({
+  explorer,
+  initial,
+}: {
+  explorer: string;
+  /** The book, read on the server, so this renders populated without JS. */
+  initial?: FloorSnapshot | null;
+}) {
+  const { snapshot, tape, connected, signals } = useMarket(initial);
   const [filter, setFilter] = useState<number | null>(null);
   const [sheet, setSheet] = useState<{ kind: "open" } | { kind: "bid"; m: FloorMandate } | null>(
     null,
@@ -115,9 +124,20 @@ export default function MarketApp({ explorer }: { explorer: string }) {
             <button className="btn btn--primary" onClick={() => setSheet({ kind: "open" })}>
               Open a mandate
             </button>
+            {/*
+              Never a bare explorer root.
+
+              This was `${explorer}/address/${snapshot?.market ?? ""}`, and
+              snapshot was null until the stream connected, so the link a
+              visitor arrived at read `bscscan.com/address/` with no address on
+              it — a "verify this yourself" button that verified nothing, on the
+              site whose whole argument is that claims must be checkable. The
+              canonical address is known at build time and does not depend on a
+              network read completing.
+            */}
             <a
               className="btn"
-              href={`${explorer}/address/${snapshot?.market ?? ""}`}
+              href={addressUrl(snapshot?.market ?? CANONICAL.address, CANONICAL.chainId)}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -223,7 +243,13 @@ export default function MarketApp({ explorer }: { explorer: string }) {
                   </td>
                 </tr>
               ) : (
-                shown.map((m) => <MandateRow key={m.id} m={m} onBid={() => setSheet({ kind: "bid", m })} />)
+                shown.map((m) => (
+                  <MandateRow
+                    key={`${m.deployment ?? "v2"}-${m.id}`}
+                    m={m}
+                    onBid={() => setSheet({ kind: "bid", m })}
+                  />
+                ))
               )}
             </tbody>
           </table>
@@ -340,7 +366,21 @@ function MandateRow({ m, onBid }: { m: FloorMandate; onBid: () => void }) {
   const alphaPerEpoch = m.epochsSettled > 0 ? m.cumulativeAlphaBps / m.epochsSettled : 0;
   return (
     <tr>
-      <td className="fig dim">{m.id}</td>
+      {/*
+        The id alone is ambiguous: mandate 0 exists on all three deployments
+        and means a different mandate on each. The label says which book the
+        row is from, so two rows numbered 0 are legible as two mandates rather
+        than as a duplicate.
+      */}
+      <td className="fig dim">
+        {m.id}
+        {m.deployment && m.deployment !== "v2" ? (
+          <span className="mandate-row__dep" title="An earlier deployment. Its mandates are still live and still counted.">
+            {" "}
+            {m.deployment}
+          </span>
+        ) : null}
+      </td>
       <td>{CATEGORIES[m.category]}</td>
       <td className="fig r">{bnb(m.capitalWei)}</td>
       <td className="fig">{short(m.agent)}</td>
