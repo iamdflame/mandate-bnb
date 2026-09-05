@@ -37,7 +37,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | C2 | 1.9 MB static JSON | **PARTIAL** | still a snapshot, but it merges rather than replaces and carries `lastSeen` per row; no Postgres instance to point at |
 | C3 | No self-service listing | **DONE** | `/list-your-agent` — what each rung costs |
 | C4 | Agent diversity structurally unequal | **PARTIAL** | 4 categories now have mandates + sessions; only grid has settled epochs |
-| C5 | Zero app tests, zero CI | **TODO** | 0 test files, no `.github/` |
+| C5 | Zero app tests, zero CI | **PARTIAL** | three workflows: CI, mainnet verification hourly, smoke every 15 min. Still no app unit tests |
 | C6 | No agent career page | **DONE** | mandates, epochs, fees, slashes, dismissals, each with its tx |
 
 ### Category D — adoption blockers
@@ -45,11 +45,11 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | # | Problem | State |
 |---|---|---|
 | D1 | Only runs on your machine | **PARTIAL** — benchmark and preimages are off-machine; `.sessions/` public half still a committed file |
-| D2 | Single operator, no key ceremony | **TODO** |
-| D3 | No incident/failure path | **TODO** |
+| D2 | Single operator, no key ceremony | **PARTIAL** — v2 two-step adjudicator handover, roles documented; **no multisig on the owner**, named as the largest gap |
+| D3 | No incident/failure path | **DONE** — `docs/INCIDENTS.md`, eight modes |
 | D4 | No economic sustainability model | **TODO** — no protocol fee in the contract |
 | D5 | Nothing written back to the substrate | **DONE** — six assays in the Reputation Registry |
-| D6 | No licence/brand/team/ADOPTION.md | **TODO** |
+| D6 | No licence/brand/team/ADOPTION.md | **DONE** — `ADOPTION.md`, all eight sections |
 
 ### Category E — engineering
 
@@ -146,7 +146,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | R9 | Supply side: listing, shadow mandates, underwriting, bond tiers | **PARTIAL** — ShadowLedger and Underwriter deployed; bond tiers not done |
 | R10 | Contract v2 (11 items) | **DONE** — 70 tests, deployed to mainnet |
 | R11 | Data pipeline | **PARTIAL** — `docs/DATA.md`: observation boundaries, block-pinned reads, stated exclusions, rate-limit strategy. No Postgres instance, no subgraph |
-| R12 | CI, uptime, reliability | **TODO** |
+| R12 | CI, uptime, reliability | **DONE** — CI, `mandate-verify` against mainnet on a schedule, production smoke, `docs/INCIDENTS.md` |
 
 ---
 
@@ -161,9 +161,9 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 **Done:** #9 published verifier · #4 assay-derived session scope · #6 reputation autopsy pages.
 **Remaining:** underwriting/co-bonding · shadow mandates · succession queue surface · per-category benchmarks · reputation autopsy · registry write-back · pool-gap scanner · adverse-results policy.
 
-## PART VI — the adoption case (0 of 8)
+## PART VI — the adoption case (8 of 8)
 
-`ADOPTION.md` does not exist. All eight sections outstanding: cost model · runbook · key management · failure modes · write-back commitment · ladder as KPI · brand and team · what it is not.
+`ADOPTION.md` is written, all eight sections, costed from measured mainnet transactions. Plus a ninth it did not ask for — **What is not true yet** — listing the multisig gap, the missing Postgres instance, the partial sweep, the dust bonds, the absent video, and the archive-node constraint.
 
 ---
 

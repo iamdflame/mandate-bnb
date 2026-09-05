@@ -180,12 +180,15 @@ export function exclusionsFor(a: ExclusionInput): Exclusion[] {
   // agent sharing it. The check is implemented here because it is cheap and
   // the failure is real if present.
   //
-  // It has NOT been confirmed on live data. Establishing it needs the detail
-  // endpoint, which costs one call per agent against a 25/min anonymous limit
-  // and was timing out entirely when this was written. So this is their
-  // finding, implemented and not yet reproduced — which is a different thing
-  // from a finding of our own, and is labelled as such rather than repeated
-  // as though we had checked.
+  // It is NOT confirmed on live data. A sweep needs the detail endpoint, one
+  // call per agent against a 25/min anonymous limit, and it was refusing most
+  // requests when this was written: 11 agents came back out of 100 attempted.
+  //
+  // Of those 11, zero carried a template — and all 11 carried no endpoint at
+  // all, which is the more striking number and matches the ladder's 5 verified
+  // endpoints in 303,391 registrations. Eleven is far too small to confirm or
+  // refute anything, so this stays their finding, implemented and untested,
+  // rather than being repeated as though we had checked it.
   if (a.endpoint && /\{agent[_-]?id\}|\{tokenId\}|%7BagentId%7D/i.test(a.endpoint)) {
     out.push({
       code: "endpoint-template",

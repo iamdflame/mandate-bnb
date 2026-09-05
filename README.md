@@ -641,6 +641,19 @@ per unit of standing depth.
 The honest half is in the doc too — on the window the lock chose, the
 rebalancing agent would have churned and lost to doing nothing.
 
+## Adoption
+
+[`ADOPTION.md`](ADOPTION.md) · [`docs/INCIDENTS.md`](docs/INCIDENTS.md)
+
+BNB Chain's question is *"can we run this, and will it embarrass us?"* The
+answer is costed from measured transactions — **a settled epoch is $0.0101** —
+with a runbook someone who is not the author can follow, a key-management table
+saying what each role cannot do, eight failure modes with what is *not* handled,
+and a closing section titled **"What is not true yet."**
+
+The largest gap is named rather than buried: **there is no multisig on the
+owner key.**
+
 ## The data pipeline
 
 [`docs/DATA.md`](docs/DATA.md)

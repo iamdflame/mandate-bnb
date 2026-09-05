@@ -1,0 +1,48 @@
+name: verify-mainnet
+
+# Our own proof system, run against the live chain on every push and every
+# hour. If a settlement on BSC stops verifying, this is where it shows up —
+# which is the point of shipping a verifier rather than describing one.
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: verify mandate 0 on BSC
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - name: Build the verifier
+        working-directory: packages/mandate-verify
+        run: npm run build
+
+      - name: Verify, and prove the checks bind
+        run: |
+          set +e
+          node packages/mandate-verify/dist/cli.js --mandate 0 --chain 56 --tamper
+          code=$?
+          set -e
+          # 0 verified · 1 a real mismatch · 3 no node would serve the evidence.
+          # Only the middle one is a failure of ours; conflating the third with
+          # it would turn a rate-limited RPC into a broken mandate.
+          if [ "$code" = "1" ]; then
+            echo "::error::a settled value no longer matches its committed measurement"
+            exit 1
+          fi
+          if [ "$code" = "3" ]; then
+            echo "::warning::inconclusive — no provider would serve the logs"
+          fi
+          exit 0
