@@ -20,7 +20,7 @@ import { marketChain, marketClient, walletFor } from "@/lib/chain/market";
 import { valueWallet } from "@/lib/chain/prices";
 
 const V2 = (process.env.NEXT_PUBLIC_MARKET_V2_ADDRESS ??
-  "0x2BAD8DF36AE86459e350b8074fCe6Ec1B5C6DE38") as Address;
+  "0x6052C0ab83a99Fb37aC598c23b8E369fB21C71B2") as Address;
 
 const norm = (k?: string) => (k?.startsWith("0x") ? k : `0x${k}`) as Hex;
 const owner = walletFor(norm(process.env.PRIVATE_KEY));
@@ -124,6 +124,9 @@ await send(
     EPOCHS_TOTAL,
     3,
     -1_000,
+    // The bond must be at least a fifth of the capital under mandate. A flat
+    // floor is only meaningful at one size.
+    2_000,
   ],
   CAPITAL,
 );

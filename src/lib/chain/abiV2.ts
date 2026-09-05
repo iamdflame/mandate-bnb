@@ -606,6 +606,11 @@ export const MANDATE_MARKET_V2_ABI = [
             "name": "catastrophicAlphaBps",
             "type": "int32",
             "internalType": "int32"
+          },
+          {
+            "name": "bondFloorBps",
+            "type": "uint16",
+            "internalType": "uint16"
           }
         ]
       }
@@ -888,6 +893,11 @@ export const MANDATE_MARKET_V2_ABI = [
         "name": "catastrophic_",
         "type": "int32",
         "internalType": "int32"
+      },
+      {
+        "name": "bondFloorBps_",
+        "type": "uint16",
+        "internalType": "uint16"
       }
     ],
     "outputs": [
@@ -1193,6 +1203,25 @@ export const MANDATE_MARKET_V2_ABI = [
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "requiredBond",
+    "inputs": [
+      {
+        "name": "mandateId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint96",
+        "internalType": "uint96"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",

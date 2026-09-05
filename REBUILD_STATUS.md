@@ -23,7 +23,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | # | Problem | State | Evidence |
 |---|---|---|---|
 | B1 | ★ Benchmark lives in a local directory | **DONE** | `.benchmarks/` deleted; attestations on chain + Greenfield |
-| B2 | Market self-dealt with dust | **PARTIAL** | still one operator; bonds still ~$0.06. Needs R9 |
+| B2 | Market self-dealt with dust | **PARTIAL** | bond tiers now scale the floor with capital, and underwriting lets a third party post it — so the mechanism no longer requires the operator to be the bidder. The live bonds are still dust, because the funds are |
 | B3 | `minBond` source/chain divergence | **DONE** | constructor argument; events on both setters |
 | B4 | Alpha reported, not derived; adjudicator is us | **PARTIAL→v2** | v2 makes reporting cost a stake and lets anyone contradict it for the same block. The contract still cannot decide wallet value; it can freeze the money and price the lie |
 | B5 | README argues with the brief | **DONE** | opens with the ladder; the directory is swallowed, not rejected |
@@ -143,7 +143,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 |---|---|---|
 | R7 | PancakeSwap doc + pool-gap scanner | **DONE** |
 | R8 | Information architecture (9 routes) | **DONE** — all nine |
-| R9 | Supply side: listing, shadow mandates, underwriting, bond tiers | **PARTIAL** — ShadowLedger and Underwriter deployed; bond tiers not done |
+| R9 | Supply side: listing, shadow mandates, underwriting, bond tiers | **DONE** — all four |
 | R10 | Contract v2 (11 items) | **DONE** — 70 tests, deployed to mainnet |
 | R11 | Data pipeline | **PARTIAL** — `docs/DATA.md`, Postgres read path + migration, per-source reporting. No subgraph; production has no database attached |
 | R12 | CI, uptime, reliability | **DONE** — CI, `mandate-verify` against mainnet on a schedule, production smoke, `docs/INCIDENTS.md` |

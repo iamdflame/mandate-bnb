@@ -95,7 +95,8 @@ contract MandateMarketV2Test is Test {
             EPOCH,
             EPOCHS,
             STRIKES,
-            CATASTROPHIC
+            CATASTROPHIC,
+            0 // no proportional bond floor; the absolute minBond alone
         );
     }
 
@@ -113,7 +114,8 @@ contract MandateMarketV2Test is Test {
             EPOCH,
             EPOCHS,
             STRIKES,
-            CATASTROPHIC
+            CATASTROPHIC,
+            0 // no proportional bond floor; the absolute minBond alone
         );
         vm.stopPrank();
     }
@@ -417,7 +419,8 @@ contract MandateMarketV2Test is Test {
             EPOCH,
             EPOCHS,
             1, // one strike and you are out
-            CATASTROPHIC
+            CATASTROPHIC,
+            0
         );
         _bid(id, alice, 1 ether);
         _award(id, 0);
@@ -440,7 +443,8 @@ contract MandateMarketV2Test is Test {
             EPOCH,
             EPOCHS,
             STRIKES,
-            -300 // -3% is catastrophic here
+            -300, // -3% is catastrophic here
+            0
         );
         _bid(id, alice, 1 ether);
         _award(id, 0);
@@ -486,7 +490,7 @@ contract MandateMarketV2Test is Test {
         vm.expectRevert(MandateMarketV2.Paused.selector);
         market.openMandate{value: 1 ether}(
             MandateMarketV2.Category.Rebalancing, address(0), 0,
-            MandateMarketV2.Benchmark.Hold, TOLERANCE, FEE, SLASH, EPOCH, EPOCHS, STRIKES, CATASTROPHIC
+            MandateMarketV2.Benchmark.Hold, TOLERANCE, FEE, SLASH, EPOCH, EPOCHS, STRIKES, CATASTROPHIC, 0
         );
 
         // A halt must never trap funds already owed.
@@ -537,7 +541,7 @@ contract MandateMarketV2Test is Test {
         market.openMandate{value: 1 ether}(
             MandateMarketV2.Category.Rebalancing, address(0), 0,
             MandateMarketV2.Benchmark.Hold, TOLERANCE, FEE, SLASH,
-            1 hours, EPOCHS, STRIKES, CATASTROPHIC
+            1 hours, EPOCHS, STRIKES, CATASTROPHIC, 0
         );
     }
 
@@ -550,6 +554,64 @@ contract MandateMarketV2Test is Test {
         vm.prank(bob);
         market.acceptAdjudicator();
         assertEq(market.adjudicator(), bob);
+    }
+
+    // -------------------------------------------------------- bond tiers --
+
+    /**
+     * A flat floor is only meaningful at one size. At $0.06 it is nothing
+     * against a large mandate, and at a level meaningful there it excludes
+     * every small one.
+     */
+    function test_BondFloorScalesWithCapital() public {
+        vm.prank(principal);
+        uint256 id = market.openMandate{value: 10 ether}(
+            MandateMarketV2.Category.GridTrading, address(0), 0,
+            MandateMarketV2.Benchmark.Hold, TOLERANCE, FEE, SLASH, EPOCH, EPOCHS,
+            STRIKES, CATASTROPHIC,
+            1_000 // the bond must be at least a tenth of the capital
+        );
+        assertEq(market.requiredBond(id), 1 ether, "floor did not scale");
+
+        // The absolute minimum is nowhere near enough on a mandate this size.
+        vm.prank(alice);
+        vm.expectRevert(MandateMarketV2.BondTooSmall.selector);
+        market.bid{value: MIN_BOND}(id, 200, 0, 0);
+
+        vm.prank(alice);
+        market.bid{value: 1 ether}(id, 200, 0, 0);
+        assertEq(market.getBids(id)[0].bond, 1 ether);
+    }
+
+    function test_ZeroFloorKeepsTheAbsoluteMinimum() public {
+        // A principal who does not care should not be forced to.
+        uint256 id = _open(10 ether);
+        assertEq(market.requiredBond(id), MIN_BOND, "zero floor changed the minimum");
+        vm.prank(alice);
+        market.bid{value: MIN_BOND}(id, 200, 0, 0);
+        assertEq(market.getBids(id).length, 1);
+    }
+
+    function test_FloorNeverFallsBelowTheAbsoluteMinimum() public {
+        vm.prank(principal);
+        uint256 id = market.openMandate{value: 0.02 ether}(
+            MandateMarketV2.Category.GridTrading, address(0), 0,
+            MandateMarketV2.Benchmark.Hold, TOLERANCE, FEE, SLASH, EPOCH, EPOCHS,
+            STRIKES, CATASTROPHIC,
+            100 // 1% of 0.02 is 0.0002, well under minBond
+        );
+        assertEq(market.requiredBond(id), MIN_BOND, "the scaled floor undercut the absolute one");
+    }
+
+    function test_AFloorAboveTheCapitalIsRefused() public {
+        vm.prank(principal);
+        vm.expectRevert(MandateMarketV2.BadParameters.selector);
+        market.openMandate{value: 1 ether}(
+            MandateMarketV2.Category.GridTrading, address(0), 0,
+            MandateMarketV2.Benchmark.Hold, TOLERANCE, FEE, SLASH, EPOCH, EPOCHS,
+            STRIKES, CATASTROPHIC,
+            10_001
+        );
     }
 
     // ------------------------------------------------------------- fuzz --

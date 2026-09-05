@@ -78,7 +78,7 @@ line is the whole product: an agent can be fired, on-chain, while you watch.
 ## Settlement that costs something to get wrong
 
 [`contracts/src/MandateMarketV2.sol`](contracts/src/MandateMarketV2.sol) ·
-[`0x2BAD8DF3…DE38`](https://bscscan.com/address/0x2BAD8DF36AE86459e350b8074fCe6Ec1B5C6DE38)
+[`0x6052C0ab…71B2`](https://bscscan.com/address/0x6052C0ab83a99Fb37aC598c23b8E369fB21C71B2)
 
 V1 shipped with one honest weakness, written in its own source: alpha on
 off-vault positions cannot be derived on chain, so an adjudicator reported it.
@@ -117,6 +117,12 @@ own wallet, and that wallet paid a bond, a stake and gas between the two marks.
 In a deployment the managed wallet and the agent's operating wallet are not the
 same address.*
 
+**Bond tiers.** A flat floor is only meaningful at one size: $0.06 is nothing
+against a large mandate, and a level that means something there excludes every
+small one. A principal sets `bondFloorBps`, and a bid must post at least that
+share of the capital — never less than the market's absolute minimum, and zero
+keeps the old behaviour for a principal who does not care.
+
 Also in v2: **BEP-20 mandates** (`uint96` BNB excluded most real capital),
 **per-category benchmarks** (a measurement carries its own benchmark, so a yield
 agent earning 3% while 5% sat available has negative alpha — under `Hold` this
@@ -125,7 +131,7 @@ fee** capped at 5%, a **pause guard** that leaves withdrawals open, **bid
 expiry**, `challengeWindow < epochLength` enforced at open, and a **two-step
 adjudicator handover**.
 
-**70 tests pass** — 42 from v1, 28 new. The solvency invariant survives BEP-20
+**87 tests pass** — 42 from v1, 32 for v2, 13 for the supply side. The solvency invariant survives BEP-20
 and staking; two new invariants join it at 2,000 fuzz runs each: a resolved
 challenge pays out exactly the two stakes and can never mint a third, and
 attestations can never move backwards in block height.
@@ -134,7 +140,7 @@ attestations can never move backwards in block height.
 
 | | |
 |---|---|
-| **V2** — [`0x2BAD8DF3…DE38`](https://bscscan.com/address/0x2BAD8DF36AE86459e350b8074fCe6Ec1B5C6DE38) | Staked, challengeable settlement. BEP-20, per-category benchmarks, protocol fee, pause, bid expiry. |
+| **V2** — [`0x6052C0ab…71B2`](https://bscscan.com/address/0x6052C0ab83a99Fb37aC598c23b8E369fB21C71B2) | Staked, challengeable settlement. BEP-20, per-category benchmarks, protocol fee, pause, bid expiry. |
 | **V1** — [`0xeD331c…1544`](https://bscscan.com/address/0xeD331c44183EFF1e8eDc31f6C60AfDA187681544) | Attested settlement. What `mandate-verify` currently checks. |
 | **Superseded** — [`0x4c2BeE…58EC`](https://bscscan.com/address/0x4c2BeE70b4Acaf3b242860C9AefF97217D1758EC) | Pre-attestation. It proved the mechanism executes end to end, and the two transactions below are on it. |
 

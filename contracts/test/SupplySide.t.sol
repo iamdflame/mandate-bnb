@@ -137,7 +137,8 @@ contract UnderwriterTest is Test {
             EPOCH,
             10,
             3,
-            -1_000
+            -1_000,
+            0
         );
     }
 

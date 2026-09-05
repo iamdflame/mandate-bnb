@@ -101,6 +101,19 @@ contract MandateMarketV2 is ReentrancyGuard, Ownable {
         uint32 strikesToDismiss;
         /// @notice One epoch this far below benchmark dismisses at once.
         int32 catastrophicAlphaBps;
+        /**
+         * @notice The bond floor, as a share of capital under mandate.
+         *
+         * A flat `minBond` is only meaningful at one size. At $0.06 it is
+         * nothing against a million dollars, and at a level that means
+         * something against a million it excludes every small mandate. So the
+         * floor scales: a bid must post at least `capital * bondFloorBps`, and
+         * never less than the market's absolute `minBond`.
+         *
+         * Zero keeps the old behaviour — the absolute floor alone — because a
+         * principal who does not care should not be forced to.
+         */
+        uint16 bondFloorBps;
     }
 
     struct Bid {
@@ -340,12 +353,15 @@ contract MandateMarketV2 is ReentrancyGuard, Ownable {
         uint32 epochLength,
         uint32 epochsTotal,
         uint32 strikes_,
-        int32 catastrophic_
+        int32 catastrophic_,
+        uint16 bondFloorBps_
     ) external payable notPaused nonReentrant returns (uint256 mandateId) {
         if (epochsTotal == 0 || epochLength == 0) revert BadParameters();
         if (toleranceBps > MAX_BPS || feeBps > MAX_BPS || slashBps > MAX_BPS) revert BadParameters();
         if (strikes_ == 0) revert BadParameters();
         if (catastrophic_ >= 0) revert BadParameters();
+        // A floor above the capital itself could never be met.
+        if (bondFloorBps_ > MAX_BPS) revert BadParameters();
 
         // A challenge that cannot resolve before the next epoch settles leaves
         // slashes piling up unadjudicated. V1 allowed it; this does not.
@@ -375,7 +391,8 @@ contract MandateMarketV2 is ReentrancyGuard, Ownable {
                 asset: asset,
                 benchmark: benchmark,
                 strikesToDismiss: strikes_,
-                catastrophicAlphaBps: catastrophic_
+                catastrophicAlphaBps: catastrophic_,
+                bondFloorBps: bondFloorBps_
             })
         );
 
@@ -409,6 +426,18 @@ contract MandateMarketV2 is ReentrancyGuard, Ownable {
         emit Observed(mandateId, type(uint32).max, h, opening);
 
         _award(mandateId, m, bidIndex);
+    }
+
+    /**
+     * @notice What a bid on this mandate must post.
+     * @dev The greater of the market's absolute floor and this mandate's share
+     *      of capital. Public so a bidder can ask before it sends, rather than
+     *      finding out from a revert.
+     */
+    function requiredBond(uint256 mandateId) public view returns (uint96) {
+        Mandate storage m = _mandates[mandateId];
+        uint256 scaled = (uint256(m.capital) * m.bondFloorBps) / MAX_BPS;
+        return scaled > minBond ? uint96(scaled) : minBond;
     }
 
     function hashObservation(Observation calldata o) public pure returns (bytes32) {
@@ -473,7 +502,7 @@ contract MandateMarketV2 is ReentrancyGuard, Ownable {
         }
 
         uint96 posted = _take(m.asset, amount);
-        if (posted < minBond) revert BondTooSmall();
+        if (posted < requiredBond(mandateId)) revert BondTooSmall();
 
         uint64 expiresAt = ttl == 0
             ? uint64(block.timestamp) + uint64(m.epochLength) * uint64(m.epochsTotal)
