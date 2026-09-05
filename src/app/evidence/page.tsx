@@ -63,6 +63,12 @@ const PROOFS: Item[] = [
  */
 const ADVERSE: Item[] = [
   {
+    title: "We measured our own agents wrong, and slashed one for it",
+    body: "The valuation read native BNB and USDT and nothing else, so a V3 position, a Venus supply, a debt repayment or a WBNB wrap all counted as zero — the better an agent performed, the harder it was punished. Three slashes totalling 0.00037 BNB stand against one agent on that basis. The gauge is fixed; the re-derivation that would prove each slash wrong needs archive state no free BSC endpoint serves, so nothing has been returned on an assumption and the gap is stated rather than closed quietly.",
+    href: "https://github.com/iamdflame/mandate-bnb/blob/main/docs/RESTATEMENT.md",
+    hrefLabel: "Read the restatement",
+  },
+  {
     title: "The rebalancing agent lost to doing nothing",
     body: "Over the locked window, the one sampled position that crossed the agent's re-centre trigger came back into range on its own. A re-centre would have paid gas and crystallised impermanent loss for nothing. On that window, at that tolerance, inaction beat the agent.",
   },

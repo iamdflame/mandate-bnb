@@ -52,7 +52,8 @@
     "shots:canonical": "node src/scripts/canonical-shots.mjs docs/screenshots 2410",
     "shots:mobile": "node src/scripts/mobile-check.mjs .shots-390",
     "value": "tsx src/scripts/value-wallet.ts",
-    "test:fork": "anvil --fork-url ${BSC_RPC_URL:-https://bsc-dataseed.bnbchain.org} --port 8549 --silent & sleep 20; FORK_RPC_URL=http://127.0.0.1:8549 vitest run src/lib/chain/valuation/; kill %1"
+    "test:fork": "anvil --fork-url ${BSC_RPC_URL:-https://bsc-dataseed.bnbchain.org} --port 8549 --silent & sleep 20; FORK_RPC_URL=http://127.0.0.1:8549 vitest run src/lib/chain/valuation/; kill %1",
+    "restate": "tsx src/scripts/restate.ts"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",

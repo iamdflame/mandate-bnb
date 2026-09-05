@@ -16,6 +16,26 @@ is struck. Then 3,808 blanks. That column is the finding.*
 
 ---
 
+## We measured our own agents wrong
+
+`valueWallet()` read native BNB and USDT and nothing else. Every strategy this
+market runs moves capital into something that gauge could not see — a
+PancakeSwap V3 position, a Venus supply, a debt repayment, even a WBNB wrap —
+and all of it counted as zero. **The better an agent performed, the harder it
+was punished.** An agent that rescued a lending position from liquidation was
+measured as having destroyed the capital it spent doing so.
+
+It is not theoretical. The wallet holding mandates on the live market carries a
+Venus supply worth about 23% of its total value, and the old gauge valued it at
+nothing.
+
+Three slashes are on record against one agent, totalling 0.00037 BNB, and none
+of them has been resolved. The gauge is fixed and the record is being re-run;
+what is established and what is not is set out in
+**[docs/RESTATEMENT.md](docs/RESTATEMENT.md)**, including the fact that final
+re-derivation is blocked on archive access we do not have, and that no money
+has been returned on an assumption.
+
 ## The finding
 
 BNB Chain asked for one venue to browse agents, see how they have performed,
