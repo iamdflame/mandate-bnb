@@ -16,6 +16,7 @@
  */
 
 import { getAgent, listFeedbacks, type ScanFeedback } from "@/lib/sources/scan";
+import { memo } from "@/lib/cache";
 import {
   detectCoordination,
   profileReviewers,
@@ -50,8 +51,19 @@ export interface Autopsy {
   reasons: string[];
   /** Share of this agent's feedback written by flagged wallets, 0-100. */
   flaggedShare: number;
-  /** Feedback records the whole-registry sample was drawn from. */
+  /** Reviewer profiles the whole-registry sample was drawn from. */
   populationSampled: number;
+  /**
+   * Whether that sample could actually be read.
+   *
+   * The registry-wide feedback endpoint returns `DATABASE_ERROR` under load,
+   * and when it does the profiles fall back to this agent's own reviewers —
+   * a corpus of one or two wallets. De-duplication judged against that is not
+   * de-duplication, and reporting it as though it were would be exactly the
+   * unearned confidence this page exists to expose. So it is stated, and no
+   * verdict is offered.
+   */
+  populationRead: boolean;
   reproduce: string;
   thresholds: typeof SYBIL_DEFAULTS;
 }
@@ -104,11 +116,43 @@ async function population(chainId: number, pages: number): Promise<Map<string, R
   return profiles;
 }
 
+/**
+ * The autopsy for one agent, memoised.
+ *
+ * It costs eighteen or so calls against an API that allows twenty-five a
+ * minute anonymously, and the agent page was timing out before it ever
+ * rendered — which meant the single highest-value component in the product was
+ * one nobody had actually seen. The corpus moves slowly; the reading does not
+ * need recomputing for every visitor inside the same few minutes.
+ */
 export async function readAutopsy(
   chainId: number,
   tokenId: string,
   opts: { populationPages?: number } = {},
 ): Promise<Autopsy | null> {
+  return memo(
+    `autopsy:${chainId}:${tokenId}:${opts.populationPages ?? 12}`,
+    { freshMs: 5 * 60_000, staleMs: 30 * 60_000 },
+    () => readAutopsyUncached(chainId, tokenId, opts),
+  );
+}
+
+async function readAutopsyUncached(
+  chainId: number,
+  tokenId: string,
+  opts: { populationPages?: number } = {},
+): Promise<Autopsy | null> {
+  /*
+    The registry-wide sample and this agent's own corpus are fetched together.
+
+    They were sequential, and the population walk is the expensive half — so
+    every agent page paid for the whole registry before it started reading the
+    agent it was actually about. Started here, the population is usually
+    already cached by the time it is needed, and on a cold cache the two walks
+    at least overlap.
+  */
+  const populationWork = population(chainId, opts.populationPages ?? 12);
+
   let detail: Awaited<ReturnType<typeof getAgent>>;
   const own: ScanFeedback[] = [];
   try {
@@ -120,14 +164,30 @@ export async function readAutopsy(
       if (items.length < 100) break;
     }
   } catch {
+    // The population walk is still in flight; let it settle into its cache
+    // rather than surfacing as an unhandled rejection.
+    void populationWork.catch(() => {});
     return null;
   }
 
-  if (own.length === 0) return null;
+  if (own.length === 0) {
+    void populationWork.catch(() => {});
+    return null;
+  }
 
-  const profiles = await population(chainId, opts.populationPages ?? 12).catch(
-    () => profileReviewers(own),
-  );
+  /*
+    A failed registry walk is not an empty registry.
+
+    `population` throws when the upstream refuses, and falling back to this
+    agent's own reviewers gives a "population" of one or two wallets. That
+    fallback still lets the page render the two scores side by side, but the
+    page must know it happened.
+  */
+  let populationRead = true;
+  const profiles = await populationWork.catch(() => {
+    populationRead = false;
+    return profileReviewers(own);
+  });
   const owners = new Set(
     [detail.owner_address, detail.agent_wallet, detail.creator_address]
       .filter(Boolean)
@@ -170,6 +230,7 @@ export async function readAutopsy(
     flaggedShare: own.length ? ((own.length - clean.length) / own.length) * 100 : 0,
     reasons: [...new Set(flagged.flatMap((f) => f.reasons))].slice(0, 6),
     populationSampled: profiles.size,
+    populationRead,
     reproduce: `npm run sybil -- ${tokenId}`,
     thresholds: SYBIL_DEFAULTS,
   };

@@ -6,6 +6,12 @@ Built for *The Smart Money Era* — BNB Chain, main track.
 
 **Live:** https://mandate-coral.vercel.app · **Start here:** [/start](https://mandate-coral.vercel.app/start)
 
+![The register, sorted by fineness. The mark column is empty for every row.](docs/screenshots/register.png)
+
+*The register, sorted by fineness descending. Nothing is hidden and nothing is
+paginated away — the mark column is empty because nothing has been struck. That
+column is the finding.*
+
 ---
 
 ## The finding
@@ -34,6 +40,15 @@ The reputation attached to those registrations does not survive contact either.
 agent, `@binance · Ensoul`, a published 84.7 becomes 81.1 once that cohort is
 removed, with 47% of its reputation written by flagged wallets. Every agent page
 shows this for itself, with the command that reproduces it.
+
+The certificate screenshot is regenerated with `npm run shots:canonical`; it is
+held back at the moment because the 8004scan index is returning
+`DATABASE_ERROR` on every endpoint, and a screenshot of an upstream outage is
+not a screenshot of the product.
+
+The brand system behind these pages — the hallmarking platform, the mark
+geometry, the palette, the motion doctrine — is documented in
+[BRAND.md](BRAND.md).
 
 ## What a rung costs
 

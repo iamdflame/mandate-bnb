@@ -21,6 +21,7 @@ import { bnb, useMarket, type TapeEntry } from "@/lib/useMarket";
 import type { FloorMandate } from "@/app/api/floor/route";
 import AgentStandings from "./AgentStandings";
 import OperatedAgents from "@/components/agents/OperatedAgents";
+import Legend from "@/components/floor/Legend";
 import SiteHeader from "@/components/shell/SiteHeader";
 
 const CATEGORIES = ["Rebalancing", "Grid Trading", "Yield Optimisation", "Health Factor"];
@@ -126,10 +127,20 @@ export default function MarketApp({ explorer }: { explorer: string }) {
           </div>
         </div>
 
-        <figure className="hero__viz">
-          <FloorCanvas state={stateRef} />
-          <figcaption className="label">
-            live · size is capital under mandate, ring is bond still at risk
+        {/*
+          The floor, with the legend that turns it from art into an instrument.
+
+          Everything moving on the canvas is a field of a mandate. Without the
+          legend it reads as a generative background; with it, a viewer can name
+          what they are looking at and check it against the table below — which
+          is the whole difference between decoration and a reading.
+        */}
+        <figure className="hero__viz floorwin">
+          <FloorCanvas state={stateRef} className="floorwin__canvas" />
+          <Legend compact />
+          <figcaption className="mark-label floorwin__status">
+            <span className={`pulse ${connected ? "pulse--on" : ""}`} aria-hidden />
+            {connected ? "live" : "reconnecting"}
           </figcaption>
         </figure>
       </section>

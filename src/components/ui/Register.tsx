@@ -1,0 +1,425 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Fineness from "@/components/mark/Fineness";
+import CategoryMark from "@/components/mark/CategoryMark";
+import Observation from "./Observation";
+import { CATEGORIES, CATEGORY_LABEL, RUNG_NAMES, type Category } from "@/lib/config";
+import { gradeOf } from "@/components/mark/geometry";
+
+export interface RegisterRow {
+  /** ERC-8004 token id, or the wallet for a market holder that has none. */
+  tokenId: string;
+  /**
+   * Where this row came from.
+   *
+   * The registry and the market are not yet the same population — no ERC-8004
+   * agent has ever posted a bond here — and a register that silently merged
+   * them would hide the single most important fact about this market. So both
+   * appear, sorted together by fineness, and each row says which it is.
+   */
+  source: "registry" | "market";
+  /** Where the row links. A certificate, or a ledger for a market holder. */
+  href: string;
+  name: string | null;
+  owner: string | null;
+  category: Category | null;
+  /** On-chain millesimal fineness. Null means never assayed, not zero. */
+  fineness: number | null;
+  endpointVerified: boolean;
+  rung: number;
+  rungReason: string;
+  lastSeen: string | null;
+  /** Wei, as a string — bigint does not survive the RSC boundary. */
+  bondWei: string | null;
+  alphaBps: number | null;
+  feedbacks: number;
+}
+
+type SortKey = "fineness" | "tokenId" | "name" | "rung" | "bond" | "alpha" | "seen";
+
+const ROW = 44;
+const OVERSCAN = 10;
+
+/**
+ * The register.
+ *
+ * Every agent we have actually read, in one table, sorted by fineness. The
+ * first screen is the hallmarked agents and then a cliff — and the cliff is
+ * the finding, not a rendering problem to be smoothed over. Nothing is hidden,
+ * nothing is paginated away, and nothing below the bar is greyed out
+ * apologetically: it simply carries no mark.
+ *
+ * Virtualised, because the argument only works if you can scroll the whole
+ * thing. Rows are a fixed 44px so the window arithmetic is exact and the
+ * scrollbar tells the truth about how far down the blanks go.
+ */
+export default function Register({
+  rows,
+  chainId,
+  blockNumber,
+  readAt,
+  unindexed,
+  registered,
+  initial,
+}: {
+  rows: RegisterRow[];
+  chainId: number;
+  blockNumber?: string | number | null;
+  readAt?: string | null;
+  /** Registered agents we have not read yet. Stated, never invented as rows. */
+  unindexed?: number;
+  registered?: number;
+  initial?: { rung?: number | "all"; category?: Category | "all"; q?: string };
+}) {
+  const [q, setQ] = useState(initial?.q ?? "");
+  const [rung, setRung] = useState<number | "all">(initial?.rung ?? "all");
+  const [category, setCategory] = useState<Category | "all">(initial?.category ?? "all");
+  const [endpoint, setEndpoint] = useState<"all" | "answering" | "silent">("all");
+  const [marked, setMarked] = useState<"all" | "struck" | "unmarked">("all");
+  const [source, setSource] = useState<"all" | "registry" | "market">("all");
+  const [sort, setSort] = useState<SortKey>("fineness");
+  const [desc, setDesc] = useState(true);
+
+  const search = useRef<HTMLInputElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
+  const [top, setTop] = useState(0);
+  const [height, setHeight] = useState(880);
+
+  /** `/` focuses search, the way every register a judge already uses does. */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+      e.preventDefault();
+      search.current?.focus();
+      search.current?.select();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  /**
+   * Filter state lives in the URL so a filtered view can be sent to someone.
+   * Written with replaceState rather than a router navigation: this page is
+   * dynamic, and re-rendering the server tree on every keystroke would make
+   * the filters feel broken to defend a URL nobody has clicked yet.
+   */
+  useEffect(() => {
+    const p = new URLSearchParams();
+    if (q) p.set("q", q);
+    if (rung !== "all") p.set("rung", String(rung));
+    if (category !== "all") p.set("category", category);
+    if (endpoint !== "all") p.set("endpoint", endpoint);
+    if (marked !== "all") p.set("marked", marked);
+    if (source !== "all") p.set("source", source);
+    const qs = p.toString();
+    window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
+  }, [q, rung, category, endpoint, marked, source]);
+
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    const measure = () => setHeight(el.clientHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    const out = rows.filter((r) => {
+      if (rung !== "all" && r.rung !== rung) return false;
+      if (category !== "all" && r.category !== category) return false;
+      if (endpoint === "answering" && !r.endpointVerified) return false;
+      if (endpoint === "silent" && r.endpointVerified) return false;
+      const struck = (r.fineness ?? 0) >= 375;
+      if (marked === "struck" && !struck) return false;
+      if (marked === "unmarked" && struck) return false;
+      if (source !== "all" && r.source !== source) return false;
+      if (!needle) return true;
+      return (
+        r.tokenId.includes(needle) ||
+        (r.name ?? "").toLowerCase().includes(needle) ||
+        (r.owner ?? "").toLowerCase().includes(needle)
+      );
+    });
+
+    const dir = desc ? -1 : 1;
+    out.sort((a, b) => dir * (value(a, sort) - value(b, sort)) || Number(a.tokenId) - Number(b.tokenId));
+    return out;
+  }, [rows, q, rung, category, endpoint, marked, source, sort, desc]);
+
+  const first = Math.max(0, Math.floor(top / ROW) - OVERSCAN);
+  const last = Math.min(filtered.length, Math.ceil((top + height) / ROW) + OVERSCAN);
+  const visible = filtered.slice(first, last);
+
+  const header = useCallback(
+    (key: SortKey, label: string, className?: string) => (
+      <th className={className} scope="col" aria-sort={sort === key ? (desc ? "descending" : "ascending") : "none"}>
+        <button
+          type="button"
+          onClick={() => {
+            if (sort === key) setDesc((d) => !d);
+            else {
+              setSort(key);
+              setDesc(true);
+            }
+          }}
+        >
+          {label}
+          {sort === key ? (desc ? " ↓" : " ↑") : ""}
+        </button>
+      </th>
+    ),
+    [sort, desc],
+  );
+
+  const struckCount = useMemo(
+    () => filtered.filter((r) => (r.fineness ?? 0) >= 375).length,
+    [filtered],
+  );
+
+  return (
+    <div className="reg">
+      <aside className="reg__rail">
+        <label className="reg__search">
+          <span className="mark-label">Search</span>
+          <input
+            ref={search}
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="token id, name, owner"
+            aria-label="Search the register"
+          />
+          <span className="mark-label reg__hint">press /</span>
+        </label>
+
+        <Facet label="Rung">
+          <Choice on={rung === "all"} onClick={() => setRung("all")}>
+            any
+          </Choice>
+          {RUNG_NAMES.map((name, n) => (
+            <Choice key={name} on={rung === n} onClick={() => setRung(n)}>
+              {n} {name.toLowerCase()}
+            </Choice>
+          ))}
+        </Facet>
+
+        <Facet label="Office">
+          <Choice on={category === "all"} onClick={() => setCategory("all")}>
+            any
+          </Choice>
+          {CATEGORIES.map((c) => (
+            <Choice key={c} on={category === c} onClick={() => setCategory(c)}>
+              {CATEGORY_LABEL[c].toLowerCase()}
+            </Choice>
+          ))}
+        </Facet>
+
+        <Facet label="Endpoint">
+          <Choice on={endpoint === "all"} onClick={() => setEndpoint("all")}>
+            any
+          </Choice>
+          <Choice on={endpoint === "answering"} onClick={() => setEndpoint("answering")}>
+            answers when called
+          </Choice>
+          <Choice on={endpoint === "silent"} onClick={() => setEndpoint("silent")}>
+            silent
+          </Choice>
+        </Facet>
+
+        <Facet label="Population">
+          <Choice on={source === "all"} onClick={() => setSource("all")}>
+            both
+          </Choice>
+          <Choice on={source === "registry"} onClick={() => setSource("registry")}>
+            erc-8004 registry
+          </Choice>
+          <Choice on={source === "market"} onClick={() => setSource("market")}>
+            holds a mandate
+          </Choice>
+        </Facet>
+
+        <Facet label="Hallmark">
+          <Choice on={marked === "all"} onClick={() => setMarked("all")}>
+            any
+          </Choice>
+          <Choice on={marked === "struck"} onClick={() => setMarked("struck")}>
+            struck
+          </Choice>
+          <Choice on={marked === "unmarked"} onClick={() => setMarked("unmarked")}>
+            unmarked
+          </Choice>
+        </Facet>
+      </aside>
+
+      <div className="reg__main">
+        <div className="reg__stat">
+          <Observation
+            size="small"
+            label="Showing"
+            value={`${filtered.length.toLocaleString()} of ${rows.length.toLocaleString()} read`}
+            block={blockNumber ?? undefined}
+            at={readAt ?? undefined}
+          />
+          <span className="mark-label reg__struck" data-none={struckCount === 0 ? "1" : undefined}>
+            {struckCount} hallmarked in this view
+          </span>
+          {unindexed && unindexed > 0 ? (
+            <span className="mark-label reg__tail">
+              {unindexed.toLocaleString()} further registered agents not yet read
+              {registered ? ` · ${registered.toLocaleString()} registered in total` : ""}
+            </span>
+          ) : null}
+        </div>
+
+        <div className="register__scroll" ref={scroller} onScroll={(e) => setTop(e.currentTarget.scrollTop)}>
+          <table className="register">
+            <thead>
+              <tr>
+                {/*
+                  The mark column is labelled, not left as an unnamed gutter.
+
+                  Almost every row under it is blank, and a blank column with
+                  no heading reads as something that failed to render. Named,
+                  the same emptiness reads as what it is: nothing was struck.
+                */}
+                <th className="mark-col" scope="col">
+                  mark
+                </th>
+                {header("tokenId", "token")}
+                {header("name", "name", "name-col")}
+                <th scope="col">office</th>
+                {header("fineness", "fineness", "num")}
+                <th scope="col">endpoint</th>
+                {header("seen", "last read", "num")}
+                {header("bond", "bond", "num")}
+                {header("alpha", "alpha", "num")}
+              </tr>
+            </thead>
+            <tbody>
+              {first > 0 ? (
+                <tr style={{ height: first * ROW }} aria-hidden>
+                  <td colSpan={9} />
+                </tr>
+              ) : null}
+
+              {visible.map((r) => {
+                const struck = (r.fineness ?? 0) >= 375;
+                return (
+                  <tr key={r.tokenId} data-struck={struck ? "1" : undefined}>
+                    <td className="mark-col">
+                      <Fineness fineness={r.fineness ?? 0} size={20} />
+                    </td>
+                    <td className="num">
+                      <a href={r.href}>
+                        {r.source === "market" ? `${r.tokenId.slice(0, 8)}…` : r.tokenId}
+                      </a>
+                    </td>
+                    <td className="name-col" title={r.name ?? undefined}>
+                      <a href={r.href}>{r.name ?? "—"}</a>
+                      {r.source === "market" ? (
+                        <span className="reg__src mark-label"> holder</span>
+                      ) : null}
+                    </td>
+                    <td>
+                      {r.category ? (
+                        <span className="reg__office" title={CATEGORY_LABEL[r.category]}>
+                          <CategoryMark category={r.category} size={16} metal="var(--pewter-500)" />
+                        </span>
+                      ) : (
+                        <span className="dim">—</span>
+                      )}
+                    </td>
+                    <td className="num" style={struck ? { color: gradeOf(r.fineness ?? 0).metal } : undefined}>
+                      {r.fineness === null ? "—" : r.fineness}
+                    </td>
+                    <td className="num">{r.endpointVerified ? "answers" : "—"}</td>
+                    <td className="num">{shortDate(r.lastSeen)}</td>
+                    <td className="num">{r.bondWei ? bnb(r.bondWei) : "—"}</td>
+                    <td className="num">{alpha(r.alphaBps)}</td>
+                  </tr>
+                );
+              })}
+
+              {last < filtered.length ? (
+                <tr style={{ height: (filtered.length - last) * ROW }} aria-hidden>
+                  <td colSpan={9} />
+                </tr>
+              ) : null}
+
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="reg__none">
+                    Nothing in the register matches that.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Facet({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="reg__facet">
+      <span className="mark-label">{label}</span>
+      <div className="reg__choices">{children}</div>
+    </div>
+  );
+}
+
+function Choice({
+  on,
+  onClick,
+  children,
+}: {
+  on: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button type="button" className="reg__choice" data-on={on ? "1" : undefined} onClick={onClick} aria-pressed={on}>
+      {children}
+    </button>
+  );
+}
+
+function value(r: RegisterRow, key: SortKey): number {
+  switch (key) {
+    case "fineness":
+      return r.fineness ?? -1;
+    case "tokenId":
+      return Number(r.tokenId);
+    case "rung":
+      return r.rung;
+    case "bond":
+      return r.bondWei ? Number(BigInt(r.bondWei) / 10n ** 9n) : -1;
+    case "alpha":
+      return r.alphaBps ?? Number.NEGATIVE_INFINITY;
+    case "seen":
+      return r.lastSeen ? Date.parse(r.lastSeen) : 0;
+    case "name":
+      // Names sort lexically; the numeric comparator gets a stable proxy.
+      return r.name ? -r.name.toLowerCase().charCodeAt(0) : -1e6;
+  }
+}
+
+const bnb = (wei: string) => (Number(BigInt(wei)) / 1e18).toFixed(4);
+
+const alpha = (bps: number | null) =>
+  bps === null ? "—" : `${bps > 0 ? "+" : ""}${(bps / 100).toFixed(2)}%`;
+
+const shortDate = (iso: string | null) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return "—";
+  return d.toISOString().slice(5, 10).replace("-", "·");
+};

@@ -21,7 +21,8 @@ import {
 } from "@/lib/chain/market";
 import { HALLMARK_BAR } from "@/lib/ladder";
 import type { Address } from "viem";
-import { RUNG_NAMES } from "@/lib/config";
+import { CATEGORIES, RUNG_NAMES, type Category } from "@/lib/config";
+import { memo } from "@/lib/cache";
 
 export interface MarketSets {
   /** Lower-cased wallets with a fineness at or above the bar. */
@@ -30,14 +31,44 @@ export interface MarketSets {
   bonded: Set<string>;
   /** Lower-cased wallets with at least one settled epoch. */
   settled: Set<string>;
+  /**
+   * What the market actually holds against each wallet.
+   *
+   * The register renders a fineness, a bond and a running alpha per row, and
+   * every one of those is a chain read rather than an index field — so they
+   * travel with the sets rather than being fetched again per row.
+   */
+  standing: Map<string, WalletStanding>;
   /** False when the chain could not be read; rungs 4-6 are then unknown. */
   read: boolean;
+}
+
+export interface WalletStanding {
+  /** On-chain millesimal fineness. Null where the market has never assayed it. */
+  fineness: number | null;
+  /** Total bond currently at risk across this wallet's mandates, in wei. */
+  bondWei: bigint;
+  /** Sum of settled alpha, in basis points. */
+  alphaBps: bigint;
+  epochsSettled: number;
+  mandates: number;
+  /**
+   * The office this wallet works under, from the mandate it holds.
+   *
+   * The market's own holders are not ERC-8004 entries, so their category
+   * cannot come from a registry card — it comes from what they were hired to
+   * do, which is the stronger source anyway.
+   */
+  category: Category | null;
+  /** Mandate ids held, so a register row can link to the ledger. */
+  mandateIds: number[];
 }
 
 export const EMPTY_SETS: MarketSets = {
   assayed: new Set(),
   bonded: new Set(),
   settled: new Set(),
+  standing: new Map(),
   read: false,
 };
 
@@ -48,9 +79,14 @@ export const EMPTY_SETS: MarketSets = {
  * is a handful of reads rather than a scan per agent.
  */
 export async function readMarketSets(): Promise<MarketSets> {
+  return memo("market-sets", { freshMs: 20_000, staleMs: 5 * 60_000 }, readMarketSetsUncached);
+}
+
+async function readMarketSetsUncached(): Promise<MarketSets> {
   const assayed = new Set<string>();
   const bonded = new Set<string>();
   const settled = new Set<string>();
+  const standing = new Map<string, WalletStanding>();
   try {
     const mandates = await readAllMandates();
     for (const m of mandates) {
@@ -58,6 +94,24 @@ export async function readMarketSets(): Promise<MarketSets> {
       if (!a || /^0x0+$/.test(a)) continue;
       bonded.add(a);
       if (m.epochsSettled > 0) settled.add(a);
+      const prior = standing.get(a) ?? {
+        fineness: null,
+        bondWei: 0n,
+        alphaBps: 0n,
+        epochsSettled: 0,
+        mandates: 0,
+        category: null,
+        mandateIds: [] as number[],
+      };
+      standing.set(a, {
+        fineness: prior.fineness,
+        bondWei: prior.bondWei + m.bond,
+        alphaBps: prior.alphaBps + m.cumulativeAlphaBps,
+        epochsSettled: prior.epochsSettled + m.epochsSettled,
+        mandates: prior.mandates + 1,
+        category: prior.category ?? CATEGORIES[m.category] ?? null,
+        mandateIds: [...prior.mandateIds, m.id],
+      });
     }
     for (const a of bonded) {
       const f = (await marketClient.readContract({
@@ -66,9 +120,11 @@ export async function readMarketSets(): Promise<MarketSets> {
         functionName: "fineness",
         args: [a as Address],
       })) as number;
+      const entry = standing.get(a);
+      if (entry) entry.fineness = Number(f);
       if (Number(f) >= HALLMARK_BAR) assayed.add(a);
     }
-    return { assayed, bonded, settled, read: true };
+    return { assayed, bonded, settled, standing, read: true };
   } catch {
     return EMPTY_SETS;
   }

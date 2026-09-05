@@ -9,6 +9,7 @@
  */
 
 import { SCAN_API_KEY, SCAN_BASE_URL } from "@/lib/config";
+import { memo } from "@/lib/cache";
 
 /** Conservative unless a key is present. Pro tier is 500/min. */
 const RATE_PER_MIN = SCAN_API_KEY ? 450 : 25;
@@ -224,8 +225,21 @@ export function listAgents(params: {
   return get<ScanPage<ScanAgentSummary>>(`/agents?${q}`);
 }
 
+/**
+ * One agent's registration record.
+ *
+ * Memoised, because the certificate page reads it and the live assay reads it
+ * again for the same agent on the same request — two calls through a queue
+ * that only drains every 2.4 seconds. With several pages open the queue was
+ * minutes deep and the assay simply never finished: the stream emitted
+ * "reading registry claim" and stopped there.
+ */
 export const getAgent = (chainId: number, tokenId: string) =>
-  get<ScanAgentDetail>(`/agents/${chainId}/${tokenId}`);
+  memo(
+    `scan:agent:${chainId}:${tokenId}`,
+    { freshMs: 60_000, staleMs: 10 * 60_000 },
+    () => get<ScanAgentDetail>(`/agents/${chainId}/${tokenId}`),
+  );
 
 export function listFeedbacks(params: {
   chainId: number;
@@ -245,7 +259,19 @@ export function listFeedbacks(params: {
     sort_by: "submitted_at",
     sort_order: "asc",
   });
-  return get<ScanPage<ScanFeedback>>(`/feedbacks?${q}`);
+  /*
+    Feedback pages are memoised on the exact query.
+
+    The reputation autopsy walks twelve registry-wide pages and five for the
+    agent itself. Every visitor to every agent page walks the same twelve, and
+    each walk is a place in the same 25-per-minute queue. Keyed on the query
+    string, one walk serves them all.
+  */
+  return memo(
+    `scan:feedbacks:${q}`,
+    { freshMs: 5 * 60_000, staleMs: 30 * 60_000 },
+    () => get<ScanPage<ScanFeedback>>(`/feedbacks?${q}`),
+  );
 }
 
 /** Cheapest possible way to read a filtered total: ask for one row, read `total`. */

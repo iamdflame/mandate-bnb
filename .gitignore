@@ -31,3 +31,6 @@ contracts/broadcast/
 
 # built verifier package
 packages/mandate-verify/dist/
+
+# Narrow-viewport captures from `npm run shots:mobile`. Checked by eye, not committed.
+.shots-390/

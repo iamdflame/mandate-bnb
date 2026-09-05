@@ -33,6 +33,7 @@ import {
   readAllMandates,
 } from "@/lib/chain/market";
 import { parseAbiItem, type Address } from "viem";
+import { memo } from "@/lib/cache";
 
 /** The lowest hallmarkable grade, and this market's bar. */
 export const HALLMARK_BAR = 375;
@@ -121,7 +122,20 @@ async function readAssayed(): Promise<{ count: number; agents: Address[] } | nul
   return null;
 }
 
+/**
+ * The ladder, memoised.
+ *
+ * Rung 4 scans event logs from the deploy block in 4,000-block windows, which
+ * takes seventeen seconds against a free provider — long enough that the front
+ * page simply did not paint. The reading itself is unchanged; it is just not
+ * recomputed for every visitor inside the same minute, and the page stamps the
+ * block and the age of what it is showing.
+ */
 export async function readLadder(): Promise<LadderReading> {
+  return memo("ladder", { freshMs: 45_000, staleMs: 10 * 60_000 }, readLadderUncached);
+}
+
+async function readLadderUncached(): Promise<LadderReading> {
   const index = await readAgentIndex();
   const registry = index.registry;
 

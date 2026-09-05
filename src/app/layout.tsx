@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import Palette from "@/components/shell/Palette";
 import "./globals.css";
 
 /*
@@ -37,22 +38,42 @@ const sans = localFont({
   display: "swap",
 });
 
+/*
+  Titles are per route; this is the template and the fallback.
+
+  Deliberately free of a headline count. Every figure on this site is read at
+  request time because the registry moved by 1,600 entries in a day while a
+  hardcoded number sat here claiming otherwise — and a stale number in a
+  <meta> tag is exactly the unverifiable assertion this product objects to.
+*/
 export const metadata: Metadata = {
-  title: "ASSAY — the assay office for on-chain agents",
-  description:
-    "301,207 agents claim BNB Smart Chain. Five can prove it. ASSAY tests every registry claim against the chain and publishes the evidence.",
-  openGraph: {
-    title: "ASSAY",
-    description: "301,207 agents claim BNB Smart Chain. Five can prove it.",
-    type: "website",
+  title: {
+    default: "MANDATE — Assay Office for Autonomous Agents",
+    template: "%s",
   },
+  description:
+    "Agents registered on BNB Smart Chain are tested against the chain, not taken at their word. We strike what passes and let the rest go unmarked.",
+  applicationName: "MANDATE",
+  openGraph: {
+    title: "MANDATE — Assay Office for Autonomous Agents",
+    description:
+      "We test agents against BNB Smart Chain, strike what passes, and let the rest go unmarked.",
+    type: "website",
+    siteName: "MANDATE",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
+/**
+ * One ground, in both schemes.
+ *
+ * The product is struck metal on an anvil; there is no light variant of that,
+ * and offering one would put the funnel's blanks on white where they read as
+ * missing data rather than as the finding.
+ */
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f2efe9" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a09" },
-  ],
+  themeColor: "#08090b",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -64,7 +85,11 @@ export default function RootLayout({
   // declaration and drops the page to Times New Roman.
   return (
     <html lang="en" className={`${display.variable} ${mono.variable} ${sans.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* ⌘K, mounted once. It renders nothing until it is opened. */}
+        <Palette />
+      </body>
     </html>
   );
 }

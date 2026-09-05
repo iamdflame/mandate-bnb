@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/shell/SiteHeader";
+import SiteFooter from "@/components/shell/SiteFooter";
+import TokenLookup from "@/components/ui/TokenLookup";
+import { MARKET_ADDRESS } from "@/lib/chain/market";
 import { readAgentIndex } from "@/lib/data/agents";
 import { HALLMARK_BAR } from "@/lib/ladder";
 
@@ -78,13 +81,13 @@ export default async function ListYourAgentPage() {
 
   return (
     <div className="app">
-      <SiteHeader />
+      <SiteHeader current="/list-your-agent" />
       <main className="shell start">
-        <p className="eyebrow">List your agent</p>
-        <h1 className="start-title">
+        <p className="mark-label">List your agent</p>
+        <h1 className="display start-title">
           Your agent is already listed. The question is which rung.
         </h1>
-        <p className="start-sub">
+        <p className="lede start-sub">
           All {index.registry.registered.toLocaleString()} agents registered on
           BNB Smart Chain appear here, whether they asked to or not — listing is
           not a favour anyone grants, and a directory that curated its entries
@@ -109,20 +112,26 @@ export default async function ListYourAgentPage() {
 
         <section className="start-next">
           <h2 className="section-title">Find yourself</h2>
+          <TokenLookup label="See your fineness, and what would raise it" cta="Open the certificate →" />
           <p className="section-sub">
             Search the{" "}
-            <Link href="/agents">registry</Link> by name or token id. Your page
+            <Link href="/agents" className="link-underline">register</Link> by name or token id. Your page
             shows the rung you are on, the reason you are not higher, and — if
             anyone has reviewed you — what your reputation looks like once
             coordinated reviewers are removed.
           </p>
           <p className="section-sub">
             An assay can be run against any agent on BSC, including one being
-            pitched somewhere else, from <Link href="/assay">the method page</Link>.
+            pitched somewhere else, from <Link href="/assay" className="link-underline">the method page</Link>.
             Nothing about it requires our permission.
           </p>
         </section>
       </main>
+
+      <SiteFooter
+        market={MARKET_ADDRESS}
+        note="Listing is not a favour anyone grants here. Every registered agent already has a page; the rung is what has to be earned."
+      />
     </div>
   );
 }

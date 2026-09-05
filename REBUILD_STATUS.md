@@ -154,7 +154,9 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 
 **Done:** VEYRA session-scope proof (beaten: wrong-selector) · Docket input lock (beaten: anchored on chain) · Docket published losses · winsznx independent verifier · **winsznx `granted ⊆ proven` as a compiled invariant** · MandateX `ERC721Enumerable` finding · MandateX `chain_id` footgun (tested — false) · Onplaced honest tiering · Agripinaa mainnet operation.
 
-**Remaining (21):** VEYRA proof table · VEYRA refund path · PositionCrew block-pinned reads · PositionCrew stated exclusions · PositionCrew CI badges · PositionCrew no-wallet trial · Agripinaa surplus-vs-limit bps · Agripinaa receipt JSON · Agripinaa MEV protection · SMEAI `/start` · SMEAI video (**blocked**) · SMEAI "calls every agent" headline · Docket anonymised seats · Docket "what is not true yet" · KaizenScope census-as-JSON · KaizenScope buyer-signs-each-step · MandateX exclusion reasons · Kawal write-back · Onplaced trust decay.
+**Closed by the frontend rebuild:** SMEAI `/start` (the judge path, every claim beside the command that falsifies it) · Docket "what is not true yet" (its own section on `/evidence`, in the present tense) · MandateX exclusion reasons (`<Exclusions>`, on every certificate, each with the remedy) · PositionCrew block-pinned reads (`<Observation>` stamps the block and the read-age on every figure) · PositionCrew stated exclusions (the register states the unread remainder as a count rather than inventing rows) · PositionCrew no-wallet trial (`/bench` and `/assay`, no wallet anywhere).
+
+**Remaining (15):** VEYRA proof table · VEYRA refund path · PositionCrew CI badges · Agripinaa surplus-vs-limit bps · Agripinaa receipt JSON · Agripinaa MEV protection · SMEAI video (**blocked**) · SMEAI "calls every agent" headline · Docket anonymised seats · KaizenScope census-as-JSON · KaizenScope buyer-signs-each-step · Kawal write-back · Onplaced trust decay.
 
 ## PART V — net-new innovation (3 of 10)
 

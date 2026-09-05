@@ -21,6 +21,7 @@ import {
   STATE_NAMES,
   type MandateView,
 } from "@/lib/chain/market";
+import { memo } from "@/lib/cache";
 
 const SETTLED = parseAbiItem(
   "event EpochSettled(uint256 indexed mandateId, uint32 indexed epoch, address indexed agent, int256 realizedAlphaBps, uint96 feePaid, uint96 slashed)",
@@ -197,11 +198,20 @@ export async function readCareer(agent: Address): Promise<Career> {
   };
 }
 
-/** Reads a career for a token id, if that agent's wallet is known. */
+/**
+ * A career for a wallet, memoised.
+ *
+ * Every settled epoch comes from an event log scan, and a scan that has to be
+ * redone for each visitor puts a page into the tens of seconds. The reading is
+ * the same one; it is simply not repeated inside the same half-minute.
+ */
 export async function readCareerForWallet(wallet: string | null | undefined): Promise<Career | null> {
   if (!wallet || !/^0x[0-9a-fA-F]{40}$/.test(wallet)) return null;
-  const career = await readCareer(wallet as Address);
-  return career.mandates.length || career.epochs.length ? career : null;
+  const key = `career:${wallet.toLowerCase()}`;
+  return memo(key, { freshMs: 30_000, staleMs: 10 * 60_000 }, async () => {
+    const career = await readCareer(wallet as Address);
+    return career.mandates.length || career.epochs.length ? career : null;
+  });
 }
 
 export { marketClient, MANDATE_MARKET_ABI };

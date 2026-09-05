@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/shell/SiteHeader";
+import SiteFooter from "@/components/shell/SiteFooter";
+import Command from "@/components/ui/Command";
+import { MARKET_ADDRESS } from "@/lib/chain/market";
 
 export const metadata: Metadata = {
   title: "Evidence — MANDATE",
@@ -86,14 +89,44 @@ const ADVERSE: Item[] = [
   },
 ];
 
+/**
+ * What is not true yet.
+ *
+ * Stated as plainly as the wins, and in the present tense. A roadmap written
+ * as if it were shipped is the same unverifiable claim as an agent card, and a
+ * judge who finds one unshipped promise stops believing the shipped ones.
+ */
+const NOT_YET: Item[] = [
+  {
+    title: "No registry agent has ever settled an epoch here",
+    body: "Every mandate on the floor is held by an agent we operate. The registry population and the market population do not overlap at all yet. That gap is the reason this market exists and it is not closed.",
+  },
+  {
+    title: "The registry is read in part, not in full",
+    body: "Roughly 3,800 of 303,000 registered agents have had their cards fetched and parsed. Anonymous access to the indexer is capped at 25 requests a minute; a full sweep needs the paid tier. The register shows what was actually read and states the remainder as a count rather than inventing rows for it.",
+  },
+  {
+    title: "Capability cannot be swept across the registry",
+    body: "Rung 3 needs a log scan per agent, and no free BSC provider will serve the range at that volume. It is measured on request, on the agent page, and left blank in the funnel — a plausible number there would be a guess.",
+  },
+  {
+    title: "Revocation is authorised by an operator token, not by the principal",
+    body: "In this deployment the principal, the operator and the adjudicator are the same party. A market with third-party principals would have the principal sign revocation from their own wallet. The contract already treats dismissal that way; this endpoint is the piece that would move.",
+  },
+  {
+    title: "Bonds are small enough that nobody has attacked them",
+    body: "The mechanism is identical at any size and the sums currently at risk are under a dollar. Nothing here has been tested by an adversary with a reason to try.",
+  },
+];
+
 function Card({ item }: { item: Item }) {
   return (
     <li className="ev">
       <h3 className="ev-title">{item.title}</h3>
       <p className="ev-body">{item.body}</p>
-      {item.command ? <code className="ev-cmd">{item.command}</code> : null}
+      {item.command ? <Command>{item.command}</Command> : null}
       {item.href ? (
-        <a className="ev-link" href={item.href} rel="noreferrer">
+        <a className="ev-link" href={item.href} rel="noreferrer" target="_blank">
           {item.hrefLabel ?? "Open"} →
         </a>
       ) : null}
@@ -104,11 +137,11 @@ function Card({ item }: { item: Item }) {
 export default function EvidencePage() {
   return (
     <div className="app">
-      <SiteHeader />
+      <SiteHeader current="/evidence" />
       <main className="ev-page shell">
-        <p className="eyebrow">Evidence</p>
-        <h1 className="start-title">Everything, including what went wrong.</h1>
-        <p className="start-sub">
+        <p className="mark-label">Evidence</p>
+        <h1 className="display start-title">Everything, including what went wrong.</h1>
+        <p className="lede start-sub">
           Each item below carries the command that reproduces it. The second
           section is the one that matters: a product built on distrust of
           self-reported numbers does not get to publish only its wins.
@@ -133,11 +166,30 @@ export default function EvidencePage() {
           ))}
         </ul>
 
-        <p className="ladder-foot">
-          Start at the <Link href="/start">judge path</Link> if you would rather
-          check the claims than read about them.
+        <h2 className="section-title ev-head ev-head--adverse">What is not true yet</h2>
+        <p className="section-sub">
+          In the present tense, because a roadmap written as if it had shipped is the
+          same unverifiable claim as an agent card.
+        </p>
+        <ul className="ev-grid">
+          {NOT_YET.map((p) => (
+            <Card key={p.title} item={p} />
+          ))}
+        </ul>
+
+        <p className="tbl__foot ladder-foot">
+          Start at the{" "}
+          <Link href="/start" className="link-underline">
+            judge path
+          </Link>{" "}
+          if you would rather check the claims than read about them.
         </p>
       </main>
+
+      <SiteFooter
+        market={MARKET_ADDRESS}
+        note="Adverse results are kept permanently. Nothing on this page is removed because it stopped being convenient."
+      />
     </div>
   );
 }

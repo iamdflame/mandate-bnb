@@ -11,21 +11,28 @@ import type { Exclusion } from "@/lib/assay/evidence";
 export default function Exclusions({ exclusions }: { exclusions: Exclusion[] }) {
   if (exclusions.length === 0) {
     return (
-      <section className="career">
-        <h2 className="section-title">What is missing</h2>
-        <p className="au-lede">
+      <section className="panel">
+        <div className="panel__head">
+          <h2 className="mark-label">What is missing</h2>
+        </div>
+        <div className="panel__body">
+        <p className="small excl__lede">
           Nothing. This agent clears every test the ladder applies.
         </p>
+        </div>
       </section>
     );
   }
 
   return (
-    <section className="career" aria-labelledby="excl-title">
-      <h2 id="excl-title" className="section-title">
-        What is missing
-      </h2>
-      <p className="au-lede">
+    <section className="panel" aria-labelledby="excl-title">
+      <div className="panel__head">
+        <h2 id="excl-title" className="mark-label">
+          What is missing
+        </h2>
+      </div>
+      <div className="panel__body">
+      <p className="small excl__lede">
         {exclusions.length} {exclusions.length === 1 ? "thing keeps" : "things keep"} this agent
         off the rungs above it. Each is a statement about evidence that does not
         exist, not about the operator, and each says what would fix it.
@@ -39,6 +46,7 @@ export default function Exclusions({ exclusions }: { exclusions: Exclusion[] }) 
           </li>
         ))}
       </ul>
+      </div>
     </section>
   );
 }

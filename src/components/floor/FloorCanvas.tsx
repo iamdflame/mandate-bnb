@@ -182,14 +182,14 @@ export default function FloorCanvas({
     };
 
     let ink = readColor("--ink", [0.9, 0.89, 0.85]);
-    let ground = readColor("--paper", [0.04, 0.04, 0.035]);
-    let gold = readColor("--gold", [0.78, 0.64, 0.29]);
+    let ground = readColor("--void", [0.031, 0.035, 0.043]);
+    let gold = readColor("--gold-999", [0.91, 0.64, 0.09]);
 
     const themeQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const onTheme = () => {
       ink = readColor("--ink", ink);
-      ground = readColor("--paper", ground);
-      gold = readColor("--gold", gold);
+      ground = readColor("--void", ground);
+      gold = readColor("--gold-999", gold);
     };
     themeQuery.addEventListener("change", onTheme);
 

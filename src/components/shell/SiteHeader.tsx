@@ -1,41 +1,57 @@
 "use client";
 
-/**
- * One header for both surfaces.
- *
- * The marketplace and the capital market are two halves of the same product;
- * previously each had its own bar, so moving between them felt like leaving
- * the site.
- */
-
+import OfficeMark from "@/components/mark/OfficeMark";
 import { WalletChip } from "@/components/floor/Actions";
 
+const NAV = [
+  { href: "/start", label: "Start" },
+  { href: "/agents", label: "Register" },
+  { href: "/floor", label: "Floor" },
+  { href: "/authority", label: "Authority" },
+  { href: "/evidence", label: "Evidence" },
+  { href: "/assay", label: "Method" },
+  { href: "/list-your-agent", label: "List yours" },
+];
+
+/**
+ * One bar across the whole product.
+ *
+ * The office mark is struck once, small, on the left, and the wordmark sits
+ * beside it at cap height. Nothing else in the header is allowed to compete
+ * with the register underneath it.
+ */
 export default function SiteHeader({
   live,
   status,
+  current,
 }: {
   live?: boolean;
   status?: string;
+  current?: string;
 }) {
   return (
     <header className="app-header">
       <div className="app-header__inner shell">
-        <a href="/" className="wordmark">
-          MANDATE
+        <a href="/" className="wordmark" aria-label="MANDATE — home">
+          <OfficeMark size={20} />
+          <span className="wordmark__name" style={{ fontSize: 20 }}>
+            MANDATE
+          </span>
         </a>
-        <nav className="app-nav">
-          <a href="/agents">Agents</a>
-          <a href="/floor">Floor</a>
-          <a href="/authority">Authority</a>
-          <a href="/evidence">Evidence</a>
-          <a href="/assay">Method</a>
-          <a href="/list-your-agent">List yours</a>
+
+        <nav className="app-nav" aria-label="Primary">
+          {NAV.map((n) => (
+            <a key={n.href} href={n.href} aria-current={current === n.href ? "page" : undefined}>
+              {n.label}
+            </a>
+          ))}
         </nav>
+
         <div className="app-header__right">
           {status ? (
             <>
               <span className={`pulse ${live ? "pulse--on" : ""}`} aria-hidden />
-              <span className="label">{status}</span>
+              <span className="mark-label">{status}</span>
             </>
           ) : null}
           <WalletChip />

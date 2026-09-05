@@ -56,7 +56,7 @@ export function WalletChip() {
         className="label"
         style={{
           background: "transparent",
-          border: "1px solid var(--rule)",
+          border: "1px solid var(--score)",
           color: "var(--ink)",
           padding: "0.35rem 0.8rem",
           cursor: "pointer",
@@ -73,9 +73,9 @@ export function WalletChip() {
         onClick={() => void switchChain()}
         className="label"
         style={{
-          background: "var(--gold)",
-          border: "1px solid var(--gold)",
-          color: "var(--paper)",
+          background: "var(--gold-750)",
+          border: "1px solid var(--gold-750)",
+          color: "var(--void)",
           padding: "0.35rem 0.8rem",
           cursor: "pointer",
         }}
@@ -86,7 +86,7 @@ export function WalletChip() {
   }
 
   return (
-    <span className="fig" style={{ fontSize: 11, color: "var(--ink-70)" }}>
+    <span className="fig" style={{ fontSize: 11, color: "var(--ink-2)" }}>
       {address.slice(0, 6)}…{address.slice(-4)} · {fmtBnb(balanceWei, 3)} BNB
     </span>
   );
@@ -109,7 +109,7 @@ function Phase({ tx }: { tx: TxState }) {
         marginTop: "0.7rem",
         fontSize: 11.5,
         lineHeight: 1.5,
-        color: tx.phase === "confirmed" ? "var(--gold-deep)" : "var(--ink-70)",
+        color: tx.phase === "confirmed" ? "var(--gold-999)" : "var(--ink-2)",
       }}
     >
       {label}
@@ -137,9 +137,9 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   background: "transparent",
   border: 0,
-  borderBottom: "1px solid var(--rule)",
+  borderBottom: "1px solid var(--score)",
   color: "var(--ink)",
-  fontFamily: "var(--font-mono)",
+  fontFamily: "var(--mono)",
   fontSize: 15,
   padding: "0.35rem 0",
   outline: "none",
@@ -148,11 +148,11 @@ const inputStyle: React.CSSProperties = {
 const buttonStyle = (enabled: boolean): React.CSSProperties => ({
   width: "100%",
   marginTop: "0.4rem",
-  background: enabled ? "var(--gold)" : "transparent",
-  color: enabled ? "var(--paper)" : "var(--ink-25)",
-  border: `1px solid ${enabled ? "var(--gold)" : "var(--rule)"}`,
+  background: enabled ? "var(--gold-750)" : "transparent",
+  color: enabled ? "var(--void)" : "var(--base)",
+  border: `1px solid ${enabled ? "var(--gold-750)" : "var(--score)"}`,
   padding: "0.6rem 1rem",
-  fontFamily: "var(--font-mono)",
+  fontFamily: "var(--mono)",
   fontSize: 11,
   letterSpacing: "0.16em",
   textTransform: "uppercase",
@@ -221,7 +221,7 @@ export function BidPanel({
         />
       </div>
 
-      <p style={{ fontSize: 11.5, lineHeight: 1.5, color: "var(--ink-45)", margin: 0 }}>
+      <p style={{ fontSize: 11.5, lineHeight: 1.5, color: "var(--ink-3)", margin: 0 }}>
         You are escrowing <strong style={{ color: "var(--ink)" }}>{bond} BNB</strong> of
         your own capital and committing to beat the benchmark by{" "}
         {(targetNum / 100).toFixed(2)}% per epoch. Trail it beyond tolerance and{" "}
@@ -295,8 +295,8 @@ export function OpenMandatePanel({ onDone }: { onDone?: () => void }) {
                 textAlign: "left",
                 background: "transparent",
                 border: 0,
-                borderBottom: "1px solid var(--ink-06)",
-                color: category === i ? "var(--gold-deep)" : "var(--ink-45)",
+                borderBottom: "1px solid var(--iron)",
+                color: category === i ? "var(--gold-999)" : "var(--ink-3)",
                 fontSize: 12,
                 padding: "0.3rem 0",
                 cursor: "pointer",
@@ -309,7 +309,7 @@ export function OpenMandatePanel({ onDone }: { onDone?: () => void }) {
         </div>
       </div>
 
-      <p style={{ fontSize: 11.5, lineHeight: 1.5, color: "var(--ink-45)", margin: 0 }}>
+      <p style={{ fontSize: 11.5, lineHeight: 1.5, color: "var(--ink-3)", margin: 0 }}>
         Terms: 2% underperformance tolerated, 20% of alpha to the agent, a
         quarter of its bond slashed per failing epoch, hourly settlement over 24
         epochs. Your capital is escrowed in the contract and returns to you when
@@ -340,8 +340,8 @@ export function WithdrawButton() {
         className="label"
         style={{
           background: "transparent",
-          border: "1px solid var(--rule)",
-          color: "var(--ink-70)",
+          border: "1px solid var(--score)",
+          color: "var(--ink-2)",
           padding: "0.35rem 0.8rem",
           cursor: busy ? "default" : "pointer",
         }}

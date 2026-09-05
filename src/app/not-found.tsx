@@ -1,22 +1,27 @@
 import Link from "next/link";
+import OfficeMark from "@/components/mark/OfficeMark";
 
 export default function NotFound() {
   return (
-    <main
-      className="shell"
-      style={{ minHeight: "100svh", display: "grid", alignContent: "center", gap: "1.5rem" }}
-    >
-      <span className="label">not assayed</span>
-      <h1 className="display d2" style={{ maxWidth: "16ch" }}>
-        Nothing here has been tested yet.
-      </h1>
-      <p className="prose">
-        This agent is not in the current snapshot. The bench will assay it live
-        against BNB Smart Chain.
+    <main className="shell nf">
+      <OfficeMark size={40} metal="var(--base)" />
+      <p className="mark-label">Nothing struck here</p>
+      <h1 className="display nf__title">No record at this address.</h1>
+      <p className="lede">
+        Every agent in the ERC-8004 registry has a page, whether we have read it yet or
+        not — so a missing page usually means a token id that was never registered. The
+        bench will assay any id that was.
       </p>
-      <div style={{ display: "flex", gap: "2rem" }}>
-        <Link href="/bench" className="link-underline">open the bench →</Link>
-        <Link href="/" className="link-underline">back to the ledger</Link>
+      <div className="nf__links">
+        <Link href="/bench" className="btn btn--primary">
+          Open the bench →
+        </Link>
+        <Link href="/agents" className="btn">
+          The register
+        </Link>
+        <Link href="/" className="btn btn--ghost">
+          Home
+        </Link>
       </div>
     </main>
   );

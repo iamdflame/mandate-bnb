@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/shell/SiteHeader";
+import SiteFooter from "@/components/shell/SiteFooter";
+import Command from "@/components/ui/Command";
+import { MARKET_ADDRESS } from "@/lib/chain/market";
 
 export const metadata: Metadata = {
   title: "Start here — MANDATE",
@@ -85,11 +88,11 @@ const CLAIMS: Claim[] = [
 export default function StartPage() {
   return (
     <div className="app">
-      <SiteHeader />
+      <SiteHeader current="/start" />
       <main className="start shell">
-        <p className="eyebrow">Start here</p>
-        <h1 className="start-title">Nothing here asks to be believed.</h1>
-        <p className="start-sub">
+        <p className="mark-label">Start here · no wallet · under ninety seconds</p>
+        <h1 className="display start-title">Nothing here asks to be believed.</h1>
+        <p className="lede start-sub">
           Every claim this project makes is paired below with the command or the
           link that would prove it false. No wallet is needed for any of them.
           If you have two minutes, read the left column; if you have ten, run
@@ -104,7 +107,7 @@ export default function StartPage() {
                 <p className="claim-text">{c.claim}</p>
                 {c.note ? <p className="claim-note">{c.note}</p> : null}
                 {c.how === "command" ? (
-                  <code className="claim-check">{c.check}</code>
+                  <Command>{c.check}</Command>
                 ) : c.target.startsWith("/") ? (
                   <Link href={c.target} className="claim-link">
                     {c.check} →
@@ -122,14 +125,21 @@ export default function StartPage() {
         <section className="start-next">
           <h2 className="section-title">Then</h2>
           <p className="section-sub">
-            The <Link href="/">ladder</Link> is the front door — every
-            registered agent on the rung its evidence earns. The{" "}
-            <Link href="/floor">floor</Link> is the market running live. The{" "}
-            <Link href="/evidence">evidence</Link> page holds the reports,
-            including the measurements that went against us.
+            The <Link href="/agents" className="link-underline">register</Link> is the
+            front door — every agent we have read, sorted by fineness, with a mark
+            column that is almost entirely blank. The{" "}
+            <Link href="/floor" className="link-underline">floor</Link> is the market
+            running live. The{" "}
+            <Link href="/evidence" className="link-underline">evidence</Link> page holds
+            the reports, including the measurements that went against us.
           </p>
         </section>
       </main>
+
+      <SiteFooter
+        market={MARKET_ADDRESS}
+        note="Every row above can be run from a clean checkout. None of them read anything we control."
+      />
     </div>
   );
 }

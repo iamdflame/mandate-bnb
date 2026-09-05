@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/shell/SiteHeader";
+import SiteFooter from "@/components/shell/SiteFooter";
 import Authority from "@/components/agents/Authority";
+import { MARKET_ADDRESS } from "@/lib/chain/market";
 
 export const metadata: Metadata = {
   title: "Authority — MANDATE",
@@ -11,17 +13,14 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-const CHAIN = Number(process.env.NEXT_PUBLIC_MARKET_CHAIN_ID ?? 56);
-const EXPLORER = CHAIN === 97 ? "https://testnet.bscscan.com" : "https://bscscan.com";
-
 export default function AuthorityPage() {
   return (
     <div className="app">
-      <SiteHeader />
+      <SiteHeader current="/authority" />
       <main className="shell start">
-        <p className="eyebrow">Authority</p>
-        <h1 className="start-title">What each agent may do, and how to stop it.</h1>
-        <p className="start-sub">
+        <p className="mark-label">Authority</p>
+        <h1 className="display start-title">What each agent may do, and how to stop it.</h1>
+        <p className="lede start-sub">
           A bond makes an agent accountable for outcomes. It does not make it
           incapable of anything outside its brief — that is an{" "}
           <strong>ERC-8183 session key</strong>: a spend cap no larger than the
@@ -29,16 +28,16 @@ export default function AuthorityPage() {
           allowlist bound to target <em>and</em> selector. The principal never
           surrenders its own keys.
         </p>
-        <p className="start-sub">
+        <p className="lede start-sub">
           The allowlist is not a category default. It is the intersection of
           what the category permits and what the chain has shown that agent
           actually doing, so the calls listed as withheld are withheld because
           the evidence for them does not exist. See{" "}
-          <Link href="/evidence">the evidence page</Link> for the proof that the
+          <Link href="/evidence" className="link-underline">the evidence page</Link> for the proof that the
           bound holds.
         </p>
 
-        <Authority explorer={EXPLORER} />
+        <Authority />
 
         <section className="start-next">
           <h2 className="section-title">Who may press it</h2>
@@ -53,6 +52,11 @@ export default function AuthorityPage() {
           </p>
         </section>
       </main>
+
+      <SiteFooter
+        market={MARKET_ADDRESS}
+        note="Session keys are ERC-8183. The allowlist is derived from the assay, never from the category alone — granted is a subset of proven, enforced by the type system rather than by a check somebody has to remember."
+      />
     </div>
   );
 }

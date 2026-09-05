@@ -11,7 +11,13 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AssayReport, AssayResult } from "@/lib/assay/types";
-import { Fineness, HallmarkBadge, ResultRow } from "./Report";
+import Hallmark from "./mark/Hallmark";
+import Strike from "./mark/Strike";
+import AssayBar from "./ui/AssayBar";
+import Command from "./ui/Command";
+import CountUp from "./ui/CountUp";
+import { gradeOf } from "./mark/geometry";
+import { CATEGORY_LABEL, type Category } from "@/lib/config";
 
 type Status = "idle" | "running" | "done" | "error";
 
@@ -97,22 +103,19 @@ export default function Bench({
   useEffect(() => () => sourceRef.current?.close(), []);
 
   const busy = status === "running";
+  const fineness = report?.fineness ?? null;
+  const grade = gradeOf(fineness ?? 0);
+  const category = (report?.category ?? null) as Category | null;
+  const done = new Set(results.map((r) => r.id));
+  const pending = report ? [] : ORDER.filter((id) => !done.has(id as AssayResult["id"]));
 
   return (
-    <div>
+    <div className="bench">
       <form
+        className="bench__form"
         onSubmit={(e) => {
           e.preventDefault();
           run(input);
-        }}
-        style={{
-          display: "flex",
-          gap: "1rem",
-          alignItems: "stretch",
-          flexWrap: "wrap",
-          borderTop: "1px solid var(--ink)",
-          borderBottom: "1px solid var(--rule)",
-          paddingBlock: "1rem",
         }}
       >
         <input
@@ -121,166 +124,107 @@ export default function Bench({
           placeholder="153776"
           inputMode="numeric"
           aria-label="Agent token id"
-          className="fig"
-          style={{
-            flex: "1 1 20ch",
-            minWidth: 0,
-            background: "transparent",
-            border: 0,
-            outline: "none",
-            color: "var(--ink)",
-            fontSize: "clamp(1.5rem, 4vw, 2.75rem)",
-            letterSpacing: "-0.03em",
-            padding: 0,
-          }}
+          className="bench__input num"
         />
-        <button
-          type="submit"
-          disabled={busy}
-          className="fig"
-          style={{
-            background: busy ? "transparent" : "var(--ink)",
-            color: busy ? "var(--ink-45)" : "var(--paper)",
-            border: "1px solid var(--ink)",
-            padding: "0.75rem 1.75rem",
-            fontSize: 12,
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
-            cursor: busy ? "default" : "pointer",
-            transition: "background .3s var(--ease), color .3s var(--ease)",
-            alignSelf: "center",
-          }}
-        >
+        <button type="submit" disabled={busy} className="btn btn--primary bench__go">
           {busy ? "assaying" : "assay"}
         </button>
       </form>
 
       {status === "idle" && suggestions.length ? (
-        <div style={{ marginTop: "1.25rem", display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
-          <span className="label" style={{ alignSelf: "center" }}>
-            try
-          </span>
-          {suggestions.map((s) => (
-            <button
-              key={s.tokenId}
-              onClick={() => {
-                setInput(s.tokenId);
-                run(s.tokenId);
-              }}
-              className="fig"
-              style={{
-                background: "transparent",
-                border: "1px solid var(--rule)",
-                color: "var(--ink-70)",
-                padding: "0.35rem 0.7rem",
-                fontSize: 11.5,
-                cursor: "pointer",
-              }}
-            >
-              {s.tokenId} · {s.name.slice(0, 28)}
-            </button>
-          ))}
+        <div className="bench__try">
+          <span className="mark-label">try</span>
+          <div className="chips">
+            {suggestions.map((s) => (
+              <button
+                key={s.tokenId}
+                type="button"
+                className="chip"
+                onClick={() => {
+                  setInput(s.tokenId);
+                  run(s.tokenId);
+                }}
+              >
+                {s.tokenId} · {s.name.slice(0, 28)}
+              </button>
+            ))}
+          </div>
         </div>
       ) : null}
 
       {status !== "idle" ? (
-        <div
-          style={{
-            marginTop: "2.5rem",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "baseline",
-            gap: "1rem",
-            flexWrap: "wrap",
-          }}
-        >
-          <div className="label">
+        <div className="bench__status">
+          <span className="mark-label">
             {busy ? `${stage}…` : status === "error" ? "halted" : "complete"}
-          </div>
-          <div className="fig" style={{ fontSize: 12, color: "var(--ink-45)" }}>
+          </span>
+          <span className="mark-label num">
             {(elapsed / 1000).toFixed(1)}s · {results.length}/6 tests
-          </div>
+          </span>
         </div>
       ) : null}
 
-      {busy ? (
-        <div
-          aria-hidden
-          style={{
-            marginTop: "0.6rem",
-            height: 1,
-            background: "var(--ink-12)",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: `${(results.length / 6) * 100}%`,
-              background: "var(--ink)",
-              transition: "width .6s var(--ease)",
-            }}
-          />
-        </div>
-      ) : null}
+      {error ? <p className="small bench__error">{error}</p> : null}
 
-      {error ? (
-        <p className="prose" style={{ marginTop: "1.5rem", color: "var(--ink)" }}>
-          {error}
-        </p>
-      ) : null}
-
-      {results.length ? (
-        <div style={{ marginTop: "2rem" }}>
-          {results.map((r, i) => (
-            <div
-              key={r.id}
-              className="rise"
-              style={{ animationDelay: `${Math.min(i, 6) * 0.06}s` }}
-            >
-              <ResultRow result={r} />
-            </div>
-          ))}
+      {status !== "idle" ? (
+        <div className="bench__results">
+          <AssayBar results={results} fineness={fineness} pending={pending} />
         </div>
       ) : null}
 
       {report ? (
-        <div
-          className="rise"
-          style={{
-            marginTop: "2.5rem",
-            borderTop: "1px solid var(--ink)",
-            paddingTop: "1.75rem",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-end",
-            gap: "2rem",
-            flexWrap: "wrap",
-          }}
-        >
-          <div>
-            <div className="label">verdict</div>
-            <h2 className="display d3" style={{ marginTop: "0.3rem", maxWidth: "20ch" }}>
-              {report.name ?? "Unnamed agent"}
-            </h2>
-            <div className="fig" style={{ fontSize: 12, color: "var(--ink-45)", marginTop: "0.6rem" }}>
-              {report.agentId}
-            </div>
-          </div>
-          <div style={{ display: "grid", gap: "0.75rem", justifyItems: "end" }}>
-            <Fineness value={report.fineness} size={1.35} />
-            <HallmarkBadge report={report} />
+        <div className="bench__verdict">
+          <div className="bench__who">
+            <span className="mark-label">Verdict</span>
+            <h2 className="h2 bench__name">{report.name ?? "Unnamed agent"}</h2>
+            <span className="mark-label num">{report.agentId}</span>
             {report.registryScore !== null ? (
-              <div className="label">registry reports {report.registryScore}</div>
+              <span className="mark-label">
+                registry reports {report.registryScore} · we publish {fineness}
+              </span>
             ) : null}
           </div>
+
+          <div className="bench__mark">
+            {/* The strike lands when the assay does. It is the only motion here. */}
+            <Strike when={report.assayedAt}>
+              <Hallmark
+                size={40}
+                record={{
+                  chainId: report.chainId,
+                  tokenId: report.tokenId,
+                  fineness,
+                  category,
+                  assayedAt: report.assayedAt,
+                }}
+              />
+            </Strike>
+            <span className="bench__fig num" style={{ color: grade.metal }}>
+              <CountUp value={fineness} />
+              <span className="bench__denom"> / 999</span>
+            </span>
+            <span className="mark-label">
+              {grade.shape ? grade.label : "unstruck · base metal"}
+              {category ? ` · ${CATEGORY_LABEL[category]}` : ""}
+            </span>
+          </div>
+        </div>
+      ) : null}
+
+      {report ? (
+        <div className="bench__cmd">
+          <Command note="The same six tests, from a terminal. Neither run reads anything the other wrote.">
+            {`npm run assay -- ${report.tokenId}`}
+          </Command>
+          <a className="btn" href={`/agent/${report.tokenId}`}>
+            Full certificate →
+          </a>
         </div>
       ) : null}
     </div>
   );
 }
+
+const ORDER = ["identity", "custody", "activity", "capability", "reputation", "performance"];
 
 /** Accepts a bare token id or a full `chain:registry:token` agent id. */
 function parseAgentId(raw: string): string | null {
