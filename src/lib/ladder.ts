@@ -33,7 +33,7 @@ import {
   readAllMandates,
 } from "@/lib/chain/market";
 import { parseAbiItem, type Address } from "viem";
-import { memo } from "@/lib/cache";
+import { memo, withTimeout } from "@/lib/cache";
 
 /** The lowest hallmarkable grade, and this market's bar. */
 export const HALLMARK_BAR = 375;
@@ -160,7 +160,16 @@ async function readLadderUncached(): Promise<LadderReading> {
     settled = null;
   }
 
-  const assayed = await readAssayed().catch(() => null);
+  /*
+    Rung 4 is a log scan from the deploy block, and it is the only slow part of
+    this reading. On a warm memo it costs nothing; cold, against a serverless
+    function with a hard limit, it was taking long enough to time out the whole
+    funnel — which turned one unmeasurable rung into no ladder at all.
+
+    Bounded, it degrades the way every other unmeasurable rung already does:
+    the population is null and the source says why.
+  */
+  const assayed = await withTimeout(readAssayed().catch(() => null), 12_000);
 
   // The bar the contract actually enforces, not the one we would like it to.
   let minFineness = 0;
@@ -218,7 +227,7 @@ async function readLadderUncached(): Promise<LadderReading> {
       population: assayed?.count ?? null,
       source: assayed
         ? `Read from the market contract now, so a demoted agent drops off. The bar is currently ${minFineness}: ${minFineness === 0 ? "the gate is open, which is why agents below it hold mandates" : "enforced on every bid"}.`
-        : "The chain could not be read for this figure.",
+        : "Not measured for this reading: the scan from the deploy block did not finish inside the budget. A number here would be a guess, so there isn't one.",
       verify: "npm run adjudicator",
     },
     {
