@@ -33,7 +33,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 
 | # | Problem | State | Evidence |
 |---|---|---|---|
-| C1 | 265 of 301,996 classified | **TODO** | `agents.json` holds 3,402 |
+| C1 | 265 of 301,996 classified | **BLOCKED** | 265 of 3,808 indexed, of 303,391 registered. Classification is multi-signal and chain-weighted now; the coverage gap is the 25 req/min anonymous tier, same blocker as R2.1 |
 | C2 | 1.9 MB static JSON | **PARTIAL** | Postgres read path built and migrated (3,808 rows); pages report their source. Production has no instance attached, so the deployed site still reads the snapshot |
 | C3 | No self-service listing | **DONE** | `/list-your-agent` — what each rung costs |
 | C4 | Agent diversity structurally unequal | **DONE** | 4 categories with mandates and registered sessions; grid and yield both have settled, attested epochs |
