@@ -641,6 +641,21 @@ per unit of standing depth.
 The honest half is in the doc too — on the window the lock chose, the
 rebalancing agent would have churned and lost to doing nothing.
 
+## The data pipeline
+
+[`docs/DATA.md`](docs/DATA.md)
+
+Every figure carries the moment it was taken: attestations carry their block,
+index rows carry `lastSeen`, the Advantage Report carries an anchor fixed
+before the run. Reads that combine several sources take them at one height,
+because a valuation assembled from different blocks is not a measurement of
+anything.
+
+The exclusions are listed rather than left implicit — incentive rewards, thin
+pools, unparseable cards, our own agents, reverted transactions — and so is
+what is **not** true yet: no Postgres instance, no subgraph, and a registry
+sweep that has reached 3,808 of 303,391 agents.
+
 ## The site
 
 | Route | What it is |

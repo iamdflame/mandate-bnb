@@ -34,7 +34,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | # | Problem | State | Evidence |
 |---|---|---|---|
 | C1 | 265 of 301,996 classified | **TODO** | `agents.json` holds 3,402 |
-| C2 | 1.9 MB static JSON | **TODO** | 1,976,377 bytes, captured 2026-09-04T11:20Z |
+| C2 | 1.9 MB static JSON | **PARTIAL** | still a snapshot, but it merges rather than replaces and carries `lastSeen` per row; no Postgres instance to point at |
 | C3 | No self-service listing | **DONE** | `/list-your-agent` — what each rung costs |
 | C4 | Agent diversity structurally unequal | **PARTIAL** | 4 categories now have mandates + sessions; only grid has settled epochs |
 | C5 | Zero app tests, zero CI | **TODO** | 0 test files, no `.github/` |
@@ -62,7 +62,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | E5 | Strikes + catastrophic alpha are constants | **DONE** — per-mandate in v2 |
 | E6 | No bid expiry | **DONE** — v2, and expired bids are skipped on succession |
 | E7 | No event indexer / subgraph | **TODO** |
-| E8 | No documented rate-limit strategy | **PARTIAL** — limiter exists, undocumented |
+| E8 | No documented rate-limit strategy | **DONE** — `docs/DATA.md` |
 | E9 | No deploy runbook | **TODO** |
 | E10 | Self-hosted fonts, no third-party requests | **DONE** — stated in README |
 
@@ -105,8 +105,8 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | # | Item | State |
 |---|---|---|
 | R2.1 | Scale to the full indexable registry | **BLOCKED** — needs the 8004scan Pro key |
-| R2.2 | Multi-signal, confidence-scored, auditable, contestable classification | **PARTIAL** — on-chain evidence signal now works (see R2 note) |
-| R2.3 | Exclusion reason for every excluded agent | **TODO** |
+| R2.2 | Multi-signal, confidence-scored, auditable, contestable classification | **DONE** — chain evidence outweighs text 12:1, every signal kept and shown |
+| R2.3 | Exclusion reason for every excluded agent | **DONE** — eight coded reasons, each with a remedy, on every agent page |
 | R2.4 | Reproduce the indexer footgun | **DONE** — tested, **false**; publishing the negative result instead |
 | R2.5 | Reputation autopsy per agent | **DONE** — on every agent page |
 
@@ -143,9 +143,9 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 |---|---|---|
 | R7 | PancakeSwap doc + pool-gap scanner | **DONE** |
 | R8 | Information architecture (9 routes) | **DONE** — all nine |
-| R9 | Supply side: listing, shadow mandates, underwriting, bond tiers | **TODO** |
+| R9 | Supply side: listing, shadow mandates, underwriting, bond tiers | **PARTIAL** — ShadowLedger and Underwriter deployed; bond tiers not done |
 | R10 | Contract v2 (11 items) | **DONE** — 70 tests, deployed to mainnet |
-| R11 | Data pipeline | **TODO** |
+| R11 | Data pipeline | **PARTIAL** — `docs/DATA.md`: observation boundaries, block-pinned reads, stated exclusions, rate-limit strategy. No Postgres instance, no subgraph |
 | R12 | CI, uptime, reliability | **TODO** |
 
 ---

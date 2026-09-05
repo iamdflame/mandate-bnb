@@ -1472,3 +1472,14 @@ a {
 .auth-note { font-size: 0.82rem; line-height: 1.6; margin-top: 1.5rem; padding: 0.8rem 1rem; background: var(--ink-06); border-left: 2px solid var(--gold-deep); }
 .auth-revoked { font-size: 0.8rem; line-height: 1.55; color: var(--ink-45); margin: 0 0 0.75rem; padding-left: 0.8rem; border-left: 2px solid var(--gold-deep); }
 .auth-revoked a { color: var(--gold-deep); }
+
+/* ----------------------------------------------------------- exclusions -- */
+
+.excl { list-style: none; margin: 1.25rem 0 0; padding: 0; border-top: 1px solid var(--rule); }
+.excl-item { padding: 1rem 0; border-bottom: 1px solid var(--rule); }
+.excl-rung {
+  font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--gold-deep);
+}
+.excl-reason { font-size: 0.92rem; line-height: 1.55; margin: 0.35rem 0 0; max-width: 58ch; }
+.excl-remedy { font-size: 0.8rem; line-height: 1.55; color: var(--ink-45); margin: 0.4rem 0 0; max-width: 58ch; }

@@ -3,10 +3,13 @@ import SiteHeader from "@/components/shell/SiteHeader";
 import AgentDetail from "@/components/agents/AgentDetail";
 import AutopsyPanel from "@/components/agents/Autopsy";
 import CareerPanel from "@/components/agents/CareerPanel";
+import Exclusions from "@/components/agents/Exclusions";
 import { findAgent } from "@/lib/data/agents";
 import { readAutopsy } from "@/lib/autopsy";
 import { readCareerForWallet } from "@/lib/career";
 import { placeAgent, readMarketSets } from "@/lib/rung";
+import { exclusionsFor } from "@/lib/assay/evidence";
+import { getAgent } from "@/lib/sources/scan";
 
 /**
  * Any agent in the ERC-8004 registry has a page here, not only the ones in a
@@ -42,12 +45,29 @@ export default async function AgentPage({
 
   // The live assay streams in the client. These three read the chain and the
   // registry, so they render on the server and never block the assay.
-  const [sets, autopsy, career] = await Promise.all([
+  const [sets, autopsy, career, detail] = await Promise.all([
     readMarketSets(),
     readAutopsy(CHAIN, tokenId).catch(() => null),
     readCareerForWallet(indexed?.owner).catch(() => null),
+    getAgent(CHAIN, tokenId).catch(() => null),
   ]);
   const placement = indexed ? placeAgent({ ...indexed, rung: undefined }, sets) : null;
+
+  const wallet = (detail?.agent_wallet ?? indexed?.owner ?? "").toLowerCase();
+  const exclusions = exclusionsFor({
+    name: detail?.name ?? indexed?.name,
+    description: detail?.description ?? indexed?.description,
+    owner: detail?.owner_address ?? indexed?.owner,
+    agentWallet: detail?.agent_wallet,
+    endpoint: detail?.agent_url ?? detail?.a2a_endpoint ?? detail?.mcp_server,
+    endpointVerified: Boolean(detail?.is_endpoint_verified ?? indexed?.endpointVerified),
+    category: indexed?.category ?? null,
+    // The nonce is the assay's to establish; omitting it here is honest —
+    // a missing check must not become a stated failure.
+    nonce: null,
+    assayed: wallet ? sets.assayed.has(wallet) : false,
+    bonded: wallet ? sets.bonded.has(wallet) : false,
+  });
 
   return (
     <div className="app">
@@ -78,6 +98,7 @@ export default async function AgentPage({
           </section>
         ) : null}
 
+        <Exclusions exclusions={exclusions} />
         {autopsy ? <AutopsyPanel autopsy={autopsy} /> : null}
         {career ? <CareerPanel career={career} explorer={EXPLORER} /> : null}
       </div>
