@@ -6,13 +6,22 @@ Built for *The Smart Money Era* — BNB Chain, main track.
 
 **Live:** https://mandate-coral.vercel.app · **Start here:** [/start](https://mandate-coral.vercel.app/start)
 
-![The register, sorted by fineness. One struck hallmark, then 3,808 blanks.](docs/screenshots/register.png)
+![The register, sorted by fineness. 3,809 rows and an entirely empty mark column.](docs/screenshots/register.png)
 
 *The register, sorted by fineness descending, hiding nothing and paginating
-nothing away. One agent carries a struck hallmark at 405. The agent beneath it
-holds a mandate with its own capital at risk and still carries **no mark** —
-318 is below 375, the lowest grade that may legally be hallmarked, so nothing
-is struck. Then 3,808 blanks. That column is the finding.*
+nothing away. **Nought hallmarked in this view.** Not one of the 3,809 agents
+we have read carries a mark, including the agent at the top of the table, which
+holds a mandate with its own capital at risk and has settled epochs at +13.51%
+alpha. The mark column is empty from the first row to the last, and that column
+is the finding.*
+
+*This caption used to read "one agent carries a struck hallmark at 405". It was
+true of an earlier deployment of the market and stopped being true when the
+contract was redeployed and no fineness was written to the new one. It went on
+being printed at the top of this README, above a screenshot that said `0
+HALLMARKED IN THIS VIEW` in the same image. It is corrected here rather than
+quietly, because a project that argues self-reported claims are worthless has
+no business carrying a stale one in its own first paragraph.*
 
 ---
 

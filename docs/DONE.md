@@ -129,6 +129,29 @@ office strikes, which is the point of it and also why it is not a decision to
 take unattended. No mark currently carries a bond, and `Claim.tsx` says so on
 every claim that has none: *"No bond stands behind this yet."*
 
+Read literally the gate is *satisfied* — every hallmark at or above 375 carries
+a bond, and there are none, so the statement holds over an empty set. That is
+not a pass and it is not recorded as one. A gate that passes because nothing
+has happened yet is measuring nothing.
+
+**No wallet carries a fineness on the current market at all.** Both
+`fineness(0xd6d1…cbe9)` and `fineness(0x54c0…3C90)` return 0 on
+`0xeD33…1544`. Fineness was written to an earlier deployment and never
+re-written after the redeploy, which is also how the README came to caption its
+own headline screenshot with a hallmark at 405 that the same image reported as
+`0 HALLMARKED IN THIS VIEW`. Corrected there, and noted here.
+
+## The canonical screenshot
+
+§7 asks for `/agents` sorted by fineness showing two struck gold hallmarks and
+eighteen blank rows. It shows **3,809 blank rows and no hallmarks**, because
+nothing has earned one, and manufacturing a mark to make the image match its
+brief would be the single most on-the-nose violation available to this project.
+
+Shot from production at 1600×1000 and at 2× — `docs/screenshots/register.png`
+and `register@2x.png`, via `npm run shots:canonical`. The empty column makes
+the argument more forcefully than two gold marks would have.
+
 ## Self-subject — passed
 
 *MANDATE registered, assayed by its own engine, listed at its earned rung.*
