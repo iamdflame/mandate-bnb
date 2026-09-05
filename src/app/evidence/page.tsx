@@ -124,12 +124,12 @@ const NOT_YET: Item[] = [
     body: "In this deployment the principal, the operator and the adjudicator are the same party. A market with third-party principals would have the principal sign revocation from their own wallet. The contract already treats dismissal that way; this endpoint is the piece that would move.",
   },
   {
-    title: "Bonds are small enough that nobody has attacked them",
-    body: "The mechanism is identical at any size and the sums currently at risk are under a dollar. Nothing here has been tested by an adversary with a reason to try. Retiring this objection needs one mandate at roughly 1 BNB capital and 0.25 BNB bond, settled honestly and published either way — about 1.25 BNB more than the operator wallet currently holds.",
+    title: "Bonds are small enough that nobody has attacked them — and we do not have the capital to fix it",
+    body: "The mechanism is identical at any size and the sums currently at risk are under a dollar, so nothing here has been tested by an adversary with a reason to try. Retiring the objection needs one mandate at roughly 1 BNB capital and 0.25 BNB bond, settled honestly and published win or lose. The operator wallet holds about 0.005 BNB. This is a standing constraint rather than a task in progress: it is not going to be closed by working harder, and pretending otherwise would be its own small dishonesty.",
   },
   {
-    title: "Production reads a committed file, not a database",
-    body: "The Postgres read path is built and the agent index is migrated, but no instance is attached to the deployment — DATABASE_URL points at localhost — so the live site serves a snapshot. Every page states its source rather than implying freshness it does not have. This is a provisioning decision, not an engineering one.",
+    title: "Production reads a committed file, because the database rejects our password",
+    body: "A Supabase instance now exists and the read path is built. Two things stood between them. Supabase's direct host resolves IPv6-only and neither this machine nor a Vercel function has global IPv6, so the connection had to move to the IPv4 pooler — that is fixed. The pooler now recognises the project and tries to authenticate, and the password is rejected. Until it is reset, the live site serves the committed snapshot and every page states that as its source rather than implying freshness it does not have. `npm run db:check` names which of the two failures is happening.",
   },
   {
     title: "The registry sweep cannot run continuously, because it has nowhere to write",
