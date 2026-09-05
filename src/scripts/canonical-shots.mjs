@@ -13,6 +13,15 @@ import { mkdirSync } from "node:fs";
 
 const OUT = process.argv[2] ?? "docs/screenshots";
 /**
+ * Where to shoot from.
+ *
+ * Production by default: it reads the market with the deployed environment,
+ * which is where the struck hallmarks actually are. A local server with a
+ * different `MARKET_ADDRESS` shows an empty mark column for every row, which
+ * is a true picture of that machine and a misleading one of the product.
+ */
+const BASE = process.env.SHOT_BASE ?? "http://localhost:3000";
+/**
  * The exhibit for the certificate shot.
  *
  * 2410 (`@binance · Ensoul`) is the most-reviewed agent on the BSC registry
@@ -36,7 +45,7 @@ for (const scale of [1, 2]) {
   });
   const page = await ctx.newPage();
 
-  await page.goto("http://localhost:3000/agents", { waitUntil: "domcontentloaded", timeout: 120000 });
+  await page.goto(`${BASE}/agents`, { waitUntil: "domcontentloaded", timeout: 120000 });
   await page.waitForTimeout(4000);
   await page.screenshot({ path: `${OUT}/register${suffix}.png`, animations: "disabled" });
   console.log("register", scale);
@@ -49,7 +58,7 @@ for (const scale of [1, 2]) {
     waits for — the page is perfectly usable and the navigation promise simply
     never settles. The waits below are on the content that actually matters.
   */
-  await page.goto(`http://localhost:3000/agent/${AGENT}`, { waitUntil: "commit", timeout: 120000 });
+  await page.goto(`${BASE}/agent/${AGENT}`, { waitUntil: "commit", timeout: 120000 });
   /*
     The assay streams over SSE and the autopsy is a server read behind
     Suspense. Both have to have landed, or the shot shows six pulsing bars and

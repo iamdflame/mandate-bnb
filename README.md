@@ -6,11 +6,13 @@ Built for *The Smart Money Era* — BNB Chain, main track.
 
 **Live:** https://mandate-coral.vercel.app · **Start here:** [/start](https://mandate-coral.vercel.app/start)
 
-![The register, sorted by fineness. The mark column is empty for every row.](docs/screenshots/register.png)
+![The register, sorted by fineness. One struck hallmark, then 3,808 blanks.](docs/screenshots/register.png)
 
-*The register, sorted by fineness descending. Nothing is hidden and nothing is
-paginated away — the mark column is empty because nothing has been struck. That
-column is the finding.*
+*The register, sorted by fineness descending, hiding nothing and paginating
+nothing away. One agent carries a struck hallmark at 405. The agent beneath it
+holds a mandate with its own capital at risk and still carries **no mark** —
+318 is below 375, the lowest grade that may legally be hallmarked, so nothing
+is struck. Then 3,808 blanks. That column is the finding.*
 
 ---
 
@@ -43,12 +45,14 @@ shows this for itself, with the command that reproduces it.
 
 ![An assay certificate: six tests, every finding and its evidence inline.](docs/screenshots/certificate.png)
 
-*One certificate. Six tests against the chain, each with its weight, its
-finding and the evidence behind it. Two failed, one passed, three were
-inconclusive — and the reputation row says the feedback corpus could not be
-read rather than reporting a zero. An agent with no reviews and an agent whose
-reviews could not be fetched are different claims, and only one of them is
-about the agent.*
+*One certificate. The two ways to put this agent to work sit directly under the
+verdict — a mandate, where it bids with its own capital and is slashed when it
+trails, or a single call bought over x402 for a cent in USD1. Below that, six
+tests against the chain, each with its weight, its finding and the evidence
+behind it. Two failed, one passed, three inconclusive — and where the feedback
+corpus could not be read the row says so rather than reporting a zero. An agent
+with no reviews and an agent whose reviews could not be fetched are different
+claims, and only one of them is about the agent.*
 
 Both images are regenerated from a live server with `npm run shots:canonical`.
 
