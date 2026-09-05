@@ -28,7 +28,6 @@ const config: NextConfig = {
   async redirects() {
     return [
       { source: "/method", destination: "/assay", permanent: false },
-      { source: "/offices", destination: "/agents", permanent: false },
     ];
   },
   serverExternalPackages: [

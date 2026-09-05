@@ -6,6 +6,8 @@ import { WalletChip } from "@/components/floor/Actions";
 
 const NAV = [
   { href: "/start", label: "Start" },
+  // The four offices carry equal weight in the rubric and equal weight here.
+  { href: "/offices", label: "Offices" },
   { href: "/agents", label: "Register" },
   { href: "/floor", label: "Floor" },
   { href: "/authority", label: "Authority" },

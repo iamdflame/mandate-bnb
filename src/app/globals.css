@@ -2992,3 +2992,100 @@ p code {
   letter-spacing: 0.06em;
   color: var(--ink-4);
 }
+
+/* ----------------------------------------------------------------- office */
+
+/**
+ * The four offices, at equal depth.
+ *
+ * Agent Diversity is a third of the main-track score and its stated failure
+ * mode is treating one category as the event and the rest as an afterthought.
+ * One template renders all four, so a thin office looks thin rather than being
+ * quietly padded — the emptiness is the finding and the page says so in words.
+ */
+.office-head { display: flex; flex-direction: column; gap: 12px; }
+
+.office-head__mark { line-height: 0; }
+
+.office-head__title { margin: 0; }
+
+.office-head__blurb {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: var(--t-h2);
+  line-height: 1.25;
+  color: var(--ink);
+  max-width: 34ch;
+  text-wrap: balance;
+}
+
+.office-head__method { max-width: 72ch; }
+
+.office-head__figs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  margin-top: 8px;
+}
+
+.office-live { display: flex; flex-direction: column; border-top: var(--hair) solid var(--score); }
+
+.office-live__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8ch 18ch max-content;
+  align-items: center;
+  gap: 16px;
+  min-height: var(--row);
+  border-bottom: var(--hair) solid var(--score);
+}
+
+.office-live__name { color: var(--ink); text-decoration: none; }
+.office-live__name:hover { color: var(--gold-999); }
+
+.office-live__id {
+  font-family: var(--mono);
+  font-size: var(--t-mark);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-4);
+  text-align: right;
+}
+
+.office-live__state { color: var(--ink-3); }
+
+.office-nav {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: var(--hair) solid var(--score);
+  border-left: var(--hair) solid var(--score);
+}
+
+.office-nav__door {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border-right: var(--hair) solid var(--score);
+  border-bottom: var(--hair) solid var(--score);
+  text-decoration: none;
+  transition: background var(--d-hover) linear;
+}
+
+.office-nav__door:hover { background: var(--iron); }
+.office-nav__name { color: var(--ink); }
+.office-nav__blurb { font-size: var(--t-mark); color: var(--ink-3); }
+
+@media (max-width: 860px) {
+  .office-live__row { grid-template-columns: minmax(0, 1fr) max-content; }
+  .office-live__id,
+  .office-live__state { display: none; }
+  .office-nav { grid-template-columns: minmax(0, 1fr); }
+}
+
+.offices-idx__name { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.offices-idx__blurb {
+  flex-basis: 100%;
+  font-size: var(--t-mark);
+  color: var(--ink-3);
+  font-weight: 400;
+}

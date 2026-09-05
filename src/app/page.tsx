@@ -156,7 +156,7 @@ export default async function Home() {
           <ul className="offices">
             {CATEGORIES.map((c) => (
               <li key={c}>
-                <a className="office" href={`/agents?category=${c}`}>
+                <a className="office" href={`/office/${c}`}>
                   <CategoryMark category={c} size={32} metal="var(--silver-925)" />
                   <span className="office__n num">
                     {(index.counts.byCategory?.[c] ?? 0).toLocaleString()}
