@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/shell/SiteHeader";
-import { getAgentIndex } from "@/lib/data/agents";
+import { readAgentIndex } from "@/lib/data/agents";
 import { HALLMARK_BAR } from "@/lib/ladder";
 
 export const metadata: Metadata = {
@@ -73,8 +73,8 @@ const STEPS: Step[] = [
   },
 ];
 
-export default function ListYourAgentPage() {
-  const index = getAgentIndex();
+export default async function ListYourAgentPage() {
+  const index = await readAgentIndex();
 
   return (
     <div className="app">

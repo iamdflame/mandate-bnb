@@ -34,10 +34,10 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | # | Problem | State | Evidence |
 |---|---|---|---|
 | C1 | 265 of 301,996 classified | **TODO** | `agents.json` holds 3,402 |
-| C2 | 1.9 MB static JSON | **PARTIAL** | still a snapshot, but it merges rather than replaces and carries `lastSeen` per row; no Postgres instance to point at |
+| C2 | 1.9 MB static JSON | **PARTIAL** | Postgres read path built and migrated (3,808 rows); pages report their source. Production has no instance attached, so the deployed site still reads the snapshot |
 | C3 | No self-service listing | **DONE** | `/list-your-agent` — what each rung costs |
 | C4 | Agent diversity structurally unequal | **PARTIAL** | 4 categories now have mandates + sessions; only grid has settled epochs |
-| C5 | Zero app tests, zero CI | **PARTIAL** | three workflows: CI, mainnet verification hourly, smoke every 15 min. Still no app unit tests |
+| C5 | Zero app tests, zero CI | **DONE** | 35 unit tests, three workflows: CI, mainnet verification hourly, smoke every 15 min |
 | C6 | No agent career page | **DONE** | mandates, epochs, fees, slashes, dismissals, each with its tx |
 
 ### Category D — adoption blockers
@@ -47,7 +47,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | D1 | Only runs on your machine | **PARTIAL** — benchmark and preimages are off-machine; `.sessions/` public half still a committed file |
 | D2 | Single operator, no key ceremony | **PARTIAL** — v2 two-step adjudicator handover, roles documented; **no multisig on the owner**, named as the largest gap |
 | D3 | No incident/failure path | **DONE** — `docs/INCIDENTS.md`, eight modes |
-| D4 | No economic sustainability model | **TODO** — no protocol fee in the contract |
+| D4 | No economic sustainability model | **DONE** — v2 protocol fee capped at 5%, cost model in `ADOPTION.md` measured from real transactions |
 | D5 | Nothing written back to the substrate | **DONE** — six assays in the Reputation Registry |
 | D6 | No licence/brand/team/ADOPTION.md | **DONE** — `ADOPTION.md`, all eight sections |
 
@@ -63,7 +63,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | E6 | No bid expiry | **DONE** — v2, and expired bids are skipped on succession |
 | E7 | No event indexer / subgraph | **TODO** |
 | E8 | No documented rate-limit strategy | **DONE** — `docs/DATA.md` |
-| E9 | No deploy runbook | **TODO** |
+| E9 | No deploy runbook | **DONE** — `ADOPTION.md` §2, written for someone who is not the author |
 | E10 | Self-hosted fonts, no third-party requests | **DONE** — stated in README |
 
 ### Category F — narrative
@@ -98,7 +98,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | R1.2 | Preimages on Greenfield | **DONE** — 3 objects, read back and hash-checked |
 | R1.3 | Optimistic settlement + challenge bonds | **DONE** — v2, staked proposals, deployed |
 | R1.4 | `npx mandate-verify`, published | **DONE** — `mandate-verify@0.2.0` on npm |
-| R1.5 | Local state → Postgres + Greenfield | **PARTIAL** |
+| R1.5 | Local state → Postgres + Greenfield | **PARTIAL** — preimages on Greenfield, agent index migrated to Postgres with a read path; `.sessions/` public half is still a committed file, deliberately |
 
 ### R2 — assay engine v2
 
@@ -145,7 +145,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | R8 | Information architecture (9 routes) | **DONE** — all nine |
 | R9 | Supply side: listing, shadow mandates, underwriting, bond tiers | **PARTIAL** — ShadowLedger and Underwriter deployed; bond tiers not done |
 | R10 | Contract v2 (11 items) | **DONE** — 70 tests, deployed to mainnet |
-| R11 | Data pipeline | **PARTIAL** — `docs/DATA.md`: observation boundaries, block-pinned reads, stated exclusions, rate-limit strategy. No Postgres instance, no subgraph |
+| R11 | Data pipeline | **PARTIAL** — `docs/DATA.md`, Postgres read path + migration, per-source reporting. No subgraph; production has no database attached |
 | R12 | CI, uptime, reliability | **DONE** — CI, `mandate-verify` against mainnet on a schedule, production smoke, `docs/INCIDENTS.md` |
 
 ---

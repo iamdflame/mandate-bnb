@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import SiteHeader from "@/components/shell/SiteHeader";
 import Marketplace from "@/components/agents/Marketplace";
-import { getAgentIndex } from "@/lib/data/agents";
+import { readAgentIndex } from "@/lib/data/agents";
 import { placeAgent, readMarketSets } from "@/lib/rung";
 import { CATEGORIES, type Category } from "@/lib/config";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { registry } = getAgentIndex();
+  const { registry } = await readAgentIndex();
   return {
     title: "Every agent on BSC — MANDATE",
     description: `All ${registry.registered.toLocaleString()} agents registered on BNB Smart Chain, each on the rung its evidence earns. Filter by rung and category.`,
@@ -22,7 +22,7 @@ export default async function AgentsPage({
   searchParams: Promise<{ rung?: string; category?: string }>;
 }) {
   const params = await searchParams;
-  const full = getAgentIndex();
+  const full = await readAgentIndex();
   const sets = await readMarketSets();
 
   // Ship only what the page renders. The full index is ~2 MB and would

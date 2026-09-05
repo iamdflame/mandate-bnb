@@ -99,13 +99,15 @@ subgraph or a persistent indexer, and the schema for one already exists in
 
 ## What is not true yet
 
-- **Postgres is not the source of truth.** The schema and client are written
-  and the app falls back to a committed snapshot when `DATABASE_URL` is absent,
-  which is deliberate — it keeps the site deployable before any infrastructure
-  exists. But no instance is running, so the 1.9 MB snapshot is still what the
-  site reads. It carries `lastSeen` per row and the indexer merges rather than
-  replaces, so coverage grows and staleness is visible per row. It is still a
-  snapshot.
+- **Postgres is the source of truth where an instance exists, and the site
+  still ships a snapshot fallback.** The worker had always written to Postgres
+  and nothing had ever read from it, so the database was a write-only store and
+  the site ran on a file. `readAgentIndex()` is the read path, `npm run db:seed`
+  is the migration, and every page reports which source it used rather than
+  leaving a reader to guess. The fallback is deliberate: it keeps the site
+  deployable before any infrastructure exists and up when the database is not.
+  **Production has no instance attached yet**, so the deployed site reads the
+  snapshot — which merges rather than replaces and carries `lastSeen` per row.
 - **The registry sweep is partial.** 3,808 of 303,391 agents have been fetched
   and parsed. That is a floor, not a total, and the ladder says so with a `≥`.
   Reaching the whole registry needs the Pro tier.

@@ -306,8 +306,15 @@ async function cycle() {
   }
 }
 
-log(`indexer starting · chain ${CHAIN_ID} · cycle ${CYCLE_MS / 60000}min`);
+const ONCE = process.argv.includes("--once");
+
+log(`indexer starting · chain ${CHAIN_ID} · cycle ${CYCLE_MS / 60000}min${ONCE ? " · one cycle" : ""}`);
 await cycle();
+
+if (ONCE) {
+  log("one cycle done");
+  process.exit(0);
+}
 
 while (!stopping) {
   await new Promise((r) => setTimeout(r, CYCLE_MS));

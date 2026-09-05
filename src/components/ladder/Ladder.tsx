@@ -82,7 +82,8 @@ export default function Ladder({ reading }: { reading: LadderReading }) {
 
       <p className="ladder-foot shell">
         Widths are logarithmic, or every rung below the first would be
-        invisible. Registry counts from the snapshot of{" "}
+        invisible. Registry counts read from{" "}
+        {reading.source === "postgres" ? "the index" : "a committed snapshot"} of{" "}
         <time dateTime={reading.capturedAt}>{reading.capturedAt.slice(0, 10)}</time>;
         on-chain rungs read at block {reading.blockNumber ?? "—"}.
       </p>

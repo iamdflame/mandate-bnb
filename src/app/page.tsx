@@ -3,13 +3,13 @@ import Link from "next/link";
 import SiteHeader from "@/components/shell/SiteHeader";
 import Ladder from "@/components/ladder/Ladder";
 import { readLadder } from "@/lib/ladder";
-import { getAgentIndex } from "@/lib/data/agents";
+import { readAgentIndex } from "@/lib/data/agents";
 import { CATEGORIES, CATEGORY_BLURB, CATEGORY_LABEL } from "@/lib/config";
 
 export async function generateMetadata(): Promise<Metadata> {
   // Read rather than hardcoded: the registry grew by 1,600 in a day while
   // this page still claimed the number it was written with.
-  const { registry } = getAgentIndex();
+  const { registry } = await readAgentIndex();
   return {
     title: "MANDATE — the trust ladder for agents on BNB Chain",
     description: `${registry.registered.toLocaleString()} agents are registered on BNB Smart Chain. ${registry.withEndpoint} have an endpoint that answers. Here is the ladder, every rung a test the chain settles, and what it costs to climb it.`,
@@ -21,7 +21,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function Home() {
-  const [reading, index] = await Promise.all([readLadder(), Promise.resolve(getAgentIndex())]);
+  const [reading, index] = await Promise.all([readLadder(), readAgentIndex()]);
 
   return (
     <div className="app">

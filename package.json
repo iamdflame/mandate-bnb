@@ -46,7 +46,9 @@
     "v2": "tsx --env-file=.env --env-file=.env.local src/scripts/v2-lifecycle.ts",
     "smoke": "tsx src/scripts/smoke.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:seed": "tsx --env-file=.env --env-file=.env.local src/scripts/db-seed.ts",
+    "worker:once": "tsx --env-file=.env --env-file=.env.local src/worker/index.ts --once"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",

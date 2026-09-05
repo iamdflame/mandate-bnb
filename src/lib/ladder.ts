@@ -24,7 +24,7 @@
  * numbers cannot be re-derived is the same unverifiable claim as an agent card.
  */
 
-import { getAgentIndex } from "@/lib/data/agents";
+import { readAgentIndex } from "@/lib/data/agents";
 import {
   logClients,
   MANDATE_MARKET_ABI,
@@ -75,6 +75,8 @@ export interface LadderReading {
   at: string;
   /** Block the on-chain rungs were read at. */
   blockNumber: string | null;
+  /** Where the registry rungs came from. Stated, so nobody has to guess. */
+  source: "postgres" | "snapshot";
   capturedAt: string;
 }
 
@@ -120,7 +122,7 @@ async function readAssayed(): Promise<{ count: number; agents: Address[] } | nul
 }
 
 export async function readLadder(): Promise<LadderReading> {
-  const index = getAgentIndex();
+  const index = await readAgentIndex();
   const registry = index.registry;
 
   // Rungs 5 and 6 come from the market itself.
@@ -175,7 +177,7 @@ export async function readLadder(): Promise<LadderReading> {
       test: "Its agent card parses into something readable.",
       population: index.agents.length,
       atLeast: true,
-      source: `A floor, not a total: ${index.agents.length.toLocaleString()} cards have been fetched and parsed so far. The rest are unindexed, not disproven.`,
+      source: `A floor, not a total: ${index.agents.length.toLocaleString()} cards have been fetched and parsed so far, read from ${index.source === "postgres" ? "the index" : "a committed snapshot"}. The rest are unindexed, not disproven.`,
       verify: "npm run index",
     },
     {
@@ -231,6 +233,7 @@ export async function readLadder(): Promise<LadderReading> {
 
   return {
     rungs,
+    source: index.source,
     minFineness,
     at: new Date().toISOString(),
     blockNumber,
