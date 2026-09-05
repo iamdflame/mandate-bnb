@@ -71,16 +71,16 @@ export default async function OfficesPage() {
 
         <section className="section shell">
           <div className="tablewrap">
-            <table className="floor-table">
+            <table className="tbl">
               <caption className="sr-only">The four offices compared</caption>
               <thead>
                 <tr>
                   <th scope="col">office</th>
-                  <th scope="col">bonded</th>
-                  <th scope="col">open or active</th>
-                  <th scope="col">capital</th>
-                  <th scope="col">epochs settled</th>
-                  <th scope="col">classified</th>
+                  <th scope="col" className="num">bonded</th>
+                  <th scope="col" className="num">open or active</th>
+                  <th scope="col" className="num">capital</th>
+                  <th scope="col" className="num">epochs settled</th>
+                  <th scope="col" className="num">classified</th>
                   <th scope="col" />
                 </tr>
               </thead>
@@ -92,11 +92,11 @@ export default async function OfficesPage() {
                       <a href={`/office/${o.c}`}>{CATEGORY_LABEL[o.c]}</a>
                       <span className="offices-idx__blurb">{CATEGORY_BLURB[o.c]}</span>
                     </th>
-                    <td className="fig">{o.bonded}</td>
-                    <td className="fig">{o.live}</td>
-                    <td className="fig">{(Number(o.capitalWei) / 1e18).toFixed(7)}</td>
-                    <td className="fig">{o.settled}</td>
-                    <td className="fig">{o.classified.toLocaleString()}</td>
+                    <td className="num">{o.bonded}</td>
+                    <td className="num">{o.live}</td>
+                    <td className="num">{(Number(o.capitalWei) / 1e18).toFixed(7)}</td>
+                    <td className="num">{o.settled}</td>
+                    <td className="num">{o.classified.toLocaleString()}</td>
                     <td>
                       <a href={`/office/${o.c}`}>open →</a>
                     </td>

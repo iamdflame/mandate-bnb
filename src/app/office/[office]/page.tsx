@@ -5,7 +5,6 @@ import SiteFooter from "@/components/shell/SiteFooter";
 import CategoryMark from "@/components/mark/CategoryMark";
 import Observation from "@/components/ui/Observation";
 import Command from "@/components/ui/Command";
-import Hire from "@/components/ui/Hire";
 import { readBook, type BookRow } from "@/lib/chain/book";
 import { readAgentIndex } from "@/lib/data/agents";
 import { CATEGORIES, CATEGORY_BLURB, CATEGORY_LABEL, type Category } from "@/lib/config";
@@ -155,18 +154,18 @@ export default async function OfficePage({
             </p>
           ) : (
             <div className="tablewrap">
-              <table className="floor-table">
+              <table className="tbl">
                 <caption className="sr-only">
                   Mandates in the {CATEGORY_LABEL[c]} office
                 </caption>
                 <thead>
                   <tr>
-                    <th scope="col">#</th>
+                    <th scope="col" className="num">#</th>
                     <th scope="col">state</th>
-                    <th scope="col">capital</th>
-                    <th scope="col">bond at risk</th>
-                    <th scope="col">alpha</th>
-                    <th scope="col">epochs</th>
+                    <th scope="col" className="num">capital</th>
+                    <th scope="col" className="num">bond at risk</th>
+                    <th scope="col" className="num">alpha</th>
+                    <th scope="col" className="num">epochs</th>
                     <th scope="col">ledger</th>
                   </tr>
                 </thead>
@@ -211,12 +210,20 @@ export default async function OfficePage({
                   <span className="office-live__state mark-label">
                     {a.endpointVerified ? "answered" : "no endpoint reached"}
                   </span>
-                  <Hire
-                    tokenId={a.tokenId}
-                    fineness={null}
-                    endpointVerified={Boolean(a.endpointVerified)}
-                    agentWallet={a.owner}
-                  />
+                  {/*
+                    The action a rung actually permits, per row.
+
+                    The full hire panel belongs on an agent's own page; eight of
+                    them stacked in a list is not a marketplace, it is a wall.
+                    An agent nobody has reached cannot be called, so this offers
+                    the assay instead of pretending otherwise.
+                  */}
+                  <a
+                    className="office-live__cta"
+                    href={a.endpointVerified ? `/agent/${a.tokenId}` : `/assay?id=${a.tokenId}`}
+                  >
+                    {a.endpointVerified ? "call →" : "assay →"}
+                  </a>
                 </li>
               ))}
             </ul>
@@ -262,17 +269,17 @@ export default async function OfficePage({
 function OfficeRow({ r }: { r: BookRow }) {
   return (
     <tr>
-      <td className="fig">
+      <td className="num">
         {r.id}
         {r.deployment.status === "canonical" ? null : (
           <span className="mandate-row__dep"> {r.deployment.label}</span>
         )}
       </td>
       <td>{STATE[r.state]}</td>
-      <td className="fig">{bnb(r.capitalWei)}</td>
-      <td className="fig">{r.bondWei > 0n ? bnb(r.bondWei) : "—"}</td>
-      <td className="fig">{r.epochsSettled > 0 ? pct(r.cumulativeAlphaBps) : "—"}</td>
-      <td className="fig">
+      <td className="num">{bnb(r.capitalWei)}</td>
+      <td className="num">{r.bondWei > 0n ? bnb(r.bondWei) : "—"}</td>
+      <td className="num">{r.epochsSettled > 0 ? pct(r.cumulativeAlphaBps) : "—"}</td>
+      <td className="num">
         {r.epochsSettled} / {r.epochsTotal}
       </td>
       <td>

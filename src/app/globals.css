@@ -3102,3 +3102,14 @@ p code {
 }
 
 .superseded__parties dd { margin: 0; overflow-wrap: anywhere; }
+
+/** The one action a rung permits, at the end of a register row. */
+.office-live__cta {
+  font-family: var(--mono);
+  font-size: var(--t-mark);
+  color: var(--ink-2);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.office-live__cta:hover { color: var(--gold-999); }
