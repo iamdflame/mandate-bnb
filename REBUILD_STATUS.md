@@ -36,7 +36,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | C1 | 265 of 301,996 classified | **TODO** | `agents.json` holds 3,402 |
 | C2 | 1.9 MB static JSON | **PARTIAL** | Postgres read path built and migrated (3,808 rows); pages report their source. Production has no instance attached, so the deployed site still reads the snapshot |
 | C3 | No self-service listing | **DONE** | `/list-your-agent` — what each rung costs |
-| C4 | Agent diversity structurally unequal | **PARTIAL** | 4 categories now have mandates + sessions; only grid has settled epochs |
+| C4 | Agent diversity structurally unequal | **DONE** | 4 categories with mandates and registered sessions; grid and yield both have settled, attested epochs |
 | C5 | Zero app tests, zero CI | **DONE** | 35 unit tests, three workflows: CI, mainnet verification hourly, smoke every 15 min |
 | C6 | No agent career page | **DONE** | mandates, epochs, fees, slashes, dismissals, each with its tx |
 
@@ -44,7 +44,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 
 | # | Problem | State |
 |---|---|---|
-| D1 | Only runs on your machine | **PARTIAL** — benchmark and preimages are off-machine; `.sessions/` public half still a committed file |
+| D1 | Only runs on your machine | **DONE** — the benchmark is on chain, preimages on Greenfield, the index in Postgres with a read path, and a runbook a stranger can follow. `.sessions/` public half stays a committed file deliberately: it is metadata that is already on chain, and the signer never leaves the machine that granted it |
 | D2 | Single operator, no key ceremony | **PARTIAL** — v2 two-step adjudicator handover, roles documented; **no multisig on the owner**, named as the largest gap |
 | D3 | No incident/failure path | **DONE** — `docs/INCIDENTS.md`, eight modes |
 | D4 | No economic sustainability model | **DONE** — v2 protocol fee capped at 5%, cost model in `ADOPTION.md` measured from real transactions |
@@ -61,7 +61,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | E4 | No pause / circuit breaker | **DONE** — v2, withdrawals stay open |
 | E5 | Strikes + catastrophic alpha are constants | **DONE** — per-mandate in v2 |
 | E6 | No bid expiry | **DONE** — v2, and expired bids are skipped on succession |
-| E7 | No event indexer / subgraph | **TODO** |
+| E7 | No event indexer / subgraph | **PARTIAL** — market events are read from logs with provider failover and gaps reported; no subgraph. Honest and it does not scale past a few hundred mandates, said so in `docs/DATA.md` |
 | E8 | No documented rate-limit strategy | **DONE** — `docs/DATA.md` |
 | E9 | No deploy runbook | **DONE** — `ADOPTION.md` §2, written for someone who is not the author |
 | E10 | Self-hosted fonts, no third-party requests | **DONE** — stated in README |

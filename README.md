@@ -97,15 +97,15 @@ V2 changes what it costs to be wrong.
    stake goes to the winner.
 ```
 
-Run end to end on mainnet, mandate 1, including a real challenge:
+Run end to end on mainnet, mandate 0, including a real challenge:
 
 | | |
 |---|---|
-| Proposed −5.68% with a 0.00002 BNB stake | [`0x40b4b6c1…`](https://bscscan.com/tx/0x40b4b6c184e4a2b91bb1291a6950c69c63378eb45b432b0b32b493c9786d77ee) |
-| **Contradicted for the same block** (119980473) | [`0x2f1f332f…`](https://bscscan.com/tx/0x2f1f332f7f6bc70567e0803b1d4515b14e636ffae184dd525f308cf05768b25b) |
+| Proposed with a 0.00002 BNB stake | [`0xedd55647…`](https://bscscan.com/tx/0xedd5564773d534652a82dba40207cdcf9f8c81e872909ea8dab394da9867d4b3) |
+| **Contradicted for the same block** (120056289) | [`0x7eff4e40…`](https://bscscan.com/tx/0x7eff4e40e2926c02c8e23c70ddb5505093e7ac6d90385b426c20bd3b6e19fd62) |
 | Epochs settled while contested: **0 — nothing moved** | |
-| Resolved, 0.00004 BNB pot to the winner | [`0xff37511e…`](https://bscscan.com/tx/0xff37511e02518613becd58a2789c2b0380126ccc856196e0a301d9736f544dc8) |
-| Second epoch finalised unchallenged, stake returned | [`0x0485a1f6…`](https://bscscan.com/tx/0x0485a1f6b698cbf00ea6d6a84ae40dbac0d5a03e1f3619d90ff7d56786714555) |
+| Resolved, 0.00004 BNB pot to the winner | [`0xf96d7bac…`](https://bscscan.com/tx/0xf96d7bac708911691193dc6f89206128ae83b976beaa2659fe603db7a39a8843) |
+| Second epoch finalised unchallenged, stake returned | [`0x847d4a8b…`](https://bscscan.com/tx/0x847d4a8b65994bb6b97df08bfbaf5f26471161ce6923ecc9eac7e03e7ad4dc3d) |
 
 **The contract still cannot decide what a wallet was worth.** It can make the
 assertion expensive, make the contradiction public, and stop value moving while
@@ -285,8 +285,10 @@ reading back from https://greenfield-sp.lumibot.org:443
   ✓ mandate-0/open.json     0x1ea61d6bb51b98d1… matches the chain
   ✓ mandate-0/epoch-0.json  0x578e5063cea35d49… matches the chain
   ✓ mandate-0/epoch-1.json  0x9adb2257420b3c64… matches the chain
+  ✓ mandate-2/open.json     0x12fa03ad283c2ded… matches the chain
+  ✓ mandate-2/epoch-0.json  0x5941bfd5797d192e… matches the chain
 
-3 verified · 0 mismatched · 0 unreachable
+5 verified · 0 mismatched · 0 unreachable
 ```
 
 Uploading evidence nobody reads back is filing, not proof — so `check` is the
