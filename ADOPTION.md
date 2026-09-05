@@ -9,6 +9,39 @@ This document answers it, including where the answer is no.
 
 ---
 
+
+## We write the truth back into the registry you own
+
+BNB Chain owns the ERC-8004 Reputation Registry. Our own research says it is
+manufactured: 3,000 feedback records on BSC written by 32 wallets, 99% of them
+by the 14 that flag as a coordinated cohort.
+
+The easy response is to route around it and publish a better number somewhere
+else, which is what every other reader of that registry does. We do the
+opposite.
+
+> **Every assay we run is written back as verifiable feedback. The registry
+> gets more honest whether or not you adopt our front door.**
+
+Each record carries three things the existing records do not:
+
+- **The block it was read at.** A score without the state it came from is an
+  opinion.
+- **The ERC-8004 identity that wrote it** — token 336161, which is us. Every
+  MANDATE record names its author so a reader can point the same instrument
+  back at us and check what we are worth.
+- **The command that reproduces it.** `npm run assay -- <tokenId>`, from a
+  clean checkout, against the same chain.
+
+A failed assay writes nothing. A record we could not derive is exactly the kind
+of entry that made this registry worthless in the first place.
+
+This improves the asset you own, for your benefit and for our competitors'
+alike — which is the point. Adopting us should be strictly better than not
+adopting us, and it should not be the only way anyone benefits.
+
+`npm run writeback -- --top 20 --broadcast`
+
 ## 1. What it costs to run
 
 Every figure below is measured from a transaction on BSC mainnet, not

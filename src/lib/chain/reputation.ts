@@ -30,6 +30,17 @@ export const REPUTATION_ABI = parseAbi([
 /** The tag every record from this market carries, so ours can be filtered out. */
 export const MANDATE_TAG = "mandate-assay";
 
+/**
+ * Our own ERC-8004 identity, written into every record we leave.
+ *
+ * The registry's existing records are unattributable: a score from a wallet
+ * with no standing and no way to check it. Ours name the agent that wrote
+ * them, so anyone reading a MANDATE record can turn the same instrument back
+ * on us — which is the only thing that makes writing to this registry
+ * different from adding to the noise.
+ */
+export const MANDATE_AGENT_ID = process.env.NEXT_PUBLIC_MANDATE_TOKEN_ID ?? "336161";
+
 export interface WriteBack {
   agentId: string;
   /** Our fineness, 0–1000, rescaled to the 0–100 the registry's records use. */
@@ -41,6 +52,10 @@ export interface WriteBack {
   /** Digest of the assay's findings, so the record commits to what it saw. */
   filehash: Hex;
   comment: string;
+  /** The block the assay read. A measurement without one is an opinion. */
+  blockNumber: string | null;
+  /** Our own ERC-8004 token id, so a reader can assay the assayer. */
+  writtenBy: string;
 }
 
 /**
@@ -57,10 +72,29 @@ export function buildWriteBack(opts: {
    *  the registry has no way to interpret "—". */
   hallmark: string;
   findings: string[];
+  /** The block the assay read at, carried into the record. */
+  blockNumber?: bigint | string | null;
   siteBase?: string;
 }): WriteBack {
   const base = opts.siteBase ?? "https://mandate-coral.vercel.app";
   const fileuri = `${base}/agent/${opts.agentId}`;
+  const block = opts.blockNumber?.toString() ?? null;
+
+  /*
+    The comment carries the block and the writer's own token id.
+
+    Every other record in this registry is an unattributable number. One that
+    names the state it was read from, and the agent that wrote it, can be
+    checked and can be held to account — including by pointing the same
+    instrument back at us, which is why our own id is in there.
+  */
+  const provenance = [
+    `Machine assay, ${opts.fineness}/1000 fineness (${opts.hallmark}).`,
+    block ? `Opened at block ${block}.` : "Block not recorded.",
+    `Written by ERC-8004 ${MANDATE_AGENT_ID} — assay us too.`,
+    `Reproduce: npm run assay -- ${opts.agentId}`,
+  ].join(" ");
+
   return {
     agentId: opts.agentId,
     // Millesimal fineness is 0–1000; the registry's existing records are 0–100.
@@ -68,8 +102,12 @@ export function buildWriteBack(opts: {
     fineness: opts.fineness,
     hallmark: opts.hallmark,
     fileuri,
-    filehash: keccak256(toHex(opts.findings.join("\n"))),
-    comment: `Machine assay, ${opts.fineness}/1000 fineness (${opts.hallmark}). Reproduce: npm run assay -- ${opts.agentId}`,
+    // Commits to the findings *and* the block, so a record cannot be quietly
+    // re-attributed to a different reading of the chain.
+    filehash: keccak256(toHex([block ?? "no-block", ...opts.findings].join("\n"))),
+    comment: provenance,
+    blockNumber: block,
+    writtenBy: MANDATE_AGENT_ID,
   };
 }
 

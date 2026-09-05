@@ -1,80 +1,115 @@
 /**
- * Publishes assay results back into the ERC-8004 Reputation Registry.
+ * Assays agents and writes the result back into the ERC-8004 Reputation
+ * Registry.
  *
- *   npm run writeback -- 2410            one agent
- *   npm run writeback -- 2410 --dry      assay and show the record, send nothing
+ * Our own research says that registry is worthless — 3,000 records on BSC from
+ * 32 wallets, 99% of them by the 14 that flag as a coordinated cohort. The easy
+ * response is to route around it and publish a better number somewhere else,
+ * which is what every other reader of it does.
  *
- * We found this registry is manufactured — 3,000 records from 32 wallets, 99%
- * of them from a coordinated cohort. Rather than route around it, every assay
- * goes back in as feedback anyone can reproduce from public chain state.
+ * Repairing it is better, and it is better *for competitors too*: BNB Chain
+ * owns that registry, and a record written there improves the asset whether or
+ * not anyone adopts our front door. Every record names the block it read and
+ * the ERC-8004 identity that wrote it, so a reader can point the same
+ * instrument back at us.
  *
- * Each record carries the tag `mandate-assay`, so a reader who does not trust
- * us can filter every one of ours out in a single pass. That is deliberate: a
- * contribution that cannot be excluded is not a contribution, it is noise.
+ * Dry by default.
+ *
+ *   npx tsx src/scripts/writeback.ts 2410 153776
+ *   npx tsx src/scripts/writeback.ts --top 5 --broadcast
  */
 
+import { createPublicClient, http } from "viem";
+import { bsc } from "viem/chains";
 import { assayAgent } from "@/lib/assay";
-import { hallmarkFor } from "@/lib/assay/types";
-import { buildWriteBack, publishFeedback, MANDATE_TAG, REPUTATION_REGISTRY } from "@/lib/chain/reputation";
-import { marketClient } from "@/lib/chain/market";
+import { buildWriteBack, publishFeedback, MANDATE_AGENT_ID } from "@/lib/chain/reputation";
+import { readAgentIndex } from "@/lib/data/agents";
+import { CHAIN_ID } from "@/lib/config";
 
-const args = process.argv.slice(2).filter((a) => !a.startsWith("--"));
-const DRY = process.argv.includes("--dry");
-const CHAIN = Number(process.env.CHAIN_ID ?? 56);
+const args = process.argv.slice(2);
+const broadcast = args.includes("--broadcast");
+const topFlag = args.includes("--top") ? Number(args[args.indexOf("--top") + 1]) : 0;
+const ids = args.filter((a) => /^\d+$/.test(a));
 
-if (args.length === 0) {
-  console.error("usage: npm run writeback -- <tokenId> [--dry]");
-  process.exit(1);
+async function targets(): Promise<string[]> {
+  if (ids.length) return ids;
+  if (!topFlag) return [];
+  // Agents the registry already carries a score for: the records most worth
+  // sitting a checkable measurement beside.
+  const index = await readAgentIndex();
+  return index.agents
+    .filter((a) => (a.feedbacks ?? 0) > 0)
+    .sort((a, b) => (b.feedbacks ?? 0) - (a.feedbacks ?? 0))
+    .slice(0, topFlag)
+    .map((a) => a.tokenId);
 }
 
-console.log(`\n  registry ${REPUTATION_REGISTRY}`);
-console.log(`  tag      ${MANDATE_TAG} — every record we write carries it, so ours can be excluded\n`);
-
-let failures = 0;
-
-for (const tokenId of args) {
-  process.stdout.write(`  assaying ${tokenId}…`);
-  let report;
-  try {
-    report = await assayAgent(CHAIN, tokenId);
-  } catch (e) {
-    console.log(`\r  ${tokenId}: assay failed — ${String(e).slice(0, 90)}`);
-    failures++;
-    continue;
+async function main() {
+  const list = await targets();
+  if (list.length === 0) {
+    console.error("usage: writeback <tokenId...> | --top N   [--broadcast]");
+    process.exit(2);
   }
 
-  const findings = report.results.map((r) => `${r.id}:${r.verdict}:${r.score.toFixed(3)}`);
-  const record = buildWriteBack({
-    agentId: tokenId,
-    fineness: report.fineness,
-    hallmark: hallmarkFor(report.fineness).name,
-    findings,
+  console.log(`writing as ERC-8004 ${MANDATE_AGENT_ID} on chain ${CHAIN_ID}`);
+  console.log(`${list.length} agent(s)${broadcast ? "" : " — dry run, nothing will be sent"}\n`);
+
+  const chain = createPublicClient({
+    chain: bsc,
+    transport: http(process.env.BSC_RPC_URL ?? "https://bsc-dataseed.bnbchain.org"),
   });
 
-  console.log(`\r  ${tokenId}  ${report.name ?? "unnamed"}`);
-  console.log(`    fineness  ${record.fineness}/1000 (${record.hallmark}) → registry score ${record.score}/100`);
-  console.log(`    findings  ${findings.join("  ")}`);
-  console.log(`    filehash  ${record.filehash}`);
-  console.log(`    uri       ${record.fileuri}`);
+  let written = 0;
+  let skipped = 0;
 
-  if (DRY) {
-    console.log(`    (dry — nothing sent)\n`);
-    continue;
-  }
+  for (const tokenId of list) {
+    try {
+      /*
+        The block the assay opened at.
 
-  try {
-    const hash = await publishFeedback(record);
-    const r = await marketClient.waitForTransactionReceipt({ hash });
-    if (r.status === "success") {
-      console.log(`    published https://bscscan.com/tx/${hash}\n`);
-    } else {
-      console.log(`    REVERTED  https://bscscan.com/tx/${hash}\n`);
-      failures++;
+        An assay makes many calls and the head moves under it, so this is the
+        height it started from rather than a single pinned read — and the
+        record says exactly that rather than implying more precision than the
+        measurement has.
+      */
+      const openedAt = await chain.getBlockNumber();
+
+      const report = await assayAgent(CHAIN_ID, tokenId, undefined, {
+        registryDeadlineMs: 20_000,
+      });
+
+      const record = buildWriteBack({
+        agentId: tokenId,
+        fineness: report.fineness,
+        hallmark: report.hallmark.name,
+        findings: report.results.map((r) => `${r.id}:${r.verdict}:${r.finding}`),
+        blockNumber: openedAt,
+      });
+
+      console.log(`${tokenId.padEnd(8)} fineness ${String(record.fineness).padStart(4)} → score ${String(record.score).padStart(3)}  ${record.hallmark}`);
+      console.log(`         ${record.comment}`);
+
+      if (!broadcast) {
+        skipped++;
+        continue;
+      }
+
+      const hash = await publishFeedback(record);
+      console.log(`         written  https://bscscan.com/tx/${hash}`);
+      written++;
+    } catch (e) {
+      // A failed assay writes nothing. A record we could not derive is exactly
+      // the kind of entry that made this registry worthless.
+      console.log(`${tokenId.padEnd(8)} skipped: ${e instanceof Error ? e.message : String(e)}`);
+      skipped++;
     }
-  } catch (e) {
-    console.log(`    failed    ${String(e).replace(/\s+/g, " ").slice(0, 200)}\n`);
-    failures++;
   }
+
+  console.log(`\n${written} written, ${skipped} skipped`);
+  if (!broadcast) console.log("dry run. Pass --broadcast to write.");
 }
 
-process.exit(failures > 0 ? 1 : 0);
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
