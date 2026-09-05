@@ -3089,3 +3089,16 @@ p code {
   color: var(--ink-3);
   font-weight: 400;
 }
+
+/** A deployment that is no longer canonical says so before anything else. */
+.superseded__flag { color: var(--gold-750); margin: 0 0 8px; }
+
+.superseded__parties {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 10px 24px;
+  align-items: baseline;
+  margin: 0;
+}
+
+.superseded__parties dd { margin: 0; overflow-wrap: anywhere; }

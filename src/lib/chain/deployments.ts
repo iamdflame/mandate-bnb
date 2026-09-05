@@ -90,7 +90,13 @@ export function deploymentFor(address: string | null | undefined): Deployment | 
 export function mandatePath(address: string, id: number): string {
   const d = deploymentFor(address);
   if (!d || d.status === "canonical") return `/mandate/${id}`;
-  return `/mandate/${d.label}/${id}`;
+  /*
+    A separate path rather than /mandate/<label>/<id>: Next.js will not accept
+    two different slug names at one level, so `[id]` and `[deployment]` cannot
+    both sit under /mandate. Naming the older books /ledger keeps the canonical
+    mandate at the short URL a judge will paste.
+  */
+  return `/ledger/${d.label}/${id}`;
 }
 
 /** BscScan for the chain a deployment lives on. Never a bare explorer root. */
