@@ -18,7 +18,13 @@
 
 import type { Address } from "viem";
 import { MANDATE_MARKET_ABI, MARKET_ADDRESS, marketClient } from "@/lib/chain/market";
-import { valueWallet, type Valuation } from "@/lib/chain/prices";
+import { readPool, WBNB_USDT_POOL, type Valuation } from "@/lib/chain/prices";
+import {
+  MAX_DEVIATION_BPS,
+  NegativeNetValue,
+  settlementValuation,
+  toLegacyValuation,
+} from "@/lib/chain/valuation";
 
 /** Mirrors the contract's `Observation` struct, field for field and in order. */
 export interface Observation {
@@ -163,7 +169,56 @@ export async function measureAlpha(mandateId: number, epoch: number): Promise<Me
     };
   }
 
-  const v = await valueWallet(wallet);
+  /*
+    Measured with the full valuation engine, at an average price.
+
+    Two things changed here and both of them decided real slashes. The gauge
+    now sees V3 positions, Venus supply and borrow, staked liquidity and every
+    tracked token — previously it read native BNB and USDT and nothing else, so
+    an agent that put capital to work was measured as having lost it. And the
+    price is a thirty-minute average rather than spot, because spot is the one
+    number a third party can push at settlement time to force a slash on
+    somebody else.
+
+    Any of three conditions produces no settlement rather than a wrong one: an
+    adapter that could not see, a pool whose average has been pushed away from
+    spot, or a wallet whose debts exceed its assets.
+  */
+  const measured = await settlementValuation(marketClient, wallet);
+  if (!measured.valuation) {
+    return {
+      ...base,
+      alphaBps: null,
+      previousWei: prev.valuationWei,
+      observation: null,
+      valuation: null,
+      explanation:
+        measured.refusedBy === "deviation-guard"
+          ? `spot sits ${measured.maxDeviationBps} bps from the thirty-minute average, past the ${MAX_DEVIATION_BPS} bps guard; the pool is being held and this epoch defers rather than settling a price somebody chose`
+          : `the ${measured.refusedBy} adapter could not see the whole wallet at block ${measured.blockNumber}, and a partial valuation reads as a loss for whatever it missed`,
+    };
+  }
+
+  const reference = await readPool(WBNB_USDT_POOL);
+  let v: Valuation;
+  try {
+    v = toLegacyValuation(measured.valuation, {
+      sqrtPriceX96: reference.sqrtPriceX96,
+      usdPerBnb: reference.token0PerToken1,
+    });
+  } catch (e) {
+    if (e instanceof NegativeNetValue) {
+      return {
+        ...base,
+        alphaBps: null,
+        previousWei: prev.valuationWei,
+        observation: null,
+        valuation: null,
+        explanation: `the wallet owes more than it holds (${e.netWei} wei net), and an insolvent position cannot be committed as a uint96`,
+      };
+    }
+    throw e;
+  }
   const observation = toObservation(wallet, v);
 
   if (prev.valuationWei === 0n) {
