@@ -299,12 +299,20 @@ export default function Register({
                 {header("seen", "last read", "num")}
                 {header("bond", "bond", "num")}
                 {header("alpha", "alpha", "num")}
+                {/*
+                  Browsing has to lead somewhere.
+
+                  A register with no action on any row is a directory, and the
+                  brief asks for a venue you can hire from. One column, one
+                  verb, on every row.
+                */}
+                <th scope="col">hire</th>
               </tr>
             </thead>
             <tbody>
               {first > 0 ? (
                 <tr style={{ height: first * ROW }} aria-hidden>
-                  <td colSpan={9} />
+                  <td colSpan={10} />
                 </tr>
               ) : null}
 
@@ -342,19 +350,36 @@ export default function Register({
                     <td className="num">{shortDate(r.lastSeen)}</td>
                     <td className="num">{r.bondWei ? bnb(r.bondWei) : "—"}</td>
                     <td className="num">{alpha(r.alphaBps)}</td>
+                    <td>
+                      <a
+                        className="reg__hire"
+                        href={
+                          r.source === "market"
+                            ? r.href
+                            : `/floor?agent=${r.tokenId}`
+                        }
+                        title={
+                          r.source === "market"
+                            ? "Open this mandate"
+                            : "Open a mandate with this agent named"
+                        }
+                      >
+                        {r.source === "market" ? "ledger →" : "mandate →"}
+                      </a>
+                    </td>
                   </tr>
                 );
               })}
 
               {last < filtered.length ? (
                 <tr style={{ height: (filtered.length - last) * ROW }} aria-hidden>
-                  <td colSpan={9} />
+                  <td colSpan={10} />
                 </tr>
               ) : null}
 
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="reg__none">
+                  <td colSpan={10} className="reg__none">
                     Nothing in the register matches that.
                   </td>
                 </tr>

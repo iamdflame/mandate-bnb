@@ -9,6 +9,7 @@ import Strike from "@/components/mark/Strike";
 import AssayBar from "@/components/ui/AssayBar";
 import Command from "@/components/ui/Command";
 import Observation from "@/components/ui/Observation";
+import Hire from "@/components/ui/Hire";
 import CountUp from "@/components/ui/CountUp";
 import { gradeOf } from "@/components/mark/geometry";
 
@@ -131,6 +132,20 @@ export default function Certificate({
           ) : null}
         </div>
       </header>
+
+      {/*
+        The action, immediately under the verdict.
+
+        This page is where somebody decides whether they want this agent; it
+        has to be where they can act on that. It sat on the floor only, which
+        made the certificate a dead end.
+      */}
+      <Hire
+        tokenId={tokenId}
+        fineness={fineness}
+        endpointVerified={Boolean(indexed?.endpointVerified)}
+        agentWallet={report?.agentWallet ?? indexed?.owner ?? null}
+      />
 
       <section className="panel cert__assay" aria-labelledby="assay-title">
         <div className="panel__head">

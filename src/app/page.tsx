@@ -112,6 +112,9 @@ export default async function Home() {
             <a className="btn btn--primary" href="/agents">
               Open the register →
             </a>
+            <a className="btn" href="/floor">
+              Open a mandate →
+            </a>
             <a className="btn" href="/assay">
               Assay an agent →
             </a>
@@ -179,6 +182,14 @@ export default async function Home() {
             site that describes an incentive rather than a measurement, and it is the
             reason the top rung is not empty for free.
           </p>
+          <div className="open__actions">
+            <a className="btn btn--primary" href="/floor">
+              Open a mandate →
+            </a>
+            <a className="btn" href="/agents">
+              Find an agent first →
+            </a>
+          </div>
         </section>
 
         {/* The floor, as a live window rather than a front door. */}
