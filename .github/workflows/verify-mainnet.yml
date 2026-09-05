@@ -29,6 +29,17 @@ jobs:
         working-directory: packages/mandate-verify
         run: npm run build
 
+      - name: The two implementations must agree
+        run: |
+          # The verifier is a separate implementation of the valuation, and
+          # that only buys anything if somebody compares them. A silent
+          # divergence would mean the operator settles on one number while the
+          # public check confirms another — worse than having one engine,
+          # because it looks like corroboration.
+          npx tsx src/scripts/cross-check.ts \
+            0xd6d11Aa5046dc5C7BE8d63B9223b60D7AD94cBe9 \
+            0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90
+
       - name: Verify, and prove the checks bind
         run: |
           set +e

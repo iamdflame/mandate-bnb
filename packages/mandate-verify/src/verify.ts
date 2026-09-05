@@ -184,39 +184,23 @@ const check = (name: string, ok: boolean, detail: string): Check => ({ name, ok,
  *
  * Only possible where the node still serves that state. A node that pruned it
  * errors, and the caller stays at tier 1 rather than pretending otherwise.
+ *
+ * The valuation lives in `./valuation.ts` and is this package's own — native,
+ * every tracked token, V3 positions with their uncollected fees, and Venus
+ * supply *and borrow*. It replaced a version that read native BNB and USDT
+ * and nothing else, whose comment said it mirrored the operator's conversion.
+ * It did, and that was the flaw: it would have confirmed every settlement the
+ * operator's blind spots produced. A verifier that reproduces the bug it
+ * exists to catch does not fail to help — it certifies the error.
  */
 async function rederive(
   client: PublicClient,
   wallet: Address,
   blockNumber: bigint,
 ): Promise<bigint | null> {
-  try {
-    const [native, usdt, slot0] = await Promise.all([
-      client.getBalance({ address: wallet, blockNumber }),
-      client.readContract({
-        address: USDT,
-        abi: ERC20_ABI,
-        functionName: "balanceOf",
-        args: [wallet],
-        blockNumber,
-      }) as Promise<bigint>,
-      client.readContract({
-        address: WBNB_USDT_POOL,
-        abi: POOL_ABI,
-        functionName: "slot0",
-        blockNumber,
-      }) as Promise<readonly [bigint, number, number, number, number, number, boolean]>,
-    ]);
-
-    // Mirrors the operator's conversion: USDT valued at the same pool's price.
-    const ratio = Number(slot0[0]) / 2 ** 96;
-    const usdtPerBnb = ratio * ratio;
-    const priceScaled = usdtPerBnb === 0 ? 0n : BigInt(Math.round((1 / usdtPerBnb) * 1e18));
-    const usdtWei = priceScaled > 0n ? (usdt * 10n ** 18n) / priceScaled : 0n;
-    return native + usdtWei;
-  } catch {
-    return null;
-  }
+  const { rederiveValue } = await import("./valuation.js");
+  const v = await rederiveValue(client, wallet, blockNumber);
+  return v ? v.netWei : null;
 }
 
 async function readAttestation(

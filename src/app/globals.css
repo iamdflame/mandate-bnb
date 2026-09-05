@@ -2791,3 +2791,48 @@ p code {
   line-height: 1.6;
   color: var(--ink-3);
 }
+
+/* ------------------------------------------------------------------ claims */
+
+.claim-card {
+  border: var(--hair) solid var(--score);
+  background: var(--iron);
+  display: flex;
+  flex-direction: column;
+}
+
+.claim-card__row {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 20px;
+  align-items: start;
+  padding: 14px 16px;
+  border-bottom: var(--hair) solid var(--score);
+}
+
+.claim-card__row:last-child { border-bottom: 0; }
+
+.claim-card__text {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: var(--t-h3);
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.claim-card__artifacts { display: flex; flex-direction: column; gap: 6px; }
+
+.claim-card__artifacts li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: var(--t-mark);
+  color: var(--ink-2);
+}
+
+.claim-card__backing { margin: 0; font-size: var(--t-small); line-height: 1.55; color: var(--ink-2); }
+.claim-card__backing.dim { font-family: var(--mono); font-size: var(--t-mark); color: var(--ink-3); }
+
+@media (max-width: 640px) {
+  .claim-card__row { grid-template-columns: 1fr; gap: 8px; }
+}

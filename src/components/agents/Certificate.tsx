@@ -10,6 +10,7 @@ import AssayBar from "@/components/ui/AssayBar";
 import Command from "@/components/ui/Command";
 import Observation from "@/components/ui/Observation";
 import Hire from "@/components/ui/Hire";
+import Claim from "@/components/ui/Claim";
 import CountUp from "@/components/ui/CountUp";
 import { gradeOf } from "@/components/mark/geometry";
 
@@ -174,10 +175,32 @@ export default function Certificate({
             halted={Boolean(error)}
           />
         </div>
+        {/*
+          The fineness above, with the thing that would falsify it.
+
+          Nothing on this site asserts a number without shipping its check
+          beside it, and this is the number the whole page is about.
+        */}
         <div className="panel__body">
-          <Command note="Runs the same six tests from a terminal. The page and the command read the same chain and share no state.">
-            {`npm run assay -- ${tokenId}`}
-          </Command>
+          <Claim
+            claim={
+              fineness === null
+                ? `Agent ${tokenId} is being assayed against BNB Smart Chain.`
+                : grade.shape
+                  ? `${fineness} fineness — hallmarked ${grade.label}.`
+                  : `${fineness} fineness — below 375, so no hallmark is struck.`
+            }
+            command={`npm run assay -- ${tokenId}`}
+            artifacts={[
+              { label: "ERC-8004", value: tokenId, kind: "note" },
+              ...(report?.agentWallet
+                ? [{ label: "agent wallet", value: report.agentWallet, kind: "address" as const }]
+                : []),
+              ...(report ? [{ label: "assayed in", value: `${report.ms} ms`, kind: "note" as const }] : []),
+            ]}
+            backing={null}
+            note="Runs the same six tests from a terminal. The page and the command read the same chain and share no state."
+          />
         </div>
       </section>
     </article>
