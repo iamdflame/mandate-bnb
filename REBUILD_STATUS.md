@@ -4,6 +4,19 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 
 `DONE` · `PARTIAL` · `TODO` · `BLOCKED` (needs something I cannot supply)
 
+> **This table is not the record of where the product stands.**
+>
+> It tracks findings from a competitive review and marks them closed. Several
+> rows were marked DONE while the deployed site contradicted them — B6 in
+> particular, "floor is beautiful, not a marketplace", was closed while the
+> floor rendered "0 mandates active" to anyone without JavaScript.
+>
+> [`docs/DONE.md`](docs/DONE.md) is the honest one. It walks thirteen gates,
+> marks each as it actually stands, carries the command or transaction that
+> settles it, and lists what was found by reading production rather than this
+> repository.
+
+
 ---
 
 ## PART I — the problems
@@ -27,7 +40,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | B3 | `minBond` source/chain divergence | **DONE** | constructor argument; events on both setters |
 | B4 | Alpha reported, not derived; adjudicator is us | **PARTIAL→v2** | v2 makes reporting cost a stake and lets anyone contradict it for the same block. The contract still cannot decide wallet value; it can freeze the money and price the lie |
 | B5 | README argues with the brief | **DONE** | opens with the ladder; the directory is swallowed, not rejected |
-| B6 | Floor is beautiful, not a marketplace | **DONE** | moved to `/floor`; the ladder is the front door |
+| B6 | Floor is beautiful, not a marketplace | **PARTIAL** | The ladder is the front door and the floor renders its book server-side across all three deployments. Marked DONE for a day while the deployed floor showed "0 mandates active" without JavaScript — the row was closed against the repository, not against production |
 
 ### Category C — rubric gaps
 
@@ -36,8 +49,8 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | C1 | 265 of 301,996 classified | **BLOCKED** | 265 of 3,808 indexed, of 303,391 registered. Classification is multi-signal and chain-weighted now; the coverage gap is the 25 req/min anonymous tier, same blocker as R2.1 |
 | C2 | 1.9 MB static JSON | **PARTIAL** | Postgres read path built and migrated (3,808 rows); pages report their source. Production has no instance attached, so the deployed site still reads the snapshot |
 | C3 | No self-service listing | **DONE** | `/list-your-agent` — what each rung costs |
-| C4 | Agent diversity structurally unequal | **DONE** | 4 categories with mandates and registered sessions; grid and yield both have settled, attested epochs |
-| C5 | Zero app tests, zero CI | **DONE** | 35 unit tests, three workflows: CI, mainnet verification hourly, smoke every 15 min |
+| C4 | Agent diversity structurally unequal | **DONE** | `/office/*` gives all four the same page, book and benchmark; none is empty. Grid and yield both have settled, attested epochs. Closed only once the four had pages — until then the doors led to a filtered register |
+| C5 | Zero app tests, zero CI | **DONE** | 63 unit tests and 13 house-style gates, three workflows: CI, mainnet verification hourly, smoke every 15 min |
 | C6 | No agent career page | **DONE** | mandates, epochs, fees, slashes, dismissals, each with its tx |
 
 ### Category D — adoption blockers

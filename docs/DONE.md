@@ -255,6 +255,47 @@ write and worth nothing.
 
 ---
 
+## Read from production on 5 September 2026
+
+Every claim below was checked against the deployed site rather than against
+this repository, because the two had drifted and production is the one a judge
+opens.
+
+**The floor showed an empty market.** With JavaScript off it said "0 mandates
+active", "0 opened all-time" and "Reading the chain…" beside ledgers on the
+same site reading Active. Its "verify on BscScan" button linked
+`bscscan.com/address/` with no address on it. Both fixed: the book is read on
+the server across all three deployments and the first HTML carries eight
+mandates, 0.00686 BNB under mandate and 0.00264 BNB bonded.
+
+**Three contracts each called themselves the market.** The footer linked the
+first deployment, `/start` printed the second, the README named the third, and
+`mandate-verify` defaulted to a fourth answer. They are named now — v2
+canonical, v1 and v0 superseded — in the site, the config and the verifier's
+`--deployment` flag. All three still hold mandates with settled epochs,
+including the grid mandate that lost 21%, and all three stay readable.
+
+**The verifier could not read the contract we call canonical.** It reported
+FAILED with a hash mismatch, which is the gravest thing it can say. Three
+faults: v2's observation carries a seventh field so no v2 event ever matched
+and no v2 preimage ever hashed correctly; epoch 0 has two Observed logs and the
+scan kept whichever came last; and the log search stopped at the first
+provider's answer, which on BSC is an empty array for ranges it silently
+declines to serve. Underneath all three, absence was being read as a verdict.
+Fixed, with `--tamper` still rejecting 8 of 8 perturbations.
+
+**The four offices had no pages.** `/office/*` 404'd and the home page's four
+doors led to a filtered register. Agent Diversity is a third of the main-track
+score. Each office now has the same page — book, live-unbonded agents, venue,
+benchmark, and the commands that reproduce every figure — and none of the four
+is empty.
+
+**Two mistakes I made and caught here rather than shipping.** The office pages
+linked `/mandate/v1/2`, which did not exist; that one *was* deployed before it
+was caught. And they asked for CSS classes that were never defined, so the book
+rendered unstyled. `npm run check:doctrine` now fails on a class that does not
+exist, which would have caught the second before it reached production.
+
 ## What would move the most, and what it costs
 
 1. **`npm publish` from `packages/mandate-verify`** — needs the maintainer's
