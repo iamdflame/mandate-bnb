@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import SiteHeader from "@/components/shell/SiteHeader";
 import SiteFooter from "@/components/shell/SiteFooter";
 import Register, { type RegisterRow } from "@/components/ui/Register";
+import Replay from "@/components/ui/Replay";
 import { readAgentIndex } from "@/lib/data/agents";
 import { placeAgent, readMarketSets } from "@/lib/rung";
 import { CATEGORIES, CHAIN_ID, EXPLORER, type Category } from "@/lib/config";
@@ -21,7 +22,7 @@ export const revalidate = 0;
 export default async function AgentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ rung?: string; category?: string; q?: string }>;
+  searchParams: Promise<{ rung?: string; category?: string; q?: string; block?: string }>;
 }) {
   const params = await searchParams;
   const [index, sets] = await Promise.all([readAgentIndex(), readMarketSets()]);
@@ -125,6 +126,21 @@ export default async function AgentsPage({
             375 is greyed out apologetically — base metal simply receives no mark.
           </p>
         </div>
+
+        {/*
+          The register against history.
+
+          Shown when a block is asked for. Every figure is re-derived from
+          event logs at that block on each drag — the only way to demonstrate
+          that this data is derived rather than authored is to let somebody
+          else pick the block and watch it move.
+        */}
+        {blockNumber ? (
+          <Replay
+            head={Number(blockNumber)}
+            initial={params.block && /^\d{1,12}$/.test(params.block) ? Number(params.block) : undefined}
+          />
+        ) : null}
 
         <Register
           rows={rows}

@@ -50,6 +50,19 @@ interface Args {
   json: boolean;
   tamper: boolean;
   help: boolean;
+  /** Re-derive the ladder at this block instead of verifying a mandate. */
+  replayFrom?: bigint;
+  /**
+   * Where the market was deployed, for the replay's log scan.
+   *
+   * A flag rather than an environment variable. The isolation check rejected
+   * the first attempt at this, which read the deploy block from the operator's
+   * environment — and it was right to. A verifier that reads a setting the
+   * operator controls is taking one of the operator's numbers on trust, which
+   * is the whole thing this package exists not to do. A caller passing the
+   * block on the command line is supplying their own.
+   */
+  deployBlock?: bigint;
 }
 
 function parse(argv: string[]): Args {
@@ -68,6 +81,8 @@ function parse(argv: string[]): Args {
     else if (k === "--archive") a.archive = v();
     else if (k === "--json") a.json = true;
     else if (k === "--tamper") a.tamper = true;
+    else if (k === "--replay-from") a.replayFrom = BigInt(v());
+    else if (k === "--deploy-block") a.deployBlock = BigInt(v());
     else if (k === "--help" || k === "-h") a.help = true;
     else fail(`unknown argument ${k}`);
   }
@@ -89,6 +104,9 @@ ${bold("mandate-verify")} — re-derive a MANDATE settlement from the chain alon
   --market <address>  market contract; defaults to the known deployment
   --rpc <url>         node to read from
   --archive <url>     node serving historical state, for tier 3
+  --replay-from <n>   re-derive the whole trust ladder as it stood at block n,
+                      from event logs alone, and exit
+  --deploy-block <n>  where to start the market log scan when replaying
   --tamper            after verifying, perturb each committed number and
                       show that the checks reject it
   --json              machine-readable output
@@ -245,9 +263,39 @@ function tamperTest(r: VerifyResult): boolean {
 
 async function main() {
   const a = parse(process.argv.slice(2));
-  if (a.help || (a.mandate === null && process.argv.length <= 2)) {
+  if (a.help || (a.mandate === null && a.replayFrom === undefined && process.argv.length <= 2)) {
     console.log(USAGE);
     process.exit(a.help ? 0 : 2);
+  }
+
+  /*
+    Replay is its own mode: it re-derives the whole ladder rather than checking
+    one settlement, and it needs no mandate. Implemented in this package rather
+    than shared with the application — a verifier that reused the application's
+    derivation would be checking our arithmetic against our arithmetic.
+  */
+  if (a.replayFrom !== undefined) {
+    const { replayFrom } = await import("./replay.js");
+    const market = (a.market ?? DEFAULT_MARKET[a.chain ?? 56] ?? null) as `0x${string}` | null;
+    const deploy = a.deployBlock ?? 0n;
+
+    const result = await replayFrom({ block: a.replayFrom, market, deployBlock: deploy });
+    console.log(
+      `\n  the ladder at block ${result.block}${result.blockTime ? `  ${result.blockTime}` : ""}\n`,
+    );
+    if (!result.derived) {
+      for (const n of result.notes) console.log(`    · ${n}`);
+      console.log("\n  INCONCLUSIVE — the history could not be read\n");
+      process.exit(3);
+    }
+    for (const r of result.rungs) {
+      const pop = r.population === null ? "—" : r.population.toLocaleString();
+      console.log(`    ${r.n}  ${r.name.padEnd(11)} ${pop.padStart(9)}   ${r.method}`);
+    }
+    console.log("");
+    for (const n of result.notes) console.log(`    · ${n}`);
+    console.log("");
+    process.exit(0);
   }
   if (a.mandate === null || !Number.isInteger(a.mandate) || a.mandate < 0) {
     fail("--mandate <n> is required and must be a non-negative integer");
