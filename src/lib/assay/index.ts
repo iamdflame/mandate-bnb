@@ -42,6 +42,15 @@ export interface AssayContext {
   wallet: WalletFacts | null;
   feedbacks: ScanFeedback[];
   sybil: SybilVerdict | null;
+  /**
+   * False when the feedback corpus could not be fetched.
+   *
+   * An agent with no reviews and an agent whose reviews could not be read are
+   * different claims, and only one of them is about the agent. Without this
+   * flag an outage at the index would be reported as "no reputation here",
+   * which is the kind of silent zero this whole product exists to object to.
+   */
+  feedbacksRead?: boolean;
 }
 
 const WEIGHTS = {
@@ -405,13 +414,16 @@ function reputationAssay(ctx: AssayContext): AssayResult {
   const evidence: Evidence[] = [];
 
   if (raw === 0) {
+    const unread = ctx.feedbacksRead === false;
     return {
       id: "reputation",
       title: "Reputation",
       claim: ctx.detail.total_feedbacks
         ? `Registry reports ${ctx.detail.total_feedbacks} feedback records.`
         : "No reputation claimed.",
-      finding: "No feedback records to examine. There is no reputation here to trust or distrust.",
+      finding: unread
+        ? "The feedback corpus could not be read — the index did not answer in time — so nothing is said about this agent's reputation either way."
+        : "No feedback records to examine. There is no reputation here to trust or distrust.",
       verdict: "inconclusive",
       score: 0,
       weight: WEIGHTS.reputation,
@@ -543,16 +555,46 @@ export type AssayProgress = (event: {
   result?: AssayResult;
 }) => void;
 
+/** Races a registry read against the interactive path's patience. */
+function withDeadline<T>(work: Promise<T>, ms: number, what: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>;
+  return Promise.race([
+    work,
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`${what} within ${Math.round(ms / 1000)}s`)), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
 export async function assayAgent(
   chainId: number,
   tokenId: string,
   onProgress?: AssayProgress,
+  options: { registryDeadlineMs?: number } = {},
 ): Promise<AssayReport> {
   const started = Date.now();
   const TOTAL = 6;
 
   onProgress?.({ stage: "Reading registry claim", index: 0, total: TOTAL });
-  const detail = await getAgent(chainId, tokenId);
+
+  /*
+    The registry read gets a deadline on the interactive path.
+
+    The scan client retries a `DATABASE_ERROR` four times with backoff through
+    a queue spaced at twenty-five requests a minute, which is right for a
+    background sweep and wrong for a page somebody is watching: during an
+    upstream outage it left six bars pulsing "running" for twenty-seven seconds
+    before saying anything. The CLI passes no deadline and keeps the patient
+    path, because there the retries usually win.
+  */
+  const deadline = options.registryDeadlineMs;
+  const detail = deadline
+    ? await withDeadline(
+        getAgent(chainId, tokenId),
+        deadline,
+        "the ERC-8004 index did not answer",
+      )
+    : await getAgent(chainId, tokenId);
 
   const classification = classify({
     name: detail.name,
@@ -566,10 +608,39 @@ export async function assayAgent(
   const wallet = isAddress(walletAddr) ? await getWalletFacts(walletAddr) : null;
 
   onProgress?.({ stage: "Collecting feedback records", index: 2, total: TOTAL });
-  const feedbacks = await collectFeedbacks(chainId, tokenId);
-  const sybil = feedbacks.length ? await assessFeedback(chainId, tokenId, feedbacks, detail) : null;
 
-  const ctx: AssayContext = { detail, classification, wallet, feedbacks, sybil };
+  /*
+    The feedback walk gets the same deadline, but failing it is not fatal.
+
+    Five of the six dimensions need nothing from the corpus, so an index that
+    stalls here costs one inconclusive verdict rather than the whole assay.
+    `feedbacksRead` carries the distinction into the result: an empty list
+    because there are no reviews, and an empty list because nobody answered,
+    are different findings.
+  */
+  let feedbacksRead = true;
+  const feedbacks = deadline
+    ? await withDeadline(
+        collectFeedbacks(chainId, tokenId),
+        deadline,
+        "the feedback index did not answer",
+      ).catch(() => {
+        feedbacksRead = false;
+        return [] as ScanFeedback[];
+      })
+    : await collectFeedbacks(chainId, tokenId);
+
+  const sybil = feedbacks.length
+    ? await (deadline
+        ? withDeadline(
+            assessFeedback(chainId, tokenId, feedbacks, detail),
+            deadline,
+            "the registry-wide sample did not answer",
+          ).catch(() => null)
+        : assessFeedback(chainId, tokenId, feedbacks, detail))
+    : null;
+
+  const ctx: AssayContext = { detail, classification, wallet, feedbacks, sybil, feedbacksRead };
 
   const results: AssayResult[] = [];
   const run = async (

@@ -167,7 +167,12 @@ export default function Bench({
 
       {status !== "idle" ? (
         <div className="bench__results">
-          <AssayBar results={results} fineness={fineness} pending={pending} />
+          <AssayBar
+            results={results}
+            fineness={fineness}
+            pending={pending}
+            halted={status === "error"}
+          />
         </div>
       ) : null}
 

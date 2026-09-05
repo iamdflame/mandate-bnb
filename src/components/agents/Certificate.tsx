@@ -122,7 +122,7 @@ export default function Certificate({
             <span className="cert__denom"> / 999</span>
           </span>
           <span className="mark-label">
-            {fineness === null ? stage.toLowerCase() : grade.label}
+            {error ? "assay halted" : fineness === null ? stage.toLowerCase() : grade.label}
           </span>
           {fineness !== null && !grade.shape ? (
             <p className="cert__unstruck">
@@ -144,8 +144,20 @@ export default function Certificate({
           />
         </div>
         <div className="panel__body">
-          {error ? <p className="small dim">{error}</p> : null}
-          <AssayBar results={results} fineness={fineness} pending={pending} />
+          {error ? (
+            <p className="small assay__halted">
+              The assay stopped: {error}. The six tests read the ERC-8004 index and the
+              chain; when the index is unavailable the identity claim cannot be fetched
+              and nothing downstream of it can be tested. Nothing is assumed in its
+              place — the dimensions below are marked unrun, not failed.
+            </p>
+          ) : null}
+          <AssayBar
+            results={results}
+            fineness={fineness}
+            pending={pending}
+            halted={Boolean(error)}
+          />
         </div>
         <div className="panel__body">
           <Command note="Runs the same six tests from a terminal. The page and the command read the same chain and share no state.">

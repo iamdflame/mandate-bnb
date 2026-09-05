@@ -41,10 +41,16 @@ agent, `@binance · Ensoul`, a published 84.7 becomes 81.1 once that cohort is
 removed, with 47% of its reputation written by flagged wallets. Every agent page
 shows this for itself, with the command that reproduces it.
 
-The certificate screenshot is regenerated with `npm run shots:canonical`; it is
-held back at the moment because the 8004scan index is returning
-`DATABASE_ERROR` on every endpoint, and a screenshot of an upstream outage is
-not a screenshot of the product.
+![An assay certificate: six tests, every finding and its evidence inline.](docs/screenshots/certificate.png)
+
+*One certificate. Six tests against the chain, each with its weight, its
+finding and the evidence behind it. Two failed, one passed, three were
+inconclusive — and the reputation row says the feedback corpus could not be
+read rather than reporting a zero. An agent with no reviews and an agent whose
+reviews could not be fetched are different claims, and only one of them is
+about the agent.*
+
+Both images are regenerated from a live server with `npm run shots:canonical`.
 
 The brand system behind these pages — the hallmarking platform, the mark
 geometry, the palette, the motion doctrine — is documented in

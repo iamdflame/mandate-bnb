@@ -2566,6 +2566,16 @@ p code {
 /** The canvas band inside the market page. It needs a height of its own. */
 .hero__viz.floorwin { height: clamp(280px, 42vh, 460px); margin: 0; }
 
+/**
+ * In the band the legend goes top-left, not bottom-left.
+ *
+ * The bodies are laid out along the lower half of the field — that is where the
+ * category columns put them — so a legend pinned to the bottom sits on top of
+ * the leftmost mandate. The top-left corner is the one part of this frame
+ * nothing occupies.
+ */
+.hero__viz.floorwin .legend { top: 16px; bottom: auto; }
+
 .register th.mark-col { text-align: center; letter-spacing: 0.1em; }
 
 /**
@@ -2650,4 +2660,13 @@ p code {
   border-left: 2px solid var(--cancelled);
   color: var(--ink-2);
   max-width: 76ch;
+}
+
+/** The assay stopped. Stated once, above the rows it could not reach. */
+.assay__halted {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-left: 2px solid var(--cancelled);
+  color: var(--ink-2);
+  max-width: 82ch;
 }

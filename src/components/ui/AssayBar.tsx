@@ -22,11 +22,21 @@ export default function AssayBar({
   results,
   fineness,
   pending,
+  halted = false,
 }: {
   results: AssayResult[];
   fineness: number | null;
   /** Dimensions still running, drawn as a hairline pulse rather than a spinner. */
   pending?: string[];
+  /**
+   * The run stopped before these could be reached.
+   *
+   * A bar that pulses "running" forever after the stream has died is the one
+   * dishonest state this component can be in — it claims work is happening
+   * that stopped. Halted rows say "not run", still, and the reason sits above
+   * them.
+   */
+  halted?: boolean;
 }) {
   const metal = gradeOf(fineness ?? 0).metal;
 
@@ -83,14 +93,18 @@ export default function AssayBar({
       ))}
 
       {(pending ?? []).map((id) => (
-        <div className="assay__row" data-loading="1" key={`pending-${id}`}>
+        <div
+          className="assay__row"
+          data-loading={halted ? undefined : "1"}
+          key={`pending-${id}`}
+        >
           <span className="assay__name dim">{id}</span>
           <span className="assay__bar">
             {Array.from({ length: SEGMENTS }, (_, i) => (
               <i key={i} className="assay__seg" />
             ))}
           </span>
-          <span className="assay__verdict dim">running</span>
+          <span className="assay__verdict dim">{halted ? "not run" : "running"}</span>
           <span />
         </div>
       ))}

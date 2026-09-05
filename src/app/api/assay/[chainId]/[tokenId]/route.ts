@@ -46,15 +46,21 @@ export async function GET(
       send("open", { chainId, tokenId, at: new Date().toISOString() });
 
       try {
-        const report = await assayAgent(chainId, tokenId, (ev) => {
-          send("progress", {
-            stage: ev.stage,
-            index: ev.index,
-            total: ev.total,
-            result: ev.result ?? null,
-            elapsed: Date.now() - started,
-          });
-        });
+        const report = await assayAgent(
+          chainId,
+          tokenId,
+          (ev) => {
+            send("progress", {
+              stage: ev.stage,
+              index: ev.index,
+              total: ev.total,
+              result: ev.result ?? null,
+              elapsed: Date.now() - started,
+            });
+          },
+          // Somebody is watching this one. Twelve seconds, then say so.
+          { registryDeadlineMs: 12_000 },
+        );
         send("report", report);
       } catch (error) {
         send("error", {
