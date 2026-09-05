@@ -142,8 +142,10 @@ function render(r: VerifyResult): void {
     const o = r.opening;
     console.log(`\n  ${bold("opening mark")}  ${bnb(o.attestation.valuationWei)} at block ${o.attestation.blockNumber}`);
     for (const ch of o.checks) console.log(line(ch.ok, ch.name, ch.detail));
-  } else {
+  } else if (r.awarded) {
     console.log(`\n  ${red("no opening mark")}`);
+  } else {
+    console.log(`\n  ${dim("not awarded — no agent, no opening mark")}`);
   }
 
   for (const e of r.epochs) {
@@ -176,6 +178,13 @@ function render(r: VerifyResult): void {
           `  over a range, or --archive <url> for older epochs.`,
       ),
     );
+  } else if (!r.awarded) {
+    /*
+      Nothing was checked, and nothing was wrong. Saying VERIFIED here would
+      claim a mandate had passed an examination it was never given.
+    */
+    console.log(`  ${bold("OPEN")}`);
+    console.log(dim("  nobody has been awarded this mandate, so there is nothing yet to verify."));
   } else {
     console.log(`  ${green(bold(`VERIFIED (tier ${r.tier})`))}`);
     console.log(dim(`  ${explainTier(r.tier)}`));

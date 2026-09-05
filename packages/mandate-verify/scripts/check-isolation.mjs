@@ -20,6 +20,32 @@ const srcDir = join(root, "src");
 const ALLOWED = new Set(["viem", "viem/chains", "viem/utils", "viem/accounts"]);
 
 /**
+ * Test files may reach the test runner, and nothing else.
+ *
+ * Without this the package could not be tested at all, which is worse than the
+ * risk it avoids: the verdict logic — the branch that decides whether a
+ * mandate FAILED or was simply never awarded — is the part of this package
+ * most worth testing and the part a reviewer is least able to check by eye.
+ * Every other rule still applies to test files: they may not import the
+ * application, touch the filesystem, read the operator's environment, or name
+ * a host off the allowlist. Only the shipped `dependencies` are counted, so a
+ * dev-only runner cannot creep into the verification path.
+ */
+const TEST_ONLY = new Set(["vitest"]);
+const isTest = (p) => /\.test\.ts$/.test(p);
+
+/**
+ * A test may name loopback, because a test starts the node it talks to.
+ *
+ * The host rule exists so the shipped verification path cannot be pointed at
+ * somewhere that would answer with whatever the operator wanted it to hear. A
+ * server the test process itself creates and closes is not that; it is how the
+ * verdict logic gets exercised without the network. Shipped files are still
+ * held to the allowlist exactly as before.
+ */
+const TEST_HOSTS = new Set(["127.0.0.1", "localhost"]);
+
+/**
  * Hosts this package may talk to: public BSC RPC endpoints, and nothing else.
  *
  * An explicit list rather than a prefix pattern. The pattern version allowed
@@ -70,6 +96,7 @@ for (const file of files) {
         continue;
       }
       if (BUILTINS.has(spec) || ALLOWED.has(spec)) continue;
+      if (isTest(file) && TEST_ONLY.has(spec)) continue;
       violations.push(`${rel}: imports "${spec}", which is neither viem nor a node builtin`);
     }
   }
@@ -87,6 +114,7 @@ for (const file of files) {
       if (pattern === HOST_RE) {
         const host = (m[1] ?? "").toLowerCase();
         if (ALLOWED_HOSTS.has(host)) continue;
+        if (isTest(file) && TEST_HOSTS.has(host)) continue;
         violations.push(`${rel}: ${why} — "${host}"`);
         continue;
       }
@@ -105,4 +133,8 @@ if (violations.length) {
   process.exit(1);
 }
 
-console.log(`  ✓ isolated: ${files.length} files, ${deps.length} dependency (viem), no filesystem, no environment, no operator host`);
+const tests = files.filter(isTest).length;
+console.log(
+  `  ✓ isolated: ${files.length - tests} files + ${tests} tests, ${deps.length} dependency (viem), ` +
+    `no filesystem, no environment, no operator host`,
+);

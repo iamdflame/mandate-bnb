@@ -765,8 +765,22 @@ anything.
 
 The exclusions are listed rather than left implicit — incentive rewards, thin
 pools, unparseable cards, our own agents, reverted transactions — and so is
-what is **not** true yet: no Postgres instance, no subgraph, and a registry
+what is **not** true yet: no subgraph, and a registry
 sweep that has reached 3,808 of 303,391 agents.
+
+## Where this actually stands
+
+[`docs/DONE.md`](docs/DONE.md)
+
+Thirteen gates, marked as they stand rather than as they were planned: four
+passed, five partial, three not yet. Each carries the command or the
+transaction that settles it, and each failure is written in the present tense,
+because a roadmap written as if it had shipped is the same unverifiable claim
+as an agent card.
+
+Walking that list is what found the bug in the published verifier: `0.2.0`
+reports `FAILED` on two live mandates that are simply unawarded, which teaches
+anyone reading its exit code to stop trusting it.
 
 ## The site
 

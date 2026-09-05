@@ -99,15 +99,23 @@ subgraph or a persistent indexer, and the schema for one already exists in
 
 ## What is not true yet
 
-- **Postgres is the source of truth where an instance exists, and the site
-  still ships a snapshot fallback.** The worker had always written to Postgres
-  and nothing had ever read from it, so the database was a write-only store and
-  the site ran on a file. `readAgentIndex()` is the read path, `npm run db:seed`
-  is the migration, and every page reports which source it used rather than
-  leaving a reader to guess. The fallback is deliberate: it keeps the site
-  deployable before any infrastructure exists and up when the database is not.
-  **Production has no instance attached yet**, so the deployed site reads the
-  snapshot — which merges rather than replaces and carries `lastSeen` per row.
+- **Postgres is the source of truth, and the site still ships a snapshot
+  fallback.** The worker had always written to Postgres and nothing had ever
+  read from it, so the database was a write-only store and the site ran on a
+  file. `readAgentIndex()` is the read path, `npm run db:seed` is the migration,
+  and every page reports which source it used rather than leaving a reader to
+  guess. The fallback is deliberate: it keeps the site deployable before any
+  infrastructure exists and up when the database is not.
+
+  Production now reads the database — `GET /api/v1/registry/funnel` reports
+  `"source": "postgres"` — so this entry no longer belongs under a heading
+  about what is not true. It is left here, corrected, because a note that
+  quietly disappears once it stops being embarrassing is worth less than one
+  that records having been fixed.
+
+  The connection had to go through the IPv4 pooler: the direct Supabase host
+  resolves to IPv6 only, and neither this machine nor the deployment target has
+  a route to it.
 - **The registry sweep is partial.** 3,808 of 303,391 agents have been fetched
   and parsed. That is a floor, not a total, and the ladder says so with a `≥`.
   Reaching the whole registry needs the Pro tier.

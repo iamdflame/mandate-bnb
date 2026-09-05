@@ -11,7 +11,10 @@ import { resolve } from "node:path";
  */
 export default defineConfig({
   test: {
-    include: ["src/**/*.test.ts"],
+    // The verifier's own tests live inside the isolated package, which cannot
+    // import the application. They run in the same suite so a change to either
+    // side is caught by one command.
+    include: ["src/**/*.test.ts", "packages/*/src/**/*.test.ts"],
     environment: "node",
   },
   resolve: {

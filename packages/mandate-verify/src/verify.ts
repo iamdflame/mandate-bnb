@@ -114,6 +114,9 @@ export interface EpochResult {
   checks: Check[];
 }
 
+/** The unawarded agent slot, lower-cased for comparison. */
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
 export interface VerifyResult {
   market: Address;
   chainId: number;
@@ -124,6 +127,11 @@ export interface VerifyResult {
   epochsSettled: number;
   epochsTotal: number;
   opening: { attestation: Attestation; observation: Observation | null; checks: Check[] } | null;
+  /**
+   * A mandate nobody has won yet. It has no agent, so there is nothing it
+   * could have committed and nothing to judge it against.
+   */
+  awarded: boolean;
   epochs: EpochResult[];
   /** The weakest tier any settled epoch reached. */
   tier: Tier;
@@ -372,8 +380,31 @@ export async function verifyMandate(opts: VerifyOptions): Promise<VerifyResult> 
 
   // ---- the opening mark ------------------------------------------------
   let opening: VerifyResult["opening"] = null;
+  const awarded = (m.agent as Address).toLowerCase() !== ZERO_ADDRESS;
   if (!openAtt) {
-    failures.push("no opening attestation: nothing was committed for this mandate to be judged against");
+    /*
+      A missing opening mark means opposite things either side of the award.
+
+      On an awarded mandate it is the worst finding the verifier has: capital
+      is being managed against nothing, so no settlement can ever be checked.
+      On a mandate nobody has bid for, it is simply what an unstarted mandate
+      looks like — there is no agent to have committed anything.
+
+      Reporting the second as FAILED is what this did, on two of the four live
+      mandates, and it costs more than a wrong word. The exit code is the whole
+      product: a CI job that greps for non-zero learns to ignore it once it
+      fires on a healthy open mandate, and by then it will not be read when it
+      is right.
+    */
+    if (awarded) {
+      failures.push(
+        "no opening attestation: nothing was committed for this mandate to be judged against",
+      );
+    } else {
+      notes.push(
+        "this mandate has not been awarded, so there is no agent, no opening mark and nothing yet to verify",
+      );
+    }
   } else {
     const obs = observed.get(OPEN_EPOCH) ?? null;
     const checks: Check[] = [];
@@ -542,6 +573,7 @@ export async function verifyMandate(opts: VerifyOptions): Promise<VerifyResult> 
     chainId,
     mandateId: opts.mandateId,
     agent: m.agent as Address,
+    awarded,
     capitalWei: m.capital as bigint,
     bondWei: m.bond as bigint,
     epochsSettled,
