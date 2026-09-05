@@ -64,6 +64,14 @@ jobs:
       - name: Every granted call must be provable
         run: npm run check:config
 
+      # The house style is a set of claims about this product's own honesty:
+      # that every figure is tabular so columns compare, that nothing moves
+      # without a chain event, that no mark is struck below 375, and that red
+      # means defacement and nothing else. A README asserting those is worth
+      # nothing next to a build that fails when one stops being true.
+      - name: House style
+        run: npm run check:doctrine
+
       - name: Unit tests
         run: npm test
 

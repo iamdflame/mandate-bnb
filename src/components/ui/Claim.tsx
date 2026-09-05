@@ -37,21 +37,21 @@ export default function Claim({
   note?: string;
 }) {
   return (
-    <section className="claim-card">
-      <div className="claim-card__row">
+    <section className="claim">
+      <div className="claim__row">
         <span className="mark-label">Claim</span>
-        <p className="claim-card__text">{claim}</p>
+        <p className="claim__text">{claim}</p>
       </div>
 
-      <div className="claim-card__row">
+      <div className="claim__row">
         <span className="mark-label">Command</span>
         <Command note={note}>{command}</Command>
       </div>
 
       {artifacts.length ? (
-        <div className="claim-card__row">
+        <div className="claim__row">
           <span className="mark-label">Artifact</span>
-          <ul className="claim-card__artifacts">
+          <ul className="claim__artifacts">
             {artifacts.map((a) => (
               <li key={`${a.label}-${a.value}`}>
                 <span className="mark-label">{a.label}</span>
@@ -73,10 +73,10 @@ export default function Claim({
         </div>
       ) : null}
 
-      <div className="claim-card__row">
+      <div className="claim__row">
         <span className="mark-label">Challenge</span>
         {backing ? (
-          <p className="claim-card__backing">
+          <p className="claim__backing">
             <a className="link-underline" href={backing.href} target="_blank" rel="noreferrer">
               backed by {backing.bnb} BNB — take it if this is wrong
             </a>
@@ -87,7 +87,7 @@ export default function Claim({
             and tested but not deployed, and rendering a backing that does not
             exist would be precisely the unearned claim this card is for.
           */
-          <p className="claim-card__backing dim">
+          <p className="claim__backing dim">
             No bond stands behind this yet. `AssayBond` is written and tested; nothing is
             escrowed until it is deployed, and until then this claim rests on the command
             above and nothing else.

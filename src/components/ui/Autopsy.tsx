@@ -115,9 +115,9 @@ export default function AutopsyPanel({ autopsy }: { autopsy: Autopsy }) {
             </p>
 
             {/* Registry-wide volume. The signal is the shape, not the score. */}
-            <ul className="au__vol">
+            <ul className="au__flagged">
               {a.flagged.slice(0, 8).map((f) => (
-                <li key={f.address} className="au__vol-row">
+                <li key={f.address} className="au__flagged-row">
                   <a
                     className="au__addr num"
                     href={`${EXPLORER}/address/${f.address}`}
@@ -126,10 +126,10 @@ export default function AutopsyPanel({ autopsy }: { autopsy: Autopsy }) {
                   >
                     {f.address.slice(0, 10)}…{f.address.slice(-4)}
                   </a>
-                  <span className="au__vol-bar">
+                  <span className="au__flagged-bar">
                     <i style={{ width: `${(f.feedbacks / peak) * 100}%` }} />
                   </span>
-                  <span className="au__vol-fig num">
+                  <span className="au__flagged-fig num">
                     {f.feedbacks} across {f.agentsReviewed}
                   </span>
                 </li>

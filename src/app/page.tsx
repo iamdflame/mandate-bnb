@@ -104,9 +104,20 @@ export default async function Home() {
             passes, and let the rest go unmarked.
           </p>
 
-          <Suspense fallback={<FunnelPending />}>
-            <LadderSection />
-          </Suspense>
+          {/*
+            The funnel is given a caption bar and column heads so that it reads
+            as the register itself rather than as a stray list under a centred
+            masthead. The crest is the letterhead; this is the document.
+          */}
+          <div className="open__ladder">
+            <div className="open__caption">
+              <span className="mark-label">The ladder</span>
+              <span className="mark-label open__scale">Drawn to scale · linear</span>
+            </div>
+            <Suspense fallback={<FunnelPending />}>
+              <LadderSection />
+            </Suspense>
+          </div>
 
           <div className="open__actions">
             <a className="btn btn--primary" href="/agents">

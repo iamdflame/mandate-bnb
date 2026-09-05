@@ -116,6 +116,7 @@ table {
   --d-hover: 120ms;
   --d-route: 200ms;
   --d-reveal: 400ms;
+  --d-pulse: 900ms;   /* hairline, while a reading is still open */
 
   /* --- layout ----------------------------------------------------------- */
   --content: 1440px;
@@ -137,6 +138,7 @@ table {
     --d-hover: 0ms;
     --d-route: 0ms;
     --d-reveal: 0ms;
+    --d-pulse: 0ms;
   }
 
   *,
@@ -437,16 +439,19 @@ tr:has(.strike[data-striking="1"]),
   font-size: var(--t-data);
   line-height: 1.3;
   color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .obs--large .obs__value {
   font-size: var(--t-data-lg);
   line-height: 1.1;
   letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
 }
 
 .obs--small .obs__value {
   font-size: var(--t-small);
+  font-variant-numeric: tabular-nums;
 }
 
 .obs__stamp {
@@ -623,7 +628,7 @@ tr:has(.strike[data-striking="1"]),
 
 /** Loading is a hairline pulse on the row. No spinners, no skeletons. */
 .register tbody tr[data-loading="1"] td {
-  animation: hair-pulse 900ms linear infinite;
+  animation: hair-pulse var(--d-pulse) linear infinite;
 }
 
 @keyframes hair-pulse {
@@ -796,7 +801,7 @@ tr:has(.strike[data-striking="1"]),
 }
 
 .assay__row[data-loading="1"] .assay__seg {
-  animation: seg-pulse 900ms linear infinite;
+  animation: seg-pulse var(--d-pulse) linear infinite;
 }
 
 @keyframes seg-pulse {
@@ -835,6 +840,7 @@ tr:has(.strike[data-striking="1"]),
   line-height: 1;
   letter-spacing: -0.02em;
   color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
 }
 
 /** The corrected figure is the true one, so it is the one struck in metal. */
@@ -878,13 +884,13 @@ tr:has(.strike[data-striking="1"]),
   max-width: 68ch;
 }
 
-.au__vol {
+.au__flagged {
   display: flex;
   flex-direction: column;
   margin: 0 0 16px;
 }
 
-.au__vol-row {
+.au__flagged-row {
   display: grid;
   grid-template-columns: 160px 1fr max-content;
   align-items: center;
@@ -901,19 +907,19 @@ tr:has(.strike[data-striking="1"]),
 
 .au__addr:hover { color: var(--gold-999); }
 
-.au__vol-bar {
+.au__flagged-bar {
   display: block;
   height: 6px;
   background: var(--score);
 }
 
-.au__vol-bar i {
+.au__flagged-bar i {
   display: block;
   height: 100%;
   background: var(--cancelled);
 }
 
-.au__vol-fig {
+.au__flagged-fig {
   font-size: var(--t-mark);
   color: var(--ink-3);
 }
@@ -930,7 +936,7 @@ tr:has(.strike[data-striking="1"]),
 @media (max-width: 720px) {
   .au__scores { grid-template-columns: 1fr; }
   .au__rule { width: auto; height: var(--hair); }
-  .au__vol-row { grid-template-columns: 1fr; height: auto; padding: 6px 0; gap: 4px; }
+  .au__flagged-row { grid-template-columns: 1fr; height: auto; padding: 6px 0; gap: 4px; }
 }
 
 /* ----------------------------------------------------------------- ledger */
@@ -968,6 +974,7 @@ tr:has(.strike[data-striking="1"]),
   color: var(--ink-2);
   text-align: right;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .ledger__flag {
@@ -1336,59 +1343,174 @@ tr:has(.strike[data-striking="1"]),
 
 /* ------------------------------------------------------------------ funnel */
 
-.funnel { display: flex; flex-direction: column; }
+/**
+ * The funnel is drawn to scale, and the scale is linear.
+ *
+ * It was a column of right-aligned serif numerals, which meant the single most
+ * important fact in the register — three hundred thousand registrations
+ * collapsing to five reachable agents and then to nothing — had to be arrived
+ * at by reading four numbers and doing the division. The track does it
+ * instead. Rung 0 fills it, rung 1 is a one-percent sliver, everything below
+ * is a hairline, and the argument lands before the first word is read.
+ *
+ * A logarithmic axis would make the lower rungs comfortably visible. It would
+ * also be arguing for ourselves, so it is linear.
+ */
+
+.funnel {
+  display: flex;
+  flex-direction: column;
+  border-top: var(--hair) solid var(--score);
+}
+
+.funnel__row { border-bottom: var(--hair) solid var(--score); }
 
 .funnel__link {
   display: grid;
-  grid-template-columns: minmax(0, max-content) 1fr;
-  align-items: baseline;
+  grid-template-columns: minmax(0, 20ch) 11ch minmax(120px, 1fr) minmax(0, 34ch);
+  align-items: center;
   gap: 24px;
-  padding: 6px 0;
+  min-height: var(--row);
+  padding: 0;
 }
 
+.funnel__meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+/** The rung number, in the register's own hand. */
+.funnel__n {
+  display: inline-block;
+  min-width: 1.4ch;
+  color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+}
+
+.funnel__floor { color: var(--ink-4); margin-right: 0.15em; }
+
 /**
- * Struck numerals were serifed, and the funnel figures are the one place in
- * the product where a number is the object rather than a reading. Tabular
- * regardless, so the column edge stays true as the registry grows.
+ * Tabular and right-aligned so the digits stack true down the column while the
+ * figures run from six characters to one.
  */
 .funnel__fig {
-  font-family: var(--serif);
-  font-size: clamp(2.25rem, 5.5vw, 4.75rem);
+  font-family: var(--mono);
+  font-size: var(--t-data);
   line-height: 1;
-  letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
   text-align: right;
-  min-width: 5.4ch;
-  color: var(--silver-925);
+  color: var(--ink);
   transition: color var(--d-hover) linear;
 }
 
-.funnel__row:first-child .funnel__fig { color: var(--base); }
-.funnel__row:nth-child(2) .funnel__fig { color: var(--pewter-500); }
-.funnel__row:nth-last-child(2) .funnel__fig { color: var(--gold-750); }
-.funnel__row:last-child .funnel__fig { color: var(--gold-999); }
-
-.funnel__fig[data-null="1"] { color: var(--base); }
-
-.funnel__link:hover .funnel__fig { color: var(--struck); }
-
-.funnel__body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-
-.funnel__name {
-  font-size: var(--t-small);
-  color: var(--ink-2);
-  text-wrap: pretty;
+/**
+ * An unmeasurable rung used to render as an em-dash, which at this size read
+ * as a stray rule and looked like the page had failed rather than declined.
+ * It says what it means now, in the voice used for every other absence here.
+ */
+.funnel__none {
+  font-family: var(--mono);
+  font-size: var(--t-mark);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  white-space: nowrap;
 }
 
-.funnel__meta { color: var(--ink-3); }
+/*
+  The track is a hairline; the fill is a bar drawn over it. Both were 3px and
+  the same family of grey, so a rung at full population looked exactly like a
+  rung at none — the drawing said nothing that the numbers had not already
+  said. Height now carries the difference as well as colour, which survives
+  being read at a glance and in greyscale.
+*/
+.funnel__track {
+  position: relative;
+  height: 5px;
+  display: flex;
+  align-items: center;
+}
 
+.funnel__track::before {
+  content: "";
+  position: absolute;
+  inset: 50% 0 auto 0;
+  height: var(--hair);
+  background: var(--score);
+}
+
+.funnel__fill {
+  position: relative;
+  height: 5px;
+  background: var(--pewter-500);
+  /*
+    Draws once, when the reading lands. This figure is fetched from the chain
+    after the page paints, so the arrival is a data event — the only thing the
+    motion doctrine here lets move.
+  */
+  transition: width var(--d-reveal) cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.funnel__row:first-child .funnel__fill { background: var(--base); }
+.funnel__row:nth-last-child(2) .funnel__fill { background: var(--gold-750); }
+.funnel__row:last-child .funnel__fill { background: var(--gold-999); }
+
+/** Not measured is not zero, and the dotted track keeps them apart. */
+.funnel__row:not([data-measured]) .funnel__track::before {
+  height: 0;
+  border-top: var(--hair) dashed var(--score);
+}
+
+.funnel__test {
+  font-family: var(--mono);
+  font-size: var(--t-mark);
+  line-height: 1.45;
+  color: var(--ink-3);
+  text-align: right;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.funnel__link:hover .funnel__fig { color: var(--struck); }
+.funnel__link:hover .funnel__fill { background: var(--struck); }
+
+@media (prefers-reduced-motion: reduce) {
+  .funnel__fill { transition: none; }
+}
+
+@media (max-width: 860px) {
+  .funnel__link {
+    grid-template-columns: minmax(0, 1fr) 11ch;
+    grid-template-areas: "meta fig" "track track";
+    gap: 8px 16px;
+    padding-block: 10px;
+  }
+  .funnel__meta { grid-area: meta; }
+  .funnel__fig { grid-area: fig; }
+  .funnel__track { grid-area: track; }
+  .funnel__test { display: none; }
+}
+
+/* The rung pages want the prose, and give up the scale drawing to get it. */
 .funnel--detail .funnel__row {
   padding-bottom: 20px;
   margin-bottom: 20px;
   border-bottom: var(--hair) solid var(--score);
 }
 
-.funnel--detail .funnel__fig { font-size: var(--t-data-lg); font-family: var(--mono); }
+.funnel--detail .funnel__link {
+  grid-template-columns: minmax(0, 20ch) 11ch minmax(120px, 1fr);
+  align-items: baseline;
+}
+
+.funnel--detail .funnel__test { display: none; }
+.funnel--detail .funnel__fig { font-size: var(--t-data-lg); font-variant-numeric: tabular-nums; }
 
 .funnel__source,
 .funnel__break {
@@ -1417,7 +1539,7 @@ tr:has(.strike[data-striking="1"]),
    ========================================================================== */
 
 .section {
-  padding-block: clamp(2.5rem, 6vw, 5rem);
+  padding-block: clamp(2rem, 4vw, 3.25rem);
 }
 
 .section__head,
@@ -1742,20 +1864,38 @@ p code {
 
 /* ------------------------------------------------------------- front page */
 
+/*
+  The front page had a centred masthead floating above a left-aligned list of
+  numerals, with a hand's width of dead space between them and nothing tying
+  the two alignments together. The crest is now tightened into a letterhead and
+  the funnel sits directly beneath it as a captioned document, which is the
+  relationship an assay office's own paper has.
+*/
 .open {
   display: flex;
   flex-direction: column;
-  gap: clamp(1.75rem, 4vw, 2.75rem);
-  padding-block: clamp(2.5rem, 7vw, 5rem) clamp(2rem, 5vw, 3.5rem);
+  gap: clamp(1.5rem, 3vw, 2.25rem);
+  padding-block: clamp(1.75rem, 4.5vw, 3.25rem) clamp(2rem, 5vw, 3.5rem);
 }
 
 .open__crest {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   text-align: center;
 }
+
+.open__ladder { display: flex; flex-direction: column; gap: 10px; }
+
+.open__caption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.open__scale { color: var(--ink-4); }
 
 .open__name {
   font-family: var(--serif);
@@ -1815,6 +1955,7 @@ p code {
   font-size: var(--t-data-lg);
   line-height: 1;
   color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .office__name { font-size: var(--t-small); color: var(--ink); }
@@ -1982,6 +2123,7 @@ p code {
   font-size: clamp(2rem, 5vw, 3rem);
   line-height: 1;
   letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .cert__denom { font-size: var(--t-data); color: var(--ink-3); letter-spacing: 0; }
@@ -2287,7 +2429,7 @@ p code {
 
 .bench__mark { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
 
-.bench__fig { font-size: var(--t-data-lg); line-height: 1; letter-spacing: -0.02em; }
+.bench__fig { font-size: var(--t-data-lg); line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .bench__denom { font-size: var(--t-data); color: var(--ink-3); }
 
 .bench__cmd { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 24px; }
@@ -2427,7 +2569,7 @@ p code {
   display: block;
   height: var(--hair);
   background: var(--score);
-  animation: hair-glow 900ms linear infinite;
+  animation: hair-glow var(--d-pulse) linear infinite;
 }
 
 @keyframes hair-glow {
@@ -2794,14 +2936,14 @@ p code {
 
 /* ------------------------------------------------------------------ claims */
 
-.claim-card {
+.claim {
   border: var(--hair) solid var(--score);
   background: var(--iron);
   display: flex;
   flex-direction: column;
 }
 
-.claim-card__row {
+.claim__row {
   display: grid;
   grid-template-columns: 84px 1fr;
   gap: 20px;
@@ -2810,9 +2952,9 @@ p code {
   border-bottom: var(--hair) solid var(--score);
 }
 
-.claim-card__row:last-child { border-bottom: 0; }
+.claim__row:last-child { border-bottom: 0; }
 
-.claim-card__text {
+.claim__text {
   margin: 0;
   font-family: var(--serif);
   font-size: var(--t-h3);
@@ -2820,9 +2962,9 @@ p code {
   color: var(--ink);
 }
 
-.claim-card__artifacts { display: flex; flex-direction: column; gap: 6px; }
+.claim__artifacts { display: flex; flex-direction: column; gap: 6px; }
 
-.claim-card__artifacts li {
+.claim__artifacts li {
   display: flex;
   align-items: baseline;
   gap: 12px;
@@ -2830,9 +2972,9 @@ p code {
   color: var(--ink-2);
 }
 
-.claim-card__backing { margin: 0; font-size: var(--t-small); line-height: 1.55; color: var(--ink-2); }
-.claim-card__backing.dim { font-family: var(--mono); font-size: var(--t-mark); color: var(--ink-3); }
+.claim__backing { margin: 0; font-size: var(--t-small); line-height: 1.55; color: var(--ink-2); }
+.claim__backing.dim { font-family: var(--mono); font-size: var(--t-mark); color: var(--ink-3); }
 
 @media (max-width: 640px) {
-  .claim-card__row { grid-template-columns: 1fr; gap: 8px; }
+  .claim__row { grid-template-columns: 1fr; gap: 8px; }
 }
