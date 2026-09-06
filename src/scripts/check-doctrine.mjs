@@ -467,6 +467,77 @@ note(
   );
 }
 
+/* ------------------------------------------------------- one owner per class */
+
+/*
+  A class name has one owner.
+
+  Twice now a new layout class has been given a name another page already used.
+  `.method` was `<main className="shell method">` on /assay and /api before it
+  was a table on the front page, and the table's mobile `min-width` pinned
+  those documents to 720px. `.sheet` was the floor's fixed-position modal
+  before it was a twelve-column grid, so the grid rendered at `inset: 0` and
+  its content escaped the page gutter entirely.
+
+  Both are invisible in review: each rule is correct on its own, and nothing
+  fails until the two meet on one element. So a bare `.x { }` rule declared in
+  more than one place must not disagree about the properties that decide where
+  a box lives.
+*/
+{
+  const structural = ["display", "position"];
+  const owners = new Map();
+
+  /*
+    Top-level rules only. A `@media` block redeclaring `display` or `position`
+    is a responsive change and the whole point of having one — the collisions
+    this looks for are two unconditional rules that disagree.
+  */
+  let flat = "";
+  {
+    let i = 0;
+    while (i < css.length) {
+      const at = css.indexOf("@", i);
+      if (at === -1) { flat += css.slice(i); break; }
+      flat += css.slice(i, at);
+      const open = css.indexOf("{", at);
+      if (open === -1) break;
+      let depth = 1, j = open + 1;
+      while (depth > 0 && j < css.length) {
+        if (css[j] === "{") depth++;
+        else if (css[j] === "}") depth--;
+        j++;
+      }
+      i = j;
+    }
+  }
+
+  for (const m of flat.matchAll(/(^|\})\s*\.([a-z0-9_-]+)\s*\{([^}]*)\}/gim)) {
+    const name = m[2];
+    const body = m[3];
+    for (const prop of structural) {
+      const hit = new RegExp(`(^|;|\\s)${prop}\\s*:\\s*([^;]+)`, "i").exec(body);
+      if (!hit) continue;
+      const key = `${name}|${prop}`;
+      const value = hit[2].trim();
+      const prev = owners.get(key);
+      if (prev && prev !== value) {
+        owners.set(key, `CONFLICT:${prev} vs ${value}`);
+      } else if (!prev) {
+        owners.set(key, value);
+      }
+    }
+  }
+  const clashes = [...owners]
+    .filter(([, v]) => String(v).startsWith("CONFLICT:"))
+    .map(([k, v]) => `.${k.split("|")[0]} declares ${k.split("|")[1]} twice — ${String(v).slice(9)}`);
+  note(
+    clashes.length === 0,
+    "vocabulary: a class name has one owner",
+    clashes.join("\n      "),
+  );
+}
+
 /* --------------------------------------------------------------- fineness */
 
 /*

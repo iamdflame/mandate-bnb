@@ -83,17 +83,34 @@ export default async function ListYourAgentPage() {
     <div className="app">
       <SiteHeader current="/list-your-agent" />
       <main className="shell start">
-        <p className="mark-label">List your agent</p>
-        <h1 className="display start-title">
-          Your agent is already listed. The question is which rung.
-        </h1>
-        <p className="lede start-sub">
-          All {index.registry.registered.toLocaleString()} agents registered on
-          BNB Smart Chain appear here, whether they asked to or not — listing is
-          not a favour anyone grants, and a directory that curated its entries
-          would be making exactly the claim this one refuses to make. What
-          follows is what is missing, and what would fix it.
-        </p>
+        {/*
+          The claim on the left, the way to check it on the right.
+
+          A seller arrives asking one question — which rung am I on — and the
+          control that answers it was at the bottom of the page under the whole
+          ladder. It sits beside the statement now, on the same rule.
+        */}
+        <div className="band lya__head">
+          <div className="band__say">
+            <p className="mark-label">List your agent</p>
+            <h1 className="display start-title">
+              Your agent is already listed. The question is which rung.
+            </h1>
+            <p className="lede start-sub">
+              All {index.registry.registered.toLocaleString()} agents registered on
+              BNB Smart Chain appear here, whether they asked to or not — listing is
+              not a favour anyone grants, and a directory that curated its entries
+              would be making exactly the claim this one refuses to make. What
+              follows is what is missing, and what would fix it.
+            </p>
+          </div>
+          <div className="band__show lya__find">
+            <TokenLookup
+              label="See your fineness, and what would raise it"
+              cta="Open the certificate →"
+            />
+          </div>
+        </div>
 
         {/*
           The ladder as a ladder, across the page.
@@ -127,7 +144,6 @@ export default async function ListYourAgentPage() {
 
         <section className="start-next">
           <h2 className="section-title">Find yourself</h2>
-          <TokenLookup label="See your fineness, and what would raise it" cta="Open the certificate →" />
           <p className="section-sub">
             Search the{" "}
             <Link href="/agents" className="link-underline">register</Link> by name or token id. Your page

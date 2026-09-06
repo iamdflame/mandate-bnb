@@ -75,21 +75,35 @@ export default function MethodPage() {
       <SiteHeader current="/assay" />
 
       <main className="shell method">
-        <div className="method__crest">
-          <OfficeMark size={40} />
-        </div>
-        <p className="mark-label">The method</p>
-        <h1 className="display method__title">
-          We do not score agents. We test them, and publish what the test found.
-        </h1>
-        <p className="lede method__lede">
-          Six tests against BNB Smart Chain, each worth a fixed number of millesimal
-          points. An agent earns a point only where evidence exists — absence of
-          evidence is impurity, because an assay office does not grade unproven metal.
-          Nothing here is weighted by opinion after the fact.
-        </p>
+        {/*
+          The method on the left, the instrument on the right.
 
-        <TokenLookup />
+          The heading, the lede and the lookup ran down a single narrow column
+          — the median run of ink on this page reached 53% of the viewport. The
+          page describes a test; the control that runs that test on any agent
+          belongs beside the description of it, not underneath.
+        */}
+        <div className="band method__head">
+          <div className="band__say">
+            <div className="method__crest">
+              <OfficeMark size={40} />
+            </div>
+            <p className="mark-label">The method</p>
+            <h1 className="display method__title">
+              We do not score agents. We test them, and publish what the test found.
+            </h1>
+            <p className="lede method__lede">
+              Six tests against BNB Smart Chain, each worth a fixed number of millesimal
+              points. An agent earns a point only where evidence exists — absence of
+              evidence is impurity, because an assay office does not grade unproven
+              metal. Nothing here is weighted by opinion after the fact.
+            </p>
+          </div>
+
+          <div className="band__show method__try">
+            <TokenLookup />
+          </div>
+        </div>
 
         <section className="section" aria-labelledby="tests-title">
           <div className="section__head">

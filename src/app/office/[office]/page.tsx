@@ -155,7 +155,8 @@ export default async function OfficePage({
 
   return (
     <div className="app">
-      <SiteHeader current="/agents" live status={`${CATEGORY_LABEL[c]}`} />
+      {/* An office page belongs to Offices, not to the register. */}
+      <SiteHeader current="/offices" live status={`${CATEGORY_LABEL[c]}`} />
 
       <main>
         <section className="section shell office-head">

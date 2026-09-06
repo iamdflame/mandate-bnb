@@ -136,36 +136,59 @@ export default function SessionScope({
           ) : null}
         </dl>
 
-        <div className="scope__lists">
-          <div>
-            <span className="mark-label">Granted — {s.allowlist.length}</span>
-            <ul className="scope__calls">
-              {s.allowlist.map((c) => (
-                <li key={`${c.to}:${c.signature}`} className="num">
-                  <span className="scope__sig">{c.signature}</span>
-                  <span className="scope__to dim">{c.to.slice(0, 10)}…</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        {/*
+          One table, with the state as a column.
 
-          <div>
-            <span className="mark-label">Withheld — {s.withheld.length}</span>
-            <ul className="scope__calls scope__calls--withheld">
-              {s.withheld.length === 0 ? (
-                <li className="num dim">nothing withheld</li>
-              ) : (
-                s.withheld.map((c) => (
-                  <li key={`${c.to}:${c.signature}`} className="num">
-                    <span className="scope__sig">{c.signature}</span>
-                    <span className="scope__to dim">
-                      {c.because ?? "not observed on chain"}
-                    </span>
-                  </li>
-                ))
-              )}
-            </ul>
+          Granted and withheld sat in two columns side by side, and the withheld
+          column is empty for most sessions — so half of every panel was the
+          words "nothing withheld" and a great deal of ground. Read as one list
+          they also compare properly: the point is not that two calls were
+          allowed, it is that these two were allowed and that one beside them
+          was not, for a reason the chain can be asked about.
+        */}
+        <div className="scope__scope">
+          <div className="scope__scopehead">
+            <span className="mark-label">The whole authority</span>
+            <span className="mark-label">
+              {s.allowlist.length} granted · {s.withheld.length} withheld
+            </span>
           </div>
+          <table className="tbl scope__tbl">
+            <thead>
+              <tr>
+                <th scope="col">state</th>
+                <th scope="col">selector</th>
+                <th scope="col">target</th>
+                <th scope="col">why not</th>
+              </tr>
+            </thead>
+            <tbody>
+              {s.allowlist.map((c) => (
+                <tr key={`g:${c.to}:${c.signature}`}>
+                  <td className="mark-label scope__state">granted</td>
+                  <td className="num scope__sel">{c.signature}</td>
+                  <td className="num scope__tgt">{c.to.slice(0, 10)}…</td>
+                  <td className="scope__whynot">—</td>
+                </tr>
+              ))}
+              {s.withheld.map((c) => (
+                <tr key={`w:${c.to}:${c.signature}`} data-withheld="1">
+                  <td className="mark-label scope__state">withheld</td>
+                  <td className="num scope__sel">{c.signature}</td>
+                  <td className="num scope__tgt">{c.to.slice(0, 10)}…</td>
+                  <td className="scope__whynot">{c.because ?? "not observed on chain"}</td>
+                </tr>
+              ))}
+              {s.allowlist.length === 0 && s.withheld.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="empty">
+                    This session grants no calls at all. It can read the chain and
+                    decide; it can spend nothing.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
         </div>
 
         {s.scopeRationale ? <p className="small dim scope__why">{s.scopeRationale}</p> : null}

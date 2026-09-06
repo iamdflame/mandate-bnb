@@ -37,6 +37,7 @@ import { memo, withTimeout } from "@/lib/cache";
 import { getField } from "@/lib/data/field";
 import { getProbes } from "@/lib/data/probes";
 import { HOUSE } from "@/lib/house";
+import { collapse, type Duplication } from "@/lib/dedup";
 
 /** The lowest hallmarkable grade, and this market's bar. */
 export const HALLMARK_BAR = 375;
@@ -60,6 +61,18 @@ export interface Rung {
   /** Set when the figure is a floor rather than a total. */
   atLeast?: boolean;
   /**
+   * Distinct products behind `population`, where the two differ.
+   *
+   * A registration is not a product. One agent minted once per user wallet
+   * arrives in the registry as hundreds of rows, so a rung that counts rows
+   * counts that product hundreds of times. Where this is set, it is the same
+   * population collapsed onto distinct name-and-description — owner-blind,
+   * because the copies are precisely what differs by owner. See `lib/dedup`.
+   */
+  distinct?: number;
+  /** Rendered under the count when rows and products are not the same number. */
+  duplication?: string;
+  /**
    * How many of these came up the ladder from the registry.
    *
    * The lower rungs count ERC-8004 entries; the upper rungs count whoever has
@@ -74,6 +87,8 @@ export interface Rung {
 
 export interface LadderReading {
   rungs: Rung[];
+  /** The collapse of rung 1's rows onto distinct products. */
+  duplication: Duplication;
   /** The fineness the contract currently requires to bid. */
   minFineness: number;
   at: string;
@@ -159,6 +174,17 @@ async function readLadderUncached(): Promise<LadderReading> {
   const index = await readAgentIndex();
   const registry = index.registry;
   const probes = getProbes();
+
+  /*
+    How many of the rows we parsed are the same product wearing different ids.
+
+    Measured over rung 1's population and no further. The registry's own count
+    at rung 0 stays a count of registrations, because a collapse ratio measured
+    on a crawl ordered by token id is not a ratio that holds across all
+    303,391 of them, and extrapolating it would be the kind of guess this
+    ladder exists to refuse.
+  */
+  const duplication = collapse(index.agents);
 
   // Rungs 5 and 6 come from the market itself.
   let bonded: number | null = null;
@@ -250,8 +276,17 @@ async function readLadderUncached(): Promise<LadderReading> {
       test: "Its agent card parses into something readable.",
       population: index.agents.length,
       atLeast: true,
-      source: `A floor, not a total: ${index.agents.length.toLocaleString()} cards have been fetched and parsed so far, read from ${index.source === "postgres" ? "the index" : "a committed snapshot"}. The rest are unindexed, not disproven.`,
-      verify: "npm run index",
+      distinct: duplication.distinct,
+      duplication:
+        duplication.duplicateRows === 0
+          ? undefined
+          : `${duplication.distinct.toLocaleString()} distinct products, not ${duplication.counted.toLocaleString()} agents: ${duplication.duplicateRows.toLocaleString()} of these rows (${(duplication.duplicateShare * 100).toFixed(1)}%) are a product already listed under another token id. The largest is "${duplication.clusters[0].name}", registered ${duplication.clusters[0].count.toLocaleString()} times across ${duplication.clusters[0].owners.toLocaleString()} distinct owners. Collapsed on name and description and blind to the owner, because one registration per user wallet is exactly how these copies differ.`,
+      source: `A floor, not a total: ${index.agents.length.toLocaleString()} cards have been fetched and parsed so far, read from ${index.source === "postgres" ? "the index" : "a committed snapshot"} that \`npm run index\` builds. The rest are unindexed, not disproven.`,
+      // Re-derives both figures this rung publishes: the rows read and the
+      // products they collapse onto. `npm run index` rebuilds the index, which
+      // is provenance rather than verification — a fresh crawl reads a
+      // different population and so cannot check this one.
+      verify: "npm run dedup",
     },
     {
       n: 2,
@@ -320,6 +355,7 @@ async function readLadderUncached(): Promise<LadderReading> {
 
   return {
     rungs,
+    duplication,
     source: index.source,
     minFineness,
     at: new Date().toISOString(),

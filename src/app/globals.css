@@ -263,6 +263,53 @@ samp {
   padding-inline: var(--gutter);
 }
 
+/*
+  The twelve columns, actually used.
+
+  `BRAND.md` specifies a twelve-column grid at 1,440 and then says the
+  governing decision is density — that the data structure carries the argument.
+  The site kept the first half and inverted the second: prose was capped at a
+  46-character measure and left to float alone, so the pages that carry the
+  argument used half the screen. Measured across ten routes, the median run of
+  ink reached 49% of the viewport on /authority, 50% on /list-your-agent and
+  53% on /assay, against 94% on the register.
+
+  A measure is right for reading and wrong as a page. So the measure stays and
+  the grid is used: an explanation takes the left half, and the table, figures
+  or evidence it is explaining takes the right, on the same rule. Nothing is
+  stretched to fill — the second column has to have something real in it, or
+  the section stays single-column and says so by being narrow.
+*/
+.band {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gutter);
+  row-gap: 24px;
+  align-items: start;
+}
+
+/** Prose, at a measure, on the left half of the sheet. */
+.band__say { grid-column: 1 / span 6; max-width: 68ch; }
+
+/** The thing the prose is about, on the right half. */
+.band__show { grid-column: 7 / span 6; min-width: 0; }
+
+/** Full bleed across the sheet, for a register or a book. */
+.band__wide { grid-column: 1 / -1; min-width: 0; }
+
+/** Two thirds and one third, where the figures are a summary rather than a table. */
+.band__main { grid-column: 1 / span 8; min-width: 0; }
+.band__side { grid-column: 9 / span 4; min-width: 0; }
+
+@media (max-width: 1040px) {
+  .band { grid-template-columns: minmax(0, 1fr); }
+  .band__say,
+  .band__show,
+  .band__wide,
+  .band__main,
+  .band__side { grid-column: 1 / -1; }
+}
+
 .rule {
   border: 0;
   border-top: var(--hair) solid var(--score);
@@ -483,44 +530,53 @@ tr:has(.strike[data-striking="1"]),
 }
 
 /**
- * The command scrolls; the copy button does not.
+ * The command wraps; the copy button stays put.
  *
- * Scrolling the whole row pushed the button off the end of a long command,
- * which is precisely the command most worth copying.
+ * It used to scroll horizontally with `scrollbar-width: none`, so a command
+ * longer than its box was simply cut — `npx mandate-verify --mandate 0 --chain
+ * 56 --deployment v1` ended at "--deployment v" with no scrollbar, no fade and
+ * nothing to suggest there was more. The whole argument of this page is that a
+ * reader can run these lines themselves; a line they cannot read is not an
+ * invitation.
+ *
+ * Wrapping keeps the prompt and the copy control on the first line and lets
+ * the command take the height it needs.
  */
 .cmd__line {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   min-height: var(--row);
   padding: 0 12px;
   background: var(--iron);
   border: var(--hair) solid var(--score);
-  overflow: hidden;
 }
 
 .cmd__prompt {
   font-family: var(--mono);
   font-size: var(--t-data);
+  line-height: 1.5;
   color: var(--gold-750);
   flex: none;
+  padding-block: 12px;
 }
 
 .cmd__text {
   font-size: var(--t-data);
+  line-height: 1.5;
   color: var(--ink);
-  white-space: pre;
+  /* Wraps at whitespace, and only breaks inside a token when it has to. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   flex: 1 1 auto;
   min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
   padding-block: 12px;
 }
 
 .cmd__copy {
   flex: none;
   color: var(--ink-3);
-  padding: 4px 6px;
+  padding: 14px 6px;
   transition: color var(--d-hover) linear;
 }
 
@@ -1596,9 +1652,21 @@ tr:has(.strike[data-striking="1"]),
    nobody has rewritten yet still arrives in the right language.
    ========================================================================== */
 
+/*
+  One leading edge, not two.
+
+  `padding-block` applied the spacing to both edges, so two adjacent sections
+  each contributed up to 52px and nothing on the site could be closer together
+  than 104px. Where a section rendered short, the run of empty ground reached
+  240px on /offices and /floor. The space belongs above a section, once.
+*/
 .section {
-  padding-block: clamp(2rem, 4vw, 3.25rem);
+  padding-block-start: clamp(2rem, 4vw, 3.25rem);
+  padding-block-end: 0;
 }
+
+/* The last section still needs ground under it before the footer. */
+.app main > .section:last-of-type { padding-block-end: clamp(2rem, 4vw, 3.25rem); }
 
 .section__head,
 .section-head {
@@ -1765,7 +1833,16 @@ p code {
 }
 
 .tbl tbody tr { transition: background var(--d-hover) linear; }
-.tbl tbody tr:hover { background: var(--iron); }
+/*
+  A row lights its own rule, it does not fill.
+
+  `BRAND.md` specifies the hover as the hairline brightening from `--score` to
+  `--pewter-500` over 120ms. Filling the row with `--iron` instead is a bigger
+  gesture than the doctrine allows for moving a mouse, and on a register of
+  three thousand rows it makes the pointer the loudest thing on the page.
+*/
+.tbl tbody tr:hover td,
+.tbl tbody tr:hover th { border-bottom-color: var(--pewter-500); }
 
 .tbl .empty,
 .empty {
@@ -2212,6 +2289,9 @@ p code {
   .beat__row { grid-template-columns: minmax(0, 1fr); gap: 6px; }
 }
 
+.lya__head { padding-block: 8px 8px; }
+.lya__find { border-left: var(--hair) solid var(--score); padding-left: 24px; }
+
 /* ------------------------------------------------------- the seller's ladder */
 
 /*
@@ -2319,10 +2399,88 @@ p code {
   color: var(--pewter-500);
 }
 
+/*
+  The second count in the figure column: rows above, distinct products below.
+
+  Dimmer than the row count and set beneath it rather than beside it, because
+  it qualifies that number rather than competing with it — the same treatment
+  the floor mark gets. Tabular like every other figure, so the two counts keep
+  their right edge against each other as the digits change.
+*/
+.msheet__distinct {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--t-mark);
+  font-variant-numeric: tabular-nums;
+  color: var(--pewter-500);
+}
+
 .tbl td.msheet__cmd { vertical-align: top; width: 26%; white-space: normal; }
 
 @media (max-width: 900px) {
   .msheet { min-width: 720px; }
+}
+
+/* ------------------------------------------------------------ session scope */
+
+.scope__scope { margin-top: 20px; }
+
+.scope__scopehead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.scope__tbl { width: 100%; table-layout: fixed; }
+.scope__tbl td, .scope__tbl th { padding-block: 10px; vertical-align: top; height: auto; }
+
+.tbl td.scope__state { width: 11ch; }
+
+/* A selector wraps: it is the whole point of the row and must not be clipped. */
+.tbl td.scope__sel {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: var(--t-mark);
+  line-height: 1.5;
+}
+
+.tbl td.scope__tgt { width: 14ch; color: var(--ink-3); }
+
+.tbl td.scope__whynot {
+  width: 34%;
+  white-space: normal;
+  color: var(--base);
+  font-size: var(--t-mark);
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Absence of light, never red: a withheld call is unlit, not forbidden. */
+.scope__tbl tr[data-withheld] td { color: var(--base); }
+
+@media (max-width: 720px) {
+  .scope__scope { overflow-x: auto; }
+  .scope__tbl { min-width: 560px; }
+}
+
+/* --------------------------------------------------------------- authority */
+
+.auth-head { padding-block: 8px 32px; }
+
+/*
+  The caveat is set as an aside, not as a second lede: it qualifies the claim
+  beside it rather than continuing it, and the oxblood rule is the only place
+  on this page where a limitation is marked rather than described.
+*/
+.auth-caveat {
+  border-left: 2px solid var(--cancelled);
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 /* ----------------------------------------------------------------- compare */
@@ -2828,9 +2986,18 @@ p code {
 
 .start-sub { margin: 0 0 40px; max-width: 64ch; }
 
-.claims { display: flex; flex-direction: column; }
+/*
+  The falsify column on /start.
 
-.claim {
+  These were `.claim` and `.claim-*`, which is also the name of the `<Claim>`
+  component's own block — and that block is declared later in this file, so
+  every numbered row on /start was silently taking a bordered iron box and a
+  column flex instead of its two-column grid. Two owners for one name; renamed
+  to what this list actually is.
+*/
+.falsify { display: flex; flex-direction: column; }
+
+.falsify__item {
   display: grid;
   grid-template-columns: 48px 1fr;
   gap: 24px;
@@ -2838,18 +3005,19 @@ p code {
   border-top: var(--hair) solid var(--score);
 }
 
-.claim-n {
+.falsify__n {
   font-family: var(--mono);
   font-size: var(--t-mark);
+  font-variant-numeric: tabular-nums;
   letter-spacing: 0.14em;
   color: var(--ink-3);
   padding-top: 4px;
 }
 
-.claim-body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.falsify__body { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 
 /** The claim is the object. Serif, because it is a statement, not a reading. */
-.claim-text {
+.falsify__text {
   margin: 0;
   font-family: var(--serif);
   font-size: var(--t-h3);
@@ -2858,7 +3026,7 @@ p code {
   max-width: 46ch;
 }
 
-.claim-note {
+.falsify__note {
   margin: 0;
   font-size: var(--t-small);
   line-height: 1.55;
@@ -2866,7 +3034,7 @@ p code {
   max-width: 72ch;
 }
 
-.claim-link {
+.falsify__link {
   font-family: var(--mono);
   font-size: var(--t-data);
   color: var(--gold-999);
@@ -2875,7 +3043,7 @@ p code {
   padding-bottom: 2px;
 }
 
-.claim-link:hover { color: var(--struck); }
+.falsify__link:hover { color: var(--struck); }
 
 .start-next { padding-block: 40px; border-top: var(--hair) solid var(--score); }
 
@@ -3054,10 +3222,21 @@ p code {
 
 .method { padding-block: clamp(2.5rem, 6vw, 4rem) 0; }
 .method__crest { margin-bottom: 20px; }
-.method__title { margin: 12px 0 20px; max-width: 22ch; }
+.method__title { margin: 12px 0 20px; max-width: 18ch; }
+
+/* The lookup sits on the rule the prose starts from, not under it. */
+.method__head { padding-block: 8px 24px; }
+.method__try { border-left: var(--hair) solid var(--score); padding-left: 24px; }
 .method__lede { margin: 0 0 8px; }
-/* `.tbl td` sets nowrap and outranks a bare class; see .method__how. */
-.tbl td.method__wrap { white-space: normal; max-width: 42ch; }
+/*
+  `.tbl td` sets nowrap and outranks a bare class; see .msheet__how.
+
+  The 42ch cap was doing to the table what the narrow column was doing to the
+  page: two of its four columns could not use the width they had, so the six
+  tests — the actual content of the method page — were squeezed into a third of
+  it. A measure belongs on prose, not on a cell that is already in a column.
+*/
+.tbl td.method__wrap { white-space: normal; line-height: 1.55; }
 .method__cmds { display: flex; flex-direction: column; gap: 20px; max-width: 720px; }
 
 .grades {
@@ -3636,7 +3815,31 @@ p code {
  * One template renders all four, so a thin office looks thin rather than being
  * quietly padded — the emptiness is the finding and the page says so in words.
  */
-.office-head { display: flex; flex-direction: column; gap: 12px; }
+/*
+  The office identifies itself on the left and reports itself on the right.
+
+  It was one narrow stack: mark, name, description, method, then five figures
+  wrapped underneath — all of it inside about a third of the page, with the
+  rest empty and a 240px run of nothing before the book. The five figures are
+  the office's actual state and belong beside its name, not queued under it.
+*/
+.office-head {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  column-gap: var(--gutter);
+  row-gap: 12px;
+  align-items: start;
+}
+
+.office-head__mark,
+.office-head__title,
+.office-head__blurb,
+.office-head__method { grid-column: 1; }
+
+@media (max-width: 1040px) {
+  .office-head { grid-template-columns: minmax(0, 1fr); }
+  .office-head__figs { grid-column: 1; }
+}
 
 .office-head__mark { line-height: 0; }
 
@@ -3652,21 +3855,32 @@ p code {
   text-wrap: balance;
 }
 
-.office-head__method { max-width: 72ch; }
+.office-head__method { max-width: 60ch; }
 
 .office-head__figs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 32px;
-  margin-top: 8px;
+  grid-column: 2;
+  grid-row: 1 / span 4;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 24px;
+  padding-left: 24px;
+  border-left: var(--hair) solid var(--score);
 }
 
 .office-live { display: flex; flex-direction: column; border-top: var(--hair) solid var(--score); }
 
 .office-live__row {
   display: grid;
-  /* name · id · what the call returned · who runs it · the verb */
-  grid-template-columns: minmax(0, 1fr) 8ch 22ch 16ch max-content;
+  /*
+    name · id · what the call returned · who runs it · the verb
+
+    The name column was `1fr` and everything after it was fixed, so on a wide
+    page the name took seven hundred pixels for a twenty-character string and
+    the rest of the row sat against the right edge with a void between. The
+    flexible columns are proportional now, so the slack is shared by the two
+    that can use it rather than pooling in one that cannot.
+  */
+  grid-template-columns: minmax(0, 3fr) 9ch minmax(0, 2fr) minmax(0, 1.4fr) max-content;
   align-items: center;
   gap: 16px;
   min-height: var(--row);

@@ -132,21 +132,21 @@ export default async function StartPage() {
           <h2 id="falsify-title" className="section-title">Falsify</h2>
           <span className="mark-label">eight claims · no wallet</span>
         </div>
-        <ol className="claims">
+        <ol className="falsify">
           {CLAIMS.map((c, i) => (
-            <li key={i} className="claim">
-              <span className="claim-n">{String(i + 1).padStart(2, "0")}</span>
-              <div className="claim-body">
-                <p className="claim-text">{c.claim}</p>
-                {c.note ? <p className="claim-note">{c.note}</p> : null}
+            <li key={i} className="falsify__item">
+              <span className="falsify__n">{String(i + 1).padStart(2, "0")}</span>
+              <div className="falsify__body">
+                <p className="falsify__text">{c.claim}</p>
+                {c.note ? <p className="falsify__note">{c.note}</p> : null}
                 {c.how === "command" ? (
                   <Command>{c.check}</Command>
                 ) : c.target.startsWith("/") ? (
-                  <Link href={c.target} className="claim-link">
+                  <Link href={c.target} className="falsify__link">
                     {c.check} →
                   </Link>
                 ) : (
-                  <a href={c.target} className="claim-link" rel="noreferrer">
+                  <a href={c.target} className="falsify__link" rel="noreferrer">
                     {c.check} →
                   </a>
                 )}

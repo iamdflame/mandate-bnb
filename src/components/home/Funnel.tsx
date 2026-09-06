@@ -85,11 +85,25 @@ export default function Funnel({
                     <>
                       {r.atLeast ? <span className="funnel__floor">≥</span> : null}
                       {r.population.toLocaleString()}
+                      {/*
+                        Rows and products are different counts, and where they
+                        differ the register shows both. Printing only the row
+                        count would give one agent as many places on the shelf
+                        as it has holders.
+                      */}
+                      {r.distinct !== undefined && r.distinct !== r.population ? (
+                        <span className="msheet__distinct">
+                          {r.distinct.toLocaleString()} distinct
+                        </span>
+                      ) : null}
                     </>
                   )}
                 </td>
                 <td className="msheet__how">
                   {r.source}
+                  {r.duplication ? (
+                    <span className="msheet__break">{r.duplication}</span>
+                  ) : null}
                   {r.discontinuity ? (
                     <span className="msheet__break">{r.discontinuity}</span>
                   ) : null}
