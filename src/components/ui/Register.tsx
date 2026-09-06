@@ -19,8 +19,6 @@ export interface RegisterRow {
    * appear, sorted together by fineness, and each row says which it is.
    */
   source: "registry" | "market";
-  /** Where the row links. A certificate, or a ledger for a market holder. */
-  href: string;
   name: string | null;
   owner: string | null;
   category: Category | null;
@@ -28,8 +26,22 @@ export interface RegisterRow {
   fineness: number | null;
   endpointVerified: boolean;
   rung: number;
-  rungReason: string;
-  lastSeen: string | null;
+  /**
+   * A mandate this row's wallet holds, for the ledger link.
+   *
+   * Present only for market rows. `href` used to ride on every row: the same
+   * twenty characters, derived from the token id, three thousand nine hundred
+   * times. So did `rungReason`, which has eight distinct values across the
+   * whole table. Both are reconstructed here instead of serialised there.
+   */
+  mandateId?: number | null;
+  /**
+   * When this row was last read, where it differs from the table's stamp.
+   *
+   * Almost every row shares the crawl's timestamp, so it is sent once for the
+   * table and only the exceptions carry their own.
+   */
+  lastSeen?: string | null;
   /** Wei, as a string — bigint does not survive the RSC boundary. */
   bondWei: string | null;
   alphaBps: number | null;
@@ -73,6 +85,7 @@ const OVERSCAN = 10;
 export default function Register({
   rows,
   chainId,
+  explorer,
   blockNumber,
   readAt,
   unindexed,
@@ -81,6 +94,8 @@ export default function Register({
 }: {
   rows: RegisterRow[];
   chainId: number;
+  /** Explorer root, for the few rows that are a bare wallet. */
+  explorer: string;
   blockNumber?: string | number | null;
   readAt?: string | null;
   /** Registered agents we have not read yet. Stated, never invented as rows. */
@@ -343,18 +358,24 @@ export default function Register({
 
               {visible.map((r) => {
                 const struck = (r.fineness ?? 0) >= 375;
+                const href = hrefFor(r, explorer);
                 return (
-                  <tr key={r.tokenId} data-struck={struck ? "1" : undefined}>
+                  <tr
+                    key={r.tokenId}
+                    data-struck={struck ? "1" : undefined}
+                    // Why this row sits where it does, without a column for it.
+                    title={reasonFor(r)}
+                  >
                     <td className="mark-col">
                       <Fineness fineness={r.fineness ?? 0} size={20} />
                     </td>
                     <td className="num">
-                      <a href={r.href}>
+                      <a href={href}>
                         {r.source === "market" ? `${r.tokenId.slice(0, 8)}…` : r.tokenId}
                       </a>
                     </td>
                     <td className="name-col" title={r.name ?? undefined}>
-                      <a href={r.href}>{r.name ?? "—"}</a>
+                      <a href={href}>{r.name ?? "—"}</a>
                       {r.source === "market" ? (
                         <span className="reg__src mark-label"> holder</span>
                       ) : null}
@@ -384,7 +405,7 @@ export default function Register({
                       {r.fineness === null ? "—" : r.fineness}
                     </td>
                     <td className="num">{r.endpointVerified ? "answers" : "—"}</td>
-                    <td className="num">{shortDate(r.lastSeen)}</td>
+                    <td className="num">{shortDate(r.lastSeen ?? readAt ?? null)}</td>
                     <td className="num">{r.bondWei ? bnb(r.bondWei) : "—"}</td>
                     <td className="num">{alpha(r.alphaBps)}</td>
                     {/*
@@ -399,8 +420,12 @@ export default function Register({
                       idea.
                     */}
                     <td>
-                      <a className="reg__hire" href={action(r).href} title={action(r).title}>
-                        {action(r).label}
+                      <a
+                        className="reg__hire"
+                        href={action(r, explorer).href}
+                        title={action(r, explorer).title}
+                      >
+                        {action(r, explorer).label}
                       </a>
                     </td>
                   </tr>
@@ -477,15 +502,49 @@ function Choice({
 }
 
 /**
+ * Where a row points, rebuilt rather than carried.
+ *
+ * A certificate for anything with a token id; the ledger of a mandate it holds
+ * when the row is a bare wallet; the explorer when even that is missing.
+ */
+function hrefFor(r: RegisterRow, explorer: string): string {
+  if (r.source === "registry") return `/agent/${r.tokenId}`;
+  if (r.mandateId !== null && r.mandateId !== undefined) return `/mandate/${r.mandateId}`;
+  return `${explorer}/address/${r.tokenId}`;
+}
+
+/**
+ * Why a row sits where it does, by rung.
+ *
+ * Eight sentences, one per rung and one for a chain that would not answer,
+ * against three thousand nine hundred rows. It travelled per row.
+ */
+const REASONS: Record<number, string> = {
+  0: "registered, and nothing beyond that: no name, no description, no endpoint",
+  1: "its card parses, but no endpoint of ours has ever reached it",
+  2: "its endpoint answered when we called it, but it has never been assayed on chain",
+  3: "its wallet has touched the protocols its category implies",
+  4: "assayed at or above the bar, but it has never posted a bond",
+  5: "holds a mandate with its own capital at risk, but has settled no epochs yet",
+  6: "has settled epochs against measurements committed before the outcome",
+};
+
+const reasonFor = (r: RegisterRow): string =>
+  REASONS[r.rung] ?? "not placed: the chain could not be read for this row";
+
+/**
  * What this row lets you do, derived from its rung.
  *
  * Mirrors `<Hire>` on the certificate, so the register and the agent page
  * cannot offer different actions for the same agent.
  */
-function action(r: RegisterRow): { href: string; label: string; title: string } {
+function action(
+  r: RegisterRow,
+  explorer: string,
+): { href: string; label: string; title: string } {
   if (r.source === "market" || r.rung >= 5) {
     return {
-      href: r.href,
+      href: hrefFor(r, explorer),
       label: r.source === "market" ? "ledger →" : "mandate →",
       title: r.source === "market" ? "Open this mandate" : "Open a mandate with this agent named",
     };

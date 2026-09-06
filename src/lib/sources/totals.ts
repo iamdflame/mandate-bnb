@@ -51,12 +51,14 @@ export interface RegistryTotals {
  * close enough together that a page render does not wait on them. Beyond that
  * the caller gets null and says so.
  */
-async function attempt<T>(fn: () => Promise<T>, tries = 3): Promise<T | null> {
+async function attempt<T>(fn: () => Promise<T>, tries = 2): Promise<T | null> {
   for (let i = 0; i < tries; i++) {
     try {
       return await fn();
     } catch {
-      if (i < tries - 1) await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+      // Short, because the caller bounds the whole read at 2.5 seconds and a
+      // long backoff spends that budget without ever reaching the answer.
+      if (i < tries - 1) await new Promise((r) => setTimeout(r, 250));
     }
   }
   return null;
@@ -96,34 +98,47 @@ async function fromIndexer(chainId: number): Promise<RegistryTotals | null> {
   }
 }
 
-async function readTotalsUncached(chainId: number): Promise<RegistryTotals | null> {
-  const [registered, withEndpoint] = await Promise.all([
+async function readTotalsUncached(chainId: number): Promise<RegistryTotals> {
+  /*
+    All three reads start together.
+
+    The upstream and the crawler's row were tried in sequence, and the caller
+    bounds this whole thing at 2.5 seconds so a cold instance cannot block a
+    page. Two retries against a failing upstream spend that budget on their own
+    backoff, so the fast local read that was meant to be the fallback never got
+    to start — and every such render fell through to a file that was two days
+    old while the answer sat in a table one query away.
+
+    In parallel, the upstream still wins when it answers and the crawler's row
+    is already in hand when it does not.
+  */
+  const [registered, withEndpoint, carried] = await Promise.all([
     attempt(() => countAgents({ chainId })),
     attempt(() => countAgents({ chainId, isEndpointVerified: true })),
+    fromIndexer(chainId),
   ]);
 
   // A count of zero from an upstream that is failing is not a count of zero.
-  if (!registered) {
-    const carried = await fromIndexer(chainId);
-    /*
-      Throw rather than resolve to null when every tier is silent.
-
-      `memo` stores whatever the read resolves to, so returning null here
-      cached the failure for ten minutes: one unlucky render pinned the whole
-      instance to the committed snapshot long after the upstream recovered.
-      A rejection is not stored, so the next render tries again.
-    */
-    if (!carried) throw new Error("no registry total available from any tier");
-    return carried;
+  if (registered) {
+    return {
+      registered,
+      withEndpoint: withEndpoint ?? 0,
+      live: true,
+      tier: "upstream",
+      at: new Date().toISOString(),
+    };
   }
 
-  return {
-    registered,
-    withEndpoint: withEndpoint ?? 0,
-    live: true,
-    tier: "upstream",
-    at: new Date().toISOString(),
-  };
+  /*
+    Throw rather than resolve to null when every tier is silent.
+
+    `memo` stores whatever the read resolves to, so returning null cached the
+    failure for ten minutes: one unlucky render pinned the whole instance to
+    the committed snapshot long after the upstream recovered. A rejection is
+    not stored, so the next render tries again.
+  */
+  if (!carried) throw new Error("no registry total available from any tier");
+  return carried;
 }
 
 /**
@@ -134,7 +149,7 @@ async function readTotalsUncached(chainId: number): Promise<RegistryTotals | nul
  * is two calls against a 30-per-minute anonymous tier on every page render,
  * which is how the front door would start rate-limiting itself.
  */
-export function readRegistryTotals(chainId: number): Promise<RegistryTotals | null> {
+export function readRegistryTotals(chainId: number): Promise<RegistryTotals> {
   return memo(
     `registry-totals:${chainId}`,
     { freshMs: 10 * 60_000, staleMs: 60 * 60_000 },

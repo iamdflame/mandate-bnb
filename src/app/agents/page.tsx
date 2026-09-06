@@ -65,15 +65,12 @@ export default async function AgentsPage({
     return {
       tokenId: a.tokenId,
       source: "registry" as const,
-      href: `/agent/${a.tokenId}`,
       name: a.name,
       owner: a.owner,
       category: a.category,
       fineness: standing?.fineness ?? null,
       endpointVerified: Boolean(a.endpointVerified),
       rung: place.rung,
-      rungReason: place.reason,
-      lastSeen: a.lastSeen ?? index.capturedAt,
       bondWei: standing ? standing.bondWei.toString() : null,
       alphaBps: standing ? Number(standing.alphaBps) : null,
       feedbacks: a.feedbacks,
@@ -96,18 +93,12 @@ export default async function AgentsPage({
       ? {
           tokenId: house.tokenId,
           source: "market" as const,
-          href: `/agent/${house.tokenId}`,
           name: house.name,
           owner: wallet,
           category: st.category,
           fineness: st.fineness,
           endpointVerified: false,
           rung: st.epochsSettled > 0 ? 6 : 5,
-          rungReason:
-            st.epochsSettled > 0
-              ? "an ERC-8004 registration whose own wallet has settled epochs against committed measurements"
-              : "an ERC-8004 registration whose own wallet holds a mandate with its capital at risk",
-          lastSeen: readAtIso,
           bondWei: st.bondWei.toString(),
           alphaBps: Number(st.alphaBps),
           feedbacks: 0,
@@ -121,20 +112,13 @@ export default async function AgentsPage({
     return {
       tokenId: wallet,
       source: "market" as const,
-      href: st.mandateIds.length
-        ? `/mandate/${st.mandateIds[0]}`
-        : `${EXPLORER}/address/${wallet}`,
+      mandateId: st.mandateIds[0] ?? null,
       name: `${wallet.slice(0, 10)}…${wallet.slice(-4)}`,
       owner: wallet,
       category: st.category,
       fineness: st.fineness,
       endpointVerified: false,
       rung: st.epochsSettled > 0 ? 6 : 5,
-      rungReason:
-        st.epochsSettled > 0
-          ? "has settled epochs against committed measurements, but no ERC-8004 registration stands behind it"
-          : "holds a mandate with its own capital at risk, but no ERC-8004 registration stands behind it",
-      lastSeen: readAtIso,
       bondWei: st.bondWei.toString(),
       alphaBps: Number(st.alphaBps),
       feedbacks: 0,
@@ -183,7 +167,6 @@ export default async function AgentsPage({
       return {
         tokenId: a.tokenId,
         source: "registry" as const,
-        href: `/agent/${a.tokenId}`,
         name: a.name,
         owner: a.owner,
         category: a.category,
@@ -192,7 +175,6 @@ export default async function AgentsPage({
         // this, so "answers when called" means a call this office made.
         endpointVerified: answered(a.tokenId),
         rung: place.rung,
-        rungReason: place.reason,
         lastSeen: field.capturedAt,
         bondWei: standing ? standing.bondWei.toString() : null,
         alphaBps: standing ? Number(standing.alphaBps) : null,
@@ -271,6 +253,7 @@ export default async function AgentsPage({
         <Register
           rows={rows}
           chainId={CHAIN_ID}
+          explorer={EXPLORER}
           blockNumber={blockNumber}
           readAt={index.capturedAt}
           unindexed={unindexed}
