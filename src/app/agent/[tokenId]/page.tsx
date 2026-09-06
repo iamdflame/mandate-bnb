@@ -6,7 +6,8 @@ import Certificate from "@/components/agents/Certificate";
 import AutopsyPanel from "@/components/ui/Autopsy";
 import CareerPanel from "@/components/agents/CareerPanel";
 import Exclusions from "@/components/agents/Exclusions";
-import { findAgent } from "@/lib/data/agents";
+import { resolveAgent, type AgentRecord } from "@/lib/agent-record";
+import { notFound } from "next/navigation";
 import { readAutopsy } from "@/lib/autopsy";
 import { readCareerForWallet } from "@/lib/career";
 import { placeAgent, readMarketSets } from "@/lib/rung";
@@ -28,7 +29,8 @@ export async function generateMetadata({
   params: Promise<{ tokenId: string }>;
 }): Promise<Metadata> {
   const { tokenId } = await params;
-  const a = findAgent(tokenId);
+  // The chain knows the name of every agent; our crawl knows 3,808 of them.
+  const a = await resolveAgent(tokenId).catch(() => null);
   return {
     title: `${a?.name ?? `Agent ${tokenId}`} — certificate of assay — MANDATE`,
     description:
@@ -51,21 +53,33 @@ export async function generateMetadata({
   also the honest way to render them: a panel that is still reading says so.
 */
 
-async function Placement({ tokenId }: { tokenId: string }) {
-  const indexed = findAgent(tokenId);
+async function Placement({ agent }: { agent: AgentRecord }) {
+  const tokenId = agent.tokenId;
+  const indexed = agent;
   const [sets, detail] = await Promise.all([
     readMarketSets(),
     withTimeout(getAgent(CHAIN_ID, tokenId).catch(() => null), PANEL_TIMEOUT_MS),
   ]);
-  const placement = indexed ? placeAgent({ ...indexed, rung: undefined }, sets) : null;
+  const placement = placeAgent({ ...indexed, rung: undefined }, sets);
 
-  const wallet = (detail?.agent_wallet ?? indexed?.owner ?? "").toLowerCase();
+  /*
+    The chain's owner wins.
+
+    8004scan's `agent_wallet` is its reading of the registration; `ownerOf` is
+    the registration. They agree for most tokens and the index is missing
+    entirely for the newest ones, including ours.
+  */
+  const wallet = (agent.chain?.owner ?? detail?.agent_wallet ?? indexed?.owner ?? "").toLowerCase();
   const exclusions = exclusionsFor({
-    name: detail?.name ?? indexed?.name,
-    description: detail?.description ?? indexed?.description,
-    owner: detail?.owner_address ?? indexed?.owner,
-    agentWallet: detail?.agent_wallet,
-    endpoint: detail?.agent_url ?? detail?.a2a_endpoint ?? detail?.mcp_server,
+    name: indexed.name ?? detail?.name,
+    description: indexed.description ?? detail?.description,
+    owner: indexed.owner ?? detail?.owner_address,
+    agentWallet: agent.chain?.owner ?? detail?.agent_wallet,
+    endpoint:
+      agent.chain?.services[0]?.endpoint ??
+      detail?.agent_url ??
+      detail?.a2a_endpoint ??
+      detail?.mcp_server,
     endpointVerified: Boolean(detail?.is_endpoint_verified ?? indexed?.endpointVerified),
     category: indexed?.category ?? null,
     // The nonce is the assay's to establish; omitting it here is honest — a
@@ -115,15 +129,21 @@ async function Placement({ tokenId }: { tokenId: string }) {
 const PANEL_TIMEOUT_MS = 20_000;
 
 /**
- * The autopsy gets longer.
+ * The autopsy gets longer, but not this long.
  *
  * It is the highest-value component in the product — an official score beside
  * the score that survives de-duplication, with the command that reproduces
  * both — and it costs eighteen calls against an API that allows twenty-five a
- * minute. Twenty seconds was not enough for it to ever appear. The page is
- * streamed, so nothing else waits on it, and the panel pulses while it reads.
+ * minute, so twenty seconds was not enough for it to ever appear.
+ *
+ * Fifty was too many. The certificate reaches first byte in under a second and
+ * paints immediately, but the response stayed open for the better part of a
+ * minute waiting on a panel most agents have no data for, which a crawler and
+ * a preview card both sit through. Twenty-five clears the corpus for an agent
+ * that has one and gives up in half the time on an agent that does not, and
+ * the panel says which happened rather than showing an empty result.
  */
-const AUTOPSY_TIMEOUT_MS = 50_000;
+const AUTOPSY_TIMEOUT_MS = 25_000;
 
 async function Reputation({ tokenId }: { tokenId: string }) {
   const autopsy = await withTimeout(
@@ -141,10 +161,9 @@ async function Reputation({ tokenId }: { tokenId: string }) {
   return <AutopsyPanel autopsy={autopsy} />;
 }
 
-async function CareerSection({ tokenId }: { tokenId: string }) {
-  const indexed = findAgent(tokenId);
+async function CareerSection({ agent }: { agent: AgentRecord }) {
   const career = await withTimeout(
-    readCareerForWallet(indexed?.owner).catch(() => null),
+    readCareerForWallet(agent.owner).catch(() => null),
     PANEL_TIMEOUT_MS,
   );
   if (!career) {
@@ -192,7 +211,19 @@ export default async function AgentPage({
   params: Promise<{ tokenId: string }>;
 }) {
   const { tokenId } = await params;
-  const indexed = findAgent(tokenId);
+
+  /*
+    The identity, from the registry itself.
+
+    This page used to read only our own crawl, so an agent we had not indexed —
+    which is 300,979 of them, including our own registration and every token in
+    this hackathon minted in the last two days — rendered as a name-less shell
+    or not at all. `ownerOf` and `tokenURI` answer for all of them, and
+    `ownerOf` reverting is the existence test: a token that was never minted is
+    a 404, and nothing else is.
+  */
+  const agent = await resolveAgent(tokenId).catch(() => null);
+  if (!agent) notFound();
 
   /*
     The market's answer about this wallet, read before the certificate paints.
@@ -204,11 +235,11 @@ export default async function AgentPage({
     the placement panel below, so it costs one chain read, not two.
   */
   const sets = await readMarketSets();
-  const wallet = indexed?.owner?.toLowerCase() ?? "";
+  const wallet = agent.owner?.toLowerCase() ?? "";
   const st = wallet ? sets.standing.get(wallet) : undefined;
-  const placement = indexed ? placeAgent({ ...indexed, rung: undefined }, sets) : null;
+  const placement = placeAgent({ ...agent, rung: undefined }, sets);
   const standing = {
-    rung: sets.read ? (placement?.rung ?? null) : null,
+    rung: sets.read ? placement.rung : null,
     bondWei: st ? st.bondWei.toString() : null,
     mandateId: st?.mandateIds[0] ?? null,
   };
@@ -221,12 +252,12 @@ export default async function AgentPage({
         <Certificate
           tokenId={tokenId}
           chainId={CHAIN_ID}
-          indexed={indexed}
+          indexed={agent}
           standing={standing}
         />
 
         <Suspense fallback={<Pending title="Ladder placement" />}>
-          <Placement tokenId={tokenId} />
+          <Placement agent={agent} />
         </Suspense>
 
         <Suspense fallback={<Pending title="Reputation autopsy" />}>
@@ -234,7 +265,7 @@ export default async function AgentPage({
         </Suspense>
 
         <Suspense fallback={<Pending title="Career" />}>
-          <CareerSection tokenId={tokenId} />
+          <CareerSection agent={agent} />
         </Suspense>
       </main>
 
