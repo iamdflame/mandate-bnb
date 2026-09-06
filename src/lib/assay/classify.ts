@@ -15,9 +15,29 @@ import type { Category } from "@/lib/config";
 import { CATEGORIES } from "@/lib/config";
 
 interface Signal {
-  /** Matched case-insensitively as a whole phrase. */
+  /**
+   * Matched case-insensitively, and only where a word starts.
+   *
+   * Most signals here are deliberately stems — `rebalanc` is meant to catch
+   * rebalancing, rebalance and rebalancer, and `spread` is meant to catch
+   * spreads and spreading — so the match is a prefix test at a word boundary
+   * rather than a whole-word one. What it is not is a bare substring test:
+   * that is what this used to be, and it read `dca` out of "broadcaster",
+   * "podcast" and "broadcast", and `apr` out of "AuraPro816".
+   */
   phrase: string;
   weight: number;
+  /**
+   * Require the phrase to end at a word boundary too, give or take a plural.
+   *
+   * Set on the acronyms, which are short enough to be the opening of ordinary
+   * words that mean nothing like them: `apr` begins "April", `dca` ends
+   * "broadcast", and a three-letter prefix rule is too loose to tell an annual
+   * rate from a month. A trailing "s" is still allowed, because "the best
+   * APYs" is the plural of the signal and not a different word — dropping it
+   * cost a real classification the first time this rule was written.
+   */
+  whole?: boolean;
 }
 
 const SIGNALS: Record<Category, Signal[]> = {
@@ -39,7 +59,7 @@ const SIGNALS: Record<Category, Signal[]> = {
     { phrase: "grid bot", weight: 6 },
     { phrase: "grid order", weight: 5 },
     { phrase: "grid strateg", weight: 5 },
-    { phrase: "dca", weight: 2 },
+    { phrase: "dca", weight: 2, whole: true },
     { phrase: "limit order", weight: 2 },
     { phrase: "range trad", weight: 3 },
     { phrase: "market making", weight: 3 },
@@ -49,8 +69,8 @@ const SIGNALS: Record<Category, Signal[]> = {
   "yield-optimisation": [
     { phrase: "yield optim", weight: 6 },
     { phrase: "yield farm", weight: 5 },
-    { phrase: "apr", weight: 3 },
-    { phrase: "apy", weight: 3 },
+    { phrase: "apr", weight: 3, whole: true },
+    { phrase: "apy", weight: 3, whole: true },
     { phrase: "auto-compound", weight: 5 },
     { phrase: "autocompound", weight: 5 },
     { phrase: "compounding", weight: 3 },
@@ -64,7 +84,7 @@ const SIGNALS: Record<Category, Signal[]> = {
     { phrase: "health factor", weight: 7 },
     { phrase: "liquidation", weight: 5 },
     { phrase: "collateral ratio", weight: 5 },
-    { phrase: "ltv", weight: 3 },
+    { phrase: "ltv", weight: 3, whole: true },
     { phrase: "loan-to-value", weight: 4 },
     { phrase: "lending position", weight: 4 },
     { phrase: "borrow position", weight: 4 },
@@ -81,6 +101,20 @@ export interface Classification {
   /** The phrases that drove the decision, for display. Never a black box. */
   matched: string[];
   scores: Record<Category, number>;
+}
+
+/**
+ * Does this signal fire against the agent's own text?
+ *
+ * A word character before the phrase means the phrase is buried inside a
+ * longer word rather than starting one, and that is not a match — "podcast"
+ * is not a DCA bot. `whole` additionally requires the phrase to end where a
+ * word ends, which is what separates the rate from the month.
+ */
+function matches(haystack: string, signal: Signal): boolean {
+  const phrase = signal.phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const tail = signal.whole ? "s?(?![a-z0-9])" : "";
+  return new RegExp(`(?<![a-z0-9])${phrase}${tail}`).test(haystack);
 }
 
 export function classify(input: {
@@ -105,7 +139,7 @@ export function classify(input: {
     let score = 0;
     const hits: string[] = [];
     for (const signal of SIGNALS[category]) {
-      if (haystack.includes(signal.phrase)) {
+      if (matches(haystack, signal)) {
         score += signal.weight;
         hits.push(signal.phrase);
       }
