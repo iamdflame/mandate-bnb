@@ -5,7 +5,8 @@ import Register, { type RegisterRow } from "@/components/ui/Register";
 import Replay from "@/components/ui/Replay";
 import { readAgentIndex } from "@/lib/data/agents";
 import { getField } from "@/lib/data/field";
-import { placeAgent, readMarketSets } from "@/lib/rung";
+import { houseByWallet } from "@/lib/house";
+import { placeAgent, readMarketSets, type WalletStanding } from "@/lib/rung";
 import { CATEGORIES, CHAIN_ID, EXPLORER, type Category } from "@/lib/config";
 import { MARKET_ADDRESS, marketClient } from "@/lib/chain/market";
 
@@ -73,31 +74,63 @@ export default async function AgentsPage({
   /*
     The agents that actually hold mandates.
 
-    None of them are ERC-8004 entries — that discontinuity is the finding the
-    ladder narrates, and hiding it by listing only the registry would leave the
-    register's mark column empty while the market's own top rung is occupied.
-    So both populations sit in one table, sorted together by fineness, and the
-    population facet separates them for anyone who wants them apart.
+    A wallet with a registration behind it is shown as that registration — the
+    token id is the row and it links to the certificate, because the whole
+    point of the join is that the identity and the capital at risk are one key.
+    A wallet with no registration is still listed, as an address, because
+    hiding it would leave the register's mark column empty while the market's
+    own top rung is occupied. The population facet separates the two.
   */
-  const marketRows: RegisterRow[] = [...sets.standing.entries()].map(([wallet, st]) => ({
-    tokenId: wallet,
-    source: "market" as const,
-    href: st.mandateIds.length ? `/mandate/${st.mandateIds[0]}` : `${EXPLORER}/address/${wallet}`,
-    name: `${wallet.slice(0, 10)}…${wallet.slice(-4)}`,
-    owner: wallet,
-    category: st.category,
-    fineness: st.fineness,
-    endpointVerified: false,
-    rung: st.epochsSettled > 0 ? 6 : 5,
-    rungReason:
-      st.epochsSettled > 0
-        ? "has settled epochs against committed measurements"
-        : "holds a mandate with its own capital at risk",
-    lastSeen: readAtIso,
-    bondWei: st.bondWei.toString(),
-    alphaBps: Number(st.alphaBps),
-    feedbacks: 0,
-  }));
+  const marketRows: RegisterRow[] = [...sets.standing.entries()].map(([wallet, st]) => {
+    const house = houseByWallet(wallet);
+    return house?.tokenId
+      ? {
+          tokenId: house.tokenId,
+          source: "market" as const,
+          href: `/agent/${house.tokenId}`,
+          name: house.name,
+          owner: wallet,
+          category: st.category,
+          fineness: st.fineness,
+          endpointVerified: false,
+          rung: st.epochsSettled > 0 ? 6 : 5,
+          rungReason:
+            st.epochsSettled > 0
+              ? "an ERC-8004 registration whose own wallet has settled epochs against committed measurements"
+              : "an ERC-8004 registration whose own wallet holds a mandate with its capital at risk",
+          lastSeen: readAtIso,
+          bondWei: st.bondWei.toString(),
+          alphaBps: Number(st.alphaBps),
+          feedbacks: 0,
+          operator: "MANDATE house",
+        }
+      : marketRowForWallet(wallet, st);
+  });
+
+  /** A holder with no registration behind it, shown as the address it is. */
+  function marketRowForWallet(wallet: string, st: WalletStanding): RegisterRow {
+    return {
+      tokenId: wallet,
+      source: "market" as const,
+      href: st.mandateIds.length
+        ? `/mandate/${st.mandateIds[0]}`
+        : `${EXPLORER}/address/${wallet}`,
+      name: `${wallet.slice(0, 10)}…${wallet.slice(-4)}`,
+      owner: wallet,
+      category: st.category,
+      fineness: st.fineness,
+      endpointVerified: false,
+      rung: st.epochsSettled > 0 ? 6 : 5,
+      rungReason:
+        st.epochsSettled > 0
+          ? "has settled epochs against committed measurements, but no ERC-8004 registration stands behind it"
+          : "holds a mandate with its own capital at risk, but no ERC-8004 registration stands behind it",
+      lastSeen: readAtIso,
+      bondWei: st.bondWei.toString(),
+      alphaBps: Number(st.alphaBps),
+      feedbacks: 0,
+    };
+  }
 
   /*
     The field: mainnet identities other people operate, read from the registry.

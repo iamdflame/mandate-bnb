@@ -34,6 +34,8 @@ import {
 } from "@/lib/chain/market";
 import { parseAbiItem, type Address } from "viem";
 import { memo, withTimeout } from "@/lib/cache";
+import { getField } from "@/lib/data/field";
+import { HOUSE } from "@/lib/house";
 
 /** The lowest hallmarkable grade, and this market's bar. */
 export const HALLMARK_BAR = 375;
@@ -160,6 +162,8 @@ async function readLadderUncached(): Promise<LadderReading> {
   let bonded: number | null = null;
   let settled: number | null = null;
   let blockNumber: string | null = null;
+  let bondedFromRegistry = 0;
+  let settledFromRegistry = 0;
   try {
     const mandates = await readAllMandates();
     blockNumber = (await marketClient.getBlockNumber()).toString();
@@ -167,11 +171,33 @@ async function readLadderUncached(): Promise<LadderReading> {
       mandates.filter((m) => !/^0x0+$/.test(m.agent)).map((m) => m.agent.toLowerCase()),
     );
     bonded = holders.size;
-    settled = new Set(
+    const settledHolders = new Set(
       mandates
         .filter((m) => m.epochsSettled > 0 && !/^0x0+$/.test(m.agent))
         .map((m) => m.agent.toLowerCase()),
-    ).size;
+    );
+    settled = settledHolders.size;
+
+    /*
+      How many of the market's holders are registry entries.
+
+      This was the constant `0` with a sentence beside it saying the two
+      populations "do not yet overlap at all". That was true when it was
+      written and it is the kind of sentence that goes on being served after it
+      stops being true, so it is counted rather than asserted: a holder counts
+      if some ERC-8004 registration we can see is owned by that wallet.
+
+      The check runs over every population the register knows — the crawl, the
+      field read from the chain, and this office's own registered agents — so a
+      third party bonding here moves the number without anyone editing copy.
+    */
+    const registryOwners = new Set<string>();
+    for (const a of index.agents) if (a.owner) registryOwners.add(a.owner.toLowerCase());
+    for (const a of getField().agents) registryOwners.add(a.owner.toLowerCase());
+    for (const h of HOUSE) if (h.tokenId) registryOwners.add(h.wallet.toLowerCase());
+
+    for (const w of holders) if (registryOwners.has(w)) bondedFromRegistry++;
+    for (const w of settledHolders) if (registryOwners.has(w)) settledFromRegistry++;
   } catch {
     bonded = null;
     settled = null;
@@ -258,9 +284,15 @@ async function readLadderUncached(): Promise<LadderReading> {
       name: "Bonded",
       test: "It has its own capital at risk against a live mandate.",
       population: bonded,
-      fromRegistry: 0,
+      fromRegistry: bondedFromRegistry,
       discontinuity:
-        "None of these came up the ladder. The agents holding mandates are operated by us and are not ERC-8004 entries, so the registry's population and the market's do not yet overlap at all.",
+        bonded === null
+          ? undefined
+          : bondedFromRegistry === 0
+            ? "None of these came up the ladder. The wallets holding mandates are not ERC-8004 entries, so the registry's population and the market's do not overlap at all."
+            : bondedFromRegistry === bonded
+              ? `Every holder is an ERC-8004 registration: the token id and the wallet at risk are the same key.`
+              : `${bondedFromRegistry} of ${bonded} holders are ERC-8004 registrations, so for those the token id and the wallet at risk are the same key. The rest are wallets with no registration behind them.`,
       source: "Distinct holders across every mandate the market has opened.",
       verify: "npm run market",
     },
@@ -269,9 +301,13 @@ async function readLadderUncached(): Promise<LadderReading> {
       name: "Settled",
       test: "It has epochs settled against measurements committed before the outcome was known.",
       population: settled,
-      fromRegistry: 0,
+      fromRegistry: settledFromRegistry,
       discontinuity:
-        `Zero registry agents have ever settled an epoch here. That gap, between ${registry.registered.toLocaleString()} registrations and nobody with a measured track record, is the whole reason this market exists.`,
+        settled === null
+          ? undefined
+          : settledFromRegistry === 0
+            ? `No registry agent has ever settled an epoch here. That gap, between ${registry.registered.toLocaleString()} registrations and nobody with a measured track record, is the whole reason this market exists.`
+            : `${settledFromRegistry} registry agent${settledFromRegistry === 1 ? " has" : "s have"} settled epochs here, against ${registry.registered.toLocaleString()} registrations. The gap is the reason this market exists; it is no longer total.`,
       source: "Distinct agents with at least one settled epoch.",
       verify: "npx mandate-verify --mandate 0 --chain 56 --deployment v1",
     },
