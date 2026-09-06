@@ -95,17 +95,32 @@ export default async function ListYourAgentPage() {
           follows is what is missing, and what would fix it.
         </p>
 
-        <ol className="claims">
+        {/*
+          The ladder as a ladder, across the page.
+
+          Each rung was a single narrow column capped at a 46-character
+          measure, stacked down the left of a 1,440px page — two thirds of
+          every row was empty, and the thing a seller actually wants to compare
+          across rungs, the price, was the last line of a paragraph. The rung,
+          what it means, what earns it and what it costs are four columns of
+          one row.
+        */}
+        <ol className="ladderdoc">
+          <li className="ladderdoc__head" aria-hidden>
+            <span className="mark-label">rung</span>
+            <span className="mark-label">what it means</span>
+            <span className="mark-label">what earns it</span>
+            <span className="mark-label">what it costs</span>
+          </li>
           {STEPS.map((s) => (
-            <li key={s.rung} className="claim">
-              <span className="claim-n">{s.rung}</span>
-              <div className="claim-body">
-                <p className="claim-text">
-                  <strong>{s.name}</strong> — {s.what}
-                </p>
-                <p className="claim-note">{s.how}</p>
-                <p className="claim-note claim-cost">{s.cost}</p>
-              </div>
+            <li key={s.rung} className="ladderdoc__row">
+              <span className="ladderdoc__n num">{s.rung}</span>
+              <span className="ladderdoc__what">
+                <strong className="ladderdoc__name">{s.name}</strong>
+                <span className="ladderdoc__test">{s.what}</span>
+              </span>
+              <span className="ladderdoc__how">{s.how}</span>
+              <span className="ladderdoc__cost">{s.cost}</span>
             </li>
           ))}
         </ol>

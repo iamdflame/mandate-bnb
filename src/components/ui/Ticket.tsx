@@ -78,7 +78,8 @@ export default function Ticket({
   blockNumber?: string | null;
   readAt?: string | null;
 }) {
-  const { address, ready } = useWallet();
+  const { address, available, ready, chainId, connect, switchChain } = useWallet();
+  const [connecting, setConnecting] = useState(false);
   const [category, setCategory] = useState<Category>(initialCategory ?? "grid-trading");
   const [capital, setCapital] = useState("0.05");
   const [tx, setTx] = useState<TxState>({ phase: "idle" });
@@ -98,9 +99,8 @@ export default function Ticket({
       return "Capital must be a positive number of BNB.";
     if (capitalNum < 0.00001)
       return "Below 0.00001 BNB the bond tier rounds to nothing and the agent would risk zero.";
-    if (!ready) return "No wallet is connected, so nothing can be signed.";
     return null;
-  }, [capitalNum, ready]);
+  }, [capitalNum]);
 
   const busy = tx.phase === "signing" || tx.phase === "pending";
   const bondFloor = capitalNum > 0 ? capitalNum * 0.25 : 0;
@@ -282,6 +282,14 @@ export default function Ticket({
         </Rule>
       </div>
 
+      {/*
+        The wallet is asked for here and nowhere else.
+
+        Everything above this line is readable, checkable and shareable with no
+        wallet at all, which is the whole shape of the product: the office is
+        open to anyone, and the key is only needed by the person about to put
+        capital behind a decision they have already been shown in full.
+      */}
       <div className="ticket__sign">
         {refusal ? (
           <p className="ticket__refusal">{refusal}</p>
@@ -291,14 +299,45 @@ export default function Ticket({
             leaves your wallet beyond that amount and the gas.
           </p>
         )}
-        <button
-          type="button"
-          className="btn btn--primary"
-          onClick={submit}
-          disabled={Boolean(refusal) || busy}
-        >
-          {busy ? "…" : "Sign and open the mandate"}
-        </button>
+
+        {!available ? (
+          <p className="ticket__refusal">
+            No wallet extension is available in this browser, so this ticket cannot be
+            signed here. Everything above is still readable, and the same transaction
+            can be sent from a terminal.
+          </p>
+        ) : !address ? (
+          <button
+            type="button"
+            className="btn btn--primary"
+            disabled={connecting}
+            onClick={async () => {
+              setConnecting(true);
+              try {
+                await connect();
+              } catch {
+                /* The wallet has already said why. */
+              } finally {
+                setConnecting(false);
+              }
+            }}
+          >
+            {connecting ? "…" : "Connect a wallet to sign"}
+          </button>
+        ) : !ready ? (
+          <button type="button" className="btn btn--primary" onClick={() => void switchChain()}>
+            Switch to BNB Smart Chain (on {chainId})
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={submit}
+            disabled={Boolean(refusal) || busy}
+          >
+            {busy ? "…" : "Sign and open the mandate"}
+          </button>
+        )}
         <Phase tx={tx} />
       </div>
     </section>

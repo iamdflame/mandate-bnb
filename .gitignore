@@ -34,3 +34,7 @@ packages/mandate-verify/dist/
 
 # Narrow-viewport captures from `npm run shots:mobile`. Checked by eye, not committed.
 .shots-390/
+
+# The prompt this rebuild was worked from, kept out of the repo.
+new_prompt.md
+_shot.mjs

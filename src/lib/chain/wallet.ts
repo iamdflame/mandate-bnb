@@ -51,6 +51,33 @@ export interface WalletState {
 
 const toHexChain = (id: number) => `0x${id.toString(16)}`;
 
+/**
+ * Whether this browser has ever connected a wallet to this origin.
+ *
+ * Kept in `localStorage` rather than inferred, because the question is not
+ * "does a wallet exist" — it is "has this person already agreed to talk to
+ * us", and only they can have answered that.
+ */
+const CONNECTED_KEY = "mandate:wallet-connected";
+
+function hasConnectedBefore(): boolean {
+  try {
+    return window.localStorage.getItem(CONNECTED_KEY) === "1";
+  } catch {
+    // Private windows and blocked site data both throw. Neither is a reason
+    // to open a wallet dialogue nobody asked for.
+    return false;
+  }
+}
+
+function rememberConnected(): void {
+  try {
+    window.localStorage.setItem(CONNECTED_KEY, "1");
+  } catch {
+    /* The convenience is optional; the connection is not stored anywhere else. */
+  }
+}
+
 export function useWallet() {
   const [state, setState] = useState<WalletState>({
     address: null,
@@ -83,7 +110,25 @@ export function useWallet() {
     });
   }, []);
 
-  // Reflect an already-authorised wallet without prompting on page load.
+  /*
+    Nothing is asked of the wallet until somebody asks for the wallet.
+
+    This used to call `eth_accounts` on mount, on the reasoning that reading
+    the authorised accounts is not a request for permission. That reasoning is
+    correct about the JSON-RPC method and wrong about what actually happens:
+    several multi-chain wallets — Phantom among them, injected as
+    `window.ethereum` — surface their own connect overlay on the first provider
+    call from an unknown origin, whatever the method is. So opening the front
+    page of an assay office threw a wallet popup at the reader, which for a
+    site asking to be trusted with capital is the single worst first impression
+    available.
+
+    The provider is only touched after a deliberate act. The presence check is
+    a property read, which reaches no extension. If this browser has connected
+    to this origin before, the silent `eth_accounts` reflection happens then
+    and only then — a returning user keeps the convenience and a first-time
+    visitor gets no dialogue at all.
+  */
   useEffect(() => {
     const provider = window.ethereum;
     if (!provider) {
@@ -92,13 +137,15 @@ export function useWallet() {
     }
     setState((s) => ({ ...s, available: true }));
 
-    provider
-      .request({ method: "eth_accounts" })
-      .then((accounts) => {
-        const list = accounts as Address[];
-        if (list?.length) void refresh(list[0]);
-      })
-      .catch(() => undefined);
+    if (hasConnectedBefore()) {
+      provider
+        .request({ method: "eth_accounts" })
+        .then((accounts) => {
+          const list = accounts as Address[];
+          if (list?.length) void refresh(list[0]);
+        })
+        .catch(() => undefined);
+    }
 
     const onAccounts = (accounts: unknown) => {
       const list = accounts as Address[];
@@ -129,6 +176,9 @@ export function useWallet() {
     const accounts = (await provider.request({
       method: "eth_requestAccounts",
     })) as Address[];
+    // Remembered so a later visit can reflect the connection silently. This is
+    // the only thing that licenses touching the provider on mount.
+    rememberConnected();
     await refresh(accounts[0] ?? null);
   }, [refresh]);
 

@@ -61,25 +61,34 @@ export default async function OfficesPage() {
     <div className="app">
       <SiteHeader current="/offices" live status={`${book.active} mandates active`} />
       <main>
+        {/*
+          One section, not two.
+
+          The heading and the table were separate `.section` blocks, so the
+          page put a hundred pixels of nothing between a sentence and the
+          figures it introduces, and another two hundred under the table. A
+          comparison sheet reads as one document or it does not read as a
+          comparison.
+        */}
         <section className="section shell">
-          <h1 className="section-title">Four offices</h1>
-          <p className="section-sub" style={{ maxWidth: "72ch" }}>
+          <div className="section__head">
+            <h1 className="section-title">Four offices</h1>
+            <Observation
+              size="small"
+              label="Read at"
+              block={book.blockNumber ?? undefined}
+              at={book.at}
+            />
+          </div>
+          <p className="section-sub offices-idx__lede">
             The same four the brief names, given the same page and the same figures. An
             agent&rsquo;s office is derived from its own description and, where the chain
             will show it, from the protocols its wallet has actually touched — a grid
             trading agent that has never touched a router is not a grid trading agent,
             whatever its card says.
           </p>
-          <Observation
-            size="small"
-            label="Read at"
-            block={book.blockNumber ?? undefined}
-            at={book.at}
-          />
-        </section>
 
-        <section className="section shell">
-          <div className="tablewrap">
+          <div className="tablewrap offices-idx">
             <table className="tbl">
               <caption className="sr-only">The four offices compared</caption>
               <thead>
@@ -96,17 +105,27 @@ export default async function OfficesPage() {
               <tbody>
                 {offices.map((o) => (
                   <tr key={o.c}>
-                    <th scope="row" className="offices-idx__name">
-                      <CategoryMark category={o.c} size={20} metal="var(--silver-925)" />
-                      <a href={`/office/${o.c}`}>{CATEGORY_LABEL[o.c]}</a>
-                      <span className="offices-idx__blurb">{CATEGORY_BLURB[o.c]}</span>
+                    {/*
+                      The cell stays a cell. Laying the grid on the `th` itself
+                      replaces `display: table-cell`, which drops the cell out
+                      of the row-height calculation — the description then hung
+                      below its own row and printed over the next one.
+                    */}
+                    <th scope="row" className="offices-idx__cell">
+                      <span className="offices-idx__name">
+                        <CategoryMark category={o.c} size={20} metal="var(--silver-925)" />
+                        <span className="offices-idx__id">
+                          <a href={`/office/${o.c}`}>{CATEGORY_LABEL[o.c]}</a>
+                          <span className="offices-idx__blurb">{CATEGORY_BLURB[o.c]}</span>
+                        </span>
+                      </span>
                     </th>
                     <td className="num">{o.bonded}</td>
                     <td className="num">{o.live}</td>
                     <td className="num">{(Number(o.capitalWei) / 1e18).toFixed(7)}</td>
                     <td className="num">{o.settled}</td>
                     <td className="num">{o.classified.toLocaleString()}</td>
-                    <td>
+                    <td className="offices-idx__go">
                       <a href={`/office/${o.c}`}>open →</a>
                     </td>
                   </tr>
@@ -114,6 +133,12 @@ export default async function OfficesPage() {
               </tbody>
             </table>
           </div>
+
+          <p className="section-sub offices-idx__foot">
+            Bonded counts holders with capital of their own at risk. Classified counts
+            registrations this office has read and placed in the category, which is a
+            statement about coverage rather than about the office.
+          </p>
         </section>
       </main>
       <SiteFooter market={MARKET_ADDRESS} note="Every column is a contract read at the block above." />

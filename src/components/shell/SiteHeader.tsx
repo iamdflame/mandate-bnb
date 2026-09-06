@@ -1,7 +1,4 @@
-"use client";
-
 import OfficeMark from "@/components/mark/OfficeMark";
-import { WalletChip } from "@/components/floor/Actions";
 
 const NAV = [
   { href: "/start", label: "Start" },
@@ -60,6 +57,17 @@ export default function SiteHeader({
           ))}
         </nav>
 
+        {/*
+          No wallet in the header.
+
+          A "no wallet detected" chip sat here on every page, which meant the
+          bar across an assay office was advertising a wallet state to readers
+          who had not asked for one — and, because the chip mounted the wallet
+          hook, the front page opened a connect dialogue in any browser whose
+          extension answers a bare provider call. Browsing needs no wallet at
+          any point; it is asked for once, at the ticket, by somebody who has
+          decided to sign something.
+        */}
         <div className="app-header__right">
           {status ? (
             <>
@@ -67,7 +75,6 @@ export default function SiteHeader({
               <span className="mark-label">{status}</span>
             </>
           ) : null}
-          <WalletChip />
         </div>
       </div>
     </header>

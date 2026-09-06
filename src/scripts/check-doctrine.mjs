@@ -288,6 +288,109 @@ note(
   [...undefinedClasses].map(([n, f]) => `.${n}  (${f})`).join("\n      "),
 );
 
+/* ------------------------------------------------------------ table layout */
+
+/*
+  A table cell keeps `display: table-cell`.
+
+  Setting `flex` or `grid` on a `<th>` or `<td>` replaces that, and the cell
+  stops contributing its height to its row: a two-line cell then renders its
+  second line over the row beneath it. /offices shipped four office names
+  printed across four rows of figures for exactly this reason, and it is
+  invisible in review because the rule and the markup are in different files.
+
+  Any class used on a `th` or `td` in a .tsx must not set a display that takes
+  the element out of table layout. Put the layout on a span inside the cell.
+*/
+{
+  const cellClasses = new Set();
+  const walkCells = (dir) => {
+    for (const e of readdirSync(dir)) {
+      const p = join(dir, e);
+      if (statSync(p).isDirectory()) {
+        walkCells(p);
+        continue;
+      }
+      if (!/\.tsx$/.test(p)) continue;
+      const src = readFileSync(p, "utf8");
+      for (const m of src.matchAll(/<(?:th|td)\b[^>]*className=\{?"([^"]+)"/g)) {
+        for (const name of m[1].split(/\s+/)) if (name && !name.includes("$")) cellClasses.add(name);
+      }
+    }
+  };
+  walkCells("src");
+
+  const offenders = [];
+  for (const name of cellClasses) {
+    // The rule body for this exact class, wherever it is declared.
+    const re = new RegExp(`(^|[,}])\\s*[^{}]*\\.${name}\\b[^{}]*\\{([^}]*)\\}`, "gm");
+    for (const m of css.matchAll(re)) {
+      if (/display:\s*(flex|grid|inline-flex|inline-grid|block)/.test(m[2])) {
+        offenders.push(`.${name} sets a non-table display on a th/td`);
+      }
+    }
+  }
+  note(
+    offenders.length === 0,
+    "layout: no table cell is taken out of table layout",
+    offenders.join("\n      "),
+  );
+}
+
+/* ------------------------------------------------------- cell specificity */
+
+/*
+  A cell rule has to out-rank the cell defaults.
+
+  `.tbl td` sets `white-space: nowrap`, and it carries an element as well as a
+  class — so a bare `.my-cell { white-space: normal }` loses to it and the
+  column renders as one clipped line. It happened on three pages at once, and
+  it is invisible in review because the losing rule is right there and looks
+  correct.
+
+  Any class used on a th/td that overrides a property `.tbl td` sets must name
+  the element too.
+*/
+{
+  const guarded = ["white-space", "height"];
+  const cellClasses = new Set();
+  const walkCells2 = (dir) => {
+    for (const e of readdirSync(dir)) {
+      const p = join(dir, e);
+      if (statSync(p).isDirectory()) {
+        walkCells2(p);
+        continue;
+      }
+      if (!/\.tsx$/.test(p)) continue;
+      const src = readFileSync(p, "utf8");
+      for (const m of src.matchAll(/<(?:th|td)\b[^>]*className=\{?"([^"]+)"/g)) {
+        for (const name of m[1].split(/\s+/)) if (name && !name.includes("$")) cellClasses.add(name);
+      }
+    }
+  };
+  walkCells2("src");
+
+  const weak = [];
+  for (const name of cellClasses) {
+    const re = new RegExp(`(^|[,}])\\s*([^{}]*\\.${name}\\b[^{}]*)\\{([^}]*)\\}`, "gm");
+    for (const m of css.matchAll(re)) {
+      const sel = m[2].trim();
+      const body = m[3];
+      if (/\b(td|th)\b/.test(sel)) continue;
+      for (const prop of guarded) {
+        if (new RegExp(`(^|;|\\s)${prop}\\s*:`).test(body)) {
+          weak.push(`.${name} overrides ${prop} without naming td/th, so .tbl td wins`);
+        }
+      }
+    }
+  }
+  note(
+    weak.length === 0,
+    "layout: a cell rule out-ranks the cell defaults",
+    [...new Set(weak)].join("\n      "),
+  );
+}
+
 /* --------------------------------------------------------------- fineness */
 
 /*

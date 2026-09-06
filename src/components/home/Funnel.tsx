@@ -49,10 +49,64 @@ export default function Funnel({
 }) {
   const max = Math.max(1, ...reading.rungs.map((r) => r.population ?? 0));
 
+  /*
+    The method sheet is a table, not the ladder drawn again.
+
+    It used to re-render every rung at the size of the ladder itself, with the
+    figure set in display mono and a full-width command box under each — seven
+    of those, which was more than half the length of the front page spent
+    repeating something the reader had already seen at the top. The same
+    information reads faster as four columns: which rung, what it counts, how
+    it was obtained, and the line that re-derives it.
+  */
+  if (detail) {
+    return (
+      <div className="tablewrap">
+        <table className="tbl method">
+          <caption className="sr-only">Every rung, its method and its command</caption>
+          <thead>
+            <tr>
+              <th scope="col">rung</th>
+              <th scope="col" className="num">count</th>
+              <th scope="col">how it was obtained</th>
+              <th scope="col">check it</th>
+            </tr>
+          </thead>
+          <tbody>
+            {reading.rungs.map((r) => (
+              <tr key={r.n}>
+                <th scope="row" className="method__rung">
+                  <span className="num method__n">{r.n}</span> {r.name}
+                </th>
+                <td className="num method__fig">
+                  {r.population === null ? (
+                    <span className="funnel__none">not measurable</span>
+                  ) : (
+                    <>
+                      {r.atLeast ? <span className="funnel__floor">≥</span> : null}
+                      {r.population.toLocaleString()}
+                    </>
+                  )}
+                </td>
+                <td className="method__how">
+                  {r.source}
+                  {r.discontinuity ? (
+                    <span className="method__break">{r.discontinuity}</span>
+                  ) : null}
+                </td>
+                <td className="method__cmd">{r.verify ? <Command>{r.verify}</Command> : "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
   return (
-    <ol className={detail ? "funnel funnel--detail" : "funnel"}>
+    <ol className="funnel">
       {reading.rungs.map((r) => (
-        <Rung key={r.n} rung={r} max={max} detail={detail} href={FILTER[r.n] ?? "/agents"} />
+        <Rung key={r.n} rung={r} max={max} href={FILTER[r.n] ?? "/agents"} />
       ))}
     </ol>
   );
@@ -61,12 +115,10 @@ export default function Funnel({
 function Rung({
   rung: r,
   max,
-  detail,
   href,
 }: {
   rung: LadderReading["rungs"][number];
   max: number;
-  detail: boolean;
   href: string;
 }) {
   const measured = r.population !== null;
@@ -114,14 +166,6 @@ function Rung({
 
         <span className="funnel__test">{r.test}</span>
       </a>
-
-      {detail ? (
-        <>
-          <p className="funnel__source">{r.source}</p>
-          {r.discontinuity ? <p className="funnel__break">{r.discontinuity}</p> : null}
-          {r.verify ? <Command>{r.verify}</Command> : null}
-        </>
-      ) : null}
     </li>
   );
 }
