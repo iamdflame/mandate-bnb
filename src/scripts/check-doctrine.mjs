@@ -391,6 +391,82 @@ note(
   );
 }
 
+/* --------------------------------------------------- narrow-viewport widths */
+
+/*
+  A rule inside a `max-width` query may not demand more width than the query.
+
+  `@media (max-width: 900px) { .msheet { min-width: 720px } }` was written to
+  keep a wide table readable inside its own scroller. The class collided with
+  `<main className="shell method">` on two other pages, and the effect was that
+  those documents were pinned to 720px on a 390px phone and scrolled sideways
+  — the layout rule this project states most plainly, broken by the rule meant
+  to protect it.
+
+  Anything set inside a narrow-viewport query that is wider than the breakpoint
+  is either a mistake or belongs on an inner scroller instead.
+*/
+{
+  /*
+    The floor of the range, not the ceiling of the query.
+
+    A `max-width: 900px` block applies at 390px too, so comparing against 900
+    passed the exact rule that broke the phone. The bar is the narrowest
+    viewport this design supports.
+
+    Tables are exempt: a wide table is meant to have a min-width and scroll
+    inside `.tablewrap`, which is the correct pattern rather than a violation
+    of it. Only classes actually used on a `<table>` get that exemption.
+  */
+  const NARROWEST = 375;
+  const tableClasses = new Set();
+  const walkTables = (dir) => {
+    for (const e of readdirSync(dir)) {
+      const p = join(dir, e);
+      if (statSync(p).isDirectory()) {
+        walkTables(p);
+        continue;
+      }
+      if (!/\.tsx$/.test(p)) continue;
+      for (const m of readFileSync(p, "utf8").matchAll(/<table\b[^>]*className=\{?"([^"]+)"/g)) {
+        for (const n of m[1].split(/\s+/)) if (n && !n.includes("$")) tableClasses.add(n);
+      }
+    }
+  };
+  walkTables("src");
+
+  const wide = [];
+  const mediaRe = /@media[^{]*\(\s*max-width:\s*(\d+)px\s*\)[^{]*\{/g;
+  for (const m of css.matchAll(mediaRe)) {
+    const breakpoint = Number(m[1]);
+    let depth = 1;
+    let i = m.index + m[0].length;
+    while (depth > 0 && i < css.length) {
+      if (css[i] === "{") depth++;
+      else if (css[i] === "}") depth--;
+      i++;
+    }
+    const body = css.slice(m.index + m[0].length, i);
+    for (const d of body.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+      const sel = d[1].trim().split("\n").pop().trim();
+      const onATable = [...tableClasses].some((c) => sel.includes(`.${c}`));
+      if (onATable) continue;
+      for (const w of d[2].matchAll(/\b(min-width|width)\s*:\s*(\d+)px/g)) {
+        if (Number(w[2]) > NARROWEST) {
+          wide.push(
+            `${sel} sets ${w[1]}:${w[2]}px inside @media (max-width: ${breakpoint}px), which also applies at ${NARROWEST}px`,
+          );
+        }
+      }
+    }
+  }
+  note(
+    wide.length === 0,
+    "layout: no narrow-viewport rule demands a wider viewport",
+    [...new Set(wide)].join("\n      "),
+  );
+}
+
 /* --------------------------------------------------------------- fineness */
 
 /*

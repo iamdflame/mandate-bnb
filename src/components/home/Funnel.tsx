@@ -62,7 +62,7 @@ export default function Funnel({
   if (detail) {
     return (
       <div className="tablewrap">
-        <table className="tbl method">
+        <table className="tbl msheet">
           <caption className="sr-only">Every rung, its method and its command</caption>
           <thead>
             <tr>
@@ -75,10 +75,10 @@ export default function Funnel({
           <tbody>
             {reading.rungs.map((r) => (
               <tr key={r.n}>
-                <th scope="row" className="method__rung">
-                  <span className="num method__n">{r.n}</span> {r.name}
+                <th scope="row" className="msheet__rung">
+                  <span className="num msheet__n">{r.n}</span> {r.name}
                 </th>
-                <td className="num method__fig">
+                <td className="num msheet__fig">
                   {r.population === null ? (
                     <span className="funnel__none">not measurable</span>
                   ) : (
@@ -88,13 +88,13 @@ export default function Funnel({
                     </>
                   )}
                 </td>
-                <td className="method__how">
+                <td className="msheet__how">
                   {r.source}
                   {r.discontinuity ? (
-                    <span className="method__break">{r.discontinuity}</span>
+                    <span className="msheet__break">{r.discontinuity}</span>
                   ) : null}
                 </td>
-                <td className="method__cmd">{r.verify ? <Command>{r.verify}</Command> : "—"}</td>
+                <td className="msheet__cmd">{r.verify ? <Command>{r.verify}</Command> : "—"}</td>
               </tr>
             ))}
           </tbody>
