@@ -3887,29 +3887,6 @@ p code {
 .office-head__blurb,
 .office-head__method { grid-column: 1; }
 
-@media (max-width: 1040px) {
-  .office-head { grid-template-columns: minmax(0, 1fr); }
-  .office-head__figs {
-    grid-column: 1;
-    grid-row: auto;
-    padding-left: 0;
-    border-left: 0;
-    border-top: var(--hair) solid var(--score);
-    padding-top: 20px;
-  }
-}
-
-/*
-  On a phone the five figures go to one column.
-
-  Two columns of an `<Observation>` — a value, the block it was read at and its
-  age — do not fit in 390px, and the stamp was the eight pixels that pushed the
-  whole document sideways.
-*/
-@media (max-width: 560px) {
-  .office-head__figs { grid-template-columns: minmax(0, 1fr); }
-}
-
 .office-head__mark { line-height: 0; }
 
 .office-head__title { margin: 0; }
@@ -3934,6 +3911,37 @@ p code {
   gap: 20px 24px;
   padding-left: 24px;
   border-left: var(--hair) solid var(--score);
+}
+
+/*
+  These sit after the rule they override, not before it.
+
+  They were written next to `.office-head`, which is declared earlier in this
+  file than `.office-head__figs` — and at equal specificity the later rule
+  wins, so the base two-column grid overrode both media queries and the phone
+  layout silently never applied. The fix was ordering, not the queries.
+*/
+@media (max-width: 1040px) {
+  .office-head { grid-template-columns: minmax(0, 1fr); }
+  .office-head__figs {
+    grid-column: 1;
+    grid-row: auto;
+    padding-left: 0;
+    border-left: 0;
+    border-top: var(--hair) solid var(--score);
+    padding-top: 20px;
+  }
+}
+
+/*
+  On a phone the five figures go to one column.
+
+  Two columns of an `<Observation>` — a value, the block it was read at and its
+  age — do not fit in 390px, and the stamp was the eight pixels that pushed the
+  whole document sideways.
+*/
+@media (max-width: 560px) {
+  .office-head__figs { grid-template-columns: minmax(0, 1fr); }
 }
 
 .office-live { display: flex; flex-direction: column; border-top: var(--hair) solid var(--score); }

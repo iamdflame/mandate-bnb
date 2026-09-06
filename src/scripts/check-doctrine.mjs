@@ -538,6 +538,93 @@ note(
   );
 }
 
+/* ----------------------------------------------- media queries that override */
+
+/*
+  A media query has to come after the rule it overrides.
+
+  CSS resolves equal specificity by document order, and a `@media` block does
+  not raise specificity — so `@media (max-width: 560px) { .x { … } }` written
+  above an unconditional `.x { … }` loses to it, silently, at every width. The
+  office page's phone layout was written, deployed, and never once applied for
+  exactly this reason: the queries were placed beside a related class that
+  happened to be declared earlier in the file.
+
+  It is invisible in review because both rules read correctly and the media
+  query looks like it is doing something. Checked for every class whose
+  properties are set in both places.
+*/
+{
+  const conditional = new Map();
+  const mediaRe = /@media[^{]*\{/g;
+  for (const m of css.matchAll(mediaRe)) {
+    let depth = 1;
+    let i = m.index + m[0].length;
+    while (depth > 0 && i < css.length) {
+      if (css[i] === "{") depth++;
+      else if (css[i] === "}") depth--;
+      i++;
+    }
+    const body = css.slice(m.index + m[0].length, i);
+    for (const d of body.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+      const sel = d[1].trim().split("\n").pop().trim();
+      for (const cm of sel.matchAll(/\.([a-z0-9_-]+)/gi)) {
+        const props = [...d[2].matchAll(/(^|;|\s)([a-z-]+)\s*:/g)].map((x) => x[2]);
+        const key = cm[1];
+        const at = m.index;
+        const prev = conditional.get(key);
+        if (!prev || at < prev.at) conditional.set(key, { at, props: new Set(props) });
+        else for (const p of props) prev.props.add(p);
+      }
+    }
+  }
+
+  /*
+    Only rules outside every `@media` count as unconditional. Blanking the
+    media bodies rather than removing them keeps every byte offset intact, so
+    a position found here is still comparable with the query positions above.
+  */
+  let outside = css;
+  for (const m of css.matchAll(/@media[^{]*\{/g)) {
+    let depth = 1;
+    let i = m.index + m[0].length;
+    while (depth > 0 && i < css.length) {
+      if (css[i] === "{") depth++;
+      else if (css[i] === "}") depth--;
+      i++;
+    }
+    outside =
+      outside.slice(0, m.index) +
+      " ".repeat(i - m.index) +
+      outside.slice(i);
+  }
+
+  const late = [];
+  for (const [name, { at, props }] of conditional) {
+    // The last unconditional declaration of this exact class.
+    const re = new RegExp(`(^|\\})\\s*\\.${name}\\s*\\{([^}]*)\\}`, "gm");
+    for (const m of outside.matchAll(re)) {
+      /*
+        The match may begin at a line start well before the selector, because
+        `\s*` runs back across the blanked media block. Compare the position of
+        the selector itself, or every rule looks like it comes first.
+      */
+      const selAt = m.index + m[0].indexOf(`.${name}`);
+      if (selAt < at) continue;
+      const declared = [...m[2].matchAll(/(^|;|\s)([a-z-]+)\s*:/g)].map((x) => x[2]);
+      const clash = declared.filter((p) => props.has(p));
+      if (clash.length) {
+        late.push(`.${name} is set unconditionally after its @media block — ${[...new Set(clash)].join(", ")} will never respond`);
+      }
+    }
+  }
+  note(
+    late.length === 0,
+    "layout: a media query comes after the rule it overrides",
+    [...new Set(late)].join("\n      "),
+  );
+}
+
 /* --------------------------------------------------------------- fineness */
 
 /*
