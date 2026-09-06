@@ -79,6 +79,10 @@ export interface LadderReading {
   /** Where the registry rungs came from. Stated, so nobody has to guess. */
   source: "postgres" | "snapshot";
   capturedAt: string;
+  /** Whether rungs 0 and 2 were counted live or carried from the snapshot. */
+  registrySource: "live" | "snapshot";
+  /** When rungs 0 and 2 were counted. A different clock from `capturedAt`. */
+  registryAt: string;
 }
 
 const ASSAYED = parseAbiItem("event Assayed(address indexed agent, uint16 fineness, uint64 at)");
@@ -133,6 +137,19 @@ async function readAssayed(): Promise<{ count: number; agents: Address[] } | nul
  */
 export async function readLadder(): Promise<LadderReading> {
   return memo("ladder", { freshMs: 45_000, staleMs: 10 * 60_000 }, readLadderUncached);
+}
+
+/** How long ago a reading was taken, in words, for the method line. */
+function ago(iso: string | undefined): string {
+  if (!iso) return "at an unrecorded time";
+  const ms = Date.now() - Date.parse(iso);
+  if (!Number.isFinite(ms) || ms < 0) return "just now";
+  const m = Math.round(ms / 60_000);
+  if (m < 1) return "less than a minute ago";
+  if (m < 60) return `${m} minute${m === 1 ? "" : "s"} ago`;
+  const h = Math.round(m / 60);
+  if (h < 48) return `${h} hour${h === 1 ? "" : "s"} ago`;
+  return `${Math.round(h / 24)} days ago`;
 }
 
 async function readLadderUncached(): Promise<LadderReading> {
@@ -191,8 +208,11 @@ async function readLadderUncached(): Promise<LadderReading> {
       name: "Registered",
       test: "Exists in the ERC-8004 Identity Registry on BSC.",
       population: registry.registered,
-      source: "8004scan, chain_id=56. Costs one transaction and proves nothing.",
-      verify: "curl 'https://api.8004scan.io/agents?chain_id=56&limit=1'",
+      source:
+        index.registrySource === "live"
+          ? `Counted by 8004scan on chain 56, read ${ago(index.registryAt)}. Costs one transaction and proves nothing.`
+          : "Carried from the last snapshot: 8004scan would not answer for this reading, so this count is as old as the file rather than as old as the page.",
+      verify: "curl 'https://api.8004scan.io/api/v1/agents?chain_id=56&limit=1'",
     },
     {
       n: 1,
@@ -208,7 +228,10 @@ async function readLadderUncached(): Promise<LadderReading> {
       name: "Live",
       test: "Its endpoint answered a call we made.",
       population: registry.withEndpoint,
-      source: "Endpoint verified against the registry's own record, then called.",
+      source:
+        index.registrySource === "live"
+          ? `Endpoint verified against the registry's own record, then called. Counted ${ago(index.registryAt)}.`
+          : "Endpoint verified against the registry's own record, then called. Carried from the last snapshot: 8004scan would not answer for this reading.",
       verify: "npm run assay -- <tokenId>",
     },
     {
@@ -261,5 +284,7 @@ async function readLadderUncached(): Promise<LadderReading> {
     at: new Date().toISOString(),
     blockNumber,
     capturedAt: index.capturedAt,
+    registrySource: index.registrySource ?? "snapshot",
+    registryAt: index.registryAt ?? index.capturedAt,
   };
 }

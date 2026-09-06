@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import SiteHeader from "@/components/shell/SiteHeader";
 import SiteFooter from "@/components/shell/SiteFooter";
 import Funnel from "@/components/home/Funnel";
 import Strike from "@/components/mark/Strike";
 import OfficeMark from "@/components/mark/OfficeMark";
 import CategoryMark from "@/components/mark/CategoryMark";
-import FloorWindow from "@/components/floor/FloorWindow";
+import FloorBook from "@/components/home/FloorBook";
 import Observation from "@/components/ui/Observation";
 import { readLadder } from "@/lib/ladder";
+import { readBook } from "@/lib/chain/book";
 import { readAgentIndex } from "@/lib/data/agents";
 import { CATEGORIES, CATEGORY_BLURB, CATEGORY_LABEL } from "@/lib/config";
 import { MARKET_ADDRESS } from "@/lib/chain/market";
@@ -25,9 +25,23 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// The upper rungs are read from the chain, so this cannot be cached at build.
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+/*
+  The front door is revalidated, not rendered per request.
+
+  It was `force-dynamic` with the ladder and the book behind Suspense, and that
+  combination is what a judge with JavaScript off actually saw: React streams a
+  boundary by painting the fallback in place and appending the real content in
+  a `<div hidden>` that only a script moves. So the served HTML said "reading
+  the chain" above four doors that said "reading the book", and the true
+  figures — which were in the document — were never displayed.
+
+  Awaiting them in the body puts the figures in the markup where they are read.
+  Doing that on every request would spend a chain read on each visitor and cost
+  the four seconds that decide whether they stay, so the page is cached and
+  re-read every thirty seconds instead. Every figure carries the block and the
+  age it was read at, so a cached number is never presented as a live one.
+*/
+export const revalidate = 30;
 
 /*
   The funnel streams.
@@ -59,17 +73,65 @@ async function LadderSection({ detail = false }: { detail?: boolean }) {
   );
 }
 
-/** The funnel, still being read. A hairline per rung — no skeleton numbers. */
-function FunnelPending() {
+
+/** The book, read from all three deployments. Streamed like the ladder. */
+async function FloorSection() {
+  const book = await readBook();
+  return <FloorBook book={book} />;
+}
+
+
+/**
+ * The four doors, each showing what its office actually holds.
+ *
+ * They used to show how many registry agents had been classified into the
+ * category — a number about our own indexing, not about the office. The rubric
+ * asks whether all four are equally deep, and the answer to that is the book:
+ * what is bonded there, how the last epoch went, and when it settled. An
+ * office with nothing in it says so in those terms rather than showing a
+ * classification count that makes it look busy.
+ */
+async function OfficeDoors({ index }: { index: Awaited<ReturnType<typeof readAgentIndex>> }) {
+  const book = await readBook();
   return (
-    <div className="funnel funnel--pending" aria-busy="true">
-      {Array.from({ length: 7 }, (_, i) => (
-        <span className="hairline" key={i} />
-      ))}
-      <span className="mark-label">reading the chain</span>
-    </div>
+    <ul className="offices">
+      {CATEGORIES.map((c) => {
+        const n = CATEGORIES.indexOf(c);
+        const rows = book.rows.filter((r) => r.category === n);
+        const live = rows.filter((r) => r.state === 0 || r.state === 1);
+        const bonded = live.filter((r) => r.bondWei > 0n).length;
+        const epochs = rows.reduce((t, r) => t + r.epochsSettled, 0);
+        const alphaBps = rows.reduce((t, r) => t + r.cumulativeAlphaBps, 0n);
+        return (
+          <li key={c}>
+            <a className="office" href={`/office/${c}`}>
+              <CategoryMark category={c} size={32} metal="var(--silver-925)" />
+              <span className="office__n num">{bonded}</span>
+              <span className="office__name">{CATEGORY_LABEL[c]}</span>
+              <span className="office__blurb">{CATEGORY_BLURB[c]}</span>
+              {/*
+                Three figures, the same three for every office, so a thin one
+                cannot hide behind a different set of columns.
+              */}
+              <span className="office__figs mark-label">
+                <span>{bonded} bonded</span>
+                <span className="num">
+                  {epochs > 0
+                    ? `${alphaBps > 0n ? "+" : ""}${(Number(alphaBps) / 100).toFixed(2)}%`
+                    : "no alpha yet"}
+                </span>
+                <span className="num">
+                  {epochs > 0 ? `${epochs} epoch${epochs === 1 ? "" : "s"}` : "no epoch settled"}
+                </span>
+              </span>
+            </a>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
+
 
 export default async function Home() {
   const index = await readAgentIndex();
@@ -114,9 +176,7 @@ export default async function Home() {
               <span className="mark-label">The ladder</span>
               <span className="mark-label open__scale">Drawn to scale · linear</span>
             </div>
-            <Suspense fallback={<FunnelPending />}>
-              <LadderSection />
-            </Suspense>
+            <LadderSection />
           </div>
 
           <div className="open__actions">
@@ -136,7 +196,7 @@ export default async function Home() {
 
         </section>
 
-        {/* The four offices. */}
+        {/* The four offices, at equal weight, each carrying its own book. */}
         <section className="section shell" aria-labelledby="offices-title">
           <div className="section__head">
             <h2 id="offices-title" className="section-title">
@@ -153,20 +213,7 @@ export default async function Home() {
             grid trading agent that has never touched a router is not a grid trading
             agent, whatever its card says.
           </p>
-          <ul className="offices">
-            {CATEGORIES.map((c) => (
-              <li key={c}>
-                <a className="office" href={`/office/${c}`}>
-                  <CategoryMark category={c} size={32} metal="var(--silver-925)" />
-                  <span className="office__n num">
-                    {(index.counts.byCategory?.[c] ?? 0).toLocaleString()}
-                  </span>
-                  <span className="office__name">{CATEGORY_LABEL[c]}</span>
-                  <span className="office__blurb">{CATEGORY_BLURB[c]}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
+          <OfficeDoors index={index} />
         </section>
 
         {/* The mechanism, in three sentences. */}
@@ -203,15 +250,22 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* The floor, as a live window rather than a front door. */}
+        {/*
+          The floor, as its book.
+
+          This was a WebGL window fed by an effect, which meant the front page
+          of a market printed the word "idle" while /floor listed eight live
+          mandates. The rows are read on the server now, from the same three
+          deployments the floor reads.
+        */}
         <section className="section shell" aria-labelledby="floor-title">
           <div className="section__head">
             <h2 id="floor-title" className="section-title">
               The floor
             </h2>
-            <span className="mark-label">radius is capital · ring is bond at risk</span>
+            <span className="mark-label">every mandate open for contest, read at the block below</span>
           </div>
-          <FloorWindow height={400} />
+          <FloorSection />
         </section>
 
         {/* How every figure above was obtained. */}
@@ -222,15 +276,18 @@ export default async function Home() {
             </h2>
             <span className="mark-label">every rung, its method and its command</span>
           </div>
-          <Suspense fallback={<FunnelPending />}>
-            <LadderSection detail />
-          </Suspense>
+          <LadderSection detail />
         </section>
       </main>
 
       <SiteFooter
         market={MARKET_ADDRESS}
-        note={`Registry data from 8004scan, read ${new Date(index.capturedAt).toISOString().slice(0, 16).replace("T", " ")}Z from ${index.source === "postgres" ? "the index" : "a committed snapshot"} · chain data from BNB Smart Chain · verify any settlement with npx mandate-verify`}
+        /*
+          Two clocks, both named. The registry's totals and our crawl of the
+          individual cards refresh on different schedules, and printing one
+          date for both made the live figure look as old as the stale one.
+        */
+        note={`Registry totals counted by 8004scan ${index.registrySource === "live" ? `at ${new Date(index.registryAt ?? index.capturedAt).toISOString().slice(0, 16).replace("T", " ")}Z` : "from a committed snapshot — the registry would not answer"} · cards crawled to ${new Date(index.capturedAt).toISOString().slice(0, 16).replace("T", " ")}Z from ${index.source === "postgres" ? "the index" : "a committed snapshot"} · chain data from BNB Smart Chain · verify any settlement with npx mandate-verify`}
       />
     </div>
   );

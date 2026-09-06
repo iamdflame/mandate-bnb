@@ -9,8 +9,9 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { CATEGORIES, type Category } from "@/lib/config";
+import { CATEGORIES, CHAIN_ID, type Category } from "@/lib/config";
 import { db, hasDb, schema } from "@/lib/db/client";
+import { readRegistryTotals } from "@/lib/sources/totals";
 
 export interface IndexedAgent {
   tokenId: string;
@@ -42,6 +43,17 @@ export interface AgentIndex {
   capturedAt: string;
   apiCalls: number;
   registry: { registered: number; withEndpoint: number; withFeedback: number };
+  /**
+   * Where the two registry totals came from.
+   *
+   * They are the headline figures on the front door, and they were served out
+   * of a committed file that had been standing for a day and a half. Read live
+   * where the upstream answers, and named either way so a reader is never left
+   * guessing whether the number in front of them is current.
+   */
+  registrySource?: "live" | "snapshot";
+  /** When the registry totals were read. Distinct from when the rows were. */
+  registryAt?: string;
   counts: {
     indexed: number;
     classified: number;
@@ -92,11 +104,30 @@ export function getAgentIndex(): AgentIndex {
  */
 export async function readAgentIndex(): Promise<AgentIndex & { source: "postgres" | "snapshot" }> {
   const snapshot = getAgentIndex();
-  if (!hasDb || !db) return { ...snapshot, source: "snapshot" };
+
+  /*
+    The registered and answering counts are the registry's, not ours, so they
+    are read from the registry rather than carried with our rows. They refresh
+    on a different clock from the crawl and are stamped separately.
+  */
+  const totals = await readRegistryTotals(CHAIN_ID).catch(() => null);
+  const registry = totals
+    ? {
+        registered: totals.registered,
+        withEndpoint: totals.withEndpoint,
+        withFeedback: snapshot.registry.withFeedback,
+      }
+    : snapshot.registry;
+  const registrySource: "live" | "snapshot" = totals ? "live" : "snapshot";
+  const registryAt = totals?.at ?? snapshot.capturedAt;
+
+  if (!hasDb || !db)
+    return { ...snapshot, registry, registrySource, registryAt, source: "snapshot" };
 
   try {
     const rows = await db.select().from(schema.agents).limit(20_000);
-    if (rows.length === 0) return { ...snapshot, source: "snapshot" };
+    if (rows.length === 0)
+      return { ...snapshot, registry, registrySource, registryAt, source: "snapshot" };
 
     const agents: IndexedAgent[] = rows.map((r) => ({
       tokenId: String(r.tokenId),
@@ -123,8 +154,26 @@ export async function readAgentIndex(): Promise<AgentIndex & { source: "postgres
       CATEGORIES.map((c) => [c, agents.filter((a) => a.category === c).length]),
     ) as Record<Category, number>;
 
+    /*
+      When the rows were read, from the rows themselves.
+
+      This used to be spread in from the committed file along with everything
+      else that was not overridden, so a page reading Postgres stamped itself
+      with the snapshot's age. The two happened to agree — the database was
+      seeded once and nothing has re-crawled since — which is exactly why it
+      went unnoticed. The stamp now moves when the crawl does.
+    */
+    const freshest = agents.reduce<string | null>(
+      (t, a) => (a.lastSeen && (!t || a.lastSeen > t) ? a.lastSeen : t),
+      null,
+    );
+
     return {
       ...snapshot,
+      registry,
+      registrySource,
+      registryAt,
+      capturedAt: freshest ?? snapshot.capturedAt,
       agents,
       counts: {
         ...snapshot.counts,
@@ -136,7 +185,7 @@ export async function readAgentIndex(): Promise<AgentIndex & { source: "postgres
     };
   } catch {
     // A database that will not answer is not a reason to serve nothing.
-    return { ...snapshot, source: "snapshot" };
+    return { ...snapshot, registry, registrySource, registryAt, source: "snapshot" };
   }
 }
 

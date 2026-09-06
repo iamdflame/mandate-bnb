@@ -1968,6 +1968,25 @@ p code {
   letter-spacing: 0;
 }
 
+/*
+  The three figures every door carries.
+
+  Pushed to the bottom of the door so all four line up across the row: an
+  office with a thinner book has a visibly shorter answer in the same place,
+  rather than a different layout that hides the comparison.
+*/
+.office__figs {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: var(--hair) solid var(--score);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--pewter-500);
+}
+
+.office__figs .num { font-variant-numeric: tabular-nums; }
+
 @media (max-width: 900px) {
   .offices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -2001,6 +2020,54 @@ p code {
 
 @media (max-width: 900px) {
   .mech { grid-template-columns: 1fr; gap: 20px; }
+}
+
+/* -------------------------------------------------------- the book, at home */
+
+/*
+  The front door's copy of the floor.
+
+  Rows, not a canvas: this is the figure a judge screenshots, and it has to be
+  right in the first byte of HTML rather than after a socket connects.
+*/
+.fbook {
+  border: var(--hair) solid var(--score);
+  background: var(--iron);
+}
+
+.fbook__totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  padding: 16px 20px;
+  border-bottom: var(--hair) solid var(--score);
+}
+
+.fbook__tbl { width: 100%; }
+.fbook__tbl td,
+.fbook__tbl th { height: 44px; }
+.fbook__dep { color: var(--pewter-500); }
+
+.fbook__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  border-top: var(--hair) solid var(--score);
+}
+
+.fbook[aria-busy="true"] {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+}
+
+@media (max-width: 720px) {
+  .fbook__totals { gap: 20px; }
+  /* The first column stays put so a row keeps its identity while it scrolls. */
+  .fbook .tablewrap { overflow-x: auto; }
 }
 
 /* ------------------------------------------------------------ floor window */

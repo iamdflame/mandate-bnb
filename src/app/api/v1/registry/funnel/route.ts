@@ -29,6 +29,16 @@ export async function GET(request: Request) {
       minFineness: reading.minFineness,
       source: reading.source,
       capturedAt: reading.capturedAt,
+      /*
+        Two clocks, named separately.
+
+        The registry's own totals refresh every ten minutes against 8004scan;
+        our crawl of individual cards refreshes far more slowly. Reporting one
+        `capturedAt` for both made the fresher number look as old as the older
+        one, and a caller had no way to tell which figure was which age.
+      */
+      registrySource: reading.registrySource,
+      registryCapturedAt: reading.registryAt,
       rungs: reading.rungs.map((r) => ({
         rung: r.n,
         name: r.name,
