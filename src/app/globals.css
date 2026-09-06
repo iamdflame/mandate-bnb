@@ -2022,6 +2022,85 @@ p code {
   .mech { grid-template-columns: 1fr; gap: 20px; }
 }
 
+/* --------------------------------------------------------------- heartbeat */
+
+.beat { border: var(--hair) solid var(--score); background: var(--iron); }
+
+.beat__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: var(--hair) solid var(--score);
+}
+
+.beat__list { list-style: none; margin: 0; padding: 0; }
+
+.beat__row {
+  display: grid;
+  grid-template-columns: 12ch 22ch minmax(0, 1fr) minmax(0, 1.4fr);
+  align-items: center;
+  gap: 16px;
+  min-height: 44px;
+  padding: 8px 20px;
+  border-bottom: var(--hair) solid var(--score);
+}
+
+.beat__row:last-child { border-bottom: 0; }
+
+.beat__name { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); }
+
+/*
+  Down is unlit, not red. Red is reserved for a defaced mark, and a keeper that
+  has stopped is a fact rather than a verdict.
+*/
+.beat__row[data-state="running"] .beat__state { color: var(--verify); }
+.beat__row[data-state="down"] .beat__state { color: var(--silver-925); }
+.beat__row[data-state="never"] .beat__state { color: var(--base); }
+
+.beat__none { color: var(--base); }
+
+.beat__does {
+  font-size: var(--t-mark);
+  line-height: 1.5;
+  color: var(--ink-3);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+@media (max-width: 860px) {
+  .beat__row { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+}
+
+/* ----------------------------------------------------------------- compare */
+
+.cmp { border: var(--hair) solid var(--score); background: var(--iron); }
+.cmp--empty { padding: 24px 20px; display: flex; flex-direction: column; gap: 20px; }
+
+.cmp__tbl { width: 100%; }
+.cmp__tbl td, .cmp__tbl th { height: 44px; }
+
+/* The row label is the test, and it stays legible while the columns scroll. */
+.cmp__label { text-align: left; color: var(--pewter-500); font-weight: 400; }
+
+.cmp__head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  padding: 8px 0;
+}
+
+.cmp__name { font-size: var(--t-small); color: var(--ink); }
+
+.cmp__office { display: inline-flex; align-items: center; gap: 8px; }
+
+@media (max-width: 720px) {
+  .cmp { overflow-x: auto; }
+  .cmp__tbl { min-width: 620px; }
+}
+
 /* ------------------------------------------------------------------ ticket */
 
 /*

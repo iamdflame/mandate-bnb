@@ -86,14 +86,23 @@ export default function Register({
   /** Registered agents we have not read yet. Stated, never invented as rows. */
   unindexed?: number;
   registered?: number;
-  initial?: { rung?: number | "all"; category?: Category | "all"; q?: string };
+  initial?: {
+    rung?: number | "all";
+    category?: Category | "all";
+    q?: string;
+    endpoint?: "all" | "answering" | "silent";
+    marked?: "all" | "struck" | "unmarked";
+    source?: "all" | "registry" | "market";
+  };
 }) {
   const [q, setQ] = useState(initial?.q ?? "");
   const [rung, setRung] = useState<number | "all">(initial?.rung ?? "all");
   const [category, setCategory] = useState<Category | "all">(initial?.category ?? "all");
-  const [endpoint, setEndpoint] = useState<"all" | "answering" | "silent">("all");
-  const [marked, setMarked] = useState<"all" | "struck" | "unmarked">("all");
-  const [source, setSource] = useState<"all" | "registry" | "market">("all");
+  const [endpoint, setEndpoint] = useState<"all" | "answering" | "silent">(
+    initial?.endpoint ?? "all",
+  );
+  const [marked, setMarked] = useState<"all" | "struck" | "unmarked">(initial?.marked ?? "all");
+  const [source, setSource] = useState<"all" | "registry" | "market">(initial?.source ?? "all");
   const [sort, setSort] = useState<SortKey>("fineness");
   const [desc, setDesc] = useState(true);
 

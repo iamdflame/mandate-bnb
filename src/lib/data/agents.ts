@@ -52,7 +52,7 @@ export interface AgentIndex {
    * where the upstream answers, and named either way so a reader is never left
    * guessing whether the number in front of them is current.
    */
-  registrySource?: "live" | "snapshot";
+  registrySource?: "live" | "indexer" | "snapshot";
   /** When the registry totals were read. Distinct from when the rows were. */
   registryAt?: string;
   counts: {
@@ -148,7 +148,11 @@ async function readAgentIndexUncached(): Promise<AgentIndex & { source: "postgre
         withFeedback: snapshot.registry.withFeedback,
       }
     : snapshot.registry;
-  const registrySource: "live" | "snapshot" = totals ? "live" : "snapshot";
+  const registrySource: "live" | "indexer" | "snapshot" = totals
+    ? totals.tier === "upstream"
+      ? "live"
+      : "indexer"
+    : "snapshot";
   const registryAt = totals?.at ?? snapshot.capturedAt;
 
   if (!hasDb || !db)

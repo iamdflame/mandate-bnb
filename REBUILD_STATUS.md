@@ -11,6 +11,21 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 > particular, "floor is beautiful, not a marketplace", was closed while the
 > floor rendered "0 mandates active" to anyone without JavaScript.
 >
+> It happened again, and worse. On 6 September a read of production found the
+> home page serving `Registered 0 · Resolvable ≥ 0 · Live 0 · Bonded 0 ·
+> Settled 0` underneath a sentence saying three hundred thousand agents are
+> registered, beside a floor thumbnail reading `idle` while `/floor` listed
+> eight live mandates — with the API next to it returning the correct figures
+> the whole time. Nothing in this file said so. Two rows below were actively
+> false: C2 claimed production had no database attached when it had been
+> reading Postgres for a day, and R8 called the nine-route IA complete while
+> `/compare` returned 404.
+>
+> The rule this file keeps failing is the one at the top of `prompt.md`:
+> production is the only source of truth, and a status table that is checked
+> against the repository instead of the deployment will always drift towards
+> flattery. Rows corrected on 6 September are marked **↺ restated**.
+>
 > [`docs/DONE.md`](docs/DONE.md) is the honest one. It walks thirteen gates,
 > marks each as it actually stands, carries the command or transaction that
 > settles it, and lists what was found by reading production rather than this
@@ -40,14 +55,14 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | B3 | `minBond` source/chain divergence | **DONE** | constructor argument; events on both setters |
 | B4 | Alpha reported, not derived; adjudicator is us | **PARTIAL→v2** | v2 makes reporting cost a stake and lets anyone contradict it for the same block. The contract still cannot decide wallet value; it can freeze the money and price the lie |
 | B5 | README argues with the brief | **DONE** | opens with the ladder; the directory is swallowed, not rejected |
-| B6 | Floor is beautiful, not a marketplace | **PARTIAL** | The ladder is the front door and the floor renders its book server-side across all three deployments. Marked DONE for a day while the deployed floor showed "0 mandates active" without JavaScript — the row was closed against the repository, not against production |
+| B6 | Floor is beautiful, not a marketplace | **PARTIAL ↺ restated** | `/floor` renders its book server-side across all three deployments. The *home* page did not: its floor thumbnail was a WebGL window fed by an `EventSource` from an effect, so it printed `idle` while `/floor` two clicks away listed eight live mandates. The front page of a market reported the market was not running, and this row said the floor was fixed. The home page shows the book itself now, read on the server from the same three deployments |
 
 ### Category C — rubric gaps
 
 | # | Problem | State | Evidence |
 |---|---|---|---|
 | C1 | 265 of 301,996 classified | **BLOCKED** | 265 of 3,808 indexed, of 303,391 registered. Classification is multi-signal and chain-weighted now; the coverage gap is the 25 req/min anonymous tier, same blocker as R2.1 |
-| C2 | 1.9 MB static JSON | **PARTIAL** | Postgres read path built and migrated (3,808 rows); pages report their source. Production has no instance attached, so the deployed site still reads the snapshot |
+| C2 | 1.9 MB static JSON | **PARTIAL ↺ restated** | This row was wrong in the direction that flatters least and confuses most: production *did* have an instance attached and had been reading Postgres, and `/api/v1/registry/funnel` was reporting `source: "postgres"` while this said otherwise. The real defect was that the read path spread the committed snapshot and overrode only the rows, so a page served from Postgres stamped itself with the file's `capturedAt` — and they agreed, because the database was seeded once and nothing re-crawled. Both clocks are stamped separately now and a cycle has run against the live database. Coverage is still ~3,850 of 304,800 |
 | C3 | No self-service listing | **DONE** | `/list-your-agent` — what each rung costs |
 | C4 | Agent diversity structurally unequal | **DONE** | `/office/*` gives all four the same page, book and benchmark; none is empty. Grid and yield both have settled, attested epochs. Closed only once the four had pages — until then the doors led to a filtered register |
 | C5 | Zero app tests, zero CI | **DONE** | 63 unit tests and 13 house-style gates, three workflows: CI, mainnet verification hourly, smoke every 15 min |
@@ -86,7 +101,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | F1 | README fights the brief | **DONE** |
 | F2 | Best asset buried in RESEARCH.md | **DONE** — the funnel is the front door |
 | F3 | No demo video | **BLOCKED** — I cannot record video |
-| F4 | No judge-start path | **DONE** — `/start`, 8 claims each with its falsifier |
+| F4 | No judge-start path | **DONE ↺ restated** — `/start` had 8 claims each with its falsifier and nowhere to press. Verifying every claim and then having no way to use the product is a good argument for something a judge never used. It has two columns now: falsify, and a ticket that ends on a signed transaction |
 | F5 | No stated failures | **DONE** — Advantage Report losses in bold; `scope-audit` refuses us |
 | F6 | Fineness metaphor undefined on contact | **DONE** — defined where first used |
 
@@ -155,7 +170,7 @@ Every item in `rebuild_plan.md`, with its current state. Updated as work lands.
 | # | Item | State |
 |---|---|---|
 | R7 | PancakeSwap doc + pool-gap scanner | **DONE** |
-| R8 | Information architecture (9 routes) | **DONE** — all nine |
+| R8 | Information architecture (9 routes) | **DONE ↺ restated** — nine routes existed; `/compare?a=&b=` was not one of them and returned 404 while this row said the IA was complete. Built, and it reads both agents from the chain so any token id works |
 | R9 | Supply side: listing, shadow mandates, underwriting, bond tiers | **DONE** — all four |
 | R10 | Contract v2 (11 items) | **DONE** — 70 tests, deployed to mainnet |
 | R11 | Data pipeline | **PARTIAL** — `docs/DATA.md`, Postgres read path + migration, per-source reporting. No subgraph; production has no database attached |

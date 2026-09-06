@@ -28,6 +28,7 @@
 import { classify } from "@/lib/assay/classify";
 import { findAgent, type IndexedAgent } from "@/lib/data/agents";
 import { readRegistryEntry, type RegistryEntry } from "@/lib/sources/registry";
+import { answered, probeFor } from "@/lib/data/probes";
 import type { Category } from "@/lib/config";
 
 export interface AgentRecord extends IndexedAgent {
@@ -35,6 +36,8 @@ export interface AgentRecord extends IndexedAgent {
   chain: RegistryEntry | null;
   /** True when our crawl has this token; false when the chain alone does. */
   indexed: boolean;
+  /** The last call this office made to it, if any. Never someone else's flag. */
+  probe: ReturnType<typeof probeFor>;
   /**
    * Where the identity came from.
    *
@@ -97,7 +100,8 @@ export async function resolveAgent(tokenId: string): Promise<AgentRecord | null>
     protocols: indexed?.protocols ?? [],
     x402: Boolean(chain?.x402Endpoint) || Boolean(indexed?.x402),
     // Only a call we made settles this, and neither a card nor a crawl is one.
-    endpointVerified: Boolean(indexed?.endpointVerified),
+    // Our own census first; the crawl's carried flag behind it.
+    endpointVerified: answered(tokenId) || Boolean(indexed?.endpointVerified),
     registryScore: indexed?.registryScore ?? null,
     feedbacks: indexed?.feedbacks ?? 0,
     avgScore: indexed?.avgScore ?? null,
@@ -108,6 +112,7 @@ export async function resolveAgent(tokenId: string): Promise<AgentRecord | null>
     lastSeen: chain?.at ?? indexed?.lastSeen,
     chain,
     indexed: Boolean(indexed),
+    probe: probeFor(tokenId),
     identitySource: chain ? "chain" : "index",
   };
 }

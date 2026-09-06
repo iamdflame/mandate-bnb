@@ -27,6 +27,7 @@ import {
 } from "@/lib/sources/scan";
 import { assayAgent } from "@/lib/assay";
 import { detectCoordination, profileReviewers } from "@/lib/sybil/detect";
+import { beat } from "@/lib/heartbeat";
 
 const AGENTS_PER_CYCLE = Number(process.env.AGENTS_PER_CYCLE ?? 40);
 const FEEDBACK_PAGES = Number(process.env.FEEDBACK_PAGES ?? 45);
@@ -298,6 +299,16 @@ async function cycle() {
     await refreshFunnel();
     await refreshReputation();
     await assaySlice();
+    /*
+      Stamped after the work, never before it.
+
+      The floor reads this to say whether anything is running between page
+      loads. A stamp written at the top of the cycle would report a crawl that
+      then aborted, which is the opposite of what the row is for.
+    */
+    await beat("worker", ++cycles, {
+      seconds: Math.round((Date.now() - started) / 1000),
+    });
     log(`cycle complete in ${Math.round((Date.now() - started) / 1000)}s`);
   } catch (error) {
     // A failed cycle leaves the last good state in place rather than
@@ -307,6 +318,7 @@ async function cycle() {
 }
 
 const ONCE = process.argv.includes("--once");
+let cycles = 0;
 
 log(`indexer starting · chain ${CHAIN_ID} · cycle ${CYCLE_MS / 60000}min${ONCE ? " · one cycle" : ""}`);
 await cycle();

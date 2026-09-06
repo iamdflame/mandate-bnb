@@ -2,6 +2,7 @@
   "name": "assay",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "The assay office for on-chain agents. Registry claim vs chain truth, with the proof attached.",
   "scripts": {
@@ -56,6 +57,9 @@
     "restate": "tsx src/scripts/restate.ts",
     "assay-bond": "tsx --env-file=.env --env-file=.env.local src/scripts/deploy-assay-bond.ts",
     "register-self": "tsx --env-file=.env --env-file=.env.local src/scripts/register-self.ts",
+    "register-house": "tsx --env-file=.env --env-file=.env.local src/scripts/register-house.ts",
+    "index:field": "tsx --env-file=.env --env-file=.env.local src/scripts/index-field.ts",
+    "probe": "tsx --env-file=.env --env-file=.env.local src/scripts/probe.ts",
     "replay": "tsx --env-file=.env --env-file=.env.local src/scripts/replay.ts",
     "resolve-challenge": "tsx --env-file=.env --env-file=.env.local src/scripts/resolve-challenge.ts",
     "db:check": "tsx --env-file=.env --env-file=.env.local src/scripts/db-check.ts",

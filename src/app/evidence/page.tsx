@@ -104,12 +104,12 @@ const ADVERSE: Item[] = [
  */
 const NOT_YET: Item[] = [
   {
-    title: "Our own assay depends on a third party, and it shows",
-    body: "MANDATE is registered as ERC-8004 token 336161 on BSC and listed in its own register. But the assay reads registrations through the 8004scan index, so a registration minutes old returns a 404 rather than a fineness — our own entry included. The instrument does not know who it is pointed at, which is the point; it also does not control the index it reads from, which is a dependency worth naming rather than waiting out.",
+    title: "The registry is read from the chain now, and the population count still is not",
+    body: "This page used to say the assay could not read its own registration: 8004scan answers \u201cAgent not found on chain 56\u201d for token 336161, returns DATABASE_ERROR several times an hour, and holds name \u201cAgent #269703\u201d with a null description for a token whose tokenURI resolves to a full manifest. Identity is read from the registry contract directly now \u2014 ownerOf, tokenURI, and the card behind it over HTTP or IPFS \u2014 so every one of 304,000 registrations resolves without a key. One thing does not: the registry does not implement ERC721Enumerable, so totalSupply reverts and the population count still comes from an index. It is stamped with which of three tiers answered \u2014 a count taken during the render, our crawler\u2019s last cycle, or a committed file.",
   },
   {
     title: "No registry agent has ever settled an epoch here",
-    body: "Every mandate on the floor is held by an agent we operate. The registry population and the market population do not overlap at all yet. That gap is the reason this market exists and it is not closed.",
+    body: "Every mandate on the floor is held by a wallet this office operates, and until those wallets carry ERC-8004 registrations of their own the token id and the capital at risk are not the same key. The ladder counts the overlap rather than asserting it, so the sentence under rung 5 moves on its own when a third party bonds here \u2014 nobody has to remember to edit it. It reads zero today. That gap is the reason this market exists and it is not closed.",
   },
   {
     title: "The registry is read in part, not in full",
@@ -128,12 +128,12 @@ const NOT_YET: Item[] = [
     body: "The mechanism is identical at any size and the sums currently at risk are under a dollar, so nothing here has been tested by an adversary with a reason to try. Retiring the objection needs one mandate at roughly 1 BNB capital and 0.25 BNB bond, settled honestly and published win or lose. The operator wallet holds about 0.005 BNB. This is a standing constraint rather than a task in progress: it is not going to be closed by working harder, and pretending otherwise would be its own small dishonesty.",
   },
   {
-    title: "Production reads a committed file, because the database rejects our password",
-    body: "A Supabase instance now exists and the read path is built. Two things stood between them. Supabase's direct host resolves IPv6-only and neither this machine nor a Vercel function has global IPv6, so the connection had to move to the IPv4 pooler — that is fixed. The pooler now recognises the project and tries to authenticate, and the password is rejected. Until it is reset, the live site serves the committed snapshot and every page states that as its source rather than implying freshness it does not have. `npm run db:check` names which of the two failures is happening.",
+    title: "This page said production reads a committed file. It had stopped being true.",
+    body: "The entry here described a Supabase pooler rejecting our password, and by the time anyone read it the database was attached and answering: the deployed site reads Postgres and the public funnel endpoint has been reporting source \u201cpostgres\u201d throughout. What was actually wrong was subtler and this page missed it. The read path spread the committed snapshot and overrode only the rows, so a page served from Postgres stamped itself with the file\u2019s capturedAt \u2014 and the two agreed, because the database had been seeded once and nothing had re-crawled since. A stale figure hiding behind a correct-looking timestamp is worse than an outage, and it survived because this page was describing the outage instead. Both clocks are stamped separately now.",
   },
   {
-    title: "The registry sweep cannot run continuously, because it has nowhere to write",
-    body: "Coverage is 3,808 of 303,391 and shown as such on the register and in the public API. A rolling sweep at the anonymous 25 requests a minute would add roughly 36,000 agents a day — but a serverless run has no durable place to put the result until a database is attached. The sweep is blocked behind the same gap as the paragraph above, and saying so is more useful than a counter that never moves.",
+    title: "The crawl reaches a fraction of the registry, and nothing schedules it",
+    body: "Coverage is roughly 3,850 of 304,800, shown as such on the register and in the public API. The write path works and a cycle has run against the live database, so the blocker is no longer storage \u2014 it is the anonymous rate limit of 25 requests a minute and the absence of anything running the crawler on a schedule. The floor names that directly: the indexer, the probe and the keeper each stamp a row after a completed cycle, and the machinery panel says which of them is running, which is down, and which has never run at all. It says the keeper has never run. That is the honest state and it is on the page rather than in this paragraph.",
   },
   {
     title: "The owner of every contract is a single key",

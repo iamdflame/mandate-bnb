@@ -22,12 +22,24 @@
 
 import { countAgents } from "@/lib/sources/scan";
 import { memo } from "@/lib/cache";
+import { db, hasDb, schema } from "@/lib/db/client";
+import { and, eq, inArray } from "drizzle-orm";
 
 export interface RegistryTotals {
   registered: number;
   withEndpoint: number;
   /** False when the upstream would not answer and the snapshot is standing in. */
   live: boolean;
+  /**
+   * Which of the three tiers answered.
+   *
+   * `upstream` is a count taken during this render. `indexer` is the count the
+   * crawler recorded on its last cycle, which is minutes to an hour old and
+   * far better than a file committed two days ago. Named rather than blended,
+   * because a reader deciding whether to trust a figure needs to know which of
+   * the three they are looking at.
+   */
+  tier: "upstream" | "indexer";
   /** When these figures were read. */
   at: string;
 }
@@ -50,6 +62,40 @@ async function attempt<T>(fn: () => Promise<T>, tries = 3): Promise<T | null> {
   return null;
 }
 
+/**
+ * The crawler's last count, out of its own stats table.
+ *
+ * The indexer asks 8004scan for these three numbers at the top of every cycle
+ * and records them. When the upstream refuses a page render — which it does
+ * several times an hour — that recorded count is minutes old, and serving a
+ * two-day-old file instead was throwing away the better answer.
+ */
+async function fromIndexer(chainId: number): Promise<RegistryTotals | null> {
+  if (!hasDb || !db) return null;
+  try {
+    const rows = await db
+      .select()
+      .from(schema.stats)
+      .where(
+        and(
+          eq(schema.stats.chainId, chainId),
+          inArray(schema.stats.key, ["registered", "with_endpoint"]),
+        ),
+      );
+    const registered = rows.find((r) => r.key === "registered");
+    if (!registered) return null;
+    return {
+      registered: Math.round(registered.value),
+      withEndpoint: Math.round(rows.find((r) => r.key === "with_endpoint")?.value ?? 0),
+      live: false,
+      tier: "indexer",
+      at: (registered.capturedAt ?? new Date()).toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function readTotalsUncached(chainId: number): Promise<RegistryTotals | null> {
   const [registered, withEndpoint] = await Promise.all([
     attempt(() => countAgents({ chainId })),
@@ -57,12 +103,25 @@ async function readTotalsUncached(chainId: number): Promise<RegistryTotals | nul
   ]);
 
   // A count of zero from an upstream that is failing is not a count of zero.
-  if (!registered) return null;
+  if (!registered) {
+    const carried = await fromIndexer(chainId);
+    /*
+      Throw rather than resolve to null when every tier is silent.
+
+      `memo` stores whatever the read resolves to, so returning null here
+      cached the failure for ten minutes: one unlucky render pinned the whole
+      instance to the committed snapshot long after the upstream recovered.
+      A rejection is not stored, so the next render tries again.
+    */
+    if (!carried) throw new Error("no registry total available from any tier");
+    return carried;
+  }
 
   return {
     registered,
     withEndpoint: withEndpoint ?? 0,
     live: true,
+    tier: "upstream",
     at: new Date().toISOString(),
   };
 }

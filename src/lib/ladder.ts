@@ -35,6 +35,7 @@ import {
 import { parseAbiItem, type Address } from "viem";
 import { memo, withTimeout } from "@/lib/cache";
 import { getField } from "@/lib/data/field";
+import { getProbes } from "@/lib/data/probes";
 import { HOUSE } from "@/lib/house";
 
 /** The lowest hallmarkable grade, and this market's bar. */
@@ -82,7 +83,7 @@ export interface LadderReading {
   source: "postgres" | "snapshot";
   capturedAt: string;
   /** Whether rungs 0 and 2 were counted live or carried from the snapshot. */
-  registrySource: "live" | "snapshot";
+  registrySource: "live" | "indexer" | "snapshot";
   /** When rungs 0 and 2 were counted. A different clock from `capturedAt`. */
   registryAt: string;
 }
@@ -157,6 +158,7 @@ function ago(iso: string | undefined): string {
 async function readLadderUncached(): Promise<LadderReading> {
   const index = await readAgentIndex();
   const registry = index.registry;
+  const probes = getProbes();
 
   // Rungs 5 and 6 come from the market itself.
   let bonded: number | null = null;
@@ -237,7 +239,9 @@ async function readLadderUncached(): Promise<LadderReading> {
       source:
         index.registrySource === "live"
           ? `Counted by 8004scan on chain 56, read ${ago(index.registryAt)}. Costs one transaction and proves nothing.`
-          : "Carried from the last snapshot: 8004scan would not answer for this reading, so this count is as old as the file rather than as old as the page.",
+          : index.registrySource === "indexer"
+            ? `8004scan would not answer for this reading, so this is the count our own crawler recorded ${ago(index.registryAt)}. Costs one transaction and proves nothing.`
+            : "Carried from the last committed snapshot: neither 8004scan nor our crawler could be reached, so this count is as old as the file rather than as old as the page.",
       verify: "curl 'https://api.8004scan.io/api/v1/agents?chain_id=56&limit=1'",
     },
     {
@@ -253,12 +257,13 @@ async function readLadderUncached(): Promise<LadderReading> {
       n: 2,
       name: "Live",
       test: "Its endpoint answered a call we made.",
-      population: registry.withEndpoint,
+      population: probes.answered > 0 ? probes.answered : registry.withEndpoint,
+      atLeast: probes.answered > 0,
       source:
-        index.registrySource === "live"
-          ? `Endpoint verified against the registry's own record, then called. Counted ${ago(index.registryAt)}.`
-          : "Endpoint verified against the registry's own record, then called. Carried from the last snapshot: 8004scan would not answer for this reading.",
-      verify: "npm run assay -- <tokenId>",
+        probes.answered > 0
+          ? `A floor, and our own call rather than someone else's flag: ${probes.answered} of ${probes.probed} endpoints answered when this office called them ${ago(probes.at)}, with the status and latency of each recorded. Everything outside those ${probes.probed} is unprobed, not silent. For comparison, 8004scan's own verification flag reports ${registry.withEndpoint} across the whole registry.`
+          : "Endpoint verified against the registry's own record rather than by a call we made — no census of ours has run.",
+      verify: "npm run probe",
     },
     {
       n: 3,

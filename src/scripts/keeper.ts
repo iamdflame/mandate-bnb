@@ -19,6 +19,7 @@
 import { parseAbiItem } from "viem";
 import { logClients, MARKET_ADDRESS, marketClient } from "@/lib/chain/market";
 import { loadMeta, readPublicIndex, revokeMandateSession } from "@/lib/chain/session";
+import { beat } from "@/lib/heartbeat";
 
 const DISMISSED = parseAbiItem(
   "event AgentDismissed(uint256 indexed mandateId, address indexed agent, string reason)",
@@ -131,7 +132,19 @@ const start = DEPLOY > 0n ? DEPLOY : (await marketClient.getBlockNumber()) - 10_
 log(`keeper watching ${MARKET_ADDRESS}`);
 log(`${sessions} session${sessions === 1 ? "" : "s"} on file · from block ${start}`);
 
+/*
+  The sweep stamps a heartbeat when it completes.
+
+  The floor reads it, so that a market with no keeper says so instead of
+  looking identical to one that has a keeper. The stamp is written after the
+  work rather than before it, so it cannot report a cycle that did not happen,
+  and a failed write never takes the keeper down — the floor reporting silence
+  is the correct outcome of a database that will not answer.
+*/
+let cycles = 0;
 let cursor = await sweep(start);
+await beat("keeper", ++cycles, { fromBlock: start.toString(), toBlock: cursor.toString() });
+
 if (ONCE) {
   log("one sweep done");
   process.exit(0);
@@ -141,4 +154,5 @@ log(`watching every ${INTERVAL_MS / 1000}s`);
 for (;;) {
   await new Promise((r) => setTimeout(r, INTERVAL_MS));
   cursor = await sweep(cursor);
+  await beat("keeper", ++cycles, { toBlock: cursor.toString() });
 }

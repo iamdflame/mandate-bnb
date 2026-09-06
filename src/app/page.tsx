@@ -133,6 +133,24 @@ async function OfficeDoors({ index }: { index: Awaited<ReturnType<typeof readAge
 }
 
 
+const stamp = (iso: string) =>
+  `${new Date(iso).toISOString().slice(0, 16).replace("T", " ")}Z`;
+
+/**
+ * Which of the three tiers produced the registry totals, said plainly.
+ *
+ * A count taken during this render, a count our crawler recorded on its last
+ * cycle, and a count committed to a file are three different ages, and a
+ * reader deciding whether to trust the headline figure needs to know which one
+ * is in front of them.
+ */
+function registryNote(source: "live" | "indexer" | "snapshot" | undefined, at: string) {
+  if (source === "live") return `Registry totals counted by 8004scan at ${stamp(at)}`;
+  if (source === "indexer")
+    return `Registry totals from our own crawler's last cycle at ${stamp(at)} — 8004scan would not answer for this reading`;
+  return "Registry totals carried from a committed snapshot — neither 8004scan nor the crawler could be reached";
+}
+
 export default async function Home() {
   const index = await readAgentIndex();
   const { registry } = index;
@@ -287,7 +305,7 @@ export default async function Home() {
           individual cards refresh on different schedules, and printing one
           date for both made the live figure look as old as the stale one.
         */
-        note={`Registry totals counted by 8004scan ${index.registrySource === "live" ? `at ${new Date(index.registryAt ?? index.capturedAt).toISOString().slice(0, 16).replace("T", " ")}Z` : "from a committed snapshot — the registry would not answer"} · cards crawled to ${new Date(index.capturedAt).toISOString().slice(0, 16).replace("T", " ")}Z from ${index.source === "postgres" ? "the index" : "a committed snapshot"} · chain data from BNB Smart Chain · verify any settlement with npx mandate-verify`}
+        note={`${registryNote(index.registrySource, index.registryAt ?? index.capturedAt)} · cards crawled to ${stamp(index.capturedAt)} from ${index.source === "postgres" ? "the index" : "a committed snapshot"} · chain data from BNB Smart Chain · verify any settlement with npx mandate-verify`}
       />
     </div>
   );

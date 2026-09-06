@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import MarketApp from "@/components/market/MarketApp";
 import { readBook, bookToSnapshot } from "@/lib/chain/book";
 import { CANONICAL, explorerFor } from "@/lib/chain/deployments";
+import KeeperHeartbeat from "@/components/ui/KeeperHeartbeat";
+import { readHeartbeats } from "@/lib/heartbeat";
 
 export const metadata: Metadata = {
   title: "The floor — MANDATE",
@@ -26,11 +28,31 @@ export const revalidate = 0;
  * The live stream still takes over the moment it connects.
  */
 export default async function FloorPage() {
-  const book = await readBook();
+  const [book, beats] = await Promise.all([readBook(), readHeartbeats()]);
   return (
-    <MarketApp
-      explorer={explorerFor(CANONICAL.chainId)}
-      initial={bookToSnapshot(book)}
-    />
+    <>
+      <MarketApp
+        explorer={explorerFor(CANONICAL.chainId)}
+        initial={bookToSnapshot(book)}
+      />
+      {/*
+        What is running between page loads.
+
+        `npm run floor` in a terminal and a keeper on a schedule produce
+        identical-looking books, and only one of them is a market. The
+        difference was invisible from here, which left the strongest claim on
+        this page — that a dismissal revokes the agent's key without anyone
+        typing anything — resting on the reader's goodwill.
+      */}
+      <section className="section shell" aria-labelledby="beat-title">
+        <div className="section__head">
+          <h2 id="beat-title" className="section-title">
+            The machinery
+          </h2>
+          <span className="mark-label">stamped by each process after a completed cycle</span>
+        </div>
+        <KeeperHeartbeat beats={beats} />
+      </section>
+    </>
   );
 }

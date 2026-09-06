@@ -5,6 +5,7 @@ import Register, { type RegisterRow } from "@/components/ui/Register";
 import Replay from "@/components/ui/Replay";
 import { readAgentIndex } from "@/lib/data/agents";
 import { getField } from "@/lib/data/field";
+import { answered } from "@/lib/data/probes";
 import { houseByWallet } from "@/lib/house";
 import { placeAgent, readMarketSets, type WalletStanding } from "@/lib/rung";
 import { CATEGORIES, CHAIN_ID, EXPLORER, type Category } from "@/lib/config";
@@ -24,7 +25,15 @@ export const revalidate = 0;
 export default async function AgentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ rung?: string; category?: string; q?: string; block?: string }>;
+  searchParams: Promise<{
+    rung?: string;
+    category?: string;
+    q?: string;
+    block?: string;
+    endpoint?: string;
+    marked?: string;
+    source?: string;
+  }>;
 }) {
   const params = await searchParams;
   const [index, sets] = await Promise.all([readAgentIndex(), readMarketSets()]);
@@ -158,7 +167,7 @@ export default async function AgentsPage({
           imageUrl: null,
           protocols: [],
           x402: Boolean(a.x402Endpoint),
-          endpointVerified: false,
+          endpointVerified: answered(a.tokenId),
           registryScore: null,
           feedbacks: 0,
           avgScore: null,
@@ -179,7 +188,9 @@ export default async function AgentsPage({
         owner: a.owner,
         category: a.category,
         fineness: standing?.fineness ?? null,
-        endpointVerified: false,
+        // Our own call, not the registry's flag. The endpoint facet filters on
+        // this, so "answers when called" means a call this office made.
+        endpointVerified: answered(a.tokenId),
         rung: place.rung,
         rungReason: place.reason,
         lastSeen: field.capturedAt,
@@ -248,6 +259,15 @@ export default async function AgentsPage({
           />
         ) : null}
 
+        {/*
+          Every facet the funnel links to arrives in the URL and is honoured.
+
+          The ladder's rungs link to /agents?endpoint=answering and
+          ?marked=struck, and only rung and category were being read — so two
+          of the seven rungs led to the unfiltered register and the reader was
+          left to find the population themselves. A link that does not do what
+          it says is worse than no link.
+        */}
         <Register
           rows={rows}
           chainId={CHAIN_ID}
@@ -255,7 +275,23 @@ export default async function AgentsPage({
           readAt={index.capturedAt}
           unindexed={unindexed}
           registered={index.registry.registered}
-          initial={{ rung, category, q: params.q ?? "" }}
+          initial={{
+            rung,
+            category,
+            q: params.q ?? "",
+            endpoint:
+              params.endpoint === "answering" || params.endpoint === "silent"
+                ? params.endpoint
+                : "all",
+            marked:
+              params.marked === "struck" || params.marked === "unmarked"
+                ? params.marked
+                : "all",
+            source:
+              params.source === "registry" || params.source === "market"
+                ? params.source
+                : "all",
+          }}
         />
       </main>
 

@@ -157,6 +157,80 @@ known**, which anyone can re-derive:
 npx mandate-verify --mandate 0 --chain 56 --deployment v1
 ```
 
+## The architecture
+
+Four layers, one `tokenId`. The join between them is the product: the same
+ERC-8004 identity that is catalogued and assayed is the key that holds the
+bond, signs under the session, and gets fired.
+
+```mermaid
+flowchart TB
+  subgraph chain["BNB Smart Chain 56"]
+    reg["ERC-8004 Identity Registry<br/>0x8004a1…a432<br/>ownerOf · tokenURI"]
+    rep["ERC-8004 Reputation Registry<br/>assays written back as token 336161"]
+    mkt["MandateMarketV2<br/>0x6052C0ab…71B2<br/>bond · epoch · slash · dismiss"]
+    aux["AssayBond · Underwriter · ShadowLedger"]
+    key["Altana Keystore / ERC-8183<br/>allowlist ∩ proven capability"]
+    ven["Venues: Pancake V3 · Venus · Ophis<br/>called, never wrapped"]
+  end
+
+  subgraph work["Worker — runs between page loads"]
+    idx["indexer<br/>crawls the registry"]
+    prb["probe<br/>calls each endpoint, records status"]
+    kpr["keeper<br/>dismissal → session revoked"]
+    wb["writeback<br/>assay → Reputation Registry"]
+  end
+
+  subgraph store["State"]
+    pg[("Postgres<br/>cache of crawl + assay<br/>keyed (chainId, tokenId)")]
+    gf[("Greenfield<br/>attestation preimages")]
+  end
+
+  subgraph app["Next.js — SSR everything a judge reads"]
+    ladder["/ the ladder + the book"]
+    office["/offices · /office/*"]
+    register["/agents · /agent/[tokenId]"]
+    floor["/floor · ticket · tape · heartbeat"]
+    authority["/authority — principal revoke"]
+    api["/api/v1/* — public, unauthenticated"]
+  end
+
+  reg -->|"ownerOf · tokenURI · card"| register
+  reg --> idx
+  idx --> pg
+  prb --> pg
+  prb -->|"answered / silent + latency"| register
+  mkt -->|"book, read at a named block"| ladder
+  mkt --> floor
+  mkt --> office
+  mkt -->|"AgentDismissed"| kpr
+  kpr -->|"revoke"| key
+  key --> ven
+  wb --> rep
+  pg --> app
+  gf --> ladder
+  aux --- mkt
+  floor -->|"openMandate"| mkt
+  authority -->|"revoke"| key
+  idx -.->|"heartbeat"| floor
+  prb -.->|"heartbeat"| floor
+  kpr -.->|"heartbeat"| floor
+```
+
+The dotted edges are the ones a marketplace usually leaves out. `npm run floor`
+in a terminal and a keeper on a schedule produce identical-looking books, so
+each process stamps a row after a completed cycle and `/floor` reports which of
+them is running, which is down, and which has never run at all.
+
+The four rungs the layers correspond to:
+
+```
+0 CATALOGUE  every ERC-8004 id, read from the chain, never hidden
+1 ASSAY      six tests, millesimal, null when unmeasured
+2 SESSION    ERC-8183: allowlist ∩ proven capability, cap, expiry, revoke
+3 MANDATE    bond, epoch, slash, dismiss, succession — the holder IS the tokenId
+```
+
 ## The mechanism
 
 ```
