@@ -10,6 +10,7 @@ import Observation from "@/components/ui/Observation";
 import { readLadder } from "@/lib/ladder";
 import { readBook } from "@/lib/chain/book";
 import { readAgentIndex } from "@/lib/data/agents";
+import { getProbes } from "@/lib/data/probes";
 import { CATEGORIES, CATEGORY_BLURB, CATEGORY_LABEL } from "@/lib/config";
 import { MARKET_ADDRESS } from "@/lib/chain/market";
 
@@ -17,7 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
   // Read rather than hardcoded: the registry grew by 1,600 in a day while this
   // page still claimed the number it was written with.
   const { registry } = await readAgentIndex();
-  const line = `${registry.registered.toLocaleString()} agents are registered on BNB Smart Chain. ${registry.withEndpoint} answer when called.`;
+  const probes = getProbes();
+  const answering = probes.answered > 0 ? probes.answered : registry.withEndpoint;
+  const line = `${registry.registered.toLocaleString()} agents are registered on BNB Smart Chain. ${answering} answered when we called them.`;
   return {
     title: "MANDATE — Assay Office for Autonomous Agents",
     description: `${line} We test them, strike what passes, and let the rest go unmarked.`,
@@ -154,6 +157,7 @@ function registryNote(source: "live" | "indexer" | "snapshot" | undefined, at: s
 export default async function Home() {
   const index = await readAgentIndex();
   const { registry } = index;
+  const probes = getProbes();
 
   return (
     <div className="app">
@@ -178,10 +182,19 @@ export default async function Home() {
             <p className="mark-label open__sub">Assay Office for Autonomous Agents</p>
           </div>
 
+          {/*
+            The headline counts the same way the ladder does.
+
+            It said "5 answer when called" — 8004scan's verification flag —
+            two lines above a rung reading 48, which is our own census. Two
+            numbers for one sentence on one screen, and the smaller one was
+            somebody else's measurement described as ours.
+          */}
           <p className="open__line">
             {registry.registered.toLocaleString()} agents are registered on BNB Smart
-            Chain. {registry.withEndpoint} answer when called. We test them, strike what
-            passes, and let the rest go unmarked.
+            Chain. {probes.answered > 0 ? probes.answered : registry.withEndpoint}{" "}
+            answered when we called them. We test them, strike what passes, and let the
+            rest go unmarked.
           </p>
 
           {/*
