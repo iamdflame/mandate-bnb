@@ -21,7 +21,7 @@
  */
 
 import { countAgents } from "@/lib/sources/scan";
-import { memo } from "@/lib/cache";
+import { memo, withTimeout } from "@/lib/cache";
 import { db, hasDb, schema } from "@/lib/db/client";
 import { and, eq, inArray } from "drizzle-orm";
 
@@ -51,6 +51,14 @@ export interface RegistryTotals {
  * close enough together that a page render does not wait on them. Beyond that
  * the caller gets null and says so.
  */
+/**
+ * How long the upstream leg may take before the crawler's row stands in.
+ *
+ * Comfortably inside the caller's 2.5 second bound, so a slow 8004scan costs a
+ * fresher figure rather than the whole reading.
+ */
+const UPSTREAM_BUDGET_MS = 1_600;
+
 async function attempt<T>(fn: () => Promise<T>, tries = 2): Promise<T | null> {
   for (let i = 0; i < tries; i++) {
     try {
@@ -110,11 +118,18 @@ async function readTotalsUncached(chainId: number): Promise<RegistryTotals> {
     old while the answer sat in a table one query away.
 
     In parallel, the upstream still wins when it answers and the crawler's row
-    is already in hand when it does not.
+    is already in hand when it does not — but only if the upstream leg is
+    itself bounded. `Promise.all` waits for the slowest branch, so running the
+    fast local read alongside an unbounded retry loop still spent the caller's
+    whole budget waiting for the branch that was failing, and still fell
+    through to the file. The upstream gets its own, shorter deadline.
   */
   const [registered, withEndpoint, carried] = await Promise.all([
-    attempt(() => countAgents({ chainId })),
-    attempt(() => countAgents({ chainId, isEndpointVerified: true })),
+    withTimeout(attempt(() => countAgents({ chainId })), UPSTREAM_BUDGET_MS),
+    withTimeout(
+      attempt(() => countAgents({ chainId, isEndpointVerified: true })),
+      UPSTREAM_BUDGET_MS,
+    ),
     fromIndexer(chainId),
   ]);
 

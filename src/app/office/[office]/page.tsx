@@ -7,12 +7,21 @@ import Observation from "@/components/ui/Observation";
 import Command from "@/components/ui/Command";
 import { readBook, type BookRow } from "@/lib/chain/book";
 import { readAgentIndex } from "@/lib/data/agents";
+import { getField } from "@/lib/data/field";
+import { answered, getProbes, probeFor } from "@/lib/data/probes";
 import { CATEGORIES, CATEGORY_BLURB, CATEGORY_LABEL, type Category } from "@/lib/config";
 import { CANONICAL, addressUrl, mandatePath } from "@/lib/chain/deployments";
 import { MARKET_ADDRESS } from "@/lib/chain/market";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+/*
+  Revalidated, like the front door and /offices.
+
+  The book is fourteen contract calls across three deployments and the office
+  pages are where a judge checks whether all four categories carry equal
+  weight — so they have to be fast, and every figure already carries the block
+  and the age it was read at.
+*/
+export const revalidate = 30;
 
 /** The contract's category enum, in the order the ABI declares it. */
 const ENUM_ORDER: Category[] = [
@@ -92,11 +101,57 @@ export default async function OfficePage({
   const held = live.filter((r) => r.bondWei > 0n);
   const method = METHOD[c];
 
-  // Registry agents classified into this office. Separate from the book on
-  // purpose: an agent that says it does this and an agent that has staked its
-  // own capital on doing it are different claims, and the page keeps them apart.
-  const classified = agentIndex.agents.filter((a) => a.category === c);
-  const answering = classified.filter((a) => a.endpointVerified);
+  /*
+    Registry agents classified into this office. Separate from the book on
+    purpose: an agent that says it does this and an agent that has staked its
+    own capital on doing it are different claims, and the page keeps them apart.
+
+    The field is merged in — mainnet identities other people operate, read from
+    the registry rather than waited for by our crawl. They are the ones that
+    actually answer, and an office listing only the agents we happened to crawl
+    would be describing our coverage rather than the category.
+  */
+  const crawled = agentIndex.agents
+    .filter((a) => a.category === c)
+    .map((a) => ({
+      tokenId: a.tokenId,
+      name: a.name,
+      operator: null as string | null,
+      siblings: 1,
+      answered: answered(a.tokenId) || Boolean(a.endpointVerified),
+      probe: probeFor(a.tokenId),
+    }));
+
+  const fieldIds = new Set(getField().agents.map((a) => a.tokenId));
+  const fromField = getField()
+    .agents.filter((a) => a.category === c)
+    .map((a) => ({
+      tokenId: a.tokenId,
+      name: a.name,
+      operator: a.operator,
+      siblings: a.siblings,
+      answered: answered(a.tokenId),
+      probe: probeFor(a.tokenId),
+    }));
+
+  const classified = [
+    ...fromField,
+    ...crawled.filter((a) => !fieldIds.has(a.tokenId)),
+  ].sort((a, b) => Number(b.answered) - Number(a.answered));
+
+  const answering = classified.filter((a) => a.answered);
+
+  /*
+    Operators, not registrations.
+
+    Forty-four of the identities in the field sit on one wallet, and their
+    cards classify into rebalancing and yield on marketing language alone.
+    Counting them as forty-four agents in an office would manufacture exactly
+    the diversity this page exists to measure honestly.
+  */
+  const operators = new Set(
+    classified.map((a) => a.operator ?? `token:${a.tokenId}`),
+  ).size;
 
   return (
     <div className="app">
@@ -133,6 +188,24 @@ export default async function OfficePage({
               label="Registry agents classified here"
               value={classified.length.toLocaleString()}
               at={agentIndex.capturedAt}
+            />
+            {/*
+              Distinct operators beside the count of registrations, because one
+              wallet holding forty-four identities is not forty-four agents and
+              an office that counted them as such would be manufacturing the
+              diversity it is here to report.
+            */}
+            <Observation
+              size="small"
+              label="Distinct operators"
+              value={String(operators)}
+              at={agentIndex.capturedAt}
+            />
+            <Observation
+              size="small"
+              label="Answered when we called"
+              value={`${answering.length} of ${classified.length}`}
+              at={getProbes().at}
             />
           </div>
         </section>
@@ -207,9 +280,24 @@ export default async function OfficePage({
                     {a.name || `Agent #${a.tokenId}`}
                   </a>
                   <span className="office-live__id num">{a.tokenId}</span>
+                  {/*
+                    What happened when we called it, not whether a flag says it
+                    is verified. A 402 is an answer — it is the x402 rail
+                    quoting a price — and it reads differently from silence.
+                  */}
                   <span className="office-live__state mark-label">
-                    {a.endpointVerified ? "answered" : "no endpoint reached"}
+                    {a.probe
+                      ? a.answered
+                        ? `answered ${a.probe.status ?? ""} in ${a.probe.latencyMs}ms`
+                        : (a.probe.error ?? "no answer")
+                      : "not called yet"}
                   </span>
+                  {a.operator ? (
+                    <span className="office-live__op mark-label">
+                      {a.operator}
+                      {a.siblings > 1 ? ` ×${a.siblings}` : ""}
+                    </span>
+                  ) : null}
                   {/*
                     The action a rung actually permits, per row.
 
@@ -218,11 +306,8 @@ export default async function OfficePage({
                     An agent nobody has reached cannot be called, so this offers
                     the assay instead of pretending otherwise.
                   */}
-                  <a
-                    className="office-live__cta"
-                    href={a.endpointVerified ? `/agent/${a.tokenId}` : `/assay?id=${a.tokenId}`}
-                  >
-                    {a.endpointVerified ? "call →" : "assay →"}
+                  <a className="office-live__cta" href={`/agent/${a.tokenId}`}>
+                    {a.answered ? "call →" : "assay →"}
                   </a>
                 </li>
               ))}

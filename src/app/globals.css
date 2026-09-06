@@ -3367,11 +3367,16 @@ p code {
 
 .office-live__row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 8ch 18ch max-content;
+  /* name · id · what the call returned · who runs it · the verb */
+  grid-template-columns: minmax(0, 1fr) 8ch 22ch 16ch max-content;
   align-items: center;
   gap: 16px;
   min-height: var(--row);
   border-bottom: var(--hair) solid var(--score);
+}
+
+@media (max-width: 900px) {
+  .office-live__row { grid-template-columns: minmax(0, 1fr) max-content; gap: 8px; }
 }
 
 .office-live__name { color: var(--ink); text-decoration: none; }
@@ -3386,6 +3391,9 @@ p code {
 }
 
 .office-live__state { color: var(--ink-3); }
+
+/* Who runs it. Attributed rather than absorbed — these are other people's. */
+.office-live__op { color: var(--pewter-500); }
 
 .office-nav {
   display: grid;
