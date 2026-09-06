@@ -350,21 +350,20 @@ export default function Register({
                     <td className="num">{shortDate(r.lastSeen)}</td>
                     <td className="num">{r.bondWei ? bnb(r.bondWei) : "—"}</td>
                     <td className="num">{alpha(r.alphaBps)}</td>
+                    {/*
+                      One verb per row, and it is the verb the contract would
+                      actually accept.
+
+                      Every row used to read "mandate →", which on an agent
+                      with no bond and no endpoint was an offer to escrow
+                      capital against a bid the market refuses. The register is
+                      where a judge forms their first idea of what this venue
+                      does; three thousand identical dead ends is the wrong
+                      idea.
+                    */}
                     <td>
-                      <a
-                        className="reg__hire"
-                        href={
-                          r.source === "market"
-                            ? r.href
-                            : `/floor?agent=${r.tokenId}`
-                        }
-                        title={
-                          r.source === "market"
-                            ? "Open this mandate"
-                            : "Open a mandate with this agent named"
-                        }
-                      >
-                        {r.source === "market" ? "ledger →" : "mandate →"}
+                      <a className="reg__hire" href={action(r).href} title={action(r).title}>
+                        {action(r).label}
                       </a>
                     </td>
                   </tr>
@@ -415,6 +414,41 @@ function Choice({
       {children}
     </button>
   );
+}
+
+/**
+ * What this row lets you do, derived from its rung.
+ *
+ * Mirrors `<Hire>` on the certificate, so the register and the agent page
+ * cannot offer different actions for the same agent.
+ */
+function action(r: RegisterRow): { href: string; label: string; title: string } {
+  if (r.source === "market" || r.rung >= 5) {
+    return {
+      href: r.href,
+      label: r.source === "market" ? "ledger →" : "mandate →",
+      title: r.source === "market" ? "Open this mandate" : "Open a mandate with this agent named",
+    };
+  }
+  if (r.rung === 4) {
+    return {
+      href: r.category ? `/office/${r.category}` : "/floor",
+      label: "bid →",
+      title: "Assayed above the bar: open a lot in its office for it to bid for",
+    };
+  }
+  if (r.rung === 2 || r.endpointVerified) {
+    return {
+      href: `/agent/${r.tokenId}`,
+      label: "call →",
+      title: "Answers when called: buy a single answer over x402",
+    };
+  }
+  return {
+    href: `/agent/${r.tokenId}`,
+    label: "assay →",
+    title: "Not bondable: six tests against the chain, and what is missing",
+  };
 }
 
 function value(r: RegisterRow, key: SortKey): number {

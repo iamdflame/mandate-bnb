@@ -37,7 +37,8 @@ const CLAIMS: Claim[] = [
     claim: "Those numbers were committed before the outcome was known.",
     check: "Read the Observed logs on the market contract",
     how: "link",
-    target: "https://bscscan.com/address/0xeD331c44183EFF1e8eDc31f6C60AfDA187681544#events",
+    // The canonical deployment, not the superseded one this line used to name.
+    target: `https://bscscan.com/address/${MARKET_ADDRESS}#events`,
     note: "The observation is emitted whole, and its hash was stored at award time.",
   },
   {

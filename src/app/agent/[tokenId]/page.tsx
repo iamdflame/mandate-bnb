@@ -194,12 +194,36 @@ export default async function AgentPage({
   const { tokenId } = await params;
   const indexed = findAgent(tokenId);
 
+  /*
+    The market's answer about this wallet, read before the certificate paints.
+
+    It has to be here rather than inside the streamed placement panel: the
+    action under the verdict depends on it, and a button that appears as
+    "open a mandate" and then corrects itself two seconds later is worse than
+    one that was right the first time. The read is memoised and shared with
+    the placement panel below, so it costs one chain read, not two.
+  */
+  const sets = await readMarketSets();
+  const wallet = indexed?.owner?.toLowerCase() ?? "";
+  const st = wallet ? sets.standing.get(wallet) : undefined;
+  const placement = indexed ? placeAgent({ ...indexed, rung: undefined }, sets) : null;
+  const standing = {
+    rung: sets.read ? (placement?.rung ?? null) : null,
+    bondWei: st ? st.bondWei.toString() : null,
+    mandateId: st?.mandateIds[0] ?? null,
+  };
+
   return (
     <div className="app">
       <SiteHeader current="/agents" />
 
       <main className="shell cert-page">
-        <Certificate tokenId={tokenId} chainId={CHAIN_ID} indexed={indexed} />
+        <Certificate
+          tokenId={tokenId}
+          chainId={CHAIN_ID}
+          indexed={indexed}
+          standing={standing}
+        />
 
         <Suspense fallback={<Pending title="Ladder placement" />}>
           <Placement tokenId={tokenId} />

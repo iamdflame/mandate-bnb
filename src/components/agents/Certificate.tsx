@@ -33,10 +33,25 @@ export default function Certificate({
   tokenId,
   chainId,
   indexed,
+  standing,
 }: {
   tokenId: string;
   chainId: number;
   indexed: IndexedAgent | null;
+  /**
+   * What the market holds against this agent's wallet, read on the server.
+   *
+   * The assay streaming into this component is our reading of the agent.
+   * Whether it may take capital is the contract's answer, and the two must not
+   * be conflated — an agent can assay well and still be unable to bid. So the
+   * action under the verdict is driven from here, not from the fineness above
+   * it.
+   */
+  standing: {
+    rung: number | null;
+    bondWei: string | null;
+    mandateId: number | null;
+  };
 }) {
   const [results, setResults] = useState<AssayResult[]>([]);
   const [report, setReport] = useState<AssayReport | null>(null);
@@ -143,9 +158,13 @@ export default function Certificate({
       */}
       <Hire
         tokenId={tokenId}
+        rung={standing.rung}
         fineness={fineness}
         endpointVerified={Boolean(indexed?.endpointVerified)}
         agentWallet={report?.agentWallet ?? indexed?.owner ?? null}
+        category={category}
+        bondWei={standing.bondWei}
+        mandateId={standing.mandateId}
       />
 
       <section className="panel cert__assay" aria-labelledby="assay-title">

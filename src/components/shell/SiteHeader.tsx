@@ -1,7 +1,6 @@
 "use client";
 
 import OfficeMark from "@/components/mark/OfficeMark";
-import { MANDATE_TOKEN_ID } from "@/lib/config";
 import { WalletChip } from "@/components/floor/Actions";
 
 const NAV = [
@@ -15,8 +14,16 @@ const NAV = [
   { href: "/assay", label: "Method" },
   { href: "/api", label: "API" },
   { href: "/list-your-agent", label: "List yours" },
-  // Our own entry, at whatever rung it earns.
-  { href: `/agent/${MANDATE_TOKEN_ID}`, label: "Us" },
+  /*
+    Our own ERC-8004 entry is not in this bar.
+
+    It was, as "Us", and it was the worst link in the product: token 336161 is
+    unclassified, has no card the index will resolve and has never posted a
+    bond, so the face of the office was an agent the office would refuse. It
+    stays listed in the register at whatever rung it earns — which is the
+    point of registering it — but the header of a market does not advertise
+    its own unmarked entry as though it were the exhibit.
+  */
 ];
 
 /**
