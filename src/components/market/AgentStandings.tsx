@@ -34,9 +34,14 @@ export default function AgentStandings({ explorer }: { explorer: string }) {
       }
     };
     void load();
-    // Rebuilding the book walks the log history, so it refreshes more slowly
-    // than the floor.
-    const timer = setInterval(load, 30_000);
+    /*
+      Rebuilding the book walks the log history from the deploy block, so it
+      refreshes far more slowly than the floor. Polling every thirty seconds
+      asked for a walk that takes longer than thirty seconds; the answer is
+      memoised for five minutes upstream, so asking more often than that only
+      queues work behind itself.
+    */
+    const timer = setInterval(load, 5 * 60_000);
     return () => {
       live = false;
       clearInterval(timer);
@@ -97,7 +102,7 @@ function Row({ s, explorer }: { s: Standing; explorer: string }) {
   const lost = BigInt(s.slashedWei) > 0n;
   return (
     <tr title={s.lastDismissalReason ?? undefined}>
-      <td className="fig">
+      <td className="num">
         <a
           href={`${explorer}/address/${s.agent}`}
           target="_blank"
@@ -107,17 +112,17 @@ function Row({ s, explorer }: { s: Standing; explorer: string }) {
           {short(s.agent)}
         </a>
       </td>
-      <td className={`fig r ${s.meanAlphaBps > 0 ? "up" : s.meanAlphaBps < 0 ? "down" : "dim"}`}>
+      <td className={`num r ${s.meanAlphaBps > 0 ? "up" : s.meanAlphaBps < 0 ? "down" : "dim"}`}>
         {s.epochs === 0 ? "—" : pct(s.meanAlphaBps)}
       </td>
-      <td className="fig r dim">{s.mandatesHeld}</td>
-      <td className="fig r dim">{s.epochs}</td>
-      <td className="fig r dim">
+      <td className="num r dim">{s.mandatesHeld}</td>
+      <td className="num r dim">{s.epochs}</td>
+      <td className="num r dim">
         {s.epochs === 0 ? "—" : `${Math.round((s.wins / s.epochs) * 100)}%`}
       </td>
-      <td className="fig r dim">{bnb(s.feesWei)}</td>
-      <td className={`fig r ${lost ? "warn" : "dim"}`}>{bnb(s.slashedWei)}</td>
-      <td className={`fig r ${s.dismissals > 0 ? "warn" : "dim"}`}>{s.dismissals}</td>
+      <td className="num r dim">{bnb(s.feesWei)}</td>
+      <td className={`num r ${lost ? "warn" : "dim"}`}>{bnb(s.slashedWei)}</td>
+      <td className={`num r ${s.dismissals > 0 ? "warn" : "dim"}`}>{s.dismissals}</td>
     </tr>
   );
 }

@@ -107,7 +107,7 @@ export default function OperatedAgents({ explorer }: { explorer: string }) {
                 <li key={i}>
                   <span className="label">{act.kind}</span>
                   <span>{act.reason}</span>
-                  <span className="fig dim">
+                  <span className="num dim">
                     {act.call} → {short(act.to)}
                   </span>
                 </li>
@@ -153,7 +153,7 @@ function SessionBlock({ agent, explorer }: { agent: OperatedAgent; explorer: str
       <dl className="op__kv">
         <div>
           <dt className="label">session key</dt>
-          <dd className="fig">
+          <dd className="num op__val">
             <a
               href={`${explorer}/address/${s.key}`}
               target="_blank"
@@ -166,15 +166,15 @@ function SessionBlock({ agent, explorer }: { agent: OperatedAgent; explorer: str
         </div>
         <div>
           <dt className="label">spend cap</dt>
-          <dd className="fig">{s.capBnb.toFixed(6)} BNB</dd>
+          <dd className="num op__val">{s.capBnb.toFixed(6)} BNB</dd>
         </div>
         <div>
           <dt className="label">keystore</dt>
-          <dd className="fig">{s.registered ? "registered" : "ephemeral"}</dd>
+          <dd className="num op__val">{s.registered ? "registered" : "ephemeral"}</dd>
         </div>
         <div>
           <dt className="label">mandate</dt>
-          <dd className="fig">#{agent.mandateId}</dd>
+          <dd className="num op__val">#{agent.mandateId}</dd>
         </div>
       </dl>
 
@@ -182,7 +182,7 @@ function SessionBlock({ agent, explorer }: { agent: OperatedAgent; explorer: str
         <div className="label">may call, and nothing else</div>
         <ul>
           {s.allowlist.map((c, i) => (
-            <li key={i} className="fig">
+            <li key={i} className="num op__call">
               <span className="dim">{short(c.to)}</span> {c.signature.split("(")[0]}
             </li>
           ))}

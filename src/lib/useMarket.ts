@@ -18,6 +18,16 @@ export interface TapeEntry {
   text: string;
   tone: TapeTone;
   at: string;
+  /**
+   * The block this change was first seen at.
+   *
+   * The tape is built by diffing consecutive snapshots, so `at` is when we
+   * read the chain and not when the chain moved. Thirteen entries landing in
+   * one poll all carry the same wall clock, which reads as thirteen things
+   * happening in the same second and is not what happened. The block is the
+   * honest stamp: the state had changed by then.
+   */
+  blockNumber: string;
 }
 
 const ZERO = "0x0000000000000000000000000000000000000000";
@@ -30,8 +40,33 @@ export function bnb(wei: string | bigint | undefined, dp?: number): string {
   if (dp !== undefined) return n.toFixed(dp);
   if (n === 0) return "0";
   // Precision follows magnitude: a 0.0025 BNB position is real, not zero.
-  const places = n >= 100 ? 1 : n >= 1 ? 2 : n >= 0.01 ? 3 : n >= 0.0001 ? 5 : 7;
-  return n.toFixed(places);
+  return n.toFixed(placesFor(n));
+}
+
+/** Decimals a single figure needs before it rounds away to nothing. */
+export function placesFor(n: number): number {
+  return n >= 100 ? 1 : n >= 1 ? 2 : n >= 0.01 ? 3 : n >= 0.0001 ? 5 : 7;
+}
+
+/**
+ * One precision for a whole column.
+ *
+ * Per-figure precision is right for a figure standing alone and wrong the
+ * moment figures are stacked: the floor's capital column ran 0.0000600,
+ * 0.0000500, 0.0000486, 0.00015, 0.00150, 0.00250 — four different decimal
+ * counts down one column, so the digits did not line up and two values an
+ * order of magnitude apart looked the same length. A column takes the
+ * precision its smallest non-zero member needs, and every row uses it.
+ */
+export function columnPlaces(values: (string | bigint | undefined)[]): number {
+  let places = 2;
+  for (const v of values) {
+    if (v === undefined) continue;
+    const n = Number(BigInt(v)) / 1e18;
+    if (n === 0) continue;
+    places = Math.max(places, placesFor(n));
+  }
+  return places;
 }
 
 export interface MarketState {
@@ -80,6 +115,7 @@ export function useMarket(initial?: FloorSnapshot | null) {
             text: `epoch ${m.epochsSettled} settled ${pct(delta)}`,
             tone: delta >= 0 ? "gain" : "loss",
             at: next.at,
+            blockNumber: next.blockNumber,
           });
         }
 
@@ -91,6 +127,7 @@ export function useMarket(initial?: FloorSnapshot | null) {
             text: `bond slashed ${bnb(slashed.toString())} BNB`,
             tone: "slash",
             at: next.at,
+            blockNumber: next.blockNumber,
           });
         }
 
@@ -109,6 +146,7 @@ export function useMarket(initial?: FloorSnapshot | null) {
                 : `${short(before.agent)} dismissed · no successor`,
             tone: wasHeld ? "dismissal" : "award",
             at: next.at,
+            blockNumber: next.blockNumber,
           });
         }
       }

@@ -17,7 +17,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import FloorCanvas, { type FloorBody, type FloorState } from "@/components/floor/FloorCanvas";
 import { BidPanel, OpenMandatePanel, WithdrawButton } from "@/components/floor/Actions";
-import { bnb, useMarket, type TapeEntry } from "@/lib/useMarket";
+import { bnb, columnPlaces, useMarket, type TapeEntry } from "@/lib/useMarket";
 import type { FloorSnapshot } from "@/app/api/floor/route";
 import type { FloorMandate } from "@/app/api/floor/route";
 import AgentStandings from "./AgentStandings";
@@ -63,6 +63,19 @@ export default function MarketApp({
   const mandates = snapshot?.mandates ?? [];
   const shown = filter === null ? mandates : mandates.filter((m) => m.category === filter);
   const totals = snapshot?.totals;
+
+  /*
+    One precision for the whole book.
+
+    Read from every row rather than per cell, so the capital and bond columns
+    stop running 0.0000600, 0.00015, 0.00250 down a single column with the
+    decimal points out of line. Taken from the smallest non-zero figure
+    present, so nothing rounds away to zero.
+  */
+  const bookPlaces = columnPlaces([
+    ...shown.map((m) => m.capitalWei),
+    ...shown.map((m) => m.bondWei),
+  ]);
 
   // ---- feed the canvas band without re-rendering it
   const stateRef = useRef<FloorState>({
@@ -249,6 +262,7 @@ export default function MarketApp({
                   <MandateRow
                     key={`${m.deployment ?? "v2"}-${m.id}`}
                     m={m}
+                    dp={bookPlaces}
                     onBid={() => setSheet({ kind: "bid", m })}
                   />
                 ))
@@ -334,7 +348,7 @@ export default function MarketApp({
                 {hiring ? (
                   <p className="sheet__note">
                     You are opening a mandate agent{" "}
-                    <a href={`/agent/${hiring}`} className="link-underline fig">
+                    <a href={`/agent/${hiring}`} className="link-underline num">
                       {hiring}
                     </a>{" "}
                     can bid for. Escrow the capital here; the agent then posts
@@ -364,7 +378,16 @@ export default function MarketApp({
   );
 }
 
-function MandateRow({ m, onBid }: { m: FloorMandate; onBid: () => void }) {
+function MandateRow({
+  m,
+  dp,
+  onBid,
+}: {
+  m: FloorMandate;
+  /** Decimals for the money columns, fixed across the whole book. */
+  dp: number;
+  onBid: () => void;
+}) {
   const alphaPerEpoch = m.epochsSettled > 0 ? m.cumulativeAlphaBps / m.epochsSettled : 0;
   return (
     <tr>
@@ -374,7 +397,7 @@ function MandateRow({ m, onBid }: { m: FloorMandate; onBid: () => void }) {
         row is from, so two rows numbered 0 are legible as two mandates rather
         than as a duplicate.
       */}
-      <td className="fig dim">
+      <td className="num dim">
         {m.id}
         {m.deployment && m.deployment !== "v2" ? (
           <span className="mandate-row__dep" title="An earlier deployment. Its mandates are still live and still counted.">
@@ -384,22 +407,22 @@ function MandateRow({ m, onBid }: { m: FloorMandate; onBid: () => void }) {
         ) : null}
       </td>
       <td>{CATEGORIES[m.category]}</td>
-      <td className="fig r">{bnb(m.capitalWei)}</td>
-      <td className="fig">{short(m.agent)}</td>
-      <td className="fig r">
-        {bnb(m.bondWei)}
+      <td className="num r">{bnb(m.capitalWei, dp)}</td>
+      <td className="num">{short(m.agent)}</td>
+      <td className="num r">
+        {bnb(m.bondWei, dp)}
         {m.bondFraction < 1 && m.bondFraction > 0 ? (
           <span className="dim"> · {Math.round(m.bondFraction * 100)}%</span>
         ) : null}
       </td>
-      <td className={`fig r ${m.cumulativeAlphaBps > 0 ? "up" : m.cumulativeAlphaBps < 0 ? "down" : "dim"}`}>
+      <td className={`num r ${m.cumulativeAlphaBps > 0 ? "up" : m.cumulativeAlphaBps < 0 ? "down" : "dim"}`}>
         {m.epochsSettled === 0 ? "—" : pct(alphaPerEpoch)}
       </td>
-      <td className="fig r dim">
+      <td className="num r dim">
         {m.epochsSettled}/{m.epochsTotal}
       </td>
-      <td className={`fig r ${m.strikes > 0 ? "warn" : "dim"}`}>{m.strikes}/3</td>
-      <td className="fig dim">{short(m.successor)}</td>
+      <td className={`num r ${m.strikes > 0 ? "warn" : "dim"}`}>{m.strikes}/3</td>
+      <td className="num dim">{short(m.successor)}</td>
       <td className="r">
         <button className="btn btn--sm" onClick={onBid}>
           {m.state === 1 ? "Queue" : "Bid"}
@@ -419,7 +442,19 @@ function TapeRow({ t }: { t: TapeEntry }) {
       </span>
       <span className="tape__id num">#{t.mandateId}</span>
       <span className="tape__text">{t.text}</span>
-      <span className="label tape__time">{t.at.slice(11, 19)}</span>
+      {/*
+        The block, not the clock.
+
+        The tape is built by diffing consecutive readings of the market, so a
+        wall-clock time is when this page looked rather than when the chain
+        moved — and a keeper run that changes thirteen mandates at once made
+        thirteen rows all claiming the same second. The block is what can be
+        checked: the state had changed by then, and the number is the same one
+        every other figure on this site is stamped with.
+      */}
+      <span className="label tape__time num" title={`observed at ${t.at}`}>
+        block {Number(t.blockNumber).toLocaleString()}
+      </span>
     </li>
   );
 }
@@ -437,7 +472,7 @@ function Kv({ k, v }: { k: string; v: string }) {
   return (
     <div className="kv__row">
       <dt className="label">{k}</dt>
-      <dd className="fig">{v}</dd>
+      <dd className="num">{v}</dd>
     </div>
   );
 }
