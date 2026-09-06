@@ -187,9 +187,72 @@ export default function Register({
       );
     });
 
+    /*
+      The tiebreak is evidence, not token id.
+
+      Fineness stays the primary sort — the hallmarked rows first and then a
+      cliff, which is the finding this register exists to show. But almost
+      nothing has a fineness, so in practice every row tied and fell through to
+      an ascending token id: the first screen was tokens 1, 2, 3, 4 with every
+      column an em dash, while the agents that actually answer a call sat
+      thousands of rows below. A register whose first screen is its emptiest
+      rows is not showing the cliff, it is hiding the edge of it.
+
+      So a tie is broken by what the chain will show: how high it stands, then
+      whether its endpoint answered, then whether it is classified, then
+      whether it resolved a card at all.
+    */
     const dir = desc ? -1 : 1;
-    out.sort((a, b) => dir * (value(a, sort) - value(b, sort)) || Number(a.tokenId) - Number(b.tokenId));
-    return out;
+    out.sort(
+      (a, b) =>
+        dir * (value(a, sort) - value(b, sort)) ||
+        b.rung - a.rung ||
+        Number(b.endpointVerified) - Number(a.endpointVerified) ||
+        Number(Boolean(b.category)) - Number(Boolean(a.category)) ||
+        Number(Boolean(b.name)) - Number(Boolean(a.name)) ||
+        b.feedbacks - a.feedbacks ||
+        Number(a.tokenId) - Number(b.tokenId),
+    );
+
+    /*
+      No wallet may take the whole first screen.
+
+      Ranking on evidence fixed one failure and created its mirror image. The
+      first screen had been tokens 1, 2, 3, 4 with every column empty; ranked,
+      it became forty-four consecutive BORT registrations, because they all
+      answer and they are all held by 0x97e8f3B4. Both are the same fault —
+      the top of the register describing one thing rather than the field — and
+      the second is the worse one, because forty-four rows of one wallet is
+      exactly the manufactured plurality this register exists to expose.
+
+      So the ranking is kept and then dealt round-robin by owner: the best row
+      from each wallet, then the second from each, and so on. Nothing is hidden
+      or reordered against its rank within an owner, and the sibling count
+      stays on the row. Only while the default sort is in force — a reader who
+      picks a column has asked for that column, strictly.
+    */
+    if (sort !== "fineness" || !desc) return out;
+
+    const byOwner = new Map<string, RegisterRow[]>();
+    for (const r of out) {
+      const key = r.owner?.toLowerCase() ?? r.tokenId;
+      const bucket = byOwner.get(key);
+      if (bucket) bucket.push(r);
+      else byOwner.set(key, [r]);
+    }
+    const queues = [...byOwner.values()];
+    const dealt: RegisterRow[] = [];
+    for (let round = 0; dealt.length < out.length; round++) {
+      let placed = false;
+      for (const q of queues) {
+        if (round < q.length) {
+          dealt.push(q[round]!);
+          placed = true;
+        }
+      }
+      if (!placed) break;
+    }
+    return dealt;
   }, [rows, q, rung, category, endpoint, marked, source, sort, desc]);
 
   const first = Math.max(0, Math.floor(top / ROW) - OVERSCAN);

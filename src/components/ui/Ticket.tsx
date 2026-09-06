@@ -226,16 +226,17 @@ export default function Ticket({
         <table className="tbl ticket__tbl">
           <thead>
             <tr>
-              <th>state</th>
-              <th>target</th>
-              <th>selector</th>
+              <th scope="col">state</th>
+              <th scope="col">target</th>
+              <th scope="col">selector</th>
+              <th scope="col">why not</th>
             </tr>
           </thead>
           <tbody>
             {scope.allowed.map((c) => (
               <tr key={`${c.to}-${c.signature}`}>
-                <td className="mark-label">granted</td>
-                <td className="num">
+                <td className="mark-label ticket__state">granted</td>
+                <td className="ticket__target">
                   {EXPLORER ? (
                     <a href={`${EXPLORER}/address/${c.to}`} target="_blank" rel="noreferrer">
                       {c.target}
@@ -245,16 +246,21 @@ export default function Ticket({
                   )}
                 </td>
                 <td className="num ticket__sel">{c.signature}</td>
+                <td className="ticket__why">—</td>
               </tr>
             ))}
+            {/*
+              The reason sits in its own column rather than trailing the
+              selector. Run together they made one cell long enough to push the
+              whole page sideways, and the selector — the thing that makes the
+              grant specific — was the part that got pushed off screen.
+            */}
             {scope.withheld.map((c) => (
               <tr key={`w-${c.signature}`} data-withheld="1">
-                <td className="mark-label">withheld</td>
-                <td>{c.target}</td>
-                <td className="num ticket__sel">
-                  {c.signature}
-                  <span className="ticket__why"> — {c.why}</span>
-                </td>
+                <td className="mark-label ticket__state">withheld</td>
+                <td className="ticket__target">{c.target}</td>
+                <td className="num ticket__sel">{c.signature}</td>
+                <td className="ticket__why">{c.why}</td>
               </tr>
             ))}
           </tbody>

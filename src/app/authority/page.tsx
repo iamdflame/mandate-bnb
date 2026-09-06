@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export default function AuthorityPage() {
   return (
     <div className="app">
-      <SiteHeader current="/authority" />
+      <SiteHeader current="/authority" wallet />
       <main className="shell start">
         <p className="mark-label">Authority</p>
         <h1 className="display start-title">What each agent may do, and how to stop it.</h1>

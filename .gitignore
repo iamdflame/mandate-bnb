@@ -38,3 +38,4 @@ packages/mandate-verify/dist/
 # The prompt this rebuild was worked from, kept out of the repo.
 new_prompt.md
 _shot.mjs
+_overflow.mjs

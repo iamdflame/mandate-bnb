@@ -105,7 +105,7 @@ export default async function StartPage() {
 
   return (
     <div className="app">
-      <SiteHeader current="/start" />
+      <SiteHeader current="/start" wallet />
       <main className="start shell">
         <p className="mark-label">Start here · two columns · neither needs the README</p>
         <h1 className="display start-title">Falsify it, or hire from it.</h1>

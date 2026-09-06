@@ -1295,7 +1295,17 @@ tr:has(.strike[data-striking="1"]),
   gap: 20px;
   margin-right: auto;
   overflow-x: auto;
+  /*
+    A flex item will not shrink below its own content unless it is told it may.
+    Without this, `overflow-x: auto` never engages: the nav keeps its full
+    width, widens the header past the viewport, and the whole document scrolls
+    sideways on a phone — nine uppercase links deciding the width of the page.
+  */
+  min-width: 0;
+  scrollbar-width: none;
 }
+
+.app-nav::-webkit-scrollbar { display: none; }
 
 .app-nav a {
   font-family: var(--mono);
@@ -1835,17 +1845,26 @@ p code {
 
 .tape__row {
   display: grid;
-  grid-template-columns: 56px 20px 1fr max-content;
+  grid-template-columns: 20px 5ch minmax(0, 1fr) max-content;
   align-items: baseline;
   gap: 12px;
-  padding: 6px 0;
+  padding: 10px 0;
   border-bottom: var(--hair) solid var(--score);
   font-family: var(--mono);
   font-size: var(--t-mark);
   color: var(--ink-2);
 }
 
+/*
+  The event is the content; the mandate id is the reference.
+
+  The id carried `.fig`, the display numeral, so a settlement read as a huge
+  `#0` with the thing that actually happened set beside it in six-point grey —
+  the wrong half of the row at three times the size. Both are the tape's own
+  size now and the id is the dimmer of the two.
+*/
 .tape__time, .tape__id { color: var(--ink-3); }
+.tape__id { font-variant-numeric: tabular-nums; }
 .tape__mark { color: var(--ink-3); }
 .tape__row--gain .tape__mark { color: var(--gold-999); }
 .tape__row--loss .tape__mark { color: var(--pewter-500); }
@@ -2438,13 +2457,41 @@ p code {
   margin-bottom: 10px;
 }
 
-.ticket__tbl { width: 100%; margin-bottom: 10px; }
-.ticket__tbl td, .ticket__tbl th { height: 44px; }
-.ticket__sel { font-size: var(--t-mark); word-break: break-all; }
+.ticket__tbl { width: 100%; margin-bottom: 10px; table-layout: fixed; }
+.ticket__tbl td, .ticket__tbl th { height: auto; padding-block: 10px; vertical-align: top; }
+
+.tbl td.ticket__state { width: 10ch; }
+.tbl td.ticket__target { width: 22%; white-space: normal; }
+
+/*
+  A selector wraps.
+
+  `.tbl td` sets `white-space: nowrap` and out-ranks a bare class, so
+  `exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))`
+  could not break — and one cell that cannot break pushed the whole document
+  sideways. /start scrolled horizontally, which is the one thing the layout
+  rules here forbid outright, and the selector that makes the grant specific
+  was the part that ended up off screen.
+*/
+.tbl td.ticket__sel {
+  font-size: var(--t-mark);
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 
 /* Absence of light, never red: a withheld call is unlit, not forbidden. */
 .ticket__tbl tr[data-withheld] td { color: var(--base); }
-.ticket__why { color: var(--base); text-transform: none; letter-spacing: 0; }
+
+.tbl td.ticket__why {
+  width: 26%;
+  white-space: normal;
+  color: var(--base);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--t-mark);
+  line-height: 1.5;
+}
 
 .ticket__rules {
   display: grid;

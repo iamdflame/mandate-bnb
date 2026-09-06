@@ -1,4 +1,7 @@
+"use client";
+
 import OfficeMark from "@/components/mark/OfficeMark";
+import { WalletChip } from "@/components/floor/Actions";
 
 const NAV = [
   { href: "/start", label: "Start" },
@@ -34,10 +37,23 @@ export default function SiteHeader({
   live,
   status,
   current,
+  wallet = false,
 }: {
   live?: boolean;
   status?: string;
   current?: string;
+  /**
+   * Show the wallet control.
+   *
+   * Off everywhere by default. The bar used to carry it on every page, which
+   * meant an office advertised a wallet state to readers who had not asked for
+   * one — and, because the chip mounts the wallet hook, the front page opened
+   * a connect dialogue in any browser whose extension answers a bare provider
+   * call. Removing it outright went too far the other way: the pages where you
+   * bid, revoke or sign then had no way to connect at all. It belongs where
+   * there is something to sign, and nowhere else.
+   */
+  wallet?: boolean;
 }) {
   return (
     <header className="app-header">
@@ -75,6 +91,7 @@ export default function SiteHeader({
               <span className="mark-label">{status}</span>
             </>
           ) : null}
+          {wallet ? <WalletChip /> : null}
         </div>
       </div>
     </header>

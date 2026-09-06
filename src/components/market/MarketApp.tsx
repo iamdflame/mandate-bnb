@@ -105,6 +105,8 @@ export default function MarketApp({
   return (
     <div className="app">
       <SiteHeader
+        wallet
+        current="/floor"
         live={connected}
         status={`${connected ? "live" : "connecting"}${snapshot ? ` · ${snapshot.blockNumber}` : ""}`}
       />
@@ -415,7 +417,7 @@ function TapeRow({ t }: { t: TapeEntry }) {
       <span className="tape__mark" aria-hidden>
         {mark}
       </span>
-      <span className="fig tape__id">#{t.mandateId}</span>
+      <span className="tape__id num">#{t.mandateId}</span>
       <span className="tape__text">{t.text}</span>
       <span className="label tape__time">{t.at.slice(11, 19)}</span>
     </li>
