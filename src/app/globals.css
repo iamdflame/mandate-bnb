@@ -88,7 +88,17 @@ table {
   /* --- text ------------------------------------------------------------- */
   --ink: #e6e8ea;
   --ink-2: #9aa1a9;
-  --ink-3: var(--pewter-500);
+  /*
+    Its own value, not the metal.
+
+    `--ink-3` was an alias of `--pewter-500`, which the brand assigns a meaning:
+    an agent that resolves. Borrowing it as the body's third ink spent a
+    semantic colour on ordinary text and, at #6B7280 on the void, sat at about
+    4:1 — under the readable floor for the small sizes it was mostly used at.
+    This is a neutral grey at roughly 6:1, and the metal is left to mean what
+    it means.
+  */
+  --ink-3: #8a929b;
 
   /* --- type ------------------------------------------------------------- */
   --serif: var(--font-display-loaded), "Instrument Serif", "Times New Roman", serif;
@@ -103,7 +113,26 @@ table {
   --t-small: 0.8125rem;
   --t-data: 0.875rem;
   --t-data-lg: clamp(1.375rem, 3vw, 1.75rem);
-  --t-mark: 0.625rem;
+  /*
+    The label size.
+
+    It was 0.625rem — ten pixels — and it carries most of the text on this
+    site: column heads, stamps, office descriptions, the rung tests, the reason
+    a call was withheld. Measured across fourteen routes at four viewports,
+    every page had between fifty and eighty text nodes under 10.5px. Ten-pixel
+    tracked uppercase in a dim grey is hard to read on a laptop and worse on a
+    phone, and no amount of correct layout survives text nobody wants to read.
+  */
+  --t-mark: 0.6875rem;
+
+  /*
+    A label may be small. A sentence may not.
+
+    The same ten pixels was being used for actual prose set in the mono — why a
+    call is withheld, how a figure was obtained, what an office does. Those are
+    read, not scanned, and they get their own size.
+  */
+  --t-note: 0.75rem;
 
   /* --- motion: nothing moves unless the chain moved --------------------- */
   --strike-in: cubic-bezier(0.55, 0, 1, 0.45);   /* accelerating, gaining weight */
@@ -1586,7 +1615,7 @@ tr:has(.strike[data-striking="1"]),
 
 .funnel__test {
   font-family: var(--mono);
-  font-size: var(--t-mark);
+  font-size: var(--t-note);
   line-height: 1.45;
   color: var(--ink-3);
   text-align: right;
@@ -1636,7 +1665,7 @@ tr:has(.strike[data-striking="1"]),
 .funnel__break {
   margin: 8px 0 12px;
   font-family: var(--mono);
-  font-size: var(--t-mark);
+  font-size: var(--t-note);
   line-height: 1.6;
   color: var(--ink-3);
   max-width: 76ch;
@@ -1860,7 +1889,7 @@ p code {
 .empty-note {
   margin: 12px 0 0;
   font-family: var(--mono);
-  font-size: var(--t-mark);
+  font-size: var(--t-note);
   line-height: 1.6;
   color: var(--ink-3);
 }
@@ -1934,7 +1963,7 @@ p code {
   padding: 10px 0;
   border-bottom: var(--hair) solid var(--score);
   font-family: var(--mono);
-  font-size: var(--t-mark);
+  font-size: var(--t-note);
   color: var(--ink-2);
 }
 
@@ -2183,7 +2212,7 @@ p code {
 .office__name { font-size: var(--t-small); color: var(--ink); }
 
 .office__blurb {
-  font-size: var(--t-mark);
+  font-size: var(--t-note);
   line-height: 1.6;
   color: var(--ink-3);
   text-transform: none;
@@ -2350,7 +2379,7 @@ p code {
 /* The price is the column a seller scans, so it is the one set in the mono. */
 .ladderdoc__cost {
   font-family: var(--mono);
-  font-size: var(--t-mark);
+  font-size: var(--t-note);
   line-height: 1.6;
   color: var(--pewter-500);
   font-variant-numeric: tabular-nums;
@@ -2393,7 +2422,7 @@ p code {
 .tbl td.msheet__how {
   vertical-align: top;
   white-space: normal;
-  font-size: var(--t-mark);
+  font-size: var(--t-note);
   line-height: 1.6;
   color: var(--ink-3);
 }
@@ -2402,6 +2431,7 @@ p code {
 .msheet__break {
   display: block;
   margin-top: 6px;
+  font-size: var(--t-note);
   color: var(--pewter-500);
 }
 
@@ -2458,7 +2488,7 @@ p code {
   width: 34%;
   white-space: normal;
   color: var(--base);
-  font-size: var(--t-mark);
+  font-size: var(--t-note);
   line-height: 1.5;
   text-transform: none;
   letter-spacing: 0;
@@ -2565,7 +2595,7 @@ p code {
 }
 
 .ticket__note {
-  font-size: var(--t-mark);
+  font-size: var(--t-note);
   line-height: 1.6;
   color: var(--ink-3);
   text-transform: none;
@@ -2653,7 +2683,7 @@ p code {
   color: var(--base);
   text-transform: none;
   letter-spacing: 0;
-  font-size: var(--t-mark);
+  font-size: var(--t-note);
   line-height: 1.5;
 }
 
@@ -3483,7 +3513,7 @@ p code {
   color: var(--ink);
 }
 
-.op__call { font-size: var(--t-mark); line-height: 1.6; color: var(--ink-2); }
+.op__call { font-size: var(--t-note); line-height: 1.6; color: var(--ink-2); }
 
 .op__allow { display: flex; flex-direction: column; gap: 4px; }
 
@@ -3970,7 +4000,7 @@ p code {
 .offices-idx__id { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 
 .offices-idx__blurb {
-  font-size: var(--t-mark);
+  font-size: var(--t-note);
   line-height: 1.5;
   color: var(--ink-3);
   font-weight: 400;
