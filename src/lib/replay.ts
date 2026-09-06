@@ -29,10 +29,11 @@
  *   answer.
  */
 
-import { createPublicClient, http, parseAbiItem, type Address, type PublicClient } from "viem";
+import { createPublicClient, http, parseAbiItem, type Address, type Log, type PublicClient } from "viem";
 import { bsc } from "viem/chains";
 import { IDENTITY_REGISTRY, RUNG_NAMES } from "@/lib/config";
 import { MARKET_ADDRESS } from "@/lib/chain/market";
+import { scanLogs } from "@/lib/chain/logs";
 
 /**
  * The endpoint that actually serves historical logs.
@@ -112,7 +113,7 @@ async function registeredAt(
         return id > m ? id : m;
       }, 0n);
       notes.push(
-        `rung 0 from ${logs.length} mint events in blocks ${from}–${to}; ids are sequential so the highest is the count`,
+        `Rung 0 is the highest token id minted by block ${to.toLocaleString()}. The registry issues ids in sequence, so the newest id is the population — read from ${logs.length} mint events in the ${(Number(to - from)).toLocaleString()} blocks before it.`,
       );
       return Number(highest);
     } catch (e) {
@@ -144,29 +145,46 @@ async function marketAt(
 
   const bonded = new Set<string>();
   const settled = new Set<string>();
-  const SPAN = 4_000n;
-  try {
-    for (let cursor = deploy; cursor <= block; cursor += SPAN) {
-      const to = cursor + SPAN - 1n > block ? block : cursor + SPAN - 1n;
-      const [awards, epochs] = await Promise.all([
-        c.getLogs({ address: MARKET_ADDRESS, event: AWARDED, fromBlock: cursor, toBlock: to }),
-        c.getLogs({ address: MARKET_ADDRESS, event: SETTLED, fromBlock: cursor, toBlock: to }),
-      ]);
-      for (const l of awards) {
-        const a = (l.args as { agent?: string }).agent;
-        if (a && !/^0x0+$/.test(a)) bonded.add(a.toLowerCase());
-      }
-      for (const l of epochs) {
-        const a = (l.args as { agent?: string }).agent;
-        if (a && !/^0x0+$/.test(a)) settled.add(a.toLowerCase());
-      }
-    }
-    notes.push(`rungs 5 and 6 from market events, blocks ${deploy}–${block}`);
-    return { bonded: bonded.size, settled: settled.size };
-  } catch (e) {
-    notes.push(`market log scan refused: ${(e instanceof Error ? e.message : String(e)).split("\n")[0].slice(0, 80)}`);
+
+  /*
+    This walked the range itself, one chunk at a time, against the single
+    client it was handed — and that client is the read node, which refuses
+    `eth_getLogs` outright. So the page printed the provider's own words at the
+    reader: "market log scan refused: Invalid parameters were provided to the
+    RPC method". The shared scanner tries every provider that serves logs and
+    walks the ranges several at once.
+  */
+  const { logs, complete, refused, ranges } = await scanLogs<
+    Log<bigint, number, false, undefined, undefined, [typeof AWARDED, typeof SETTLED]>
+  >({
+    address: MARKET_ADDRESS,
+    events: [AWARDED, SETTLED],
+    fromBlock: deploy,
+    toBlock: block,
+  });
+
+  for (const l of logs) {
+    const a = (l.args as { agent?: string }).agent;
+    if (!a || /^0x0+$/.test(a)) continue;
+    // Awarded puts an agent on rung 5; a settled epoch puts it on rung 6.
+    if (l.eventName === "MandateAwarded") bonded.add(a.toLowerCase());
+    if (l.eventName === "EpochSettled") settled.add(a.toLowerCase());
+  }
+
+  if (!complete) {
+    // A hole in the history is stated as a hole. Reporting a count derived
+    // from part of the range as though it were the whole one is the failure
+    // this page exists to make impossible.
+    notes.push(
+      `rungs 5 and 6 are incomplete: ${refused} of ${ranges} block ranges went unanswered by every provider, so no count is drawn`,
+    );
     return { bonded: null, settled: null };
   }
+
+  notes.push(
+    `Rungs 5 and 6 are counted from the market's own Awarded and EpochSettled events, across every deployment, between block ${deploy.toLocaleString()} and block ${block.toLocaleString()}.`,
+  );
+  return { bonded: bonded.size, settled: settled.size };
 }
 
 const NEVER_ON_CHAIN =

@@ -3697,6 +3697,13 @@ p code {
 
 /* ------------------------------------------------------------------ replay */
 
+/*
+  The replay panel sits directly above the register, and had no space under it
+  — the block scrubber, its notes and the register's search rail ran together
+  as one undifferentiated column. They are two instruments and read as two.
+*/
+.replay { margin-block: 28px 36px; }
+
 .replay__scrub { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
 
 .replay__scrub input[type="range"] {

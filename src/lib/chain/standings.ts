@@ -14,6 +14,8 @@
 
 import { parseAbiItem, type Address, type Log } from "viem";
 import { logClients, marketClient, MARKET_ADDRESS } from "./market";
+import { DEPLOYMENTS } from "./deployments";
+import { scanLogs } from "./logs";
 
 const AWARDED = parseAbiItem(
   "event MandateAwarded(uint256 indexed mandateId, address indexed agent, uint96 bond)",
@@ -60,41 +62,31 @@ type AnyLog = Log & {
  * counted, and the result says whether coverage was complete — a partial read
  * must never be presented as a full record.
  */
+/**
+ * Reads the full log history across every deployment.
+ *
+ * The walk itself lives in `chain/logs`, because the replay page needed the
+ * same thing and had its own copy — one that ran against a single client which
+ * refuses `eth_getLogs` outright, so it printed the provider's refusal at the
+ * reader instead of a ladder.
+ */
 async function collect(
   fromBlock: bigint,
   toBlock: bigint,
   span: bigint,
 ): Promise<{ logs: AnyLog[]; complete: boolean }> {
-  const events = [AWARDED, SETTLED, DISMISSED];
-  const out: AnyLog[] = [];
-  let failures = 0;
-  let cursor = fromBlock;
-
-  while (cursor <= toBlock) {
-    const end = cursor + span > toBlock ? toBlock : cursor + span;
-    let got = false;
-    // Try each provider in turn: one refusing the range must not be reported
-    // as an empty history.
-    for (const client of logClients) {
-      try {
-        const batch = await client.getLogs({
-          address: MARKET_ADDRESS,
-          events,
-          fromBlock: cursor,
-          toBlock: end,
-        });
-        out.push(...(batch as AnyLog[]));
-        got = true;
-        break;
-      } catch {
-        continue;
-      }
-    }
-    if (!got) failures += 1;
-    cursor = end + 1n;
-  }
-
-  return { logs: out, complete: failures === 0 };
+  const { logs, complete } = await scanLogs<AnyLog>({
+    // Every deployment, not just the canonical one. The book on the floor
+    // spans all three and counts the grid mandate that lost 21%; a standings
+    // table built from one contract would quietly drop the worst result this
+    // office has produced, which is the precise move it exists to catch.
+    address: MARKET_ADDRESSES,
+    events: [AWARDED, SETTLED, DISMISSED],
+    fromBlock,
+    toBlock,
+    span,
+  });
+  return { logs, complete };
 }
 
 export interface StandingsResult {
@@ -115,6 +107,9 @@ export interface StandingsResult {
 const DEPLOY_BLOCK = BigInt(
   process.env.MARKET_DEPLOY_BLOCK ?? process.env.NEXT_PUBLIC_MARKET_DEPLOY_BLOCK ?? 0,
 );
+
+/** Every market this office has run, so the record spans all of them. */
+const MARKET_ADDRESSES = DEPLOYMENTS.map((d) => d.address);
 
 export async function readStandings(
   opts: { lookback?: bigint; span?: bigint } = {},
