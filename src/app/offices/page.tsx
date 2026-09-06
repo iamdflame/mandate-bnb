@@ -8,8 +8,17 @@ import { readAgentIndex } from "@/lib/data/agents";
 import { CATEGORIES, CATEGORY_BLURB, CATEGORY_LABEL, type Category } from "@/lib/config";
 import { MARKET_ADDRESS } from "@/lib/chain/market";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+/*
+  Revalidated rather than rendered per request.
+
+  This page reads the book from three deployments and the index from Postgres,
+  which is fourteen contract calls and a table scan — and it is one of the four
+  pages a judge is most likely to open cold. Rendering it per visitor spent
+  that on each of them; caching it for thirty seconds spends it once. Every
+  figure carries the block and the age it was read at, so a cached number is
+  never presented as a live one.
+*/
+export const revalidate = 30;
 
 export const metadata: Metadata = {
   title: "Four offices — MANDATE",

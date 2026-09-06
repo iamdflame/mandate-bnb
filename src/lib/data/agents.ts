@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { CATEGORIES, CHAIN_ID, type Category } from "@/lib/config";
 import { db, hasDb, schema } from "@/lib/db/client";
 import { readRegistryTotals } from "@/lib/sources/totals";
+import { memo, withTimeout } from "@/lib/cache";
 
 export interface IndexedAgent {
   tokenId: string;
@@ -103,6 +104,22 @@ export function getAgentIndex(): AgentIndex {
  * nobody has to guess which one they are looking at.
  */
 export async function readAgentIndex(): Promise<AgentIndex & { source: "postgres" | "snapshot" }> {
+  /*
+    Memoised, which it never was.
+
+    Every page that shows a registry figure calls this, and each call was a
+    full scan of 3,808 rows over the connection pooler — so /agents paid it,
+    /offices paid it again for the same render, and the funnel paid it a third
+    time. Ten seconds of a page's time to fetch the same table three times.
+
+    Thirty seconds fresh with a stale window behind it: the crawl writes far
+    more slowly than that, so nothing is being hidden by the cache, and every
+    figure derived from this already carries the age it was read at.
+  */
+  return memo("agent-index", { freshMs: 30_000, staleMs: 5 * 60_000 }, readAgentIndexUncached);
+}
+
+async function readAgentIndexUncached(): Promise<AgentIndex & { source: "postgres" | "snapshot" }> {
   const snapshot = getAgentIndex();
 
   /*
@@ -110,7 +127,20 @@ export async function readAgentIndex(): Promise<AgentIndex & { source: "postgres
     are read from the registry rather than carried with our rows. They refresh
     on a different clock from the crawl and are stamped separately.
   */
-  const totals = await readRegistryTotals(CHAIN_ID).catch(() => null);
+  /*
+    Bounded, because a cold memo is the common case here.
+
+    The memo serves a stale reading while it refreshes behind it, but every new
+    serverless instance starts cold and pays the full read — two calls against
+    an upstream that is rate-limited and intermittently down, with retries. A
+    page must not wait on that. Two and a half seconds is long enough for a
+    healthy answer and short enough that a sick upstream costs a fresh figure
+    rather than the page, and the fallback is already labelled as carried.
+  */
+  const totals = await withTimeout(
+    readRegistryTotals(CHAIN_ID).catch(() => null),
+    2_500,
+  );
   const registry = totals
     ? {
         registered: totals.registered,

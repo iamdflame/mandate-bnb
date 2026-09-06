@@ -131,23 +131,56 @@ async function readCard(
     }
   }
 
-  if (!/^https?:\/\//i.test(uri)) {
+  /*
+    IPFS is a scheme, not a host, so it needs a gateway.
+
+    Skipping it was a real under-reading rather than a missing nicety: a
+    forty-four token cluster came back with no name and no description, which
+    reads as forty-four blank registrations and is in fact one unsupported URI
+    scheme. Publishing that as a finding about those agents would have been the
+    precise failure this product exists to catch, committed by us.
+
+    Two gateways, tried in order, because one refusing is not the card being
+    absent either.
+  */
+  const urls = uri.startsWith("ipfs://")
+    ? IPFS_GATEWAYS.map((g) => g + uri.slice("ipfs://".length).replace(/^ipfs\//, ""))
+    : /^https?:\/\//i.test(uri)
+      ? [uri]
+      : [];
+
+  if (urls.length === 0) {
     return { card: null, source: "unresolved", error: `The tokenURI scheme is not one we fetch: ${uri.slice(0, 32)}` };
   }
 
-  try {
-    const res = await fetch(uri, {
-      signal: AbortSignal.timeout(6_000),
-      headers: { accept: "application/json" },
-    });
-    if (!res.ok) {
-      return { card: null, source: "unresolved", error: `The card URL answered ${res.status}.` };
+  let last = "The card URL did not answer.";
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(6_000),
+        headers: { accept: "application/json" },
+      });
+      if (!res.ok) {
+        last = `The card URL answered ${res.status}.`;
+        continue;
+      }
+      return { card: (await res.json()) as Record<string, unknown>, source: "http", error: null };
+    } catch {
+      last = "The card URL did not answer.";
     }
-    return { card: (await res.json()) as Record<string, unknown>, source: "http", error: null };
-  } catch {
-    return { card: null, source: "unresolved", error: "The card URL did not answer." };
   }
+  return { card: null, source: "unresolved", error: last };
 }
+
+/**
+ * Gateways for `ipfs://` cards.
+ *
+ * Two, so that one gateway being slow is not recorded as an agent having no
+ * card. Both are public and neither is ours, which is the point: a reader
+ * checking this can use any gateway they like and get the same bytes, because
+ * the CID is in the registration.
+ */
+const IPFS_GATEWAYS = ["https://ipfs.io/ipfs/", "https://cloudflare-ipfs.com/ipfs/"];
 
 const str = (v: unknown): string | null =>
   typeof v === "string" && v.trim() ? v.trim() : null;

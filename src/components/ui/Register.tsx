@@ -34,6 +34,22 @@ export interface RegisterRow {
   bondWei: string | null;
   alphaBps: number | null;
   feedbacks: number;
+  /**
+   * Who operates this identity, where we know and it is not us.
+   *
+   * The register carries other people's agents on purpose — the brief asks for
+   * the front door to every agent on BSC, and a front door that only opens
+   * onto its own tenants is a shop. Attributed rather than absorbed.
+   */
+  operator?: string | null;
+  /**
+   * Registrations sharing this row's owner wallet.
+   *
+   * One wallet holding forty-four identities is not forty-four agents. The
+   * rows stay — they are real registrations — but the number is on the row so
+   * nobody reads a batch mint as a crowded office.
+   */
+  siblings?: number;
 }
 
 type SortKey = "fineness" | "tokenId" | "name" | "rung" | "bond" | "alpha" | "seen";
@@ -333,6 +349,18 @@ export default function Register({
                       {r.source === "market" ? (
                         <span className="reg__src mark-label"> holder</span>
                       ) : null}
+                      {r.operator ? (
+                        <span className="reg__src mark-label"> {r.operator}</span>
+                      ) : null}
+                      {r.siblings && r.siblings > 1 ? (
+                        <span
+                          className="reg__src mark-label"
+                          title={`${r.siblings} registrations share this owner wallet`}
+                        >
+                          {" "}
+                          ×{r.siblings}
+                        </span>
+                      ) : null}
                     </td>
                     <td>
                       {r.category ? (
@@ -376,10 +404,33 @@ export default function Register({
                 </tr>
               ) : null}
 
+              {/*
+                A token id we have not crawled is not a token id that does not
+                exist.
+
+                The register holds 3,808 of 304,787 registrations, so searching
+                it for the best-known live agent in the field returned "nothing
+                matches" — which reads as a verdict on the agent and is in fact
+                a statement about our coverage. Every id has a certificate,
+                because the certificate reads `ownerOf` and `tokenURI` from the
+                registry rather than from this table. The row below says which
+                of the two situations the reader is in, and goes there.
+              */}
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="reg__none">
-                    Nothing in the register matches that.
+                    {/^\d{1,20}$/.test(q.trim()) ? (
+                      <>
+                        Token {q.trim()} is not in the {rows.length.toLocaleString()} rows
+                        we have crawled. That is a gap in our index, not a finding about
+                        the agent —{" "}
+                        <a className="link-underline" href={`/agent/${q.trim()}`}>
+                          read it from the registry →
+                        </a>
+                      </>
+                    ) : (
+                      "Nothing in the register matches that."
+                    )}
                   </td>
                 </tr>
               ) : null}

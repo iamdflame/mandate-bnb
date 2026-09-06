@@ -4,6 +4,7 @@ import SiteFooter from "@/components/shell/SiteFooter";
 import Register, { type RegisterRow } from "@/components/ui/Register";
 import Replay from "@/components/ui/Replay";
 import { readAgentIndex } from "@/lib/data/agents";
+import { getField } from "@/lib/data/field";
 import { placeAgent, readMarketSets } from "@/lib/rung";
 import { CATEGORIES, CHAIN_ID, EXPLORER, type Category } from "@/lib/config";
 import { MARKET_ADDRESS, marketClient } from "@/lib/chain/market";
@@ -98,7 +99,79 @@ export default async function AgentsPage({
     feedbacks: 0,
   }));
 
-  const rows = [...marketRows, ...registryRows];
+  /*
+    The field: mainnet identities other people operate, read from the registry.
+
+    Our crawl walks the registry in token order and has reached 3,808 of
+    304,787 — an honest sample, and a useless front door, because every agent
+    a judge will actually search for was minted in the last fortnight at ids
+    far past where the crawl has got to. These are named and resolved from the
+    chain instead of waited for.
+
+    They are ERC-8004 registrations like any other row and get no special
+    standing for being here: the same rung tests, the same blank mark column.
+    Rows already in the crawl are not duplicated.
+  */
+  const field = getField();
+  const fieldIds = new Set(field.agents.map((a) => a.tokenId));
+  const fieldRows: RegisterRow[] = field.agents
+    .map((a) => {
+      const place = placeAgent(
+        {
+          tokenId: a.tokenId,
+          name: a.name,
+          description: a.description,
+          owner: a.owner,
+          imageUrl: null,
+          protocols: [],
+          x402: Boolean(a.x402Endpoint),
+          endpointVerified: false,
+          registryScore: null,
+          feedbacks: 0,
+          avgScore: null,
+          createdAt: null,
+          category: a.category,
+          confidence: a.confidence,
+          matched: a.matched,
+        },
+        sets,
+      );
+      const wallet = a.owner.toLowerCase();
+      const standing = sets.standing.get(wallet);
+      return {
+        tokenId: a.tokenId,
+        source: "registry" as const,
+        href: `/agent/${a.tokenId}`,
+        name: a.name,
+        owner: a.owner,
+        category: a.category,
+        fineness: standing?.fineness ?? null,
+        endpointVerified: false,
+        rung: place.rung,
+        rungReason: place.reason,
+        lastSeen: field.capturedAt,
+        bondWei: standing ? standing.bondWei.toString() : null,
+        alphaBps: standing ? Number(standing.alphaBps) : null,
+        feedbacks: 0,
+        operator: a.operator,
+        siblings: a.siblings,
+      };
+    });
+
+  /*
+    Where both sources have a token, the chain wins.
+
+    They overlap, and the overlap is where the crawl looks worst: 8004scan
+    holds `name: "Agent #269703", description: null` for a registration whose
+    tokenURI resolves to a manifest naming the pair, the venue and the daily
+    loss limit. Dropping the field row as a duplicate kept the poorer of the
+    two. The registration is the chain's; the crawl is a description of it.
+  */
+  const rows = [
+    ...marketRows,
+    ...fieldRows,
+    ...registryRows.filter((r) => !fieldIds.has(r.tokenId)),
+  ];
 
   const rung = params.rung !== undefined && /^[0-6]$/.test(params.rung) ? Number(params.rung) : "all";
   const category =
@@ -106,7 +179,7 @@ export default async function AgentsPage({
       ? (params.category as Category)
       : "all";
 
-  const unindexed = Math.max(0, index.registry.registered - registryRows.length);
+  const unindexed = Math.max(0, index.registry.registered - rows.filter((r) => r.source === "registry").length);
 
   return (
     <div className="app">
