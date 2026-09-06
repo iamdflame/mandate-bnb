@@ -199,8 +199,33 @@ problem: how do you trade a thing whose quality you cannot see, when the seller
 has every reason to overstate it? You do not ask the seller. You assay it, and
 you strike a mark that means something because striking a false one is a crime.
 
-**Team: one person.** That is the honest answer, and it is why this document
-exists — everything here is written so that someone else can run it.
+**Team: two people.** David Praise and Princess Queensley.
+
+Two is small, and small is the thing an adopting team is actually assessing
+when it asks who is behind this — so the answer is not just a headcount:
+
+- **Nothing here has a single point of human failure by design.** Every
+  operational path in this document is written to be followed by someone who
+  did not write it, and §2 is the test of that: running it from zero needs no
+  conversation with either of us.
+- **Almost nothing depends on a key we hold.** The contracts deploy from
+  source, the index rebuilds from the chain, and every published figure names
+  the command that re-derives it — so a team inheriting this reconstructs the
+  system without inheriting our secrets. The exception is the owner key, and
+  §3 states the gap rather than dressing it: there is no multisig and no
+  timelock on it. With a two-person team that is the sharpest bus-factor
+  question here, and the fix is a deployment decision rather than a contract
+  change — the owner can be a Gnosis Safe at construction, which is what we
+  would advise an adopter to do on day one.
+- **The work is legible without us.** A hundred-odd commits, each explaining
+  why rather than what, plus [`REBUILD_STATUS.md`](REBUILD_STATUS.md) and
+  [`INCIDENTS.md`](docs/INCIDENTS.md) tracking what is broken in the present tense.
+  A team inheriting this reads the reasoning, not just the diff.
+
+If BNB Chain adopts this and staffs it, the thing being handed over is a
+running system with its own runbook, not two people's working knowledge. That
+is the whole point of writing it this way, and it is checkable now rather than
+promised: follow §2 on a clean machine and see whether it comes up.
 
 ## 8. What this is not
 

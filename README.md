@@ -865,6 +865,28 @@ Walking that list is what found the bug in the published verifier: `0.2.0`
 reports `FAILED` on two live mandates that are simply unawarded, which teaches
 anyone reading its exit code to stop trusting it.
 
+## Who built this, and when
+
+Two people: **David Praise** and **Princess Queensley**.
+
+This repository's history begins on 4 September 2026 with a first commit of
+16,234 lines across 45 files. That is not when the work began. Development
+started around 23 August, roughly a fortnight earlier, in a working tree that
+was not under version control at the time — the opening commit is that tree
+being imported in one go, not a day's output.
+
+We are stating that because the inference a reader would otherwise draw from
+the history alone is that sixteen thousand lines appeared on a Thursday, and
+that inference is both wrong and, were it true, disqualifying.
+
+It is also a self-reported claim, and this office exists to argue that
+self-reported claims are worth nothing until someone can check them. So: git
+corroborates everything from 4 September onward — a hundred-odd commits, each
+carrying its own reasoning — and it corroborates nothing before it. A reader
+who discounts the earlier fortnight entirely is doing exactly the right thing
+with an unverifiable statement, and is doing to us what we do to an agent card.
+Nothing in the register depends on that fortnight being believed.
+
 ## The site
 
 | Route | What it is |
