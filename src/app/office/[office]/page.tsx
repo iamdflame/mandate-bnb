@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import SiteHeader from "@/components/shell/SiteHeader";
 import SiteFooter from "@/components/shell/SiteFooter";
 import CategoryMark from "@/components/mark/CategoryMark";
+import Strike from "@/components/mark/Strike";
 import Observation from "@/components/ui/Observation";
 import Command from "@/components/ui/Command";
 import { readBook, type BookRow } from "@/lib/chain/book";
@@ -102,6 +103,13 @@ export default async function OfficePage({
   const method = METHOD[c];
 
   /*
+    The key the office mark is struck on: every epoch this office has settled,
+    across every deployment. It changes when a settlement lands here and at no
+    other time, which is the only licence the motion doctrine grants.
+  */
+  const settledHere = rows.reduce((n, r) => n + r.epochsSettled, 0);
+
+  /*
     Registry agents classified into this office. Separate from the book on
     purpose: an agent that says it does this and an agent that has staked its
     own capital on doing it are different claims, and the page keeps them apart.
@@ -160,8 +168,20 @@ export default async function OfficePage({
 
       <main>
         <section className="section shell office-head">
+          {/*
+            The mark is struck when this office settles an epoch.
+
+            `<Strike>` runs on a change of its `when` key and never on a route
+            render, so the key is the office's own settled-epoch count read
+            from the book. Opening the page does not strike anything; an epoch
+            closing here does. That is the whole rule the motion doctrine sets
+            — nothing moves unless the chain moved — applied to the one mark on
+            the page that stands for this office.
+          */}
           <div className="office-head__mark">
-            <CategoryMark category={c} size={48} metal="var(--gold-750)" />
+            <Strike when={`${c}:${settledHere}`}>
+              <CategoryMark category={c} size={48} metal="var(--gold-750)" />
+            </Strike>
           </div>
           <h1 className="section-title office-head__title">{CATEGORY_LABEL[c]}</h1>
           <p className="office-head__blurb">{CATEGORY_BLURB[c]}</p>

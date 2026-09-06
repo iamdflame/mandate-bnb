@@ -24,6 +24,7 @@ import AgentStandings from "./AgentStandings";
 import OperatedAgents from "@/components/agents/OperatedAgents";
 import Legend from "@/components/floor/Legend";
 import SiteHeader from "@/components/shell/SiteHeader";
+import Roll from "@/components/ui/Roll";
 import { CANONICAL, addressUrl } from "@/lib/chain/deployments";
 
 const CATEGORIES = ["Rebalancing", "Grid Trading", "Yield Optimisation", "Health Factor"];
@@ -459,10 +460,22 @@ function TapeRow({ t }: { t: TapeEntry }) {
   );
 }
 
+/**
+ * A total on the floor.
+ *
+ * The four figures at the head of this page are the only ones on it that move
+ * when a settlement lands, and they were rendered as plain text — so a slash
+ * or an epoch closing changed the number with no indication that anything had
+ * happened. `BRAND.md` sanctions exactly one motion for this: a value updated
+ * from the chain rolls the character that changed, vertically, for 180ms.
+ * Nothing rolls on a re-render, and nothing rolls on load.
+ */
 function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div className="stat">
-      <div className={`fig stat__value ${accent ? "up" : ""}`}>{value}</div>
+      <div className={`fig stat__value ${accent ? "up" : ""}`}>
+        <Roll value={value} />
+      </div>
       <div className="label">{label}</div>
     </div>
   );

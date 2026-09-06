@@ -651,10 +651,16 @@ tr:has(.strike[data-striking="1"]),
   transition: background var(--d-hover) linear;
 }
 
-.register tbody tr:hover {
-  background: var(--iron);
-}
+/*
+  The rule brightens; the row does not fill.
 
+  `BRAND.md` gives hover exactly one expression — the hairline moving from
+  `--score` to `--pewter-500` over 120ms — and this rule was already doing that
+  on the cell borders while also washing the whole row in `--iron`. On a
+  register whose argument is a column of blanks, filling the row makes the
+  pointer the loudest thing on the page. The hairline is enough; it is what the
+  eye is following down the mark column anyway.
+*/
 .register tbody tr:hover td {
   border-bottom-color: var(--pewter-500);
 }
