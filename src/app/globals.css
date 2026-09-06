@@ -2022,6 +2022,195 @@ p code {
   .mech { grid-template-columns: 1fr; gap: 20px; }
 }
 
+/* ------------------------------------------------------------------ ticket */
+
+/*
+  The ticket.
+
+  A document, not a form: the terms are the body copy and the button is the
+  last line of it. Everything that governs the money is above the signature,
+  which is the only arrangement that makes the disclosure worth having.
+*/
+.ticket {
+  border: var(--hair) solid var(--score);
+  background: var(--iron);
+}
+
+.ticket__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: var(--hair) solid var(--score);
+}
+
+.ticket__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ticket__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 20px;
+  border-bottom: var(--hair) solid var(--score);
+  border-right: var(--hair) solid var(--score);
+}
+
+.ticket__field:nth-child(2n) { border-right: 0; }
+
+.ticket__value {
+  font-family: var(--mono);
+  font-size: var(--t-data);
+  color: var(--ink);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.ticket__note {
+  font-size: var(--t-mark);
+  line-height: 1.6;
+  color: var(--ink-3);
+  text-transform: none;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.ticket__offices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ticket__office {
+  font-family: var(--mono);
+  font-size: var(--t-mark);
+  color: var(--pewter-500);
+  background: transparent;
+  border: var(--hair) solid var(--score);
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: color var(--d-hover) linear, border-color var(--d-hover) linear;
+}
+
+.ticket__office:hover { color: var(--silver-925); }
+.ticket__office[data-on] { color: var(--gold-999); border-color: var(--gold-750); }
+
+.ticket__amount {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.ticket__input {
+  background: var(--void);
+  border: var(--hair) solid var(--score);
+  color: var(--ink);
+  font-size: var(--t-data);
+  padding: 8px 10px;
+  width: 12ch;
+  font-variant-numeric: tabular-nums;
+}
+
+.ticket__input:focus-visible { outline: 2px solid var(--gold-999); outline-offset: 1px; }
+
+.ticket__scope { padding: 16px 20px; border-bottom: var(--hair) solid var(--score); }
+
+.ticket__scopehead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.ticket__tbl { width: 100%; margin-bottom: 10px; }
+.ticket__tbl td, .ticket__tbl th { height: 44px; }
+.ticket__sel { font-size: var(--t-mark); word-break: break-all; }
+
+/* Absence of light, never red: a withheld call is unlit, not forbidden. */
+.ticket__tbl tr[data-withheld] td { color: var(--base); }
+.ticket__why { color: var(--base); text-transform: none; letter-spacing: 0; }
+
+.ticket__rules {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-bottom: var(--hair) solid var(--score);
+}
+
+.ticket__rule {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 20px;
+  border-right: var(--hair) solid var(--score);
+}
+
+.ticket__rule:last-child { border-right: 0; }
+
+.ticket__sign {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+/* The one place a refusal is written out rather than left as a dead button. */
+.ticket__refusal {
+  font-size: var(--t-mark);
+  line-height: 1.6;
+  color: var(--silver-925);
+  border-left: 2px solid var(--cancelled);
+  padding-left: 12px;
+  margin: 0;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.ticket__phase {
+  font-size: var(--t-mark);
+  color: var(--ink-2);
+  margin: 0;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.ticket__phase[data-ok] { color: var(--gold-999); }
+
+/* ------------------------------------------------------------- start, split */
+
+.start-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+}
+
+.start-col { min-width: 0; }
+
+.start-colhead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+  border-bottom: var(--hair) solid var(--score);
+}
+
+@media (max-width: 1040px) {
+  .start-cols { grid-template-columns: minmax(0, 1fr); gap: 56px; }
+  .ticket__grid { grid-template-columns: minmax(0, 1fr); }
+  .ticket__field { border-right: 0; }
+  .ticket__rules { grid-template-columns: minmax(0, 1fr); }
+  .ticket__rule { border-right: 0; border-bottom: var(--hair) solid var(--score); }
+  .ticket__rule:last-child { border-bottom: 0; }
+  .ticket__scope { overflow-x: auto; }
+}
+
 /* -------------------------------------------------------- the book, at home */
 
 /*

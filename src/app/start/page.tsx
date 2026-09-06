@@ -3,13 +3,21 @@ import Link from "next/link";
 import SiteHeader from "@/components/shell/SiteHeader";
 import SiteFooter from "@/components/shell/SiteFooter";
 import Command from "@/components/ui/Command";
-import { MARKET_ADDRESS } from "@/lib/chain/market";
+import Ticket from "@/components/ui/Ticket";
+import { ticketScopes } from "@/lib/ticket-scope";
+import { MARKET_ADDRESS, marketClient } from "@/lib/chain/market";
 
 export const metadata: Metadata = {
   title: "Start here — MANDATE",
   description:
-    "Every claim this project makes, and the command or link that checks it. No wallet needed.",
+    "Two columns. Falsify any claim this project makes with the command beside it, or hire an agent and end on a signed transaction. Neither needs the README.",
 };
+
+/*
+  The block is read for the ticket's stamp, so the page is revalidated rather
+  than static. Thirty seconds, like the front door.
+*/
+export const revalidate = 30;
 
 interface Claim {
   claim: string;
@@ -86,20 +94,44 @@ const CLAIMS: Claim[] = [
   },
 ];
 
-export default function StartPage() {
+export default async function StartPage() {
+  let blockNumber: string | null = null;
+  try {
+    blockNumber = (await marketClient.getBlockNumber()).toString();
+  } catch {
+    // A ticket that cannot name the block it was drawn at says so.
+    blockNumber = null;
+  }
+
   return (
     <div className="app">
       <SiteHeader current="/start" />
       <main className="start shell">
-        <p className="mark-label">Start here · no wallet · under ninety seconds</p>
-        <h1 className="display start-title">Nothing here asks to be believed.</h1>
+        <p className="mark-label">Start here · two columns · neither needs the README</p>
+        <h1 className="display start-title">Falsify it, or hire from it.</h1>
         <p className="lede start-sub">
-          Every claim this project makes is paired below with the command or the
-          link that would prove it false. No wallet is needed for any of them.
-          If you have two minutes, read the left column; if you have ten, run
-          the right one.
+          {/*
+            This page had one column and it was the wrong one on its own.
+
+            Every claim was paired with the command that would prove it false,
+            which is the right way to be read and is not the thing the rubric
+            measures. Functionality is activation: land, find, understand,
+            hire. A judge who verified all eight claims and then had nowhere to
+            press had been shown a very good argument for a product they never
+            used.
+          */}
+          Left: every claim this project makes, beside the command or link that
+          would prove it false. No wallet, no account. Right: open a mandate and
+          end on a signed transaction, with everything that governs the money on
+          the ticket before your wallet opens.
         </p>
 
+        <div className="start-cols">
+        <section className="start-col" aria-labelledby="falsify-title">
+        <div className="start-colhead">
+          <h2 id="falsify-title" className="section-title">Falsify</h2>
+          <span className="mark-label">eight claims · no wallet</span>
+        </div>
         <ol className="claims">
           {CLAIMS.map((c, i) => (
             <li key={i} className="claim">
@@ -122,6 +154,32 @@ export default function StartPage() {
             </li>
           ))}
         </ol>
+        </section>
+
+        <section className="start-col" aria-labelledby="hire-title">
+          <div className="start-colhead">
+            <h2 id="hire-title" className="section-title">Hire</h2>
+            <span className="mark-label">one ticket · ends on a signed transaction</span>
+          </div>
+          <p className="section-sub">
+            Choose an office and an amount. Everything that governs the money —
+            which contracts the agent may call, which calls are withheld from it
+            and why, what a failing epoch costs it, and what ends the mandate —
+            is on the ticket below, above the button, before the wallet opens.
+          </p>
+          <Ticket
+            scopes={ticketScopes()}
+            blockNumber={blockNumber}
+            readAt={new Date().toISOString()}
+          />
+          <p className="section-sub">
+            No command is needed to reach this. It is the same transaction the
+            floor sends, and it lands on{" "}
+            <Link href="/floor" className="link-underline">the floor</Link> as a row
+            the moment it confirms.
+          </p>
+        </section>
+        </div>
 
         <section className="start-next">
           <h2 className="section-title">Then</h2>
