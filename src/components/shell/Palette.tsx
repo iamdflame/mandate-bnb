@@ -26,7 +26,7 @@ const ROUTES: Row[] = [
 ];
 
 const COMMANDS: Row[] = [
-  { kind: "command", label: "npx mandate-verify --mandate 0 --chain 56", hint: "re-derive a settlement", copy: "npx mandate-verify --mandate 0 --chain 56" },
+  { kind: "command", label: "npx mandate-verify --mandate 0 --chain 56 --deployment v1", hint: "re-derive a settlement", copy: "npx mandate-verify --mandate 0 --chain 56 --deployment v1" },
   { kind: "command", label: "npm run assay -- <tokenId>", hint: "the six tests, locally", copy: "npm run assay -- 153776" },
   { kind: "command", label: "npm run sybil -- <tokenId>", hint: "the reputation autopsy", copy: "npm run sybil -- 153776" },
   { kind: "command", label: "npm run prove-session", hint: "attack the session scope", copy: "npm run prove-session" },

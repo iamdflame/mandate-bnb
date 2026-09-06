@@ -28,7 +28,7 @@ interface Claim {
 const CLAIMS: Claim[] = [
   {
     claim: "The number that decides every slash is on chain, not on our laptop.",
-    check: "npx mandate-verify --mandate 0 --chain 56",
+    check: "npx mandate-verify --mandate 0 --chain 56 --deployment v1",
     how: "command",
     target: "https://www.npmjs.com/package/mandate-verify",
     note: "Published to npm. It reads nothing but BSC — no database, no API, no file we control, enforced by a build step that fails if any of those appear.",
@@ -42,7 +42,7 @@ const CLAIMS: Claim[] = [
   },
   {
     claim: "Tamper with any committed number and verification fails.",
-    check: "npx mandate-verify --mandate 0 --chain 56 --tamper",
+    check: "npx mandate-verify --mandate 0 --chain 56 --deployment v1 --tamper",
     how: "command",
     target: "https://www.npmjs.com/package/mandate-verify",
     note: "Perturbs each value by the smallest amount that matters. 8 of 8 rejected.",

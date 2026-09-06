@@ -1,6 +1,6 @@
 {
   "name": "mandate-verify",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Re-derive and check a MANDATE settlement on BNB Smart Chain from public chain state alone. Reads no database, no API and no file the operator controls.",
   "type": "module",
   "bin": {

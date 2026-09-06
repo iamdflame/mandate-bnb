@@ -93,10 +93,17 @@ Unblocked by an archive RPC (`ARCHIVE_RPC_URL`, declared and empty).
 It does. Run from an empty directory with no repository present:
 
 ```
-npx mandate-verify --mandate 0 --chain 56    VERIFIED (tier 1)   exit 0
-npx mandate-verify --mandate 2 --chain 56    VERIFIED (tier 1)   exit 0
-npx mandate-verify --mandate 7 --chain 56    error: does not exist; the market holds 4
+npx mandate-verify --mandate 0 --chain 56 --deployment v1   VERIFIED (tier 1)  exit 0
+npx mandate-verify --mandate 2 --chain 56 --deployment v1   VERIFIED (tier 1)  exit 0
+npx mandate-verify --mandate 0 --chain 56                   INCONCLUSIVE       exit 3
+npx mandate-verify --mandate 7 --chain 56 --deployment v1   error: does not exist
 ```
+
+The canonical deployment is the default and reports INCONCLUSIVE, not
+VERIFIED: v2's settlement logs are not served by any public BSC provider, so
+the tool says it could not get the evidence rather than that the mandate is
+wrong. Every command printed on the site names `--deployment v1` for that
+reason — the deployment whose epochs a public node will still show.
 
 **The published version has a bug this gate found.** `mandate-verify@0.2.0` on
 npm reports `FAILED` on mandates 1 and 3 — both of which are simply unawarded,

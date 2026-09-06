@@ -154,7 +154,7 @@ Rung 6 is **settlement against a measurement committed before the outcome was
 known**, which anyone can re-derive:
 
 ```bash
-npx mandate-verify --mandate 0 --chain 56
+npx mandate-verify --mandate 0 --chain 56 --deployment v1
 ```
 
 ## The mechanism
@@ -325,7 +325,7 @@ into storage *and emitted whole in the log*, so the preimage is public and no
 external service sits in the verification path.
 
 ```bash
-npx mandate-verify --mandate 0 --chain 56
+npx mandate-verify --mandate 0 --chain 56 --deployment v1
 ```
 
 [`packages/mandate-verify`](packages/mandate-verify) is a separate package that

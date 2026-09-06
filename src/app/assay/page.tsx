@@ -173,7 +173,7 @@ export default function MethodPage() {
               npm run sybil -- 153776
             </Command>
             <Command note="Re-derives a settlement from public chain state alone.">
-              npx mandate-verify --mandate 0 --chain 56
+              npx mandate-verify --mandate 0 --chain 56 --deployment v1
             </Command>
           </div>
           <p className="tbl__foot">

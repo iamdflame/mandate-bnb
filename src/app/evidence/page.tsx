@@ -29,7 +29,7 @@ const PROOFS: Item[] = [
   {
     title: "Independent verification",
     body: "A published package that re-derives any settlement from public chain state. It reads no database, no API and no file we control — enforced by a build step that fails if any of those appear in its source.",
-    command: "npx mandate-verify --mandate 0 --chain 56",
+    command: "npx mandate-verify --mandate 0 --chain 56 --deployment v1",
   },
   {
     title: "The reputation registry is manufactured",

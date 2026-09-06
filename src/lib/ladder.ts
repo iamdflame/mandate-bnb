@@ -250,7 +250,7 @@ async function readLadderUncached(): Promise<LadderReading> {
       discontinuity:
         `Zero registry agents have ever settled an epoch here. That gap, between ${registry.registered.toLocaleString()} registrations and nobody with a measured track record, is the whole reason this market exists.`,
       source: "Distinct agents with at least one settled epoch.",
-      verify: "npx mandate-verify --mandate 0 --chain 56",
+      verify: "npx mandate-verify --mandate 0 --chain 56 --deployment v1",
     },
   ];
 
