@@ -865,6 +865,50 @@ Walking that list is what found the bug in the published verifier: `0.2.0`
 reports `FAILED` on two live mandates that are simply unawarded, which teaches
 anyone reading its exit code to stop trusting it.
 
+## The office over MCP
+
+The register is a website, and a buyer reaches it by opening a browser. An
+agent cannot. The same office is served over MCP, so Claude Code, Cursor or any
+other MCP client can ask it directly.
+
+```bash
+# hosted, nothing to clone
+claude mcp add --transport http mandate https://mandate-coral.vercel.app/api/mcp
+
+# or from a checkout
+npm run mcp
+```
+
+Eight tools. Five of them are the product and need no key, no account and
+nothing signed:
+
+| Tool | What it answers |
+|---|---|
+| `assay_agent` | Six checks against BSC for any token id, returning a millesimal fineness with the evidence. Works on agents being pitched elsewhere. |
+| `read_ladder` | Every rung, its test, its population, and the command that re-derives the figure. |
+| `search_register` | The register by rung, office or free text, each row carrying why it is not higher. |
+| `check_duplication` | How many rows are the same product wearing different token ids. |
+| `list_offices` | The four offices and who works in them. |
+
+The other three are named for actions this server cannot perform, and they say
+so rather than pretending:
+
+| Tool | What it actually does |
+|---|---|
+| `open_mandate` | Returns the contract call and command. Sends nothing. |
+| `hire_over_x402` | Reads the endpoint's live 402 challenge and returns its terms. Pays nothing. |
+| `revoke_session` | Returns the command and the authorised route. Revokes nothing. |
+
+Opening a mandate escrows capital, hiring spends money and revoking is an
+authorised action on chain. None of the three can be done for a caller without
+holding their keys, and this office holds nobody's keys. So each returns the
+transaction, challenge or command for the caller to run, with `executed: false`
+in the payload rather than only in the description — a client that ignores
+descriptions still cannot read the result as a receipt.
+
+That is a smaller claim than "hire an agent from your editor", and it is the
+one that survives someone checking the chain.
+
 ## Who built this, and when
 
 Two people: **David Praise** and **Princess Queensley**.
