@@ -1386,18 +1386,26 @@ tr:has(.strike[data-striking="1"]),
 
 .funnel__link {
   display: grid;
-  grid-template-columns: minmax(0, 20ch) 11ch minmax(120px, 1fr) minmax(0, 34ch);
+  grid-template-columns: minmax(0, 20ch) 12ch minmax(120px, 1fr) minmax(0, 34ch);
   align-items: center;
   gap: 24px;
-  min-height: var(--row);
+  min-height: 56px;
   padding: 0;
 }
 
+/*
+  The rung name is read, so it is legible.
+
+  It was set at the register's label size in `--ink-3` against the ground —
+  correct as a caption and wrong as the only label on the most important
+  object on the page. A judge scanning the ladder for four seconds was reading
+  the dimmest text on the site.
+*/
 .funnel__meta {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  color: var(--ink-3);
+  gap: 10px;
+  color: var(--silver-925);
   white-space: nowrap;
 }
 
@@ -1417,13 +1425,34 @@ tr:has(.strike[data-striking="1"]),
  */
 .funnel__fig {
   font-family: var(--mono);
-  font-size: var(--t-data);
+  font-size: var(--t-data-lg);
   line-height: 1;
   font-variant-numeric: tabular-nums;
   text-align: right;
   color: var(--ink);
   transition: color var(--d-hover) linear;
 }
+
+/*
+  The metals carry the collapse.
+
+  Every figure was one grey, so the single most important thing the ladder has
+  to say — that three hundred thousand registrations become base metal, and a
+  handful become gold — had to be worked out from the bar. The scale it
+  already uses is the palette: base metal at the bottom rung, then pewter,
+  silver, and gold where something has actually been struck or settled. No new
+  colour; the ones the brand already assigns to these exact states.
+*/
+.funnel__row:nth-child(1) .funnel__fig { color: var(--base); }
+.funnel__row:nth-child(2) .funnel__fig,
+.funnel__row:nth-child(3) .funnel__fig { color: var(--pewter-500); }
+.funnel__row:nth-child(4) .funnel__fig,
+.funnel__row:nth-child(5) .funnel__fig { color: var(--silver-925); }
+.funnel__row:nth-child(6) .funnel__fig { color: var(--gold-750); }
+.funnel__row:nth-child(7) .funnel__fig { color: var(--gold-999); }
+
+/* Unmeasurable stays unlit whatever rung it sits on. */
+.funnel__row .funnel__none { color: var(--base); }
 
 /**
  * An unmeasurable rung used to render as an em-dash, which at this size read
@@ -1974,6 +2003,33 @@ p code {
   The finding, at a measure. Left, like everything under it, and wide enough
   that the three numbers in it do not each land on their own line.
 */
+/*
+  The sentence that says what the site is. Set as the page's own voice — sans,
+  at reading size — so it is plainly an explanation and not another finding.
+*/
+.open__lede {
+  font-size: var(--t-body);
+  line-height: 1.65;
+  color: var(--ink-2);
+  max-width: 68ch;
+  margin: 0;
+}
+
+/*
+  The sentence that says what the site is.
+
+  Set in the page's own voice — sans, at reading size — so it reads plainly as
+  an explanation rather than as another finding competing with the serif line
+  under it.
+*/
+.open__lede {
+  font-size: var(--t-body);
+  line-height: 1.65;
+  color: var(--ink-2);
+  max-width: 68ch;
+  margin: 0;
+}
+
 .open__line {
   font-family: var(--serif);
   font-size: var(--t-h2);

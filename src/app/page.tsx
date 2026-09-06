@@ -183,6 +183,24 @@ export default async function Home() {
           </div>
 
           {/*
+            What this is, then what it found.
+
+            The page opened on the finding — three hundred thousand
+            registrations, a handful that answer — which is the strongest
+            sentence here and the wrong one to lead with. It tells a reader
+            what we discovered before it tells them what they are looking at
+            or what they can do, and a judge deciding in four seconds needs
+            those in the other order. The finding is still the line under it,
+            and it is still the reason the rest of the page exists.
+          */}
+          <p className="open__lede">
+            The assay office and capital market for every ERC-8004 agent on BNB
+            Smart Chain. Find one, put it to work against a bond it can lose,
+            watch it run under a key you can revoke, and dismiss it in a single
+            transaction.
+          </p>
+
+          {/*
             The headline counts the same way the ladder does.
 
             It said "5 answer when called" — 8004scan's verification flag —
