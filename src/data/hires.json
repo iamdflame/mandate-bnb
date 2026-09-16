@@ -22,7 +22,7 @@
       "task": "Check PancakeSwap V3 position #7408923 on BNB Smart Chain (owner 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90) and say whether it should be recentered, with the pool tick you read. Deliverable: a JSON verdict with the block number.",
       "at": "2026-09-11T03:47:11.713Z",
       "lastStatus": "FUNDED",
-      "lastCheckedAt": "2026-09-11T04:43:18.415Z"
+      "lastCheckedAt": "2026-09-16T03:18:26.104Z"
     },
     {
       "tokenId": "270183",
@@ -46,14 +46,39 @@
       "task": "Report the Venus health factor of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90 on BNB Smart Chain, with the block number and the markets it holds. Deliverable: JSON.",
       "at": "2026-09-11T03:47:17.212Z",
       "lastStatus": "SUBMITTED",
-      "lastCheckedAt": "2026-09-11T04:43:18.605Z",
+      "lastCheckedAt": "2026-09-16T03:18:26.333Z",
       "deliverable": {
         "url": "https://agentcensus.xyz/erc8183m/job/56777/response",
         "committedHash": "0x217240548fa124fcb780698ae45053a461098d9b0b338b82f044ce17215a52e9",
-        "contentHash": "0xbcddc187fbf791d666cab664c2aeec87f8698e109e7e74a4d6f1f559491b1e92",
         "hashMatches": false,
-        "content": "{\n  \"type\": \"agentcensus/health-factor-report/v1\",\n  \"report\": {\n    \"account\": \"0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90\",\n    \"network\": \"mainnet\",\n    \"block\": 121192588,\n    \"markets_entered\": 1,\n    \"liquidity_usd\": 0.18,\n    \"shortfall_usd\": 0.0,\n    \"status\": \"AT_RISK\",\n    \"recommendation\": \"Borrow headroom below $50 - repay or add collateral soon.\"\n  }\n}",
-        "readAt": "2026-09-11T04:43:22.644Z"
+        "matchedAs": null,
+        "candidates": [
+          {
+            "reading": "the whole response",
+            "keccak256": "0x46cbfdd8afabdd201c1f8bae57fb02bbfacac541b5b95c228449e3865381e730",
+            "sha256": "0x28338ce42aa4571276df08d486b7e90165352c48ed5f9ed9d372f66d376daac7"
+          },
+          {
+            "reading": "its response.content field",
+            "keccak256": "0xbcddc187fbf791d666cab664c2aeec87f8698e109e7e74a4d6f1f559491b1e92",
+            "sha256": "0xa9096258118104fc652b4b72737d92715714fe42bd551921a71f8edf680f5a9f"
+          },
+          {
+            "reading": "its response object",
+            "keccak256": "0xff250d6ef9a9f85e7286cad3926ca8cb6f85654a55ea1b7aa6d5a9018735653b",
+            "sha256": "0xeab542c08a9c3817fafd6320289d0ab9bb751abdb35e4bad8b551f7495a980f8"
+          }
+        ],
+        "content": "{\"success\":true,\"chain_id\":56,\"contracts\":{\"commerce\":\"0xEa4DAa3100A767e86FDed867729ae7446476EBA6\",\"policy\":\"0x9C01845705b3078Aa2e8cfF7520a6376FD766dE5\",\"router\":\"0x51895229E12F9876011789B04f8698af06cCD6DA\"},\"job_id\":56777,\"metadata\":{},\"response\":{\"content\":\"{\\n  \\\"type\\\": \\\"agentcensus/health-factor-report/v1\\\",\\n  \\\"report\\\": {\\n    \\\"account\\\": \\\"0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90\\\",\\n    \\\"network\\\": \\\"mainnet\\\",\\n    \\\"block\\\": 121192588,\\n    \\\"markets_entered\\\": 1,\\n    \\\"liquidity_usd\\\": 0.18,\\n    \\\"shortfall_usd\\\": 0.0,\\n    \\\"status\\\": \\\"AT_RISK\\\",\\n    \\\"recommendation\\\": \\\"Borrow headroom below $50 - repay or add collateral soon.\\\"\\n  }\\n}\",\"content_type\":\"text/plain\"},\"version\":1}",
+        "readAt": "2026-09-16T03:18:30.932Z",
+        "error": null
+      },
+      "disputed": {
+        "at": "2026-09-16T03:19:03.062Z",
+        "tx": "0x1101029efe7911152b6674be8b9a5df33239a7477a3885cbc1e70cad3b3e117c",
+        "because": "the hash the provider committed on chain is not the hash of any reading of the bytes it serves",
+        "committed": "0x217240548fa124fcb780698ae45053a461098d9b0b338b82f044ce17215a52e9",
+        "candidates": []
       }
     },
     {
@@ -78,7 +103,7 @@
       "task": "Read PancakeSwap V3 position #7408925 (owner 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90) and report its distance from each bound and whether to hold, widen or recentre. Deliverable: JSON.",
       "at": "2026-09-11T03:47:23.144Z",
       "lastStatus": "FUNDED",
-      "lastCheckedAt": "2026-09-11T04:43:22.911Z"
+      "lastCheckedAt": "2026-09-16T03:18:31.754Z"
     },
     {
       "tokenId": "332318",
@@ -106,7 +131,7 @@
       "task": "Describe what your service does for a wallet on BNB Smart Chain and run it once for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90. Deliverable: the output, with the block number.",
       "at": "2026-09-11T04:43:14.858Z",
       "lastStatus": "FUNDED",
-      "lastCheckedAt": "2026-09-11T04:43:23.212Z"
+      "lastCheckedAt": "2026-09-16T03:18:31.973Z"
     },
     {
       "tokenId": "269224",
@@ -149,7 +174,9 @@
         }
       },
       "evidence": "docs/evidence/2026-09-11-8183-56781.json",
-      "at": "2026-09-11T22:12:47.002Z"
+      "at": "2026-09-11T22:12:47.002Z",
+      "lastStatus": "FUNDED",
+      "lastCheckedAt": "2026-09-16T03:18:32.166Z"
     },
     {
       "tokenId": "269224",
@@ -203,6 +230,34 @@
         "hashMatches": "keccak256",
         "evidence": "docs/evidence/2026-09-11-8183-56782-deliverable.json",
         "at": "2026-09-11T22:20:09.974Z"
+      },
+      "lastStatus": "SUBMITTED",
+      "lastCheckedAt": "2026-09-16T03:18:32.363Z",
+      "deliverable": {
+        "url": "https://agents.chainhelix.io/gridtrader/erc8183/job/56782/response",
+        "committedHash": "0x3910327028b9331a17247c1dfcf61568c8441b884bfb7f1d061cbf315fe2b5c8",
+        "hashMatches": true,
+        "matchedAs": "the whole response, keccak256",
+        "candidates": [
+          {
+            "reading": "the whole response",
+            "keccak256": "0x3910327028b9331a17247c1dfcf61568c8441b884bfb7f1d061cbf315fe2b5c8",
+            "sha256": "0x2eb336ba753c205dfc7b5cb8c72d2cb33030ef7f77483ae852e0af35bf913f07"
+          },
+          {
+            "reading": "its response.content field",
+            "keccak256": "0x22a7de69757473e4c28245855944dca068b0f674a9a37284b4fe5978510deba5",
+            "sha256": "0x621648e7e2c98ed6ff937da446aa63706418b5d04219f612fddbf2cc84c7f547"
+          },
+          {
+            "reading": "its response object",
+            "keccak256": "0xb880313a0a84d68a3bd13988dbfd165e0e0e574704cf6339dbc6c18d762df641",
+            "sha256": "0x99e06eef7bf8944d3d664e2b49cd542e50de01e6f5e82746ac21ef28e73e2ed5"
+          }
+        ],
+        "content": "{\"chain_id\":56,\"contracts\":{\"commerce\":\"0xEa4DAa3100A767e86FDed867729ae7446476EBA6\",\"policy\":\"0x9C01845705b3078Aa2e8cfF7520a6376FD766dE5\",\"router\":\"0x51895229E12F9876011789B04f8698af06cCD6DA\"},\"job_id\":56782,\"metadata\":{\"built_with\":\"https://github.com/bnb-chain/bnbagent-studio\",\"generator\":\"gridtrader\",\"job_id\":56782},\"response\":{\"content\":\"{\\\"category\\\":\\\"grid\\\",\\\"ok\\\":true,\\\"mark\\\":716,\\\"spanPct\\\":2,\\\"levelsPerSide\\\":5,\\\"perLevelUsd\\\":10,\\\"budgetUsd\\\":100,\\\"allocatedUsd\\\":100,\\\"buys\\\":[{\\\"side\\\":\\\"buy\\\",\\\"price\\\":713.136,\\\"sizeUsd\\\":10,\\\"amount\\\":0.01402257},{\\\"side\\\":\\\"buy\\\",\\\"price\\\":710.272,\\\"sizeUsd\\\":10,\\\"amount\\\":0.01407911},{\\\"side\\\":\\\"buy\\\",\\\"price\\\":707.408,\\\"sizeUsd\\\":10,\\\"amount\\\":0.01413611},{\\\"side\\\":\\\"buy\\\",\\\"price\\\":704.544,\\\"sizeUsd\\\":10,\\\"amount\\\":0.01419358},{\\\"side\\\":\\\"buy\\\",\\\"price\\\":701.68,\\\"sizeUsd\\\":10,\\\"amount\\\":0.01425151}],\\\"sells\\\":[{\\\"side\\\":\\\"sell\\\",\\\"price\\\":718.864,\\\"sizeUsd\\\":10,\\\"amount\\\":0.01391084},{\\\"side\\\":\\\"sell\\\",\\\"price\\\":721.728,\\\"sizeUsd\\\":10,\\\"amount\\\":0.01385564},{\\\"side\\\":\\\"sell\\\",\\\"price\\\":724.592,\\\"sizeUsd\\\":10,\\\"amount\\\":0.01380087},{\\\"side\\\":\\\"sell\\\",\\\"price\\\":727.456,\\\"sizeUsd\\\":10,\\\"amount\\\":0.01374654},{\\\"side\\\":\\\"sell\\\",\\\"price\\\":730.32,\\\"sizeUsd\\\":10,\\\"amount\\\":0.01369263}],\\\"wallsSupplied\\\":0,\\\"levelsOnWalls\\\":0,\\\"note\\\":\\\"no wall map supplied; levels are spacing-only; supply walls[] for placement-aware grids\\\"}\",\"content_type\":\"text/plain\"},\"version\":1}",
+        "readAt": "2026-09-16T03:18:37.561Z",
+        "error": null
       }
     }
   ]

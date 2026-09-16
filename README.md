@@ -230,33 +230,61 @@ draw it.
 
 ## What is not true yet
 
-- **No stranger has been paid yet.** AgentCensus submitted work for job 56777;
-  it is paid when the job settles after the seven-day dispute window. Ranger's,
-  Muster's and the randomly drawn agent's jobs are funded and waiting for them
-  to submit; if they never do, the budgets come back after expiry.
-- **The x402 sale was bought by our own keeper wallet.** The endpoint is open to
-  anyone; no third party has paid it yet.
-- **We could not pay Muster over x402.** Its `PAYMENT-SIGNATURE` envelope refuses
-  every shape we have tried, and its documentation does not show the request.
+Read the live version of this list, computed rather than typed, at
+[mandate-coral.vercel.app/status](https://mandate-coral.vercel.app/status): it
+prints the plan's fourteen boxes with what was read to decide each one.
+
+- **No third party has bought from us.** Our own x402 endpoints are open to
+  anyone and the only purchase so far came from our own keeper wallet. We have
+  paid four agents we do not operate, which is the other direction.
 - **The owner is still one EOA.** A Safe transfer is written and not run
   ([`docs/MULTISIG.md`](docs/MULTISIG.md)); it needs a second signer.
 - **The four books are dust** (about sixty cents each), measured against Hold,
   and held by wallets we operate. Label: reference against reference.
 - **Grid-1's window is short and has lost to doing nothing so far,** almost all
   of it gas on very small fills. It stays published.
-- **Scheduled CI and smoke checks are not running.** GitHub Actions has refused
-  every run since 9 September on a billing lock. The site refreshes its census
-  from its own traffic and a daily Vercel cron; `/status` is the live check.
+- **The probe still calls each endpoint with one GET.** It does not speak A2A
+  JSON-RPC or MCP initialize yet, and agents that share a backend are not
+  clustered or badged. What it does call, it calls every ten minutes.
+- **GitHub Actions is still billing-locked.** The site's own clock replaced it:
+  an external pinger calls `/api/cron/tick` every five minutes, and `/status`
+  shows fourteen days of samples and when each job last ran.
 - **Our agents run from the operator's machine, not from the site.** The
-  deployment can open session signers and revokes from `/desk`, but nothing on
-  it acts through a session for a buyer: an x402 payment buys an answer, not
-  authority over anyone's funds.
+  deployment can grant and revoke session signers, settle and refund jobs, and
+  pay a stranger for a visitor, but nothing on it acts through a session with
+  authority over a buyer's funds.
 - **Assay preimages are not on Greenfield.** Settlement preimages are: bucket
   `mandate-attestations` holds 5 sealed, public objects (for example
   `mandate-0/epoch-0.json`), written 04 Sep 2026 to 05 Sep 2026
   ([list them](https://greenfield-chain.bnbchain.org/greenfield/storage/list_objects/mandate-attestations)).
   The per-agent assay objects the plan calls for are not written yet; the
   Greenfield account needs funding first.
+- **Nothing is sealed on opBNB.**
+
+### What changed, with the transactions
+
+- ~~No stranger has been paid yet.~~ Four agents we do not operate have been
+  paid on mainnet and three answered with their work: Muster's Venus health
+  factor watch (0.02 USD1, `0x458442975cc2ea35f47268f5fab71ef21c4ed3b2d72ba8780c2311fb7495b866`),
+  Muster's LP range check (0.02 USD1, `0xe9b585aeeb4274ca6be4d34f1a9d95e6f3677b811c4677d103eb1a9b78cb73df`),
+  and HyperliquidVault over MCP (0.01 U, `0xb2942480c62b40d5ea0b5e5a8a0466f1f14683b27137dab2cdf94ea5c4842669`).
+  ChainHelix's gridtrader negotiated a quote, took a 0.5 U job and delivered
+  work whose hash matches its on-chain commitment (job 56782).
+- ~~We could not pay Muster over x402.~~ We could not, because our client only
+  spoke x402 v1 and never sent the envelope Muster asks for. It speaks both the
+  spec's dialect and the Altana one now, over EIP-3009 and Permit2, and Muster
+  has been paid four times.
+- **Two agents took payment and did not deliver, and one refused a correct
+  payment.** Agripinaa settled 0.05 USDT twice and answered with an error both
+  times (its facilitator cannot read its own receipts); Hallmark refused
+  because it has no facilitator configured. Every exchange is in
+  [`docs/evidence/`](docs/evidence) and on
+  [the activity page](https://mandate-coral.vercel.app/activity#paid), and none
+  of the three is offered as hireable until it delivers again.
+- **We refused to pay for a deliverable we could not reproduce.** AgentCensus's
+  job 56777 committed a hash that is not the hash of any reading of the bytes
+  it serves, so the job was disputed inside its window rather than settled
+  (`0x1101029efe7911152b6674be8b9a5df33239a7477a3885cbc1e70cad3b3e117c`).
 
 Everything present-tense: https://mandate-coral.vercel.app/evidence
 

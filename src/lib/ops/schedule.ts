@@ -19,6 +19,7 @@ import { judgePathChecks } from "@/lib/ops/status";
 import { definitionOfDone, score } from "@/lib/ops/definition-of-done";
 import { store } from "@/lib/data/snapshots";
 import { beat } from "@/lib/heartbeat";
+import { sweepOurJobs, sweeperOn } from "@/lib/market/sweeper";
 
 export interface Job {
   name: string;
@@ -74,6 +75,22 @@ export const JOBS: Job[] = [
       const boxes = await definitionOfDone();
       if (boxes.length) await store("definition", boxes);
       return score(boxes);
+    },
+  },
+  {
+    /*
+      Escrowed jobs mature on their own day: a provider that delivered is paid
+      only when somebody settles after the dispute window, and one that never
+      delivered holds the escrow until the refund is claimed. Neither should
+      wait for an operator to be awake.
+    */
+    name: "sweeper",
+    everyMinutes: 30,
+    budgetMs: 20_000,
+    run: async () => {
+      const dry = !sweeperOn();
+      const r = await sweepOurJobs({ max: 2, dry });
+      return { dry, checked: r.checked, actions: r.actions };
     },
   },
   {
