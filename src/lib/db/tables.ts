@@ -95,6 +95,15 @@ export function ensureTables(): Promise<boolean> {
     for (const s of STATEMENTS) {
       try {
         await s.run();
+        /*
+          Supabase serves every table in `public` over its REST API to anyone
+          holding the project's anon key unless row-level security is on, and
+          grants that role full rights by default. Nothing here should ever be
+          reachable that way (the site connects directly as the owner, which
+          bypasses RLS), so each table is locked the moment it exists.
+        */
+        await pg!.unsafe(`alter table public."${s.name}" enable row level security`);
+        await pg!.unsafe(`revoke all on table public."${s.name}" from anon, authenticated`).catch(() => undefined);
       } catch {
         /* a table this deployment cannot create is reported by its reader */
       }

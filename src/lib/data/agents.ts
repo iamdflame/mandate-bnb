@@ -11,6 +11,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { CATEGORIES, CHAIN_ID, type Category } from "@/lib/config";
 import { db, hasDb, schema } from "@/lib/db/client";
+import { count, max } from "drizzle-orm";
 import { readRegistryTotals } from "@/lib/sources/totals";
 import { registeredCount } from "@/lib/registry/count";
 import { memo, withTimeout } from "@/lib/cache";
@@ -121,7 +122,34 @@ export async function readAgentIndex(): Promise<AgentIndex & { source: "postgres
     more slowly than that, so nothing is being hidden by the cache, and every
     figure derived from this already carries the age it was read at.
   */
-  return memo("agent-index", { freshMs: 30_000, staleMs: 5 * 60_000 }, readAgentIndexUncached);
+  return memo("agent-index", { freshMs: 5 * 60_000, staleMs: 30 * 60_000 }, readAgentIndexUncached);
+}
+
+/*
+  The table is downloaded only when it has changed.
+
+  The memo refreshed every thirty seconds while a page was in use, and each
+  refresh pulled every row, two and a half megabytes, over the pooler. One
+  busy instance moved seven gigabytes a day that way, and Supabase wrote to
+  say so. The probe writes to this table every ten minutes at most, so a
+  reader asks first how many rows there are and when the newest changed, a
+  few bytes, and re-reads the rows only when that answer moves.
+*/
+let lastStamp: string | null = null;
+let lastRows: Awaited<ReturnType<typeof selectAll>> | null = null;
+
+function selectAll() {
+  return db!.select().from(schema.agents).limit(20_000);
+}
+
+async function rowsIfChanged() {
+  const [m] = await db!.select({ n: count(), at: max(schema.agents.updatedAt) }).from(schema.agents);
+  const stamp = `${m?.n ?? 0}:${m?.at ? new Date(m.at).toISOString() : ""}`;
+  if (lastRows && stamp === lastStamp) return lastRows;
+  const rows = await selectAll();
+  lastStamp = stamp;
+  lastRows = rows;
+  return rows;
 }
 
 async function readAgentIndexUncached(): Promise<AgentIndex & { source: "postgres" | "snapshot" }> {
@@ -173,7 +201,7 @@ async function readAgentIndexUncached(): Promise<AgentIndex & { source: "postgre
     return { ...snapshot, registry, registrySource, registryAt, registryBlock, registryVerify, source: "snapshot" };
 
   try {
-    const rows = await db.select().from(schema.agents).limit(20_000);
+    const rows = await rowsIfChanged();
     if (rows.length === 0)
       return { ...snapshot, registry, registrySource, registryAt, registryBlock, registryVerify, source: "snapshot" };
 

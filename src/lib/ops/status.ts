@@ -16,7 +16,9 @@ import { listingFor } from "@/lib/market/listing";
 import { readGridWindow, type GridWindow } from "@/lib/grid/window";
 import { snapshot } from "@/lib/data/snapshots";
 import { listSessions } from "@/lib/chain/session-store";
-import { comparePolicy } from "@/lib/chain/keystore";
+import { activeKeys, comparePolicy, readKey } from "@/lib/chain/keystore";
+import { keccak256 } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import { registeredCount } from "@/lib/registry/count";
 import { withTimeout } from "@/lib/cache";
 import { DEMO_ADDRESS } from "@/lib/demo";
@@ -79,11 +81,29 @@ export async function judgePathChecks(): Promise<Check[]> {
       };
     }),
     timed(5, "The desk can read the KeyStore", async () => {
-      const live = (await listSessions()).filter((s) => !s.revokedAt && s.registered && s.expiry * 1000 > Date.now());
+      const all = await listSessions();
+      const live = all.filter((s) => !s.revokedAt && s.registered && s.expiry * 1000 > Date.now());
       if (!live.length) return { ok: false, detail: "no live registered session to compare" };
       const s = live[0];
       const m = await comparePolicy({ wallet: s.walletAddress as Hex, publicKey: s.publicKey as Hex, expiry: s.expiry, registered: s.registered, revoked: false });
-      return { ok: m.verdict === "matches", detail: `${s.label}: ${m.verdict} at block ${m.block ?? "?"}` };
+      /*
+        The other direction matters as much: a valid key on the account that no
+        session on record explains is authority nobody here can account for.
+        Three such keys sat on the demo account for a week before an audit
+        found them. This counts them on every sample.
+      */
+      const known = new Set(all.map((x) => x.keyId.toLowerCase()));
+      const raw = process.env.PRIVATE_KEY;
+      const adminKeyId = raw ? keccak256(privateKeyToAccount((raw.startsWith("0x") ? raw : `0x${raw}`) as Hex).publicKey).toLowerCase() : null;
+      const keys = await activeKeys(DEMO_ADDRESS as Hex).catch(() => [] as Hex[]);
+      let unaccounted = 0;
+      for (const k of keys) {
+        if (known.has(k.toLowerCase()) || k.toLowerCase() === adminKeyId) continue;
+        const e = await readKey(DEMO_ADDRESS as Hex, k).catch(() => null);
+        if (e?.valid) unaccounted += 1;
+      }
+      const tail = unaccounted ? `; ${unaccounted} valid key(s) on the account that no session accounts for` : `; every valid key on the account is accounted for`;
+      return { ok: m.verdict === "matches" && unaccounted === 0, detail: `${s.label}: ${m.verdict} at block ${m.block ?? "?"}${tail}` };
     }),
     timed(6, "The funnel reads the registry", async () => {
       const c = await registeredCount();

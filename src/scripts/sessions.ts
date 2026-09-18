@@ -11,7 +11,8 @@
  * was lost can still be revoked, and records it in the store as what it was.
  */
 
-import type { Address, Hex } from "viem";
+import { keccak256, type Address, type Hex } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import { activeKeys, readKey } from "@/lib/chain/keystore";
 import { adminProvider, listSessions } from "@/lib/chain/session";
 import { saveSession, toJson } from "@/lib/chain/session-store";
@@ -23,13 +24,30 @@ const principal = (process.env.DEMO_ADDRESS ?? "0x54c06cC2623aAA2Dcc38B17fA07aD2
 async function list() {
   const [keys, stored] = await Promise.all([activeKeys(principal), listSessions()]);
   const byKey = new Map(stored.map((s) => [s.keyId.toLowerCase(), s]));
+  /*
+    The account's own admin key is registered permanently by the wallet and
+    is not a session, so it is named rather than reported as unaccounted for.
+    It is only recognised when the operator's key is present to derive it.
+  */
+  const raw = process.env.PRIVATE_KEY;
+  const adminKeyId = raw ? keccak256(privateKeyToAccount((raw.startsWith("0x") ? raw : `0x${raw}`) as Hex).publicKey).toLowerCase() : null;
   console.log(`${keys.length} keys on ${principal}`);
+  let unaccounted = 0;
   for (const k of keys) {
     const e = await readKey(principal, k);
     const s = byKey.get(k.toLowerCase());
     const when = e.expiry ? new Date(e.expiry * 1000).toISOString().slice(0, 16) : "no expiry";
-    console.log(`${k}  ${e.valid ? "VALID  " : "invalid"}  ${when}  ${s ? `${s.id} (${s.revokedAt ? "revoked" : "held"})` : e.valid ? "NOT IN THE STORE" : "-"}`);
+    const who = s
+      ? `${s.id} (${s.revokedAt ? "revoked" : "held"})`
+      : k.toLowerCase() === adminKeyId
+        ? "the account's own admin key"
+        : e.valid
+          ? "NOT IN THE STORE"
+          : "-";
+    if (who === "NOT IN THE STORE") unaccounted += 1;
+    console.log(`${k}  ${e.valid ? "VALID  " : "invalid"}  ${when}  ${who}`);
   }
+  console.log(unaccounted ? `${unaccounted} valid key(s) nobody here accounts for: revoke them` : "every valid key is accounted for");
 }
 
 async function revoke(keyId: Hex, reason: string) {

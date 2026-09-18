@@ -81,16 +81,25 @@ export async function warm(names: SnapshotName[] = DEFAULT_WARM): Promise<void> 
   if (due.length) {
     const read = (async () => {
       try {
-        const rows = (await pg!`select name, payload, captured_at from snapshots where name in ${pg!(due)}`) as {
-          name: SnapshotName;
-          payload: unknown;
-          captured_at: Date;
-        }[];
-        for (const r of rows) {
+        /*
+          Two steps, so a reading that has not changed costs a few bytes: the
+          timestamps first, then the payloads only for the names whose stored
+          reading is newer than the one in memory. Every instance asked for
+          every payload every minute before, and that added up.
+        */
+        const stamps = (await pg!`select name, captured_at from snapshots where name in ${pg!(due)}`) as { name: SnapshotName; captured_at: Date | string }[];
+        const newer = stamps.filter((r) => {
           const current = snapshot(r.name);
-          const at = new Date(r.captured_at).toISOString();
-          if (!current || current.capturedAt < at) {
-            memory.set(r.name, { payload: r.payload, capturedAt: at, source: "db" });
+          return !current || current.capturedAt < new Date(r.captured_at).toISOString();
+        });
+        if (newer.length) {
+          const rows = (await pg!`select name, payload, captured_at from snapshots where name in ${pg!(newer.map((r) => r.name))}`) as {
+            name: SnapshotName;
+            payload: unknown;
+            captured_at: Date | string;
+          }[];
+          for (const r of rows) {
+            memory.set(r.name, { payload: r.payload, capturedAt: new Date(r.captured_at).toISOString(), source: "db" });
             onChange.get(r.name)?.forEach((fn) => fn());
           }
         }

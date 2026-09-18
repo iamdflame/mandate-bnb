@@ -19,6 +19,7 @@ import { dirname, join } from "node:path";
 import { sql as pg } from "@/lib/db/client";
 import { ensureTables as ensure } from "@/lib/db/tables";
 import type { PaidCall } from "@/lib/x402/pay";
+import { forget, memo } from "@/lib/cache";
 
 export interface PaidCallRecord {
   id: string;
@@ -115,6 +116,7 @@ export async function recordPaidCall(rec: PaidCallRecord, opts: { file?: boolean
     calls.sort((a, b) => a.at.localeCompare(b.at));
     writeFileSync(FILE, `${JSON.stringify({ at: new Date().toISOString(), calls }, null, 2)}\n`);
   }
+  forget("paid-calls");
   if (await ensure()) {
     await pg!`
       insert into paid_calls (id, token_id, category, paid, sponsored, tx, at, record)
@@ -125,7 +127,13 @@ export async function recordPaidCall(rec: PaidCallRecord, opts: { file?: boolean
 }
 
 /** Every recorded call, newest first: the database's rows merged over the committed file. */
-export async function listPaidCalls(): Promise<PaidCallRecord[]> {
+export function listPaidCalls(): Promise<PaidCallRecord[]> {
+  // Read by the home page, the tape, the judge walk and Judge Mode; the rows
+  // carry deliverables, so they are fetched once a minute per instance.
+  return memo("paid-calls", { freshMs: 60_000, staleMs: 10 * 60_000 }, listPaidCallsUncached);
+}
+
+async function listPaidCallsUncached(): Promise<PaidCallRecord[]> {
   const byId = new Map(readFile().map((c) => [c.id, c]));
   if (await ensure()) {
     try {

@@ -201,6 +201,14 @@ export async function saveSession(rec: SessionRecord, serialized?: string): Prom
         ${rec.adminSigner}, ${rec.grantedAt}, ${rec.grantTx ?? null}, ${rec.revokedAt ?? null}, ${rec.revokeTx ?? null},
         ${rec.revokedBecause ?? null}, ${rec.meta ? toJson(rec.meta) : null}::jsonb, ${secret})
       on conflict (id) do update set
+        -- A renewed session is a new key under the same id. This clause once
+        -- left public_key and key_id at their old values while (through the
+        -- coalesce below) storing the new signer, so the desk compared the
+        -- KeyStore against a key that had expired and reported the live one
+        -- as unregistered.
+        kind = excluded.kind, category = excluded.category, wallet_address = excluded.wallet_address,
+        public_key = excluded.public_key, key_id = excluded.key_id, admin_signer = excluded.admin_signer,
+        granted_at = excluded.granted_at,
         label = excluded.label, permissions = excluded.permissions, allowlist = excluded.allowlist,
         withheld = excluded.withheld, cap_wei = excluded.cap_wei, expiry = excluded.expiry,
         registered = excluded.registered, registration_tx = coalesce(excluded.registration_tx, sessions.registration_tx),
