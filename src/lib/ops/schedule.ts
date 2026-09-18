@@ -107,7 +107,17 @@ export const JOBS: Job[] = [
     everyMinutes: 6 * 60,
     budgetMs: 20_000,
     run: async () => {
-      if (process.env.LEASE_RENEWAL === "off") return { off: "LEASE_RENEWAL=off" };
+      /*
+        Off unless switched on. A renewal is a registration transaction paid
+        for out of the operator's own balance, and a job that spends money on
+        a clock should be something the operator turned on deliberately, not
+        something that starts the moment it is deployed. With it off this
+        reports what is lapsing so `/status` can still say so.
+      */
+      if (process.env.LEASE_RENEWAL !== "on") {
+        const due = await renewHouseSessions({ withinDays: 3, max: 0 });
+        return { off: "LEASE_RENEWAL is not on, so nothing was granted", lapsing: due.filter((x) => x.was !== "live").map((x) => `${x.slug} ${x.was}`) };
+      }
       const r = await renewHouseSessions({ days: 21, withinDays: 3, max: 2 });
       const did = r.filter((x) => x.renewed);
       return { renewed: did.map((x) => x.slug), failed: r.filter((x) => x.error).map((x) => `${x.slug}: ${x.error}`), live: r.filter((x) => x.was === "live").length };
