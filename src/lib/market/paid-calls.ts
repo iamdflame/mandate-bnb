@@ -38,6 +38,19 @@ export interface PaidCallRecord {
   /** The seller answered with its work. A paid call can fail to deliver, and is shown as that. */
   delivered: boolean;
   refused: string | null;
+  /**
+   * Who got it wrong, when a call did not go through.
+   *
+   * The first payment to Agripinaa was refused because we sent the x402
+   * specification's envelope to a seller that reads the Altana wire. The
+   * refusal was correct and the mistake was ours. Deleting the row would have
+   * been the easy fix and the wrong one: the tape keeps every attempt, and
+   * this says which of us to hold responsible for each failure. Only
+   * `"seller"` counts against an agent in the hire law.
+   */
+  fault?: "ours" | "seller" | null;
+  /** Why, in a sentence, when the bytes alone do not explain it. */
+  note?: string | null;
   tx: string | null;
   block: number | null;
   approveTx: string | null;
@@ -191,9 +204,16 @@ export function outcomes(calls: PaidCallRecord[]): Map<string, Outcome> {
   const out = new Map<string, Outcome>();
   for (const c of [...calls].sort((a, b) => a.at.localeCompare(b.at))) {
     const o = out.get(c.tokenId) ?? { tokenId: c.tokenId, delivered: 0, paidNotDelivered: 0, refused: 0, lastAt: null, lastWhy: null, lastTx: null };
+    // A failure we caused says nothing about the seller, so it is published
+    // on the tape and left out of the count that gates hiring.
+    const ours = c.fault === "ours";
     if (c.paid && c.delivered) o.delivered += 1;
     else if (c.paid) o.paidNotDelivered += 1;
-    else o.refused += 1;
+    else if (!ours) o.refused += 1;
+    if (ours && !c.paid) {
+      out.set(c.tokenId, o);
+      continue;
+    }
     o.lastAt = c.at;
     o.lastWhy = c.paid && c.delivered ? null : c.refused;
     o.lastTx = c.tx ?? o.lastTx;

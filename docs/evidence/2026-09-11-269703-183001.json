@@ -99,5 +99,6 @@
       }
     }
   ],
-  "ms": 4598
+  "ms": 4598,
+  "note": "This attempt sent the x402 specification's PAYMENT-SIGNATURE envelope to a seller that reads the Altana wire (X-PAYMENT with permit and permit2Authorization). The refusal was correct and the error was ours; it is not counted against the seller. The attempt that followed, with the right envelope, is 2026-09-11-269703-183816.json."
 }

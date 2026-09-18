@@ -16,7 +16,9 @@
  */
 
 import { NextResponse } from "next/server";
-import { exchange } from "@/lib/x402/pay";
+import { exchange, fromBase64, readRequirements, type Requirement } from "@/lib/x402/pay";
+import { recordPaidCall, toRecord } from "@/lib/market/paid-calls";
+import type { Address } from "viem";
 import { SPONSORED } from "@/lib/market/sponsored-targets";
 import { listingFor } from "@/lib/market/listing";
 import { take, callerOf, limitHeaders } from "@/lib/api/ratelimit";
@@ -72,8 +74,83 @@ export async function POST(request: Request) {
   if (!ex) return NextResponse.json({ error: "The seller did not answer." }, { status: 502 });
   const headers: Record<string, string> = {};
   for (const k of KEPT) if (ex.response.headers[k]) headers[k] = ex.response.headers[k];
+
+  /*
+    A paid call made from a visitor's wallet is a stranger hire like any
+    other and belongs on the tape, so the six checks and the activity page see
+    it. The payer is the address inside the envelope the visitor signed; the
+    settlement is the seller's receipt header when it sends one.
+  */
+  if (paid) {
+    try {
+      const env = JSON.parse(fromBase64(paid.value)) as { payload?: { authorization?: { from?: string }; permit2Authorization?: { from?: string }; from?: string } };
+      const payer = (env.payload?.authorization?.from ?? env.payload?.permit2Authorization?.from ?? env.payload?.from ?? "0x0000000000000000000000000000000000000000") as Address;
+      const accepted = readRequirements(JSON.parse(ex.response.body || "null"), ex.response.headers["payment-required"]).find(() => true) ?? null;
+      const receipt = decodeReceipt(ex.response.headers["payment-response"] ?? ex.response.headers["x-payment-response"]);
+      const ok = ex.response.status < 400;
+      const req: Requirement | null = accepted ?? quoted(listing);
+      const call = {
+        url,
+        paid: ok && Boolean(receipt),
+        delivered: ok,
+        refused: ok ? null : `it answered ${ex.response.status} to the signed payment: ${ex.response.body.slice(0, 400)}`,
+        requirement: req ? { ...req, amount: req.amount.toString() } : null,
+        payer,
+        approveTx: null,
+        settlement: receipt ? { tx: receipt, block: null, source: "payment-response header" as const } : null,
+        deliverable: parseMaybe(ex.response.body),
+        exchanges: [ex],
+        ms: ex.response.ms,
+      };
+      await recordPaidCall(toRecord(call, { tokenId, name: listing?.name ?? `#${tokenId}`, category: sponsored?.category ?? (listing?.category as string) ?? "unclassified", sponsored: false, subject: subject ?? null, evidence: null }));
+    } catch {
+      /* the tape is best effort; the visitor still gets the answer */
+    }
+  }
   return NextResponse.json(
     { url, status: ex.response.status, headers, body: ex.response.body, truncated: ex.response.truncated, ms: ex.response.ms },
     { headers: { "cache-control": "no-store" } },
   );
+}
+
+function decodeReceipt(raw: string | undefined): `0x${string}` | null {
+  if (!raw) return null;
+  try {
+    const d = JSON.parse(fromBase64(raw)) as { transaction?: string; txHash?: string; tx?: string };
+    const tx = d.transaction ?? d.txHash ?? d.tx;
+    return tx && /^0x[0-9a-fA-F]{64}$/.test(tx) ? (tx as `0x${string}`) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The terms we last read from this seller, when its paid answer carries none. */
+function quoted(listing: ReturnType<typeof listingFor>): Requirement | null {
+  const q = listing?.quote;
+  if (!q) return null;
+  return {
+    x402Version: q.x402Version === 2 ? 2 : 1,
+    raw: {},
+    scheme: q.scheme,
+    network: q.network,
+    chainId: q.chainId,
+    asset: q.asset as Address,
+    payTo: q.payTo as Address,
+    amount: BigInt(q.amount),
+    maxTimeoutSeconds: 120,
+    method: q.transferMethod,
+    domain: null,
+    spender: null,
+    resource: q.resource ? { url: q.resource } : null,
+    header: q.header,
+    dialect: "x402",
+  };
+}
+
+function parseMaybe(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 }

@@ -24,9 +24,13 @@ import {
   bnb,
   type WalletFacts,
 } from "@/lib/sources/bsc";
+import { firstHand, houseFacts, type FirstHand, type HouseFacts } from "./firsthand";
+import { getAgentIndex } from "@/lib/data/agents";
+import { withTimeout } from "@/lib/cache";
 import type { ScanAgentDetail, ScanFeedback } from "@/lib/sources/scan";
 import { getAgent, listFeedbacks } from "@/lib/sources/scan";
 import { classify, extractSkills, type Classification } from "./classify";
+import { referenceBySlug } from "@/lib/house";
 import { assessFeedback, type SybilVerdict } from "@/lib/sybil/detect";
 import {
   computeFineness,
@@ -51,6 +55,10 @@ export interface AssayContext {
    * which is the kind of silent zero this whole product exists to object to.
    */
   feedbacksRead?: boolean;
+  /** Our own probe, our own paid calls, and their answers checked against the chain. */
+  firsthand?: FirstHand;
+  /** Set for our own reference agents: the account that acts, and its record. */
+  house?: HouseFacts | null;
 }
 
 const WEIGHTS = {
@@ -68,8 +76,35 @@ const WEIGHTS = {
 
 function identityAssay(ctx: AssayContext): AssayResult {
   const d = ctx.detail;
-  const endpoint = d.a2a_endpoint ?? d.mcp_server ?? d.agent_url ?? null;
   const evidence: Evidence[] = [];
+
+  /*
+    Our own call outranks the explorer's flag. 8004scan verifies only the
+    card formats it indexes, and it reported "points nowhere" about an agent
+    whose endpoint had answered us, and taken our money, five times.
+  */
+  const probe = ctx.firsthand?.probe;
+  if (probe?.answered && probe.endpoint) {
+    evidence.push({ kind: "note", label: "Endpoint we called", value: probe.endpoint, url: probe.endpoint });
+    evidence.push({ kind: "api", label: "It answered", value: `HTTP ${probe.status ?? "?"} in ${probe.latencyMs ?? "?"} ms, ${probe.at.slice(0, 16).replace("T", " ")} UTC` });
+    if (d.is_endpoint_verified === true) evidence.push({ kind: "api", label: "8004scan", value: "also marks the endpoint verified" });
+    return {
+      id: "identity",
+      title: "Identity",
+      claim: `Declares a service at ${host(probe.endpoint)}, and we called it.`,
+      finding: `Answered our call${probe.status === 402 ? " by asking to be paid, which is an answer" : ""}. This agent can be reached.`,
+      verdict: "pass",
+      score: 1,
+      weight: WEIGHTS.identity,
+      evidence,
+    };
+  }
+  if (probe && probe.endpoint && !probe.answered) {
+    evidence.push({ kind: "note", label: "Endpoint we called", value: probe.endpoint, url: probe.endpoint });
+    evidence.push({ kind: "api", label: "Our call", value: `no answer (${probe.error ?? "silent"}), ${probe.at.slice(0, 16).replace("T", " ")} UTC` });
+  }
+
+  const endpoint = d.a2a_endpoint ?? d.mcp_server ?? d.agent_url ?? probe?.endpoint ?? null;
 
   if (endpoint) {
     evidence.push({ kind: "note", label: "Declared endpoint", value: endpoint, url: endpoint });
@@ -138,6 +173,55 @@ function identityAssay(ctx: AssayContext): AssayResult {
 // ---------------------------------------------------------------------------
 
 function custodyAssay(ctx: AssayContext): AssayResult {
+  /*
+    A session with an allowlist is a stronger arrangement than a second
+    wallet, and it is the one our reference agents actually use: they hold no
+    wallet, they act on the principal's account through a key that may call
+    four selectors on a contract which can only pay the principal back.
+  */
+  const leash = ctx.house?.leash;
+  if (leash) {
+    const expiry = new Date(leash.expiry * 1000).toISOString().slice(0, 16).replace("T", " ");
+    return {
+      id: "custody",
+      title: "Custody",
+      claim: "Acts on the owner's account through a session key.",
+      finding: leash.live
+        ? `Holds no wallet of its own. It acts on ${ctx.house!.operating} through a session restricted to ${leash.calls.join(", ")}, capped at ${leash.caps}, expiring ${expiry} UTC${leash.registered ? " and registered in the KeyStore" : " (not registered on chain)"}. It cannot move funds anywhere but back to the owner.`
+        : `Holds no wallet of its own and acts only through a session on ${ctx.house!.operating}, restricted to ${leash.calls.join(", ")} and capped at ${leash.caps}. That session expired ${expiry} UTC, so it holds no authority at all right now: nothing can be run through it until it is granted again.`,
+      verdict: leash.live && leash.registered ? "pass" : "inconclusive",
+      score: leash.live && leash.registered ? 1 : 0.4,
+      weight: WEIGHTS.custody,
+      evidence: [
+        { kind: "address", label: "Account it acts on", value: ctx.house!.operating, url: addressUrl(ctx.house!.operating) },
+        ...leash.calls.slice(0, 4).map((c) => ({ kind: "note" as const, label: "Allowed call", value: c })),
+        { kind: "note", label: "Daily cap", value: leash.caps },
+        { kind: "note", label: "Session", value: leash.live ? "live" : "expired, so it can act on nothing until renewed" },
+        { kind: "note", label: "KeyStore key id", value: leash.keyId },
+      ],
+    };
+  }
+
+  /*
+    An agent that sells answers takes custody of nothing. Asking whether its
+    custody is separated is asking a question that does not apply, and
+    scoring it zero for that would say something false about it.
+  */
+  const sellsReads = (ctx.firsthand?.delivered.length ?? 0) > 0 && !ctx.house;
+  if (sellsReads) {
+    return {
+      id: "custody",
+      title: "Custody",
+      claim: "Sells answers per call.",
+      finding: `It has answered ${ctx.firsthand!.delivered.length} paid call${ctx.firsthand!.delivered.length === 1 ? "" : "s"} for us and never held anything of ours: payment goes to it, the answer comes back, and no authority over a buyer's funds is granted at any point. There is no custody here to separate.`,
+      verdict: "inconclusive",
+      notApplicable: true,
+      score: 0,
+      weight: WEIGHTS.custody,
+      evidence: ctx.firsthand!.delivered.slice(0, 2).flatMap((c) => (c.tx ? [{ kind: "tx" as const, label: `Paid ${c.at.slice(0, 10)}`, value: c.tx, url: txUrl(c.tx) }] : [])),
+    };
+  }
+
   const d = ctx.detail;
   const wallet = d.agent_wallet?.toLowerCase() ?? null;
   const owner = d.owner_address?.toLowerCase() ?? null;
@@ -206,6 +290,9 @@ function custodyAssay(ctx: AssayContext): AssayResult {
 function activityAssay(ctx: AssayContext): AssayResult {
   const w = ctx.wallet;
   const evidence: Evidence[] = [];
+  if (ctx.house && w) {
+    evidence.push({ kind: "note", label: "Measured on", value: `${w.address}, the demo account this agent acts on through a session; the registered wallet only signs registrations` });
+  }
 
   if (!w) {
     return {
@@ -282,9 +369,11 @@ async function capabilityAssay(ctx: AssayContext): Promise<AssayResult> {
   const evidence: Evidence[] = [];
 
   if (ctx.classification.matched.length) {
+    // Most agents are classified from the words on their own card. Ours are
+    // classified from the registration we made, and the label says which.
     evidence.push({
       kind: "note",
-      label: "Classified from its own words",
+      label: ctx.house ? "Category" : "Classified from its own words",
       value: ctx.classification.matched.join(", "),
     });
   }
@@ -366,11 +455,87 @@ async function capabilityAssay(ctx: AssayContext): Promise<AssayResult> {
         proven: { protocols: [], complete: false, scannedBlocks: scannedBlocks.toString() },
       };
     }
+    /*
+      Our own agents act through a session: the transaction is sent by the
+      relay, to a leash contract, so a scan of the account for protocol
+      touches finds nothing however much it has done. What it did is on
+      chain all the same, and that is what is shown.
+    */
+    const acts = ctx.house?.actions ?? [];
+    if (acts.length) {
+      for (const a of acts.slice(0, 4)) evidence.push({ kind: "tx", label: a.label, value: a.tx, url: txUrl(a.tx) });
+      const when = acts.find((a) => a.at)?.at?.slice(0, 10);
+      return {
+        id: "capability",
+        title: "Capability",
+        claim,
+        finding: `${acts.length} on-chain action${acts.length === 1 ? "" : "s"} through its leash contract${when ? `, most recently ${when}` : ""}, outside the ${scannedBlocks.toLocaleString()} block window this scan covers. It acts through a session, so the transactions are sent by the relay to the leash rather than by this wallet to the protocol.`,
+        verdict: "pass",
+        score: 0.8,
+        weight: WEIGHTS.capability,
+        evidence,
+        proven: { protocols: [], complete: true, scannedBlocks: scannedBlocks.toString() },
+      };
+    }
+
+    /*
+      An agent that only reads never sends the protocol a transaction, so the
+      window is empty for it however good it is. Its capability is tested a
+      different way: a paid answer of its, checked against our own reading of
+      the same fact. Agreement is the claim proven; disagreement is the claim
+      failed; an answer nothing on chain states is neither.
+    */
+    const answers = ctx.firsthand?.answers ?? [];
+    const agreed = answers.filter((a) => a.agrees === true);
+    const wrong = answers.filter((a) => a.agrees === false);
+    for (const a of answers.slice(0, 3)) {
+      evidence.push({ kind: a.tx ? "tx" : "note", label: `Paid answer: ${a.what}`, value: a.tx ?? a.detail, ...(a.tx ? { url: txUrl(a.tx) } : {}) });
+      if (a.tx) evidence.push({ kind: "note", label: "Checked against the chain", value: a.detail });
+    }
+    if (agreed.length && !wrong.length) {
+      return {
+        id: "capability",
+        title: "Capability",
+        claim,
+        finding: `No transaction with a ${label} contract in the last ${scannedBlocks.toLocaleString()} blocks, because this agent reads rather than trades. We checked its paid answer${agreed.length === 1 ? "" : "s"} about ${agreed[0].what} and it stands up: ${agreed[0].detail}. The claim is tested and holds.`,
+        verdict: "pass",
+        score: Math.min(1, 0.6 + agreed.length * 0.15),
+        weight: WEIGHTS.capability,
+        evidence,
+        proven: { protocols: [], complete: true, scannedBlocks: scannedBlocks.toString() },
+      };
+    }
+    if (wrong.length) {
+      return {
+        id: "capability",
+        title: "Capability",
+        claim,
+        finding: `No transaction with a ${label} contract in the window, and a paid answer of its did not agree with the chain: ${wrong[0].what}, ${wrong[0].detail}.`,
+        verdict: "fail",
+        score: 0,
+        weight: WEIGHTS.capability,
+        evidence,
+        proven: { protocols: [], complete: true, scannedBlocks: scannedBlocks.toString() },
+      };
+    }
+    if (answers.length) {
+      return {
+        id: "capability",
+        title: "Capability",
+        claim,
+        finding: `No transaction with a ${label} contract in the window. It has answered our paid calls, but nothing on chain states what it answered, so the claim is recorded as untested rather than unsupported.`,
+        verdict: "inconclusive",
+        score: 0,
+        weight: WEIGHTS.capability,
+        evidence,
+        proven: { protocols: [], complete: true, scannedBlocks: scannedBlocks.toString() },
+      };
+    }
     return {
       id: "capability",
       title: "Capability",
       claim,
-      finding: `No interaction with any ${label} contract across the last ${scannedBlocks.toLocaleString()} blocks. An agent that runs continuously, as this one says it does, would have left a trace in that window.`,
+      finding: `No interaction with any ${label} contract across the last ${scannedBlocks.toLocaleString()} blocks, about ${(Number(scannedBlocks) * 0.75 / 3600).toFixed(1)} hours. An agent that trades continuously would have left a trace in that window; one that acts occasionally, or only reads, need not have, and we hold no paid answer from it to check instead.`,
       verdict: "fail",
       score: 0,
       weight: WEIGHTS.capability,
@@ -413,7 +578,54 @@ function reputationAssay(ctx: AssayContext): AssayResult {
   const raw = ctx.feedbacks.length;
   const evidence: Evidence[] = [];
 
+  /*
+    First hand before hearsay. What happened when we paid it is reputation we
+    can vouch for, and it is entered before any star anyone else left.
+  */
+  const own = ctx.firsthand?.calls ?? null;
+  if (own) {
+    evidence.push({
+      kind: "note",
+      label: "When we paid it",
+      value: `${own.delivered} answered, ${own.paidNotDelivered} took the money and failed, ${own.refused} refused a correct payment`,
+    });
+    if (own.lastTx) evidence.push({ kind: "tx", label: "Last settlement", value: own.lastTx, url: txUrl(own.lastTx) });
+    if (own.lastWhy) evidence.push({ kind: "note", label: "Its last failure, in its words", value: own.lastWhy.slice(0, 200) });
+  }
+  const firsthandVerdict = (): AssayResult | null => {
+    if (!own) return null;
+    const failures = own.paidNotDelivered + own.refused;
+    if (own.delivered > 0 && failures === 0) {
+      const score = Math.min(0.9, 0.3 + own.delivered * 0.15);
+      return {
+        id: "reputation",
+        title: "Reputation",
+        claim: raw ? `Registry reports ${raw} feedback records.` : "No reputation claimed.",
+        finding: `${raw ? `${raw} registry records, and ` : "No registry feedback, but "}first hand: we paid it ${own.delivered} time${own.delivered === 1 ? "" : "s"} and it answered every time.`,
+        verdict: score >= 0.5 ? "pass" : "inconclusive",
+        score,
+        weight: WEIGHTS.reputation,
+        evidence,
+      };
+    }
+    if (failures > 0 && own.delivered === 0) {
+      return {
+        id: "reputation",
+        title: "Reputation",
+        claim: raw ? `Registry reports ${raw} feedback records.` : "No reputation claimed.",
+        finding: `First hand: ${own.paidNotDelivered ? `it took our payment ${own.paidNotDelivered} time${own.paidNotDelivered === 1 ? "" : "s"} and answered with an error` : "it refused a correctly signed payment"}. ${own.lastWhy ? `Its words: ${own.lastWhy.slice(0, 160)}` : ""}`,
+        verdict: "fail",
+        score: 0,
+        weight: WEIGHTS.reputation,
+        evidence,
+      };
+    }
+    return null;
+  };
+
   if (raw === 0) {
+    const fromUs = firsthandVerdict();
+    if (fromUs) return fromUs;
     const unread = ctx.feedbacksRead === false;
     return {
       id: "reputation",
@@ -507,6 +719,83 @@ function performanceAssay(ctx: AssayContext): AssayResult {
   const w = ctx.wallet;
   const evidence: Evidence[] = [];
 
+  /*
+    A seller of answers has a performance record the moment it is paid: did
+    the answer come, how fast, and did it agree with the chain. That is the
+    return on a paid call, and it is measured here for any agent we have paid.
+  */
+  if (ctx.house?.performance) {
+    const hp = ctx.house.performance;
+    return {
+      id: "performance",
+      title: "Performance",
+      claim: "Runs a position on the demo account through a session.",
+      finding: hp.finding,
+      verdict: hp.verdict,
+      score: hp.verdict === "pass" ? 0.8 : 0,
+      weight: WEIGHTS.performance,
+      evidence: hp.evidence.map((e) => ({ kind: e.url ? ("tx" as const) : ("note" as const), label: e.label, value: e.value, ...(e.url ? { url: e.url } : {}) })),
+    };
+  }
+
+  const fh = ctx.firsthand;
+  if (fh?.delivered.length) {
+    const ms = fh.delivered.map((c) => c.ms).filter((n) => n > 0).sort((a, b) => a - b);
+    const median = ms.length ? ms[Math.floor(ms.length / 2)] : null;
+    const checked = fh.answers.filter((a) => a.agrees !== null);
+    const agreed = checked.filter((a) => a.agrees === true);
+    evidence.push({ kind: "note", label: "Paid calls answered", value: `${fh.delivered.length}${median ? `, median ${(median / 1000).toFixed(1)} s` : ""}` });
+    for (const c of fh.delivered.slice(0, 3)) if (c.tx) evidence.push({ kind: "tx", label: `Settled ${c.at.slice(0, 10)}`, value: c.tx, url: txUrl(c.tx) });
+    for (const a of checked.slice(0, 3)) evidence.push({ kind: "note", label: a.agrees ? "Checked and stands up" : "Checked and does not stand up", value: `${a.what}: ${a.detail}` });
+    const failed = fh.calls ? fh.calls.paidNotDelivered + fh.calls.refused : 0;
+    if (checked.length && agreed.length === checked.length && failed === 0) {
+      return {
+        id: "performance",
+        title: "Performance",
+        claim: "Sells answers per call.",
+        finding: `${fh.delivered.length} paid call${fh.delivered.length === 1 ? "" : "s"} answered${median ? `, median ${(median / 1000).toFixed(1)} seconds` : ""}; ${agreed.length} of ${checked.length} checked answer${checked.length === 1 ? "" : "s"} stood up when we checked ${checked.length === 1 ? "it" : "them"}. It does what it is paid for.`,
+        verdict: "pass",
+        score: Math.min(1, 0.5 + agreed.length * 0.15),
+        weight: WEIGHTS.performance,
+        evidence,
+      };
+    }
+    if (checked.length && agreed.length < checked.length) {
+      return {
+        id: "performance",
+        title: "Performance",
+        claim: "Sells answers per call.",
+        finding: `${fh.delivered.length} paid calls answered, but ${checked.length - agreed.length} of ${checked.length} checked answers did not stand up.`,
+        verdict: "fail",
+        score: 0,
+        weight: WEIGHTS.performance,
+        evidence,
+      };
+    }
+    return {
+      id: "performance",
+      title: "Performance",
+      claim: "Sells answers per call.",
+      finding: `${fh.delivered.length} paid call${fh.delivered.length === 1 ? "" : "s"} answered${median ? `, median ${(median / 1000).toFixed(1)} seconds` : ""}. Nothing on chain states what it answered, so the answers are unchecked: reported as delivered, not as right.`,
+      verdict: "inconclusive",
+      score: 0.3,
+      weight: WEIGHTS.performance,
+      evidence,
+    };
+  }
+  if (fh?.calls && fh.calls.delivered === 0 && fh.calls.paidNotDelivered + fh.calls.refused > 0) {
+    return {
+      id: "performance",
+      title: "Performance",
+      claim: "Sells answers per call.",
+      finding: `Paid, and nothing came back: ${fh.calls.paidNotDelivered} settled payment${fh.calls.paidNotDelivered === 1 ? "" : "s"} answered with an error${fh.calls.refused ? `, ${fh.calls.refused} correct payment${fh.calls.refused === 1 ? "" : "s"} refused` : ""}.`,
+      verdict: "fail",
+      score: 0,
+      weight: WEIGHTS.performance,
+      evidence,
+    };
+  }
+
   if (!w || w.nonce === 0) {
     return {
       id: "performance",
@@ -596,15 +885,45 @@ export async function assayAgent(
       )
     : await getAgent(chainId, tokenId);
 
-  const classification = classify({
+  let classification = classify({
     name: detail.name,
     description: detail.description,
     skills: extractSkills(detail.services),
     tags: detail.tags,
   });
+  /*
+    The explorer's copy of a card can be empty or stale; ours was read from
+    the registration itself. When the explorer's words name no job, the words
+    we hold are tried, and failing that the category the index filed it under.
+  */
+  if (!classification.category) {
+    const own = getAgentIndex().agents.find((a) => a.tokenId === tokenId);
+    if (own) {
+      const again = classify({ name: own.name ?? detail.name, description: own.description ?? detail.description, skills: [], tags: detail.tags });
+      classification = again.category
+        ? again
+        : own.category
+          ? { ...again, category: own.category as Category, confidence: own.confidence, matched: ["filed under this category in the index, from its registration"] }
+          : classification;
+    }
+  }
 
   onProgress?.({ stage: "Resolving wallet on chain", index: 1, total: TOTAL });
-  const walletAddr = detail.agent_wallet;
+  // Our own reference agents act through a session on the demo account, so
+  // that is the wallet whose activity and protocol interactions are measured.
+  const house = await houseFacts(tokenId).catch(() => null);
+  /*
+    For our own reference agents the category is not a guess. Yield-1 was
+    classified as health-factor monitoring because its card mentions Venus,
+    and then failed a capability check against Venus lending contracts it was
+    never meant to call. We registered these four ourselves, one per category,
+    so the registration is the answer and word matching is not consulted.
+  */
+  const houseCategory = house ? referenceBySlug(house.slug)?.category : null;
+  if (houseCategory && classification.category !== houseCategory) {
+    classification = { ...classification, category: houseCategory, confidence: 1, matched: ["registered by us as the reference agent for this category"] };
+  }
+  const walletAddr = house?.operating ?? detail.agent_wallet;
   const wallet = isAddress(walletAddr) ? await getWalletFacts(walletAddr) : null;
 
   onProgress?.({ stage: "Collecting feedback records", index: 2, total: TOTAL });
@@ -640,7 +959,9 @@ export async function assayAgent(
         : assessFeedback(chainId, tokenId, feedbacks, detail))
     : null;
 
-  const ctx: AssayContext = { detail, classification, wallet, feedbacks, sybil, feedbacksRead };
+  onProgress?.({ stage: "Reading what we know first hand", index: 2, total: TOTAL });
+  const firsthand = (await withTimeout(firstHand(tokenId).catch(() => undefined), deadline ? Math.min(deadline, 12_000) : 12_000)) ?? undefined;
+  const ctx: AssayContext = { detail, classification, wallet, feedbacks, sybil, feedbacksRead, firsthand, house };
 
   const results: AssayResult[] = [];
   const run = async (

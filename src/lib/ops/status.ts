@@ -22,6 +22,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { registeredCount } from "@/lib/registry/count";
 import { withTimeout } from "@/lib/cache";
 import { DEMO_ADDRESS } from "@/lib/demo";
+import { HOUSE_LEASHES, houseSessionId } from "@/lib/chain/house";
 
 export interface Check {
   beat: number;
@@ -80,10 +81,20 @@ export async function judgePathChecks(): Promise<Check[]> {
         detail: `${stored.fills.length} fills, ${stored.roundTrips.length} round trips, stored reading to block ${stored.toBlock}, ${age} old; ${why}`,
       };
     }),
-    timed(5, "The desk can read the KeyStore", async () => {
+    timed(5, "The desk can read the KeyStore, and no house leash has lapsed", async () => {
       const all = await listSessions();
       const live = all.filter((s) => !s.revokedAt && s.registered && s.expiry * 1000 > Date.now());
       if (!live.length) return { ok: false, detail: "no live registered session to compare" };
+      /*
+        This beat used to take the first live session and stop there. Range-1's
+        ran to October while Guard-1, Yield-1 and Grid-1 lapsed on 12 September,
+        so it stayed green for the six days our other three agents could not
+        act at all. A lapsed leash is an agent that is listed, holds a key, and
+        is authority over nothing.
+      */
+      const lapsed = HOUSE_LEASHES.map((l) => ({ slug: l.slug, rec: all.find((x) => x.id === houseSessionId(l.slug) && !x.revokedAt) }))
+        .filter((h) => !h.rec || h.rec.expiry * 1000 <= Date.now())
+        .map((h) => (h.rec ? `${h.slug} expired ${new Date(h.rec.expiry * 1000).toISOString().slice(0, 10)}` : `${h.slug} has no session`));
       const s = live[0];
       const m = await comparePolicy({ wallet: s.walletAddress as Hex, publicKey: s.publicKey as Hex, expiry: s.expiry, registered: s.registered, revoked: false });
       /*
@@ -103,7 +114,8 @@ export async function judgePathChecks(): Promise<Check[]> {
         if (e?.valid) unaccounted += 1;
       }
       const tail = unaccounted ? `; ${unaccounted} valid key(s) on the account that no session accounts for` : `; every valid key on the account is accounted for`;
-      return { ok: m.verdict === "matches" && unaccounted === 0, detail: `${s.label}: ${m.verdict} at block ${m.block ?? "?"}${tail}` };
+      const leashes = lapsed.length ? `; ${lapsed.length} of ${HOUSE_LEASHES.length} house leashes lapsed (${lapsed.join(", ")})` : `; all ${HOUSE_LEASHES.length} house leashes live`;
+      return { ok: m.verdict === "matches" && unaccounted === 0 && lapsed.length === 0, detail: `${s.label}: ${m.verdict} at block ${m.block ?? "?"}${tail}${leashes}` };
     }),
     timed(6, "The funnel reads the registry", async () => {
       const c = await registeredCount();

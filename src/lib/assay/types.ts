@@ -38,6 +38,15 @@ export interface AssayResult {
   /** Millesimal points this assay contributes at a perfect score. */
   weight: number;
   evidence: Evidence[];
+  /**
+   * The question does not apply to this agent, so it is asked of nobody.
+   *
+   * A seller of answers never takes custody of a buyer's funds; grading it
+   * "no separation of custody" scores it zero for failing to arrange
+   * something it never needed. An inapplicable check leaves the fineness to
+   * the checks that do apply rather than dragging it down.
+   */
+  notApplicable?: boolean;
   /** Milliseconds spent, surfaced in the live bench. */
   ms?: number;
   /**
@@ -97,9 +106,12 @@ export interface AssayReport {
 
 /** Absence of evidence is impurity. An assay office does not grade unproven metal. */
 export function computeFineness(results: AssayResult[]): number {
-  const total = results.reduce((sum, r) => sum + r.weight, 0);
+  // A check that does not apply is not a check this agent failed: its weight
+  // leaves the denominator instead of scoring zero in it.
+  const counted = results.filter((r) => !r.notApplicable);
+  const total = counted.reduce((sum, r) => sum + r.weight, 0);
   if (total === 0) return 0;
-  const earned = results.reduce((sum, r) => sum + r.weight * clamp01(r.score), 0);
+  const earned = counted.reduce((sum, r) => sum + r.weight * clamp01(r.score), 0);
   return Math.round((earned / total) * 1000);
 }
 

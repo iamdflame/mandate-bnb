@@ -20,6 +20,7 @@ import { definitionOfDone, score } from "@/lib/ops/definition-of-done";
 import { store } from "@/lib/data/snapshots";
 import { beat } from "@/lib/heartbeat";
 import { sweepOurJobs, sweeperOn } from "@/lib/market/sweeper";
+import { renewHouseSessions } from "@/lib/chain/house";
 
 export interface Job {
   name: string;
@@ -91,6 +92,25 @@ export const JOBS: Job[] = [
       const dry = !sweeperOn();
       const r = await sweepOurJobs({ max: 2, dry });
       return { dry, checked: r.checked, actions: r.actions };
+    },
+  },
+  {
+    /*
+      A session expires, and nothing used to notice. Guard-1, Yield-1 and
+      Grid-1 all lapsed on 12 September; they were still listed, still had
+      their keys, and could not act on anything for six days. This renews a
+      leash while it still has three days left, so the agents never go quiet
+      waiting for an operator to remember. Nothing is due on most runs, and a
+      run that is due costs one registration each.
+    */
+    name: "leases",
+    everyMinutes: 6 * 60,
+    budgetMs: 20_000,
+    run: async () => {
+      if (process.env.LEASE_RENEWAL === "off") return { off: "LEASE_RENEWAL=off" };
+      const r = await renewHouseSessions({ days: 21, withinDays: 3, max: 2 });
+      const did = r.filter((x) => x.renewed);
+      return { renewed: did.map((x) => x.slug), failed: r.filter((x) => x.error).map((x) => `${x.slug}: ${x.error}`), live: r.filter((x) => x.was === "live").length };
     },
   },
   {

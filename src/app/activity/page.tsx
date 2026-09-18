@@ -226,6 +226,8 @@ export default async function ActivityPage() {
                             ? "nothing: it settled our payment and answered with an error"
                             : "nothing: it refused the payment"}
                         {c.refused ? <div className="m-note">{c.refused.slice(0, 220)}</div> : null}
+                        {/* A failure of ours stays on the tape and says so, rather than being deleted. */}
+                        {c.note ? <div className="m-note">{c.fault === "ours" ? "Our mistake, not the seller's. " : ""}{c.note}</div> : null}
                         {c.evidence ? (
                           <div>
                             <a
