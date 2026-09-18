@@ -1,5 +1,6 @@
 import BuyOneCall from "@/components/v2/agent/BuyOneCall";
 import { humanAmount, type Quote, type Preview } from "@/lib/x402/quote";
+import { SPONSORED } from "@/lib/market/sponsored-targets";
 
 /**
  * Paying an agent for one answer, without committing capital.
@@ -96,9 +97,13 @@ export default function CallNow({
 
       {quote.payable ? (
         <div style={{ marginTop: "1rem" }}>
+          {/* A seller that takes the call as a POST (MCP) needs the same body on the 402 and the paid call. */}
           <BuyOneCall
-            path={quote.endpoint}
-            what={`One call against this agent, ${label(quote)}. You need no BNB: you sign, the seller pays the gas.`}
+            path={SPONSORED[tokenId]?.url() ?? quote.endpoint}
+            method={SPONSORED[tokenId]?.method ?? "GET"}
+            body={SPONSORED[tokenId]?.body}
+            tokenId={tokenId}
+            what={`One call against this agent, ${label(quote)}.${quote.transferMethod === "permit2" ? " Paid through Permit2: one approval for exactly this amount, then your signature." : " You need no BNB: you sign, the seller pays the gas."}`}
           />
         </div>
       ) : (

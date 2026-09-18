@@ -39,6 +39,16 @@ export interface ProbeResult {
    * findings and an operator can act on each of them differently.
    */
   error: string | null;
+  /**
+   * When we last tried, whether or not a reading came of it.
+   *
+   * `at` is the time of the last reading we actually got. When a card fails
+   * to resolve the old reading is kept, and for a week the census ordered
+   * its slices by that old time: eighty-one unresolvable cards stayed the
+   * oldest, every ten-minute slice went to them, and nothing else was called
+   * again. Slices order by this instead, so a failed attempt goes to the back.
+   */
+  attemptedAt?: string;
   at: string;
 }
 

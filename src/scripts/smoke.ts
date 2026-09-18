@@ -105,6 +105,30 @@ async function main() {
     record("/api/v1/registry/funnel", false, `unreadable: ${(e as Error).message}`);
   }
 
+  /*
+    The hire path, from the outside. Sponsored hires depend on the probe
+    reaching the sponsored agents and the hire law finding a rail; when the
+    census starved for a week, every other check here stayed green while the
+    button on /judges had gone. This one would have gone red.
+  */
+  const judge = await get("/api/judge/hire");
+  try {
+    const j = JSON.parse(judge.text) as { ok: boolean; left: number; offers: { name: string; available: boolean; why: string | null }[] };
+    const available = j.offers.filter((o) => o.available);
+    record(
+      "/api/judge/hire: at least one stranger can be hired for a visitor",
+      available.length > 0,
+      available.length
+        ? `${available.length} of ${j.offers.length} sponsored agents available, ${j.left} calls left today`
+        : j.offers.map((o) => `${o.name}: ${o.why}`).join("; ") || "no offers",
+    );
+  } catch {
+    record("/api/judge/hire", false, `expected JSON, got ${judge.status}`);
+  }
+
+  const hire = await get("/hire/344121");
+  record("/hire/344121: our own agent keeps its job form", hire.text.includes("Set the limits"), hire.text.includes("Set the limits") ? "the form renders" : "no job form on the page");
+
   const width = Math.max(...checks.map((c) => c.name.length));
   for (const c of checks) console.log(`${c.ok ? "PASS" : "FAIL"}  ${c.name.padEnd(width)}  ${c.detail}`);
   const failed = checks.filter((c) => !c.ok).length;

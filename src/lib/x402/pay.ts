@@ -287,7 +287,96 @@ export async function checkDomain(r: Requirement): Promise<void> {
   }
 }
 
-/** Signs a payment for one requirement. Nothing is sent. */
+/**
+ * The message to sign for one requirement, and the fields the envelope needs.
+ *
+ * Shared by the server, which signs with a private key, and the browser,
+ * which hands the same typed data to the visitor's wallet. Keeping one
+ * builder is what stops the two paths drifting: the button used to speak a
+ * dialect of its own and would have failed against every v2 seller.
+ */
+export function paymentTypedData(r: Requirement, from: Address, now = Math.floor(Date.now() / 1000)) {
+  // Sixty seconds back: a validAfter of "now" is refused often enough by
+  // servers whose clock runs behind the signer's.
+  const validAfter = BigInt(now - 60);
+  const validBefore = BigInt(now + Math.min(r.maxTimeoutSeconds, 600));
+  if (r.method === "eip3009") {
+    const nonce = randomHex32();
+    return {
+      kind: "eip3009" as const,
+      domain: { name: r.domain!.name, version: r.domain!.version, chainId: 56, verifyingContract: r.asset },
+      types: TRANSFER_TYPES,
+      primaryType: "TransferWithAuthorization" as const,
+      message: { from, to: r.payTo, value: r.amount, validAfter, validBefore, nonce },
+      nonce: nonce as string,
+      validAfter,
+      validBefore,
+    };
+  }
+  const nonce = BigInt(randomHex32());
+  return {
+    kind: "permit2" as const,
+    domain: { name: "Permit2", chainId: 56, verifyingContract: PERMIT2 },
+    types: PERMIT2_WITNESS_TYPES,
+    primaryType: "PermitWitnessTransferFrom" as const,
+    message: {
+      permitted: { token: r.asset, amount: r.amount },
+      spender: r.spender!,
+      nonce,
+      deadline: validBefore,
+      witness: { to: r.payTo, validAfter },
+    },
+    nonce: nonce.toString(),
+    validAfter,
+    validBefore,
+  };
+}
+
+/** The header a signed payment travels in, built from the signature and the same fields. */
+export function paymentEnvelope(
+  r: Requirement,
+  from: Address,
+  signature: Hex,
+  fields: { nonce: string; validAfter: bigint; validBefore: bigint },
+): SignedPayment {
+  let payload: Record<string, unknown>;
+  if (r.method === "eip3009") {
+    payload = {
+      signature,
+      authorization: {
+        from,
+        to: r.payTo,
+        value: r.amount.toString(),
+        validAfter: fields.validAfter.toString(),
+        validBefore: fields.validBefore.toString(),
+        nonce: fields.nonce,
+      },
+    };
+  } else {
+    const permit = {
+      permitted: { token: r.asset, amount: r.amount.toString() },
+      spender: r.spender,
+      nonce: fields.nonce,
+      deadline: fields.validBefore.toString(),
+      witness: { to: r.payTo, validAfter: fields.validAfter.toString() },
+    };
+    payload =
+      r.dialect === "b402"
+        ? // Altana's merchant decodes `permit` (and b402 facilitators
+          // `permit2Authorization`); both carry the same signed values.
+          { signature, from, permit, permit2Authorization: { ...permit, from } }
+        : { signature, permit2Authorization: { ...permit, from } };
+  }
+  const envelope: Record<string, unknown> =
+    r.x402Version !== 2
+      ? { x402Version: 1, scheme: r.scheme, network: r.network, payload }
+      : r.dialect === "b402"
+        ? { x402Version: 2, scheme: r.scheme, network: r.network, accepted: r.raw, ...(r.resource ? { resource: r.resource } : {}), payload }
+        : { x402Version: 2, ...(r.resource ? { resource: r.resource } : {}), accepted: r.raw, payload };
+  return { header: r.header, value: toBase64(JSON.stringify(envelope)), envelope, method: r.method!, from, nonce: fields.nonce };
+}
+
+/** Signs a payment for one requirement with a local key. Nothing is sent. */
 export async function signPayment(
   account: LocalAccount,
   r: Requirement,
@@ -296,80 +385,12 @@ export async function signPayment(
   const why = whyUnpayable(r);
   if (why) throw new Error(`cannot pay: ${why}`);
   await (opts.verifyDomain ?? checkDomain)(r);
-  const now = opts.now ?? Math.floor(Date.now() / 1000);
-  // Sixty seconds back: a validAfter of "now" is refused often enough by
-  // servers whose clock runs behind the signer's.
-  const validAfter = BigInt(now - 60);
-  const validBefore = BigInt(now + Math.min(r.maxTimeoutSeconds, 600));
-
-  let payload: Record<string, unknown>;
-  let nonce: string;
-  if (r.method === "eip3009") {
-    const n = randomHex32();
-    const authorization = { from: account.address, to: r.payTo, value: r.amount, validAfter, validBefore, nonce: n };
-    const signature = await account.signTypedData({
-      domain: { name: r.domain!.name, version: r.domain!.version, chainId: 56, verifyingContract: r.asset },
-      types: TRANSFER_TYPES,
-      primaryType: "TransferWithAuthorization",
-      message: authorization,
-    });
-    nonce = n;
-    payload = {
-      signature,
-      authorization: {
-        from: account.address,
-        to: r.payTo,
-        value: r.amount.toString(),
-        validAfter: validAfter.toString(),
-        validBefore: validBefore.toString(),
-        nonce: n,
-      },
-    };
-  } else {
-    const n = BigInt(randomHex32());
-    const message = {
-      permitted: { token: r.asset, amount: r.amount },
-      spender: r.spender!,
-      nonce: n,
-      deadline: validBefore,
-      witness: { to: r.payTo, validAfter },
-    };
-    const signature = await account.signTypedData({
-      domain: { name: "Permit2", chainId: 56, verifyingContract: PERMIT2 },
-      types: PERMIT2_WITNESS_TYPES,
-      primaryType: "PermitWitnessTransferFrom",
-      message,
-    });
-    nonce = n.toString();
-    const permit = {
-      permitted: { token: r.asset, amount: r.amount.toString() },
-      spender: r.spender,
-      nonce: n.toString(),
-      deadline: validBefore.toString(),
-      witness: { to: r.payTo, validAfter: validAfter.toString() },
-    };
-    payload =
-      r.dialect === "b402"
-        ? // Altana's merchant decodes `permit` (and b402 facilitators
-          // `permit2Authorization`); both carry the same signed values.
-          { signature, from: account.address, permit, permit2Authorization: { ...permit, from: account.address } }
-        : { signature, permit2Authorization: { ...permit, from: account.address } };
-  }
-
-  const envelope: Record<string, unknown> =
-    r.x402Version !== 2
-      ? { x402Version: 1, scheme: r.scheme, network: r.network, payload }
-      : r.dialect === "b402"
-        ? { x402Version: 2, scheme: r.scheme, network: r.network, accepted: r.raw, ...(r.resource ? { resource: r.resource } : {}), payload }
-        : { x402Version: 2, ...(r.resource ? { resource: r.resource } : {}), accepted: r.raw, payload };
-  return {
-    header: r.header,
-    value: toBase64(JSON.stringify(envelope)),
-    envelope,
-    method: r.method!,
-    from: account.address,
-    nonce,
-  };
+  const td = paymentTypedData(r, account.address, opts.now);
+  const signature =
+    td.kind === "eip3009"
+      ? await account.signTypedData({ domain: td.domain, types: td.types, primaryType: td.primaryType, message: td.message })
+      : await account.signTypedData({ domain: td.domain, types: td.types, primaryType: td.primaryType, message: td.message });
+  return paymentEnvelope(r, account.address, signature, td);
 }
 
 /**

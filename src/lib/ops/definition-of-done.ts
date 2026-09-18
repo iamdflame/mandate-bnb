@@ -97,12 +97,25 @@ async function build(): Promise<Box[]> {
   });
 
   // 3. The probe is live, on the protocols agents actually speak.
-  const fresh = census.minutes !== null && census.minutes <= 15;
+  /*
+    Not the census stamp, which moves on every slice even when the slice is
+    starving: the age of each callable agent's own reading. For a week the
+    stamp said "3 minutes ago" while the newest reading of any agent that
+    answers was a day and a half old.
+  */
+  const callable = all.filter((l) => l.probe?.endpoint);
+  const ages = callable.map((l) => (Date.now() - Date.parse(l.probe!.at ?? "")) / 60_000).filter((m) => Number.isFinite(m));
+  const oldest = ages.length ? Math.max(...ages) : null;
+  const withinTwoHours = ages.filter((m) => m <= 120).length;
+  const cycling = oldest !== null && oldest <= 6 * 60;
   boxes.push({
     id: "probe",
     claim: "Probe is live (15 minutes or less) on A2A and MCP; failures visible; clones badged.",
-    state: fresh ? "partly" : "open",
-    detail: `${census.minutes === null ? "No census reading" : `Last call ${census.minutes} min ago`}. Failures stay listed and dimmed. The probe is still a single GET: it does not yet speak A2A JSON-RPC or MCP initialize, and clones are not clustered.`,
+    state: cycling ? "partly" : "open",
+    detail:
+      `${withinTwoHours} of ${callable.length} agents with an endpoint were called in the last two hours; the oldest reading is ` +
+      `${oldest === null ? "unknown" : oldest < 120 ? `${Math.round(oldest)} min` : `${(oldest / 60).toFixed(1)} h`} old` +
+      `${census.minutes !== null ? ` (census stamp ${census.minutes} min ago)` : ""}. Failures stay listed and dimmed. The probe is still a single GET: it does not yet speak A2A JSON-RPC or MCP initialize, and clones are not clustered.`,
     link: "/agents",
   });
 

@@ -1405,7 +1405,15 @@ tr:has(.strike[data-striking="1"]),
   text-transform: uppercase;
   color: var(--ink-3);
   white-space: nowrap;
-  padding: 4px 0;
+  /*
+    Tall enough to tap. The type is small by design, so the hit area comes
+    from padding rather than from the glyphs: 44px on a phone, where a thumb
+    is the pointer, and the audit flagged these links as too small to hit.
+  */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 4px 2px;
   border-bottom: var(--hair) solid transparent;
   transition: color var(--d-hover) linear, border-color var(--d-hover) linear;
 }

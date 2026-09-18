@@ -69,12 +69,13 @@ export async function runCensus(opts: CensusOptions): Promise<CensusRun> {
     const want = new Set(opts.only);
     agents = agents.filter((a) => want.has(a.tokenId));
   }
-  // Oldest reading first, never-read first of all.
-  agents.sort((a, b) => {
-    const ta = prevResults.get(a.tokenId)?.at ?? "";
-    const tb = prevResults.get(b.tokenId)?.at ?? "";
-    return ta.localeCompare(tb);
-  });
+  // Longest since we last tried first, never-tried first of all. The last
+  // attempt, not the last reading: see ProbeResult.attemptedAt.
+  const lastTry = (id: string) => {
+    const r = prevResults.get(id);
+    return r?.attemptedAt ?? r?.at ?? "";
+  };
+  agents.sort((a, b) => lastTry(a.tokenId).localeCompare(lastTry(b.tokenId)));
   if (opts.limit) agents = agents.slice(0, opts.limit);
   log(`${agents.length} agents to refresh`);
 
@@ -105,19 +106,25 @@ export async function runCensus(opts: CensusOptions): Promise<CensusRun> {
   let resolvedFailed = 0;
   for (const t of targets) {
     if (t.unread) {
-      // Our read failed. Keep what we knew; if we knew nothing, say so.
+      // Our read failed. Keep what we knew, but note that we tried, so this
+      // agent goes to the back of the queue rather than heading it forever.
       resolvedFailed += 1;
-      if (!prevResults.has(t.tokenId)) {
-        prevResults.set(t.tokenId, {
-          tokenId: t.tokenId,
-          endpoint: null,
-          answered: false,
-          status: null,
-          latencyMs: null,
-          error: "the card did not resolve on this read; not a finding about the agent",
-          at: now,
-        });
-      }
+      const known = prevResults.get(t.tokenId);
+      prevResults.set(
+        t.tokenId,
+        known
+          ? { ...known, attemptedAt: now }
+          : {
+              tokenId: t.tokenId,
+              endpoint: null,
+              answered: false,
+              status: null,
+              latencyMs: null,
+              error: "the card did not resolve on this read; not a finding about the agent",
+              at: now,
+              attemptedAt: now,
+            },
+      );
       continue;
     }
     if (!t.endpoint) {
@@ -129,11 +136,12 @@ export async function runCensus(opts: CensusOptions): Promise<CensusRun> {
         latencyMs: null,
         error: "the card advertises no endpoint",
         at: now,
+        attemptedAt: now,
       });
       continue;
     }
     const r = fresh.get(t.tokenId);
-    if (r) prevResults.set(t.tokenId, r);
+    if (r) prevResults.set(t.tokenId, { ...r, attemptedAt: now });
   }
 
   // Anything that answered 402 is asked what it charges.

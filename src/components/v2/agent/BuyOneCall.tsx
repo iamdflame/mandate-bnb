@@ -1,206 +1,263 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { Address, Hex } from "viem";
+import { encodeFunctionData, parseAbi, type Address, type Hex } from "viem";
 import { useWallet, readableError } from "@/lib/chain/wallet";
-import { USD1, USD1_DECIMALS, USD1_DOMAIN, TRANSFER_TYPES } from "@/lib/x402";
 import { marketChain, marketClient } from "@/lib/chain/market";
+import {
+  PAYABLE_ASSETS,
+  PERMIT2,
+  paymentEnvelope,
+  paymentTypedData,
+  readRequirements,
+  whyUnpayable,
+  type Requirement,
+} from "@/lib/x402/pay";
 
 /**
- * Buying a single call, in the browser, without holding any BNB.
+ * Buying a single call, in the browser, with the visitor's own wallet.
  *
  * The handshake happens in the order the protocol specifies: ask unpaid, read
- * the price the server names, sign an authorisation, ask again carrying it.
- * The buyer never sends a transaction. EIP-3009 is what makes that true: the
- * signature authorises a transfer somebody else pays gas to submit, so a wallet
- * holding stablecoin and no BNB at all can buy.
+ * the price the seller names, sign, ask again carrying the signature. The
+ * buyer sends no transaction for an EIP-3009 token (USD1, U): the signature
+ * authorises a transfer the seller submits and pays gas for. A seller priced
+ * in a token without EIP-3009 (USDT) is paid through Permit2, which needs one
+ * approval transaction, for exactly this amount, before the signature.
  *
- * Nothing is signed before the price is on screen. The challenge is fetched
- * first and rendered, so the number a person approves in their wallet is one
- * they have already read here.
+ * The terms are read and the envelope built by the same code the server uses
+ * to pay strangers (lib/x402/pay). This button used to hand-roll x402 v1 and
+ * would have failed against every seller that speaks v2, which is most of
+ * them. Nothing is signed before the price is on screen.
  */
-
-interface Requirement {
-  scheme: string;
-  network: string;
-  asset: string;
-  payTo: Address;
-  maxAmountRequired: string;
-  resource: string;
-  description: string;
-  maxTimeoutSeconds: number;
-}
 
 type Phase =
   | { at: "idle" }
   | { at: "quoting" }
   | { at: "quoted"; req: Requirement }
+  | { at: "approving"; req: Requirement }
   | { at: "signing"; req: Requirement }
   | { at: "settling"; req: Requirement }
   | { at: "done"; body: unknown; tx: string | null }
   | { at: "failed"; why: string };
 
-const ERC20_BALANCE = [
-  {
-    type: "function",
-    name: "balanceOf",
-    stateMutability: "view",
-    inputs: [{ name: "a", type: "address" }],
-    outputs: [{ name: "", type: "uint256" }],
-  },
-] as const;
+const ERC20 = parseAbi([
+  "function balanceOf(address a) view returns (uint256)",
+  "function allowance(address o, address s) view returns (uint256)",
+  "function approve(address s, uint256 v) returns (bool)",
+]);
 
 /** Atomic units to a readable figure, without a float in the middle. */
-function usd1(atomic: string): string {
-  const v = BigInt(atomic);
-  const base = 10n ** BigInt(USD1_DECIMALS);
-  const whole = v / base;
-  const frac = (v % base).toString().padStart(USD1_DECIMALS, "0").slice(0, 4).replace(/0+$/, "");
+function human(atomic: bigint, decimals = 18): string {
+  const base = 10n ** BigInt(decimals);
+  const whole = atomic / base;
+  const frac = (atomic % base).toString().padStart(decimals, "0").slice(0, 4).replace(/0+$/, "");
   return frac ? `${whole}.${frac}` : `${whole}`;
 }
 
-/** 32 random bytes, from the browser's CSPRNG. */
-function nonce(): Hex {
-  const b = new Uint8Array(32);
-  crypto.getRandomValues(b);
-  return `0x${Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("")}` as Hex;
+function symbolOf(r: Requirement): string {
+  return PAYABLE_ASSETS[r.asset.toLowerCase()]?.symbol ?? (r.raw.extra as { name?: string } | undefined)?.name ?? "tokens";
 }
 
 /**
  * What went wrong, in a sentence.
  *
  * The seller returns the settlement failure verbatim, which for the commonest
- * case is a hundred and eighty characters of ContractFunctionExecutionError
- * wrapping the four words that matter. Showing that to somebody who just tried
- * to spend a cent is not honesty, it is laziness dressed as it.
+ * case is a hundred and eighty characters wrapping the four words that matter.
  */
 function sellerError(body: unknown, status: number): string {
   const b = body as { error?: string; detail?: string } | null;
-  const detail = b?.detail ?? "";
-
-  if (/exceeds balance/i.test(detail)) {
-    return "This wallet does not hold enough USD1 to cover the call. Nothing was charged.";
-  }
-  if (/already used|authorization is used/i.test(detail)) {
-    return "That authorisation has already been spent. Ask for a fresh price and sign again.";
-  }
-  if (/invalid signature|does not recover/i.test(detail)) {
-    return "The signature did not recover to your address, so the payment was refused.";
-  }
-  if (/expired|validBefore/i.test(detail)) {
-    return "The authorisation expired before it reached the chain. Ask for a price and sign again.";
-  }
-  if (status === 402) return "The payment was refused. Nothing was charged.";
-  return b?.error ?? detail.slice(0, 160) ?? `The seller answered ${status}.`;
+  const detail = `${b?.error ?? ""} ${b?.detail ?? ""}`;
+  if (/exceeds balance/i.test(detail)) return "This wallet does not hold enough to cover the call. Nothing was charged.";
+  if (/already used|authorization is used/i.test(detail)) return "That authorisation has already been spent. Ask for a fresh price and sign again.";
+  if (/invalid signature|does not recover/i.test(detail)) return "The signature did not recover to your address, so the payment was refused.";
+  if (/expired|validBefore/i.test(detail)) return "The authorisation expired before it reached the chain. Ask for a price and sign again.";
+  if (b?.error) return `The seller refused it: ${String(b.error).slice(0, 200)}`;
+  return status === 402 ? "The payment was refused. Nothing was charged." : `The seller answered ${status}.`;
 }
 
-export default function BuyOneCall({ path, what }: { path: string; what: string }) {
+/** Decodes a settlement receipt header, in either of the two spellings. */
+function txFrom(res: Answer): string | null {
+  const raw = res.header("payment-response") ?? res.header("x-payment-response");
+  if (!raw) return null;
+  try {
+    const d = JSON.parse(atob(raw)) as { transaction?: string; txHash?: string; tx?: string };
+    return d.transaction ?? d.txHash ?? d.tx ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** What a call returned, whether it went straight to the seller or through the relay. */
+interface Answer {
+  status: number;
+  header: (name: string) => string | null;
+  text: string;
+}
+
+export default function BuyOneCall({
+  path,
+  what,
+  method = "GET",
+  body,
+  tokenId,
+  subject,
+}: {
+  path: string;
+  what: string;
+  /** Some sellers (MCP) take the call as a POST with a body; the 402 and the paid call use the same one. */
+  method?: "GET" | "POST";
+  body?: unknown;
+  /**
+   * Given for an agent we do not operate: the call then goes through
+   * /api/x402/relay, because a seller that sends no CORS headers (Muster) is
+   * unreachable from a page, while our own endpoints are called directly.
+   */
+  tokenId?: string;
+  subject?: string;
+}) {
   const { address, ready, available, connect, switchChain } = useWallet();
   const [phase, setPhase] = useState<Phase>({ at: "idle" });
   const [balance, setBalance] = useState<bigint | null>(null);
+  const [allowance, setAllowance] = useState<bigint | null>(null);
+  const [unpayable, setUnpayable] = useState<string | null>(null);
 
-  /** Step one: ask unpaid, and read the price the server names. */
+  const send = async (paid?: { header: string; value: string }): Promise<Answer> => {
+    if (tokenId) {
+      const res = await fetch("/api/x402/relay", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ tokenId, subject, paid }),
+      });
+      const r = (await res.json()) as { error?: string; status?: number; headers?: Record<string, string>; body?: string };
+      if (!res.ok || typeof r.status !== "number") throw new Error(r.error ?? `The relay answered ${res.status}.`);
+      const h = r.headers ?? {};
+      return { status: r.status, header: (n) => h[n.toLowerCase()] ?? null, text: r.body ?? "" };
+    }
+    const res = await fetch(path, {
+      method,
+      headers: {
+        accept: "application/json, text/event-stream",
+        ...(body !== undefined ? { "content-type": "application/json" } : {}),
+        ...(paid ? { [paid.header]: paid.value } : {}),
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    return { status: res.status, header: (n) => res.headers.get(n), text: await res.text() };
+  };
+
+  /** Step one: ask unpaid, and read the price the seller names. */
   const quote = useCallback(async () => {
     setPhase({ at: "quoting" });
+    setUnpayable(null);
     try {
-      const res = await fetch(path, { headers: { accept: "application/json" } });
+      const res = await send();
+      const text = res.text;
+      let parsed: unknown = null;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        parsed = null;
+      }
       if (res.status !== 402) {
-        setPhase({ at: "done", body: await res.json().catch(() => null), tx: null });
+        setPhase({ at: "done", body: parsed ?? text, tx: null });
         return;
       }
-      const body = (await res.json()) as { accepts?: Requirement[] };
-      const req = body.accepts?.[0];
-      if (!req) throw new Error("The endpoint refused payment without naming a price.");
+      const offers = readRequirements(parsed, res.header("payment-required"));
+      if (!offers.length) throw new Error("The seller refused payment without naming a price we can read.");
+      const req = offers.find((o) => !whyUnpayable(o)) ?? offers[0];
+      setUnpayable(whyUnpayable(req));
       setPhase({ at: "quoted", req });
 
       if (address) {
-        const bal = await marketClient
-          .readContract({ address: USD1, abi: ERC20_BALANCE, functionName: "balanceOf", args: [address] })
-          .catch(() => null);
+        const [bal, allow] = await Promise.all([
+          marketClient.readContract({ address: req.asset, abi: ERC20, functionName: "balanceOf", args: [address] }).catch(() => null),
+          req.method === "permit2"
+            ? marketClient.readContract({ address: req.asset, abi: ERC20, functionName: "allowance", args: [address, PERMIT2] }).catch(() => null)
+            : Promise.resolve(null),
+        ]);
         setBalance(bal as bigint | null);
+        setAllowance(allow as bigint | null);
       }
     } catch (e) {
       setPhase({ at: "failed", why: readableError(e) });
     }
-  }, [path, address]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path, method, body, address, tokenId, subject]);
 
-  /** Steps two to five: authorise, sign, and ask again carrying the signature. */
+  /** Permit2 needs one approval for exactly this amount; the wallet pays that gas. */
+  const approve = useCallback(
+    async (req: Requirement) => {
+      if (!address) return;
+      setPhase({ at: "approving", req });
+      try {
+        const data = encodeFunctionData({ abi: ERC20, functionName: "approve", args: [PERMIT2, req.amount] });
+        const hash = (await window.ethereum!.request({
+          method: "eth_sendTransaction",
+          params: [{ from: address, to: req.asset, data }],
+        })) as Hex;
+        const receipt = await marketClient.waitForTransactionReceipt({ hash, timeout: 120_000 });
+        if (receipt.status !== "success") throw new Error("The approval reverted.");
+        setAllowance(req.amount);
+        setPhase({ at: "quoted", req });
+      } catch (e) {
+        setPhase({ at: "failed", why: readableError(e) });
+      }
+    },
+    [address],
+  );
+
+  /** Sign the terms with the wallet, and ask again carrying the signature. */
   const pay = useCallback(
     async (req: Requirement) => {
       if (!address) return;
       setPhase({ at: "signing", req });
       try {
-        const now = Math.floor(Date.now() / 1000);
-        const authorization = {
-          from: address,
-          to: req.payTo,
-          value: req.maxAmountRequired,
-          // Sixty seconds back, because a wallet's clock and a chain's clock
-          // disagree often enough that a validAfter of "now" gets rejected.
-          validAfter: String(now - 60),
-          validBefore: String(now + (req.maxTimeoutSeconds || 120)),
-          nonce: nonce(),
-        };
-
+        const td = paymentTypedData(req, address as Address);
+        const domainType =
+          "version" in td.domain
+            ? [
+                { name: "name", type: "string" },
+                { name: "version", type: "string" },
+                { name: "chainId", type: "uint256" },
+                { name: "verifyingContract", type: "address" },
+              ]
+            : [
+                { name: "name", type: "string" },
+                { name: "chainId", type: "uint256" },
+                { name: "verifyingContract", type: "address" },
+              ];
         const signature = (await window.ethereum!.request({
           method: "eth_signTypedData_v4",
           params: [
             address,
-            JSON.stringify({
-              types: {
-                EIP712Domain: [
-                  { name: "name", type: "string" },
-                  { name: "version", type: "string" },
-                  { name: "chainId", type: "uint256" },
-                  { name: "verifyingContract", type: "address" },
-                ],
-                ...TRANSFER_TYPES,
-              },
-              primaryType: "TransferWithAuthorization",
-              domain: USD1_DOMAIN,
-              message: authorization,
-            }),
+            JSON.stringify(
+              { types: { EIP712Domain: domainType, ...td.types }, primaryType: td.primaryType, domain: td.domain, message: td.message },
+              (_, v) => (typeof v === "bigint" ? v.toString() : v),
+            ),
           ],
         })) as Hex;
 
         setPhase({ at: "settling", req });
-
-        const header = btoa(
-          JSON.stringify({
-            x402Version: 1,
-            scheme: "exact",
-            network: req.network,
-            payload: { signature, authorization },
-          }),
-        );
-
-        const res = await fetch(path, {
-          method: path.includes("/simulate") ? "POST" : "GET",
-          headers: { accept: "application/json", "X-PAYMENT": header },
-        });
-
-        const body = await res.json().catch(() => null);
-        if (!res.ok) throw new Error(sellerError(body, res.status));
-
-        let tx: string | null = null;
-        const receipt = res.headers.get("x-payment-response");
-        if (receipt) {
-          try {
-            tx = (JSON.parse(atob(receipt)) as { transaction?: string }).transaction ?? null;
-          } catch {
-            tx = null;
-          }
+        const signed = paymentEnvelope(req, address as Address, signature, td);
+        const res = await send({ header: signed.header, value: signed.value });
+        const text = res.text;
+        let parsed: unknown = null;
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          parsed = text;
         }
-        setPhase({ at: "done", body, tx });
+        if (res.status >= 400) throw new Error(sellerError(parsed, res.status));
+        setPhase({ at: "done", body: parsed, tx: txFrom(res) });
       } catch (e) {
         setPhase({ at: "failed", why: readableError(e) });
       }
     },
-    [address, path],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [address, path, method, body, tokenId, subject],
   );
 
-  const req =
-    phase.at === "quoted" || phase.at === "signing" || phase.at === "settling" ? phase.req : null;
+  const req = "req" in phase ? phase.req : null;
   const short = (h: string) => `${h.slice(0, 10)}…${h.slice(-8)}`;
 
   if (phase.at === "idle") {
@@ -219,20 +276,13 @@ export default function BuyOneCall({ path, what }: { path: string; what: string 
     );
   }
 
-  if (phase.at === "quoting") {
-    return <p className="m-small">Asking the seller for a price…</p>;
-  }
+  if (phase.at === "quoting") return <p className="m-small">Asking the seller for a price…</p>;
 
   if (phase.at === "failed") {
     return (
       <>
         <p className="m-error">{phase.why}</p>
-        <button
-          className="m-btn m-btn--sm"
-          style={{ marginTop: "0.8rem" }}
-          onClick={() => setPhase({ at: "idle" })}
-          type="button"
-        >
+        <button className="m-btn m-btn--sm" style={{ marginTop: "0.8rem" }} onClick={() => setPhase({ at: "idle" })} type="button">
           Try again
         </button>
       </>
@@ -243,57 +293,49 @@ export default function BuyOneCall({ path, what }: { path: string; what: string 
     return (
       <>
         <p className="m-ok">
-          Paid, and the agent answered.
+          {phase.tx ? "Paid, and the agent answered. " : "The agent answered. "}
           {phase.tx ? (
-            <>
-              {" "}
-              <a
-                className="m-link m-mono"
-                href={`${marketChain.blockExplorers?.default.url}/tx/${phase.tx}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {short(phase.tx)}
-              </a>
-            </>
+            <a className="m-link m-mono" href={`${marketChain.blockExplorers?.default.url}/tx/${phase.tx}`} target="_blank" rel="noreferrer">
+              {short(phase.tx)}
+            </a>
           ) : null}
         </p>
-        <pre className="m-pre">{JSON.stringify(phase.body, null, 2)}</pre>
-        <button
-          className="m-btn m-btn--sm"
-          style={{ marginTop: "0.8rem" }}
-          onClick={() => setPhase({ at: "idle" })}
-          type="button"
-        >
+        <pre className="m-pre">{typeof phase.body === "string" ? phase.body.slice(0, 4000) : JSON.stringify(phase.body, null, 2).slice(0, 4000)}</pre>
+        <button className="m-btn m-btn--sm" style={{ marginTop: "0.8rem" }} onClick={() => setPhase({ at: "idle" })} type="button">
           Buy another
         </button>
       </>
     );
   }
 
-  /* quoted, signing or settling: the price is on screen and a decision is due */
+  /* quoted, approving, signing or settling: the price is on screen and a decision is due */
+  const sym = symbolOf(req!);
+  const price = human(req!.amount);
+  const needsApproval = req!.method === "permit2" && allowance !== null && allowance < req!.amount;
+
   return (
     <>
       <dl className="m-kv" style={{ marginBottom: "1rem" }}>
         <div>
           <dt>Price</dt>
-          <dd className="m-fig">{usd1(req!.maxAmountRequired)} USD1</dd>
+          <dd className="m-fig">
+            {price} {sym}
+          </dd>
         </div>
         <div>
           <dt>You pay in gas</dt>
-          <dd className="m-fig">nothing</dd>
+          <dd className="m-fig">{req!.method === "permit2" ? "one approval, once" : "nothing"}</dd>
         </div>
         <div>
           <dt>What it buys</dt>
-          <dd>{req!.description}</dd>
+          <dd>{(req!.raw.description as string | undefined) ?? req!.resource?.description ?? "one call"}</dd>
         </div>
       </dl>
 
-      {!available ? (
-        <p className="m-small">
-          There is no wallet in this browser. The same call is available over the
-          API with a signed payment header.
-        </p>
+      {unpayable ? (
+        <p className="m-small">We cannot settle this one for you, because {unpayable}.</p>
+      ) : !available ? (
+        <p className="m-small">There is no wallet in this browser. The same call is available over the API with a signed payment header.</p>
       ) : !address ? (
         <button className="m-btn m-btn--primary m-btn--block" onClick={() => void connect()} type="button">
           Connect a wallet
@@ -302,28 +344,24 @@ export default function BuyOneCall({ path, what }: { path: string; what: string 
         <button className="m-btn m-btn--primary m-btn--block" onClick={() => void switchChain()} type="button">
           Switch to {marketChain.name}
         </button>
-      ) : balance !== null && balance < BigInt(req!.maxAmountRequired) ? (
+      ) : balance !== null && balance < req!.amount ? (
         <p className="m-small">
-          This wallet holds {usd1(balance.toString())} USD1 and the call costs{" "}
-          {usd1(req!.maxAmountRequired)}. Nothing has been signed.
+          This wallet holds {human(balance)} {sym} and the call costs {price}. Nothing has been signed.
         </p>
+      ) : needsApproval ? (
+        <button className="m-btn m-btn--primary m-btn--block" onClick={() => void approve(req!)} disabled={phase.at !== "quoted"} type="button">
+          {phase.at === "approving" ? "Waiting for the approval…" : `Approve exactly ${price} ${sym} for Permit2`}
+        </button>
       ) : (
-        <button
-          className="m-btn m-btn--primary m-btn--block"
-          onClick={() => void pay(req!)}
-          disabled={phase.at !== "quoted"}
-          type="button"
-        >
-          {phase.at === "signing"
-            ? "Waiting for your signature…"
-            : phase.at === "settling"
-              ? "The seller is settling it…"
-              : `Sign to pay ${usd1(req!.maxAmountRequired)} USD1`}
+        <button className="m-btn m-btn--primary m-btn--block" onClick={() => void pay(req!)} disabled={phase.at !== "quoted"} type="button">
+          {phase.at === "signing" ? "Waiting for your signature…" : phase.at === "settling" ? "The seller is settling it…" : `Sign to pay ${price} ${sym}`}
         </button>
       )}
 
       <p className="m-note" style={{ marginTop: "0.6rem" }}>
-        You sign an authorisation. The seller submits the transfer and pays the gas.
+        {req!.method === "permit2"
+          ? "Permit2 moves the tokens on your signature; the approval is for this amount only and is spent by this call."
+          : "You sign an authorisation. The seller submits the transfer and pays the gas."}
       </p>
     </>
   );

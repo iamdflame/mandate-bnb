@@ -6,8 +6,11 @@ import HireFlow from "@/components/v2/hire/HireFlow";
 import { findAgent } from "@/lib/data/agents";
 import { toListing } from "@/lib/market/listing";
 import { hirePath } from "@/lib/market/hire-law";
+import { live } from "@/lib/data/live";
 
 export const revalidate = 300;
+// Room for the census slice that runs after the response (see lib/census/refresh).
+export const maxDuration = 60;
 
 export async function generateMetadata({
   params,
@@ -26,6 +29,12 @@ export default async function HirePage({
   params: Promise<{ tokenId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  /*
+    Warm the readings first. This page judged hireability from the committed
+    probe file, seven days old, while every other page read the fresh one from
+    the database: so it refused every agent, our own included, as stale.
+  */
+  await live();
   const { tokenId } = await params;
   const sp = await searchParams;
   /*
