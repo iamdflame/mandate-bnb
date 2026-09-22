@@ -1,43 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import Palette from "@/components/shell/Palette";
+import "./tokens.css";
 import "./globals.css";
 import "./theme.css";
+import "./market.css";
 
 /*
-  Fonts are self-hosted rather than fetched by `next/font/google`.
+  Geist, self-hosted from the package rather than fetched at build time.
 
-  The Google fetch is a build-time network dependency, and it was intermittently
-  timing out here, which fails the build in a way that surfaces as an unrelated
-  null-context error during prerender. Self-hosting removes the dependency
-  entirely, drops a third-party request at runtime, and makes the build
-  reproducible offline.
+  The build used to pull fonts from Google and that fetch timed out often
+  enough to fail deploys. The geist package ships its own woff2 files through
+  next/font/local, so the build needs no network for type at all.
 */
-
-const display = localFont({
-  src: "./fonts/InstrumentSerif-Regular.woff2",
-  variable: "--font-display-loaded",
-  display: "swap",
-  weight: "400",
-});
-
-const mono = localFont({
-  src: [
-    { path: "./fonts/IBMPlexMono-Regular.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/IBMPlexMono-Medium.woff2", weight: "500", style: "normal" },
-  ],
-  variable: "--font-mono-loaded",
-  display: "swap",
-});
-
-const sans = localFont({
-  src: [
-    { path: "./fonts/IBMPlexSans-Regular.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/IBMPlexSans-Medium.woff2", weight: "500", style: "normal" },
-  ],
-  variable: "--font-sans-loaded",
-  display: "swap",
-});
 
 /*
   Titles are per route; this is the template and the fallback.
@@ -49,16 +25,16 @@ const sans = localFont({
 */
 export const metadata: Metadata = {
   title: {
-    default: "Mandate | Hire an agent to run a position on BNB Chain",
+    default: "MANDATE | BNB Smart Chain Agent Marketplace",
     template: "%s",
   },
   description:
-    "A marketplace for autonomous agents on BNB Smart Chain. Each one is checked against the chain before it is listed, and paid only if it beats the benchmark you choose.",
+    "Find autonomous agents for liquidity, grid trading, yield and loan protection on BNB Smart Chain, with live onchain signals before you hire.",
   applicationName: "MANDATE",
   openGraph: {
-    title: "Mandate | Hire an agent to run a position on BNB Chain",
+    title: "MANDATE | BNB Smart Chain Agent Marketplace",
     description:
-      "Agents that rebalance liquidity, run grids, chase yield and watch loan health. Checked against the chain, bonded against failure.",
+      "Find an agent. See what it can actually do. Put it to work.",
     type: "website",
     siteName: "MANDATE",
   },
@@ -73,26 +49,20 @@ export const metadata: Metadata = {
  * missing data rather than as the finding.
  */
 export const viewport: Viewport = {
-  /*
-    Paper, not the anvil.
-
-    The marketplace is light and the verification archive is dark, and the
-    browser chrome has to pick one. It picks the one a person actually lands
-    on. The archive paints its own ground, so nothing there regresses.
-  */
-  themeColor: "#f6f3ec",
-  colorScheme: "light dark",
+  /* The whole product is one dark ground now, so the browser chrome matches it. */
+  themeColor: "#0b0e11",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // The font variables must land on <html>, not <body>: globals.css consumes
+  // The font variables must land on <html>, not <body>: tokens.css consumes
   // them at :root, and a var() reference to a property defined further down
-  // the tree is invalid at that point, which silently kills the whole
-  // declaration and drops the page to Times New Roman.
+  // the tree is invalid at that point, which silently drops the page to the
+  // browser's default face.
   return (
-    <html lang="en" className={`${display.variable} ${mono.variable} ${sans.variable}`}>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body>
         {children}
         {/* ⌘K, mounted once. It renders nothing until it is opened. */}

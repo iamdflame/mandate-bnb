@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import SiteHeader from "@/components/shell/SiteHeader";
-import SiteFooter from "@/components/shell/SiteFooter";
+import AppShell from "@/components/v2/shell/AppShell";
 import TokenLookup from "@/components/ui/TokenLookup";
 import { MARKET_ADDRESS } from "@/lib/chain/market";
 import { readAgentIndex } from "@/lib/data/agents";
@@ -80,8 +79,7 @@ export default async function ListYourAgentPage() {
   const index = await readAgentIndex();
 
   return (
-    <div className="app">
-      <SiteHeader current="/list-your-agent" />
+    <AppShell>
       <main className="shell start">
         {/*
           The claim on the left, the way to check it on the right.
@@ -159,10 +157,6 @@ export default async function ListYourAgentPage() {
         </section>
       </main>
 
-      <SiteFooter
-        market={MARKET_ADDRESS}
-        note="Listing is not a favour anyone grants here. Every registered agent already has a page; the rung is what has to be earned."
-      />
-    </div>
+      </AppShell>
   );
 }

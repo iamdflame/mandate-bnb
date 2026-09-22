@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import SiteHeader from "@/components/shell/SiteHeader";
-import SiteFooter from "@/components/shell/SiteFooter";
+import AppShell from "@/components/v2/shell/AppShell";
 import Command from "@/components/ui/Command";
 import { MARKET_ADDRESS } from "@/lib/chain/market";
 
@@ -166,8 +165,7 @@ function Card({ item }: { item: Item }) {
 
 export default function EvidencePage() {
   return (
-    <div className="app">
-      <SiteHeader current="/evidence" />
+    <AppShell>
       <main className="ev-page shell">
         <p className="mark-label">Evidence</p>
         <h1 className="display start-title">Everything, including what went wrong.</h1>
@@ -216,10 +214,6 @@ export default function EvidencePage() {
         </p>
       </main>
 
-      <SiteFooter
-        market={MARKET_ADDRESS}
-        note="Adverse results are kept permanently. Nothing on this page is removed because it stopped being convenient."
-      />
-    </div>
+      </AppShell>
   );
 }

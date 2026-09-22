@@ -14,68 +14,66 @@
 */
 
 /*
-  The document ground follows whichever sheet the page is on.
+  The ground. One dark surface for the whole product, from tokens.css.
 
-  Without this, overscroll and any area the app does not paint would show the
-  archive's near-black through the paper, which reads as a rendering fault
-  rather than as a choice.
+  The names below (paper, ink) are historical and describe roles, not
+  colours: `--paper` is the page ground and `--ink` is body text. Every value
+  now resolves to a token, so this block is a mapping and never a palette.
 */
 html:has(.m-app),
 html:has(.m-app) body {
-  background: #f6f3ec;
-  color-scheme: light;
+  background: var(--c-bg);
+  color-scheme: dark;
 }
 
 .m-app {
   /* --- ground ---------------------------------------------------------- */
-  --paper: #f6f3ec;
-  --paper-raised: #fffefb;
-  --paper-sunken: #eee9de;
-  --paper-ink: #14161a;
+  --paper: var(--c-bg);
+  --paper-raised: var(--c-surface);
+  --paper-sunken: var(--c-surface-2);
+  --paper-ink: var(--c-text);
 
-  /* --- ink ------------------------------------------------------------- */
-  --ink: #14161a;
-  --ink-2: #4b5058;
-  --ink-3: #787d85;
+  /* --- text ------------------------------------------------------------ */
+  --ink: var(--c-text);
+  --ink-2: var(--c-text-2);
+  --ink-3: var(--c-text-3);
 
   /* --- rules ----------------------------------------------------------- */
-  --rule: #ded7c8;
-  --rule-strong: #c6bdaa;
-  --rule-hair: #e8e2d6;
+  --rule: var(--c-line);
+  --rule-strong: var(--c-line-strong);
+  --rule-hair: var(--c-line-faint);
 
   /*
-    Two colours carry meaning and nothing else does.
-
-    Orange is only ever an action a person can take. Green is only ever
-    something we checked ourselves and it passed. Once those two are spent,
-    every other distinction has to be made with type, weight and space, which
-    is the discipline that keeps the page from turning into a dashboard.
+    Meaning carries colour and nothing else does. Yellow is an action, a
+    selection, a price or something live. Green is something we checked and
+    it passed. Red is kept for destructive actions and dead endpoints.
   */
-  --signal: #c8431c;
-  --signal-deep: #9e3312;
-  --signal-wash: #fbeae4;
-  --verified: #1c6b4a;
-  --verified-wash: #e4efe9;
-  --caution: #8a5a12;
-  --caution-wash: #f6eeda;
+  --signal: var(--c-accent);
+  --signal-deep: var(--c-accent-hi);
+  --signal-wash: var(--c-accent-soft);
+  --signal-ink: var(--c-accent-ink);
+  --verified: var(--c-ok);
+  --verified-wash: var(--c-ok-soft);
+  --caution: var(--c-accent);
+  --caution-wash: var(--c-accent-soft);
 
-  --focus: #1f5fbf;
+  --focus: var(--c-accent);
 
   /* --- type ------------------------------------------------------------ */
-  --m-serif: var(--font-display-loaded), "Instrument Serif", Georgia, serif;
-  --m-sans: var(--font-sans-loaded), "IBM Plex Sans", system-ui, sans-serif;
-  --m-mono: var(--font-mono-loaded), "IBM Plex Mono", ui-monospace, monospace;
+  --m-serif: var(--f-sans);
+  --m-sans: var(--f-sans);
+  --m-mono: var(--f-mono);
 
-  --m-display: clamp(2.9rem, 7.2vw, 5.6rem);
-  --m-h1: clamp(2.1rem, 4.6vw, 3.4rem);
-  --m-h2: clamp(1.55rem, 3vw, 2.15rem);
-  --m-h3: 1.25rem;
-  --m-body: 1.0625rem;
-  --m-small: 0.875rem;
-  --m-tiny: 0.78125rem;
+  --m-display: var(--ts-hero);
+  --m-h1: var(--ts-h1);
+  --m-h2: var(--ts-h2);
+  --m-h3: var(--ts-h3);
+  --m-body: var(--ts-md);
+  --m-small: var(--ts-sm);
+  --m-tiny: var(--ts-2xs);
 
-  --m-max: 1240px;
-  --m-gut: clamp(1.25rem, 4vw, 3rem);
+  --m-max: var(--w-max);
+  --m-gut: var(--w-gutter);
 
   background: var(--paper);
   color: var(--ink);
@@ -311,13 +309,13 @@ html:has(.m-app) body {
 .m-btn--primary {
   background: var(--signal);
   border-color: var(--signal);
-  color: #fff;
+  color: var(--signal-ink);
 }
 
 .m-btn--primary:hover {
   background: var(--signal-deep);
   border-color: var(--signal-deep);
-  color: #fff;
+  color: var(--signal-ink);
 }
 
 .m-btn--lg {
@@ -359,7 +357,7 @@ html:has(.m-app) body {
 
 .m-btn--primary[disabled]:hover {
   background: var(--signal);
-  color: #fff;
+  color: var(--signal-ink);
 }
 
 .m-btns {
@@ -1192,7 +1190,7 @@ html:has(.m-app) body {
 .m-step--now .m-step__n {
   background: var(--signal);
   border-color: var(--signal);
-  color: #fff;
+  color: var(--signal-ink);
 }
 
 .m-step--done {
@@ -1480,7 +1478,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 .m-mkt-check--on .m-mkt-box {
   background: var(--signal);
   border-color: var(--signal);
-  color: #fff;
+  color: var(--signal-ink);
 }
 
 /* ================================================================ home === */

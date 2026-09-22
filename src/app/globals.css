@@ -68,26 +68,26 @@ table {
   color-scheme: dark;
 
   /* --- ground: the anvil ------------------------------------------------ */
-  --void: #08090b;
-  --iron: #111316;
-  --iron-hi: #1a1d21;
-  --score: #24282d;
+  --void: var(--c-bg);
+  --iron: var(--c-surface);
+  --iron-hi: var(--c-surface-2);
+  --score: var(--c-elevated);
 
   /* --- the metals: these carry all meaning ------------------------------ */
-  --gold-999: #e8a317;   /* fine gold — hallmarked, settled */
-  --gold-750: #c98b14;   /* 18ct — assayed and passing */
-  --silver-925: #b8bec6; /* sterling — live, capable, unbonded */
-  --pewter-500: #6b7280; /* resolvable but unproven */
-  --base: #3a4048;       /* base metal — registered and nothing more */
+  --gold-999: var(--c-accent);   /* hallmarked, settled */
+  --gold-750: var(--c-accent-lo);   /* assayed and passing */
+  --silver-925: var(--c-text-2); /* live, capable, unbonded */
+  --pewter-500: var(--c-text-3); /* resolvable but unproven */
+  --base: var(--c-line-strong);       /* registered and nothing more */
 
   /* --- signals: used almost never --------------------------------------- */
-  --struck: #e8e4dc;     /* the instant a mark lands */
-  --cancelled: #8b3a3a;  /* defacement. Deep oxblood, never red */
-  --verify: #4a9d7f;     /* verification passed. Muted, never neon */
+  --struck: var(--c-text);     /* the instant a mark lands */
+  --cancelled: var(--c-err);  /* defacement, dispute, dead */
+  --verify: var(--c-ok);     /* verification passed */
 
   /* --- text ------------------------------------------------------------- */
-  --ink: #e6e8ea;
-  --ink-2: #9aa1a9;
+  --ink: var(--c-text);
+  --ink-2: var(--c-text-2);
   /*
     Its own value, not the metal.
 
@@ -98,12 +98,12 @@ table {
     This is a neutral grey at roughly 6:1, and the metal is left to mean what
     it means.
   */
-  --ink-3: #8a929b;
+  --ink-3: var(--c-text-3);
 
   /* --- type ------------------------------------------------------------- */
-  --serif: var(--font-display-loaded), "Instrument Serif", "Times New Roman", serif;
-  --sans: var(--font-sans-loaded), "IBM Plex Sans", system-ui, -apple-system, sans-serif;
-  --mono: var(--font-mono-loaded), "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --serif: var(--f-sans);
+  --sans: var(--f-sans);
+  --mono: var(--f-mono);
 
   --t-display: clamp(2.75rem, 7vw, 4.75rem);
   --t-h1: clamp(2rem, 4.6vw, 3rem);

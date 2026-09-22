@@ -1,0 +1,126 @@
+/*
+  Design tokens. The only place a raw colour, size or duration may be written.
+
+  Every stylesheet and component reads these. A value that is not here is a
+  value that will drift, so if a new one is needed it is added here first.
+  The palette follows docs/frontendprompt.md: a dark, BNB-native marketplace,
+  with yellow reserved for action, selection, price, progress and live state.
+*/
+
+:root {
+  /* --- surfaces -------------------------------------------------------- */
+  --c-bg: #0b0e11;
+  --c-surface: #101419;
+  --c-surface-2: #151a20;
+  --c-elevated: #1a2027;
+  --c-overlay: rgba(5, 7, 9, 0.72);
+
+  /* --- borders --------------------------------------------------------- */
+  --c-line-faint: rgba(255, 255, 255, 0.06);
+  --c-line: rgba(255, 255, 255, 0.1);
+  --c-line-strong: rgba(255, 255, 255, 0.16);
+
+  /* --- text ------------------------------------------------------------ */
+  --c-text: #f5f5f5;
+  --c-text-2: #9299a3;
+  /*
+    The brief's muted grey is #626A75, which is about 3.5:1 on this ground
+    and fails the 4.5:1 floor for the small text it is mostly used for. This
+    is the nearest value that passes, about 4.9:1.
+  */
+  --c-text-3: #7a828d;
+
+  /* --- accent: BNB yellow. Action, selection, price, progress, live. -- */
+  --c-accent: #f0b90b;
+  --c-accent-hi: #fcd535;
+  --c-accent-lo: #d9a406;
+  --c-accent-ink: #0b0e11; /* text on a yellow fill */
+  --c-accent-soft: rgba(240, 185, 11, 0.12);
+  --c-accent-line: rgba(240, 185, 11, 0.4);
+
+  /* --- status ---------------------------------------------------------- */
+  --c-ok: #2ebd85;
+  --c-ok-soft: rgba(46, 189, 133, 0.12);
+  --c-warn: var(--c-accent);
+  --c-err: #f6465d;
+  --c-err-soft: rgba(246, 70, 93, 0.12);
+  --c-err-ink: #ffffff; /* text on a red fill */
+  --c-info: #4f8cff;
+
+  /*
+    Category accents, used inside artwork and on the small category marks.
+    Desaturated on purpose: they give each job its own geometry and hue
+    without turning a grid of agents into a wall of collectibles.
+  */
+  --c-cat-rebalance: #3cc4b4;
+  --c-cat-grid: #e8a33a;
+  --c-cat-yield: #6fcf6a;
+  --c-cat-health: #ef7a6a;
+
+  /* --- type ------------------------------------------------------------ */
+  --f-sans: var(--font-geist-sans), "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: var(--font-geist-mono), "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --ts-hero: clamp(2.5rem, 4.6vw, 3.5rem); /* 40 to 56 */
+  --ts-h1: clamp(1.75rem, 3vw, 2.25rem);
+  --ts-h2: clamp(1.375rem, 2.2vw, 1.75rem); /* 22 to 28 */
+  --ts-h3: 1.125rem; /* 18 */
+  --ts-lg: 1rem; /* 16 */
+  --ts-md: 0.9375rem; /* 15 */
+  --ts-sm: 0.875rem; /* 14 */
+  --ts-xs: 0.8125rem; /* 13 */
+  --ts-2xs: 0.75rem; /* 12 */
+
+  /* --- space ----------------------------------------------------------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 48px;
+  --s-9: 64px;
+
+  /* --- radius ---------------------------------------------------------- */
+  --r-sm: 6px; /* controls */
+  --r-md: 10px; /* tiles, panels */
+  --r-lg: 14px; /* the largest anything gets */
+  --r-pill: 999px; /* chips and status only */
+
+  /* --- depth ----------------------------------------------------------- */
+  --shadow-1: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-3: 0 24px 64px rgba(0, 0, 0, 0.6);
+
+  /* --- motion ---------------------------------------------------------- */
+  --d-fast: 140ms; /* buttons */
+  --d-card: 200ms; /* card hover */
+  --d-panel: 320ms; /* drawers, panels */
+  --d-large: 520ms; /* large state changes */
+  --e-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --e-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
+
+  /* --- layout ---------------------------------------------------------- */
+  --w-max: 1320px;
+  --w-gutter: clamp(16px, 3vw, 32px);
+  --h-nav: 64px;
+}
+
+/*
+  Breakpoints cannot be custom properties inside a media query, so they are
+  written here once and every sheet uses exactly these widths:
+
+    375  small phone      390  phone
+    768  tablet           1024 small laptop
+    1280 laptop           1440 desktop
+*/
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --d-fast: 0ms;
+    --d-card: 0ms;
+    --d-panel: 0ms;
+    --d-large: 0ms;
+  }
+}

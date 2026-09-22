@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { formatEther } from "viem";
-import SiteHeader from "@/components/shell/SiteHeader";
-import SiteFooter from "@/components/shell/SiteFooter";
+import AppShell from "@/components/v2/shell/AppShell";
 import Ledger, { type LedgerEvent } from "@/components/ui/Ledger";
 import Attestation, { type AttestationView } from "@/components/ui/Attestation";
 import Observation from "@/components/ui/Observation";
@@ -301,8 +300,7 @@ export default async function MandatePage({ params }: { params: Promise<{ id: st
   ];
 
   return (
-    <div className="app">
-      <SiteHeader live status={`mandate ${n} of ${count}`} />
+    <AppShell>
 
       <main className="shell mandate-page">
         <header className="mandate__head">
@@ -421,7 +419,6 @@ export default async function MandatePage({ params }: { params: Promise<{ id: st
         </section>
       </main>
 
-      <SiteFooter market={MARKET_ADDRESS} note="Every figure on this page is a contract read or an event log. Nothing is served from our database." />
-    </div>
+      </AppShell>
   );
 }

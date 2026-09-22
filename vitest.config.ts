@@ -20,4 +20,8 @@ export default defineConfig({
   resolve: {
     alias: { "@": resolve(__dirname, "src") },
   },
+  // Next compiles JSX itself and tsconfig says `preserve`; tests that render a
+  // component to a string need the automatic runtime instead.
+  esbuild: { jsx: "automatic" },
+  oxc: { jsx: { runtime: "automatic" } },
 });

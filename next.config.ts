@@ -57,6 +57,13 @@ const config: NextConfig = {
       { source: "/offices", destination: "/agents", permanent: false },
       // The V1 session page; /desk reads the KeyStore and replaces it.
       { source: "/authority", destination: "/desk", permanent: false },
+      /*
+        Pages the new navigation names before they are built. Each one points
+        at the page that currently holds that content and is removed in the
+        commit that builds the real route, so no link in the nav is ever dead.
+      */
+      { source: "/trust", destination: "/verify", permanent: false },
+      { source: "/list", destination: "/list-your-agent", permanent: false },
     ];
   },
   serverExternalPackages: [

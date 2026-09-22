@@ -78,6 +78,8 @@
     "@bnbagent/sdk": "^0.5.5",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "drizzle-orm": "^0.45.2",
+    "geist": "^1.7.2",
+    "lucide-react": "^1.47.0",
     "next": "^15.5.25",
     "postgres": "^3.4.9",
     "react": "^19.2.0",

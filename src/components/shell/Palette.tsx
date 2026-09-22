@@ -50,16 +50,35 @@ export default function Palette() {
   const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    /*
+      Three ways in: Command-K for people who know it, a bare slash like every
+      other search box on the web (ignored while typing in a field), and an
+      event the Search button in the navigation fires.
+    */
+    const typing = (t: EventTarget | null) => {
+      const el = t as HTMLElement | null;
+      return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
+    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setOpen((v) => !v);
         return;
       }
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey && !typing(e.target)) {
+        e.preventDefault();
+        setOpen(true);
+        return;
+      }
       if (e.key === "Escape") setOpen(false);
     };
+    const asked = () => setOpen(true);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("mandate:search", asked);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mandate:search", asked);
+    };
   }, []);
 
   useEffect(() => {

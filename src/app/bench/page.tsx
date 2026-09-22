@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import SiteHeader from "@/components/shell/SiteHeader";
-import SiteFooter from "@/components/shell/SiteFooter";
+import AppShell from "@/components/v2/shell/AppShell";
 import Bench from "@/components/Bench";
 import { readAgentIndex } from "@/lib/data/agents";
 import { CHAIN_ID } from "@/lib/config";
@@ -31,8 +30,7 @@ export default async function BenchPage() {
     .map((a) => ({ tokenId: a.tokenId, name: a.name ?? a.tokenId, fineness: 0 }));
 
   return (
-    <div className="app">
-      <SiteHeader current="/assay" />
+    <AppShell>
 
       <main className="shell bench-page">
         <p className="mark-label">The bench</p>
@@ -47,10 +45,6 @@ export default async function BenchPage() {
         <Bench chainId={CHAIN_ID} suggestions={suggestions} />
       </main>
 
-      <SiteFooter
-        market={MARKET_ADDRESS}
-        note="Nothing is revealed before the chain has answered. The waiting is the content."
-      />
-    </div>
+      </AppShell>
   );
 }

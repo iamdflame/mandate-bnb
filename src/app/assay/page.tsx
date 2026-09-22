@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import SiteHeader from "@/components/shell/SiteHeader";
-import SiteFooter from "@/components/shell/SiteFooter";
+import AppShell from "@/components/v2/shell/AppShell";
 import TokenLookup from "@/components/ui/TokenLookup";
 import Command from "@/components/ui/Command";
 import Fineness from "@/components/mark/Fineness";
@@ -71,8 +70,7 @@ export default function MethodPage() {
   const total = TESTS.reduce((n, t) => n + t.weight, 0);
 
   return (
-    <div className="app">
-      <SiteHeader current="/assay" />
+    <AppShell>
 
       <main className="shell method">
         {/*
@@ -197,10 +195,6 @@ export default function MethodPage() {
         </section>
       </main>
 
-      <SiteFooter
-        market={MARKET_ADDRESS}
-        note="Weights are fixed before a test runs and are not adjusted afterwards. Where a check cannot produce evidence it returns inconclusive, never a zero dressed as a finding."
-      />
-    </div>
+      </AppShell>
   );
 }

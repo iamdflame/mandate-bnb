@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import SiteHeader from "@/components/shell/SiteHeader";
-import SiteFooter from "@/components/shell/SiteFooter";
+import AppShell from "@/components/v2/shell/AppShell";
 import Command from "@/components/ui/Command";
 import { MARKET_ADDRESS } from "@/lib/chain/market";
 
@@ -52,8 +51,7 @@ const ENDPOINTS = [
 
 export default function ApiPage() {
   return (
-    <div className="app">
-      <SiteHeader />
+    <AppShell>
 
       <main className="shell method">
         <p className="mark-label">Public infrastructure</p>
@@ -175,10 +173,6 @@ console.log(\`\${page.coverage.read} of \${page.coverage.registered} read\`);`}<
         </section>
       </main>
 
-      <SiteFooter
-        market={MARKET_ADDRESS}
-        note="Rate limits are returned on every response as x-ratelimit-* headers. Exceeding one returns 429 with retry-after in seconds."
-      />
-    </div>
+      </AppShell>
   );
 }

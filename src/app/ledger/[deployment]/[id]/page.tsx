@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { formatEther } from "viem";
 import { bscClient } from "@/lib/chain/rpc";
-import SiteHeader from "@/components/shell/SiteHeader";
-import SiteFooter from "@/components/shell/SiteFooter";
+import AppShell from "@/components/v2/shell/AppShell";
 import Observation from "@/components/ui/Observation";
 import Command from "@/components/ui/Command";
 import { MANDATE_MARKET_ABI } from "@/lib/chain/abi";
@@ -110,8 +109,7 @@ export default async function SupersededLedger({
   const ZERO = "0x0000000000000000000000000000000000000000";
 
   return (
-    <div className="app">
-      <SiteHeader current="/floor" live status={`${d.label} ledger`} />
+    <AppShell>
       <main>
         <section className="section shell">
           <p className="mark-label superseded__flag">
@@ -224,7 +222,6 @@ export default async function SupersededLedger({
           </>
         )}
       </main>
-      <SiteFooter market={MARKET_ADDRESS} note={`Read from ${d.address} on BNB Smart Chain.`} />
-    </div>
+      </AppShell>
   );
 }
