@@ -75,14 +75,14 @@ export const metadata: Metadata = {
  */
 export const viewport: Viewport = {
   /*
-    Ink, which is now the ground everywhere a person lands.
+    Paper, not the anvil.
 
-    The marketplace and the archive used to disagree about this and the
-    browser chrome had to pick a side. They are one system now: ink is the
-    canvas, and paper is a scope that receipts and certificates opt into.
+    The marketplace is light and the verification archive is dark, and the
+    browser chrome has to pick one. It picks the one a person actually lands
+    on. The archive paints its own ground, so nothing there regresses.
   */
-  themeColor: "#0c0b0a",
-  colorScheme: "dark",
+  themeColor: "#f6f3ec",
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({

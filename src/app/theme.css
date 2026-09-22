@@ -6,65 +6,61 @@
   about what black was. They resolve to one set of primitives now, in
   `tokens.css`.
 
-  The ground is ink. A marketplace where somebody is about to commit money
-  reads as an instrument, and the density this allows is the point: a judge
-  should understand a page in four seconds of scanning.
+  The ground is paper. Almost every project in this field is dark with a neon
+  accent, and a marketplace where a person is about to commit money reads
+  better as something printed than as something glowing.
 
-  Paper did not go away, it became a scope. `.m-paper` is what a receipt and a
-  certificate are printed on, because a receipt should look like something you
-  would send to a lawyer, and that is a document, not a terminal.
+  The token names are semantic rather than literal, so a scope can restate any
+  of them: `.m-paper` below is the same ground made explicit, for receipts and
+  certificates that have to survive being printed.
 */
 
 html:has(.m-app),
 html:has(.m-app) body {
-  background: var(--t-ink);
-  color-scheme: dark;
+  background: #f6f3ec;
+  color-scheme: light;
 }
 
 .m-app {
   /* --- ground ---------------------------------------------------------- */
-  --ground: var(--t-ink);
-  --ground-raised: var(--t-steel);
-  --ground-sunken: #090807;
+  --ground: #f6f3ec;
+  --ground-raised: #fffefb;
+  --ground-sunken: #eee9de;
 
   /* --- text ------------------------------------------------------------ */
-  --text: var(--t-paper);
-  --text-2: #b8b2a6;
-  --text-3: var(--t-mute);
+  --text: #14161a;
+  --text-2: #4b5058;
+  --text-3: #787d85;
 
   /* --- rules ----------------------------------------------------------- */
-  --rule: var(--t-hairline);
-  --rule-strong: var(--t-hairline-strong);
-  --rule-hair: var(--t-hairline-faint);
+  --rule: #ded7c8;
+  --rule-strong: #c6bdaa;
+  --rule-hair: #e8e2d6;
 
   /*
-    Meaning, and nothing else, carries colour.
+    Two colours carry meaning and nothing else does.
 
-    `--signal` is an action you can take; on ink that is paper, a light solid
-    on a dark ground, which is the most legible control available and the one
-    recognisable thing about this system. Gold stays where the plan puts it,
-    on marks and key figures, because a gold button turns the page into a
-    chain skin. `--verified` is something we checked ourselves and it passed.
-    Once those are spent, every other distinction is made with type, weight
-    and space, which is the discipline that stops the page becoming a
-    dashboard.
+    Orange is only ever an action a person can take. Green is only ever
+    something we checked ourselves and it passed. Once those two are spent,
+    every other distinction has to be made with type, weight and space, which
+    is the discipline that keeps the page from turning into a dashboard.
   */
-  --signal: var(--t-paper);
-  --signal-deep: var(--t-paper-hi);
-  --signal-wash: rgba(244, 240, 232, 0.08);
-  --signal-on: var(--t-ink); /* text on a signal fill */
+  --signal: #c8431c;
+  --signal-deep: #9e3312;
+  --signal-wash: #fbeae4;
+  --signal-on: #fff;
 
-  --hallmark: var(--t-hallmark);
-  --hallmark-hi: var(--t-hallmark-hi);
+  --hallmark: #9a7a12;
+  --hallmark-hi: #7d6210;
 
-  --verified: var(--t-live);
-  --verified-wash: rgba(61, 220, 151, 0.12);
-  --caution: var(--t-hallmark-hi);
-  --caution-wash: rgba(201, 162, 39, 0.14);
-  --dead: var(--t-dead);
-  --dead-wash: rgba(227, 77, 77, 0.12);
+  --verified: #1c6b4a;
+  --verified-wash: #e4efe9;
+  --caution: #8a5a12;
+  --caution-wash: #f6eeda;
+  --dead: #a32a2a;
+  --dead-wash: #f6e3e3;
 
-  --focus: var(--t-focus);
+  --focus: #1f5fbf;
 
   /* --- type ------------------------------------------------------------ */
   --m-serif: var(--font-display-loaded), "Instrument Serif", Georgia, serif;
@@ -2553,35 +2549,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 
 .m-paper,
 .m-app .m-paper {
-  --ground: var(--t-paper);
-  --ground-raised: var(--t-paper-hi);
-  --ground-sunken: var(--t-paper-lo);
-
-  --text: #14161a;
-  --text-2: #4b5058;
-  --text-3: #6f7480;
-
-  --rule: #ded7c8;
-  --rule-strong: #c6bdaa;
-  --rule-hair: #e8e2d6;
-
-  --signal: #14161a;
-  --signal-deep: #000;
-  --signal-wash: rgba(20, 22, 26, 0.06);
-  --signal-on: var(--t-paper);
-
-  --hallmark: #9a7a12;
-  --hallmark-hi: #7d6210;
-
-  --verified: #1c6b4a;
-  --verified-wash: #e4efe9;
-  --caution: #8a5a12;
-  --caution-wash: #f6eeda;
-  --dead: #a32a2a;
-  --dead-wash: #f6e3e3;
-
-  --focus: #1f5fbf;
-
+  --signal-on: #fff;
   background: var(--ground);
   color: var(--text);
   color-scheme: light;

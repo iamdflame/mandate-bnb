@@ -1,51 +1,17 @@
 /*
-  The primitives. One file, imported first, consumed by everything.
+  The scales, shared by both stylesheets.
 
-  Two stylesheets grew up here independently: an ink archive for the proof
-  pages and a paper shopfront for the marketplace. They were coherent on their
-  own and disagreed with each other about what black was, what gold was, and
-  whether a failure is red or oxblood. A person moving between a receipt and
-  the desk was moving between two products.
+  Colour is not here. The marketplace sheet is printed on paper and the
+  verification archive is printed on ink, and that difference is deliberate:
+  a proof archive should not read like a shopfront. Each sheet keeps its own
+  palette, and this file holds only the things that have no opinion about
+  ground, so a rhythm set in one place is the same rhythm in the other.
 
-  These are the values both sheets now resolve to. Nothing below this file
-  invents a colour.
-
-  Ink is the ground. Paper is not a theme toggle, it is what a receipt and a
-  certificate are printed on: a scope you opt into, on the few pages where the
-  right mental model is a document rather than a terminal.
+  Before this there was no space scale and no breakpoint scale at all, which
+  is how nineteen ad-hoc widths ended up in one file.
 */
 
 :root {
-  /* --- ground ---------------------------------------------------------- */
-  --t-ink: #0c0b0a; /* warm black, not blue black */
-  --t-steel: #1c1b19; /* panels on ink */
-  --t-steel-hi: #262421; /* a panel raised off a panel */
-  --t-paper: #f4f0e8;
-  --t-paper-hi: #fffdf7;
-  --t-paper-lo: #e7e1d4;
-
-  /* --- rules ----------------------------------------------------------- */
-  --t-hairline: rgba(244, 240, 232, 0.1);
-  --t-hairline-strong: rgba(244, 240, 232, 0.2);
-  --t-hairline-faint: rgba(244, 240, 232, 0.06);
-
-  /*
-    The meaning colours. Three, and each one says exactly one thing.
-
-    Gold is not an accent. It marks hallmarks, key figures and the wordmark
-    rule, and the moment it becomes a button the whole page reads as a chain
-    skin. The primary action is paper on ink instead, which is the one
-    genuinely recognisable thing about this system.
-  */
-  --t-hallmark: #c9a227; /* 22k. Deliberately not #F0B90B */
-  --t-hallmark-hi: #e0bc46; /* hover, on ink: lighter, never deeper */
-  --t-live: #3ddc97;
-  --t-dead: #e34d4d;
-  --t-mute: #8a8478;
-
-  /* Focus has to clear both grounds, so it is neither of the meaning three. */
-  --t-focus: #6ea8ff;
-
   /* --- space ----------------------------------------------------------- */
   --s1: 4px;
   --s2: 8px;
@@ -70,10 +36,9 @@
 }
 
 /*
-  Breakpoints are documented here rather than declared, because custom
-  properties cannot be used in a media query. Nineteen ad-hoc widths were in
-  use before this; these four are the only ones any sheet may name, and they
-  are always min-width.
+  Breakpoints are documented here rather than declared, because a custom
+  property cannot be used in a media query. These four are the only widths any
+  sheet should name, and they are always min-width.
 
     sm   560px
     md   860px
