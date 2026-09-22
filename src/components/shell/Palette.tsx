@@ -50,16 +50,43 @@ export default function Palette() {
   const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    /*
+      Three ways in, because the keyboard shortcut is invisible.
+
+      Command-K is the one people who already know it will try. A bare slash
+      is the one everybody else has learned from every other search field on
+      the web, and it is what the design spec asks for; it is ignored while
+      the caret is in a field, or the first thing a person types into the
+      paste box on the home page would open a dialog over it. The event is
+      for the Search control in the header, so the shortcut is discoverable
+      by somebody who never touches a keyboard shortcut.
+    */
+    const typing = (t: EventTarget | null) => {
+      const el = t as HTMLElement | null;
+      if (!el) return false;
+      const tag = el.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || el.isContentEditable;
+    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setOpen((v) => !v);
         return;
       }
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey && !e.altKey && !typing(e.target)) {
+        e.preventDefault();
+        setOpen(true);
+        return;
+      }
       if (e.key === "Escape") setOpen(false);
     };
+    const onAsked = () => setOpen(true);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("mandate:search", onAsked);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("mandate:search", onAsked);
+    };
   }, []);
 
   useEffect(() => {

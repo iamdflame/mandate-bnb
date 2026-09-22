@@ -12,6 +12,8 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { specHash, TASKS, RUBRIC, BASELINE_DEFINITION, STOPPING_RULE, WINDOW_BLOCKS, type Anchor } from "@/advantage/lock";
 
+import { verdictFor, type Verdict } from "@/lib/advantage/report";
+
 const root = process.cwd();
 const dir = join(root, "docs/advantage/results");
 const lock = JSON.parse(readFileSync(join(root, "docs/advantage/INPUT_LOCK.json"), "utf8")) as {
@@ -44,44 +46,24 @@ const pct = (v: number, d = 1) => `${n(v, d)}%`;
 const tx = `https://bscscan.com/tx/${a.txHash}`;
 const bscBlock = `https://bscscan.com/block/${a.anchorBlock}`;
 
-const verdicts: Record<string, { verdict: "win" | "loss" | "mixed" | "inconclusive"; line: string }> = {
-  T1: {
-    verdict: "loss",
-    line: T1
-      ? `**Loss.** ${T1.pastTrigger} of ${T1.sampled} sampled positions were past the agent's trigger; the one that crossed it during the window recovered unaided.`
-      : "not run",
-  },
-  T2: {
-    verdict: T2 && T2.netAdvantageBnb > 0 ? "win" : "loss",
-    line: T2
-      ? `${T2.netAdvantageBnb > 0 ? "Win." : "**Loss.**"} ${n(T2.netAdvantageBnb, 8)} BNB against holding over a ${n(T2.trendPct, 2)}% window, gas and pool fees charged.`
-      : "not run",
-  },
-  T3: {
-    verdict: "mixed",
-    line: T3
-      ? `Mixed. The locked metric is unusable and is published anyway. On the ${T3.liquid.count} markets deep enough to supply into, the spread is ${n(T3.liquid.spreadPct, 2)} points and rotation repays its gas above $${n(T3.breakEvenUsd, 2)}.`
-      : "not run",
-  },
-  T4: {
-    verdict: "win",
-    line: T4
-      ? `Win. Being early costs $${n(T4.repayGasUsd, 4)}; being late costs ${pct(T4.penaltyPct)} of seized collateral, ${Math.round(T4.ratio).toLocaleString()}× more on the worked example.`
-      : "not run",
-  },
-  T5: {
-    verdict: "mixed",
-    line: T5
-      ? `Win on correctness, **loss on coverage.** ${T5.contradicted}/${T5.sampled} cards contradicted by the chain, but ${T5.inconclusiveChecks} checks could not be answered at all.`
-      : "not run",
-  },
-  T6: {
-    verdict: "win",
-    line: T6
-      ? `Win. ${T6.feedbacksAnalysed.toLocaleString()} feedbacks from ${T6.distinctReviewers} wallets; ${pct(T6.flaggedShareOfFeedback)} written by the ${T6.flaggedReviewers} flagged as coordinated.`
-      : "not run",
-  },
-};
+/*
+  The six sentences live in lib/advantage/report.ts, not here.
+
+  They used to be written out in this script, which meant the page that
+  renders the same results had no way to reach them and would have had to
+  restate them. Two copies of a verdict is how a report starts disagreeing
+  with itself, so there is one copy and both readers import it.
+*/
+const verdicts: Record<string, { verdict: Verdict; line: string }> = Object.fromEntries(
+  [
+    ["T1", T1],
+    ["T2", T2],
+    ["T3", T3],
+    ["T4", T4],
+    ["T5", T5],
+    ["T6", T6],
+  ].map(([id, r]) => [id as string, verdictFor(id as string, r as Record<string, unknown> | null)]),
+);
 
 const counts = Object.values(verdicts).reduce(
   (acc, v) => ({ ...acc, [v.verdict]: (acc[v.verdict] ?? 0) + 1 }),

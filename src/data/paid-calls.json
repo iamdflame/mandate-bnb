@@ -223,7 +223,9 @@
       },
       "at": "2026-09-11T18:38:16.825Z",
       "ms": 3071,
-      "delivered": false
+      "delivered": false,
+      "fault": "seller",
+      "note": "The payment settled on BNB Smart Chain, which the transaction shows. The error came from this seller's own facilitator: its settlement call to its own RPC returned invalid parameters. Our envelope was the one it had quoted, so this is recorded against the seller."
     },
     {
       "id": "269705:0x5bcd036d41e9bb3dfa15a7b0a418c3ec1257c5abb957b6f961d1e2bcfad9f998",
@@ -269,7 +271,9 @@
         ]
       },
       "at": "2026-09-11T18:40:25.277Z",
-      "ms": 12265
+      "ms": 12265,
+      "fault": "seller",
+      "note": "The payment settled on BNB Smart Chain, which the transaction shows. The error came from this seller's own facilitator: its settlement call to its own RPC returned invalid parameters. Our envelope was the one it had quoted, so this is recorded against the seller."
     },
     {
       "id": "338253:0xb2942480c62b40d5ea0b5e5a8a0466f1f14683b27137dab2cdf94ea5c4842669",

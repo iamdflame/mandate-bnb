@@ -6,9 +6,13 @@
  * about measurement, digits that jitter destroy credibility instantly.
  *
  * The ground is deliberately deeper than BNB's #0B0E11: this is the anvil, not
- * the brand. --gold-999 at #E8A317 is warmer and deeper than BNB's #F0B90B, so
- * the two harmonise side by side and are never confused. That is the single
+ * the brand. Gold is #C9A227, a 22k that is browner and quieter than BNB's
+ * #F0B90B, so the two sit side by side and are never confused. Using the
+ * chain's yellow as a primary would read as a fan site, which is the single
  * most important colour decision in the system.
+ *
+ * Every value here now resolves to tokens.css, which the marketplace sheet
+ * also reads. There used to be two palettes and they disagreed about black.
  */
 
 /* ------------------------------------------------------------------ reset */
@@ -68,26 +72,26 @@ table {
   color-scheme: dark;
 
   /* --- ground: the anvil ------------------------------------------------ */
-  --void: #08090b;
-  --iron: #111316;
-  --iron-hi: #1a1d21;
-  --score: #24282d;
+  --void: var(--t-ink);
+  --iron: var(--t-steel);
+  --iron-hi: var(--t-steel-hi);
+  --score: #302d29;
 
   /* --- the metals: these carry all meaning ------------------------------ */
-  --gold-999: #e8a317;   /* fine gold — hallmarked, settled */
-  --gold-750: #c98b14;   /* 18ct — assayed and passing */
-  --silver-925: #b8bec6; /* sterling — live, capable, unbonded */
-  --pewter-500: #6b7280; /* resolvable but unproven */
-  --base: #3a4048;       /* base metal — registered and nothing more */
+  --gold-999: var(--t-hallmark);   /* fine gold: hallmarked, settled */
+  --gold-750: #a8871f;   /* 18ct: assayed and passing */
+  --silver-925: #bdb7aa; /* sterling: live, capable, unbonded */
+  --pewter-500: var(--t-mute); /* resolvable but unproven */
+  --base: #4a4640;       /* base metal: registered and nothing more */
 
   /* --- signals: used almost never --------------------------------------- */
-  --struck: #e8e4dc;     /* the instant a mark lands */
-  --cancelled: #8b3a3a;  /* defacement. Deep oxblood, never red */
-  --verify: #4a9d7f;     /* verification passed. Muted, never neon */
+  --struck: var(--t-paper);     /* the instant a mark lands */
+  --cancelled: var(--t-dead);  /* defacement, dispute, theft */
+  --verify: var(--t-live);     /* verification passed. Muted, never neon */
 
   /* --- text ------------------------------------------------------------- */
-  --ink: #e6e8ea;
-  --ink-2: #9aa1a9;
+  --ink: var(--t-paper);
+  --ink-2: #b8b2a6;
   /*
     Its own value, not the metal.
 
@@ -98,7 +102,7 @@ table {
     This is a neutral grey at roughly 6:1, and the metal is left to mean what
     it means.
   */
-  --ink-3: #8a929b;
+  --ink-3: var(--t-mute);
 
   /* --- type ------------------------------------------------------------- */
   --serif: var(--font-display-loaded), "Instrument Serif", "Times New Roman", serif;
