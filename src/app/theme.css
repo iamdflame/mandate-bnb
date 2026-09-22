@@ -1,20 +1,25 @@
 /*
   The marketplace's own design system.
 
-  Namespaced `m-` and grounded on `.m-app` rather than on `body`. It used to be
-  printed on paper while the proof archive ran on ink, and the two disagreed
-  about what black was. They resolve to one set of primitives now, in
-  `tokens.css`.
+  Namespaced `m-` and grounded on `.m-app` rather than on `body`, because the
+  verification area still runs on the older dark sheet and the two have to
+  coexist while the technical pages keep working. That separation is not an
+  accident of migration — a proof archive that reads like a different kind of
+  document from a shopfront is correct, and the hub says as much when it hands
+  you over.
 
   The ground is paper. Almost every project in this field is dark with a neon
   accent, and a marketplace where a person is about to commit money reads
   better as something printed than as something glowing.
-
-  The token names are semantic rather than literal, so a scope can restate any
-  of them: `.m-paper` below is the same ground made explicit, for receipts and
-  certificates that have to survive being printed.
 */
 
+/*
+  The document ground follows whichever sheet the page is on.
+
+  Without this, overscroll and any area the app does not paint would show the
+  archive's near-black through the paper, which reads as a rendering fault
+  rather than as a choice.
+*/
 html:has(.m-app),
 html:has(.m-app) body {
   background: #f6f3ec;
@@ -23,14 +28,15 @@ html:has(.m-app) body {
 
 .m-app {
   /* --- ground ---------------------------------------------------------- */
-  --ground: #f6f3ec;
-  --ground-raised: #fffefb;
-  --ground-sunken: #eee9de;
+  --paper: #f6f3ec;
+  --paper-raised: #fffefb;
+  --paper-sunken: #eee9de;
+  --paper-ink: #14161a;
 
-  /* --- text ------------------------------------------------------------ */
-  --text: #14161a;
-  --text-2: #4b5058;
-  --text-3: #787d85;
+  /* --- ink ------------------------------------------------------------- */
+  --ink: #14161a;
+  --ink-2: #4b5058;
+  --ink-3: #787d85;
 
   /* --- rules ----------------------------------------------------------- */
   --rule: #ded7c8;
@@ -48,17 +54,10 @@ html:has(.m-app) body {
   --signal: #c8431c;
   --signal-deep: #9e3312;
   --signal-wash: #fbeae4;
-  --signal-on: #fff;
-
-  --hallmark: #9a7a12;
-  --hallmark-hi: #7d6210;
-
   --verified: #1c6b4a;
   --verified-wash: #e4efe9;
   --caution: #8a5a12;
   --caution-wash: #f6eeda;
-  --dead: #a32a2a;
-  --dead-wash: #f6e3e3;
 
   --focus: #1f5fbf;
 
@@ -78,8 +77,8 @@ html:has(.m-app) body {
   --m-max: 1240px;
   --m-gut: clamp(1.25rem, 4vw, 3rem);
 
-  background: var(--ground);
-  color: var(--text);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--m-sans);
   font-size: var(--m-body);
   line-height: 1.55;
@@ -148,7 +147,7 @@ html:has(.m-app) body {
 .m-lede {
   font-size: clamp(1.125rem, 1.9vw, 1.4rem);
   line-height: 1.45;
-  color: var(--text-2);
+  color: var(--ink-2);
   max-width: 34ch;
 }
 
@@ -159,20 +158,20 @@ html:has(.m-app) body {
 .m-body {
   font-size: var(--m-body);
   line-height: 1.6;
-  color: var(--text-2);
+  color: var(--ink-2);
   max-width: 62ch;
 }
 
 .m-small {
   font-size: var(--m-small);
   line-height: 1.5;
-  color: var(--text-2);
+  color: var(--ink-2);
 }
 
 .m-note {
   font-size: var(--m-tiny);
   line-height: 1.5;
-  color: var(--text-3);
+  color: var(--ink-3);
 }
 
 /*
@@ -187,7 +186,7 @@ html:has(.m-app) body {
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-3);
+  color: var(--ink-3);
   display: block;
 }
 
@@ -265,20 +264,19 @@ html:has(.m-app) body {
   justify-content: space-between;
   gap: 1rem 2rem;
   padding-bottom: 0.85rem;
-  border-bottom: 1px solid var(--text);
+  border-bottom: 1px solid var(--ink);
   margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
 }
 
 .m-head__note {
   font-size: var(--m-small);
-  color: var(--text-3);
+  color: var(--ink-3);
   max-width: 40ch;
 }
 
 /* ------------------------------------------------------------ buttons --- */
 
 .m-btn {
-  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -288,10 +286,10 @@ html:has(.m-app) body {
   font-weight: 500;
   letter-spacing: 0.005em;
   padding: 0.72em 1.25em;
-  border: 1px solid var(--text);
+  border: 1px solid var(--ink);
   border-radius: 2px;
   background: transparent;
-  color: var(--text);
+  color: var(--ink);
   cursor: pointer;
   text-align: center;
   transition:
@@ -302,8 +300,8 @@ html:has(.m-app) body {
 }
 
 .m-btn:hover {
-  background: var(--text);
-  color: var(--ground);
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .m-btn:active {
@@ -313,13 +311,13 @@ html:has(.m-app) body {
 .m-btn--primary {
   background: var(--signal);
   border-color: var(--signal);
-  color: var(--signal-on);
+  color: #fff;
 }
 
 .m-btn--primary:hover {
   background: var(--signal-deep);
   border-color: var(--signal-deep);
-  color: var(--signal-on);
+  color: #fff;
 }
 
 .m-btn--lg {
@@ -330,18 +328,17 @@ html:has(.m-app) body {
 .m-btn--sm {
   font-size: var(--m-tiny);
   padding: 0.5em 0.85em;
-  min-height: 44px;
 }
 
 .m-btn--quiet {
   border-color: var(--rule-strong);
-  color: var(--text-2);
+  color: var(--ink-2);
 }
 
 .m-btn--quiet:hover {
-  background: var(--text);
-  border-color: var(--text);
-  color: var(--ground);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
 }
 
 .m-btn--block {
@@ -357,12 +354,12 @@ html:has(.m-app) body {
 .m-btn[disabled]:hover,
 .m-btn[aria-disabled="true"]:hover {
   background: transparent;
-  color: var(--text);
+  color: var(--ink);
 }
 
 .m-btn--primary[disabled]:hover {
   background: var(--signal);
-  color: var(--signal-on);
+  color: #fff;
 }
 
 .m-btns {
@@ -388,8 +385,8 @@ html:has(.m-app) body {
   width: 100%;
   font: inherit;
   font-size: var(--m-small);
-  color: var(--text);
-  background: var(--ground-raised);
+  color: var(--ink);
+  background: var(--paper-raised);
   border: 1px solid var(--rule-strong);
   border-radius: 2px;
   padding: 0.65em 0.8em;
@@ -397,7 +394,7 @@ html:has(.m-app) body {
 
 .m-input:focus,
 .m-select:focus {
-  border-color: var(--text);
+  border-color: var(--ink);
 }
 
 .m-input--fig {
@@ -408,7 +405,7 @@ html:has(.m-app) body {
 .m-field__hint {
   margin-top: 0.4rem;
   font-size: var(--m-tiny);
-  color: var(--text-3);
+  color: var(--ink-3);
 }
 
 /* --------------------------------------------------------------- tags --- */
@@ -431,7 +428,7 @@ html:has(.m-app) body {
   padding: 0.28em 0.5em;
   border: 1px solid var(--rule-strong);
   border-radius: 2px;
-  color: var(--text-2);
+  color: var(--ink-2);
   white-space: nowrap;
 }
 
@@ -454,9 +451,9 @@ html:has(.m-app) body {
 }
 
 .m-tag--solid {
-  background: var(--text);
-  border-color: var(--text);
-  color: var(--ground);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
 }
 
 /* --------------------------------------------------------------- dots --- */
@@ -465,7 +462,7 @@ html:has(.m-app) body {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--text-3);
+  background: var(--ink-3);
   flex: none;
 }
 
@@ -496,7 +493,7 @@ html:has(.m-app) body {
   display: block;
   margin-top: 0.35rem;
   font-size: var(--m-tiny);
-  color: var(--text-3);
+  color: var(--ink-3);
   line-height: 1.4;
 }
 
@@ -509,7 +506,7 @@ html:has(.m-app) body {
 }
 
 .m-stats > * {
-  background: var(--ground);
+  background: var(--paper);
   padding: 1.25rem clamp(0.9rem, 2vw, 1.5rem);
 }
 
@@ -538,7 +535,7 @@ html:has(.m-app) body {
 .m-disclose > summary::after {
   content: "+";
   font-family: var(--m-mono);
-  color: var(--text-3);
+  color: var(--ink-3);
   font-size: 1rem;
   line-height: 1;
 }
@@ -557,7 +554,7 @@ html:has(.m-app) body {
   position: sticky;
   top: 0;
   z-index: 40;
-  background: color-mix(in srgb, var(--ground) 92%, transparent);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
   backdrop-filter: saturate(1.4) blur(8px);
   border-bottom: 1px solid var(--rule);
 }
@@ -581,7 +578,7 @@ html:has(.m-app) body {
   font-size: 1.4rem;
   line-height: 1;
   letter-spacing: -0.02em;
-  color: var(--text);
+  color: var(--ink);
   /* The serif sits high in its box next to a full-height mark; this drops it
      onto the mark's optical centre rather than its geometric one. */
   transform: translateY(1px);
@@ -596,17 +593,17 @@ html:has(.m-app) body {
 }
 
 .m-nav a {
-  color: var(--text-2);
+  color: var(--ink-2);
   padding-block: 0.35rem;
   border-bottom: 1px solid transparent;
 }
 
 .m-nav a:hover {
-  color: var(--text);
+  color: var(--ink);
 }
 
 .m-nav a[aria-current="page"] {
-  color: var(--text);
+  color: var(--ink);
   border-bottom-color: var(--signal);
 }
 
@@ -663,9 +660,9 @@ html:has(.m-app) body {
   right: 0;
   top: calc(100% + 0.5rem);
   z-index: 50;
-  background: var(--ground);
+  background: var(--paper);
   border: 1px solid var(--rule);
-  box-shadow: 0 14px 34px color-mix(in srgb, var(--text) 14%, transparent);
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--ink) 14%, transparent);
 }
 
 .m-menu__panel {
@@ -675,20 +672,17 @@ html:has(.m-app) body {
   padding: 0.45rem;
 }
 .m-menu__panel a:not(.m-btn) {
-  display: flex;
-  align-items: center;
-  min-height: 44px;
   padding: 0.65rem 0.75rem;
-  color: var(--text-2);
+  color: var(--ink-2);
   font-size: var(--m-small);
   border-left: 2px solid transparent;
 }
 .m-menu__panel a:not(.m-btn):hover {
-  color: var(--text);
-  background: color-mix(in srgb, var(--text) 5%, transparent);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
 }
 .m-menu__panel a[aria-current="page"] {
-  color: var(--text);
+  color: var(--ink);
   border-left-color: var(--signal);
 }
 .m-menu__panel .m-btn {
@@ -702,8 +696,8 @@ html:has(.m-app) body {
   cursor: pointer;
 }
 .m-wallet[open] > .m-wallet__chip {
-  background: color-mix(in srgb, var(--text) 7%, transparent);
-  color: var(--text);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--ink);
 }
 .m-wallet__chip--warn {
   border-color: var(--signal);
@@ -718,7 +712,7 @@ html:has(.m-app) body {
 .m-wallet__addr {
   font-size: 0.78rem;
   word-break: break-all;
-  color: var(--text);
+  color: var(--ink);
 }
 .m-wallet__row {
   display: flex;
@@ -737,11 +731,11 @@ html:has(.m-app) body {
   gap: 1rem;
 }
 .m-wallet__facts dt {
-  color: var(--text-3);
+  color: var(--ink-3);
 }
 .m-wallet__facts dd {
   margin: 0;
-  color: var(--text);
+  color: var(--ink);
   text-align: right;
 }
 
@@ -763,14 +757,14 @@ html:has(.m-app) body {
   position: sticky;
   top: 62px;
   z-index: 30;
-  background: var(--ground);
+  background: var(--paper);
   border-bottom: 1px solid var(--rule);
 }
 
 /* ------------------------------------------------------------- footer --- */
 
 .m-footer {
-  border-top: 1px solid var(--text);
+  border-top: 1px solid var(--ink);
   padding-block: 2.5rem 3rem;
   margin-top: 4rem;
 }
@@ -785,7 +779,7 @@ html:has(.m-app) body {
   font-size: 0.6875rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-3);
+  color: var(--ink-3);
   margin-bottom: 0.75rem;
   font-weight: 500;
 }
@@ -800,7 +794,7 @@ html:has(.m-app) body {
 }
 
 .m-footer a {
-  color: var(--text-2);
+  color: var(--ink-2);
 }
 
 .m-footer a:hover {
@@ -819,7 +813,7 @@ html:has(.m-app) body {
 */
 .m-mark {
   display: block;
-  color: var(--text);
+  color: var(--ink);
 }
 
 .m-mark path,
@@ -848,12 +842,12 @@ html:has(.m-app) body {
   display: grid;
   gap: 0;
   border: 1px solid var(--rule);
-  background: var(--ground);
+  background: var(--paper);
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
 
 .m-grid > * {
-  background: var(--ground);
+  background: var(--paper);
   box-shadow:
     inset 1px 0 0 var(--rule),
     inset 0 1px 0 var(--rule);
@@ -870,7 +864,7 @@ html:has(.m-app) body {
 }
 
 .m-card:hover {
-  background: var(--ground-raised);
+  background: var(--paper-raised);
 }
 
 .m-card__top {
@@ -898,7 +892,7 @@ html:has(.m-app) body {
   font-size: 0.6875rem;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--text-3);
+  color: var(--ink-3);
   margin-bottom: 0.5rem;
   display: block;
 }
@@ -906,7 +900,7 @@ html:has(.m-app) body {
 .m-card__what {
   font-size: var(--m-small);
   line-height: 1.5;
-  color: var(--text-2);
+  color: var(--ink-2);
   display: -webkit-box;
   -webkit-line-clamp: 3;
   line-clamp: 3;
@@ -931,7 +925,7 @@ html:has(.m-app) body {
   font-size: 0.72rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-3);
+  color: var(--ink-3);
   border: 1px solid var(--rule);
   padding: 0.05rem 0.35rem;
   vertical-align: middle;
@@ -942,7 +936,7 @@ html:has(.m-app) body {
   margin: 0.6rem 0 0;
   font-size: 0.8rem;
   line-height: 1.45;
-  color: var(--text-3);
+  color: var(--ink-3);
 }
 
 .m-card__foot {
@@ -962,7 +956,7 @@ html:has(.m-app) body {
   gap: 0.5rem;
   flex-wrap: wrap;
   font-size: var(--m-tiny);
-  color: var(--text-3);
+  color: var(--ink-3);
 }
 
 .m-card__signal {
@@ -1010,7 +1004,7 @@ html:has(.m-app) body {
 }
 
 .m-row:hover {
-  background: var(--ground-raised);
+  background: var(--paper-raised);
 }
 
 .m-row__name {
@@ -1020,7 +1014,7 @@ html:has(.m-app) body {
 
 .m-row__what {
   font-size: var(--m-tiny);
-  color: var(--text-3);
+  color: var(--ink-3);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1055,7 +1049,7 @@ html:has(.m-app) body {
 }
 
 .m-check--fail .m-check__mark {
-  color: var(--text-3);
+  color: var(--ink-3);
 }
 
 .m-check--unknown .m-check__mark {
@@ -1070,7 +1064,7 @@ html:has(.m-app) body {
 
 .m-check__body {
   font-size: var(--m-tiny);
-  color: var(--text-2);
+  color: var(--ink-2);
   line-height: 1.5;
 }
 
@@ -1093,7 +1087,7 @@ html:has(.m-app) body {
 
 .m-kv dt {
   font-size: var(--m-tiny);
-  color: var(--text-3);
+  color: var(--ink-3);
   flex: none;
 }
 
@@ -1117,7 +1111,7 @@ html:has(.m-app) body {
   border: 1px dashed var(--rule-strong);
   border-radius: 2px;
   padding: 1.1rem 1.25rem;
-  background: var(--ground-sunken);
+  background: var(--paper-sunken);
 }
 
 .m-absent__t {
@@ -1134,12 +1128,12 @@ html:has(.m-app) body {
 .m-panel {
   border: 1px solid var(--rule);
   border-radius: 2px;
-  background: var(--ground-raised);
+  background: var(--paper-raised);
   padding: clamp(1.15rem, 2.5vw, 1.75rem);
 }
 
 .m-panel--sunken {
-  background: var(--ground-sunken);
+  background: var(--paper-sunken);
   border-color: var(--rule);
 }
 
@@ -1158,12 +1152,12 @@ html:has(.m-app) body {
   flex: 1;
   padding: 0.7rem 0.85rem;
   font-size: var(--m-tiny);
-  color: var(--text-3);
+  color: var(--ink-3);
   border-right: 1px solid var(--rule);
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: var(--ground-sunken);
+  background: var(--paper-sunken);
   min-width: 0;
 }
 
@@ -1190,20 +1184,20 @@ html:has(.m-app) body {
 }
 
 .m-step--now {
-  background: var(--ground-raised);
-  color: var(--text);
+  background: var(--paper-raised);
+  color: var(--ink);
   font-weight: 500;
 }
 
 .m-step--now .m-step__n {
   background: var(--signal);
   border-color: var(--signal);
-  color: var(--signal-on);
+  color: #fff;
 }
 
 .m-step--done {
   color: var(--verified);
-  background: var(--ground-raised);
+  background: var(--paper-raised);
 }
 
 /*
@@ -1242,7 +1236,7 @@ html:has(.m-app) body {
 .m-gate {
   border: 1px solid var(--rule-strong);
   border-radius: 2px;
-  background: var(--ground-sunken);
+  background: var(--paper-sunken);
   padding: 1rem 1.1rem;
   display: grid;
   gap: 0.7rem;
@@ -1253,7 +1247,7 @@ html:has(.m-app) body {
 
 .m-gate__why {
   font-size: var(--m-small);
-  color: var(--text-2);
+  color: var(--ink-2);
 }
 
 .m-error {
@@ -1362,11 +1356,10 @@ html:has(.m-app) body {
 .m-mkt-cat {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
   gap: 0.45rem;
   font: inherit;
   font-size: var(--m-small);
-  color: var(--text-2);
+  color: var(--ink-2);
   background: transparent;
   border: 1px solid transparent;
   border-radius: 2px;
@@ -1376,32 +1369,32 @@ html:has(.m-app) body {
 }
 
 .m-mkt-cat:hover {
-  background: var(--ground-sunken);
-  color: var(--text);
+  background: var(--paper-sunken);
+  color: var(--ink);
 }
 
 .m-mkt-cat--on {
-  background: var(--text);
-  color: var(--ground);
-  border-color: var(--text);
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
 }
 
 .m-mkt-cat--on .m-mark {
-  color: var(--ground);
+  color: var(--paper);
 }
 
 /* The pills are links, and the shell's `.m-app a { color: inherit }` outranks
    a single class: the selected pill rendered ink text on an ink background,
    an empty black box. These selectors carry the element so they win. */
 a.m-mkt-cat {
-  color: var(--text-2);
+  color: var(--ink-2);
 }
 a.m-mkt-cat:hover {
-  color: var(--text);
+  color: var(--ink);
 }
 a.m-mkt-cat.m-mkt-cat--on,
 a.m-mkt-cat.m-mkt-cat--on:hover {
-  color: var(--ground);
+  color: var(--paper);
 }
 
 .m-mkt-cat__n {
@@ -1459,15 +1452,15 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   align-items: center;
   gap: 0.45rem;
   font-size: var(--m-small);
-  color: var(--text-2);
+  color: var(--ink-2);
 }
 
 .m-mkt-check:hover {
-  color: var(--text);
+  color: var(--ink);
 }
 
 .m-mkt-check--on {
-  color: var(--text);
+  color: var(--ink);
   font-weight: 500;
 }
 
@@ -1476,7 +1469,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   height: 15px;
   border: 1px solid var(--rule-strong);
   border-radius: 2px;
-  background: var(--ground-raised);
+  background: var(--paper-raised);
   display: grid;
   place-items: center;
   font-size: 0.65rem;
@@ -1487,7 +1480,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 .m-mkt-check--on .m-mkt-box {
   background: var(--signal);
   border-color: var(--signal);
-  color: var(--signal-on);
+  color: #fff;
 }
 
 /* ================================================================ home === */
@@ -1511,7 +1504,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   position: absolute;
   inset: 0 0 auto 55%;
   height: 100%;
-  background: var(--ground-sunken);
+  background: var(--paper-sunken);
   clip-path: polygon(18% 0, 100% 0, 100% 100%, 0 100%);
   z-index: 0;
   pointer-events: none;
@@ -1544,7 +1537,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   margin: 0 0 1.1rem;
   font-size: clamp(0.95rem, 2vw, 1.05rem);
   line-height: 1.5;
-  color: var(--text-2);
+  color: var(--ink-2);
 }
 
 /*
@@ -1586,7 +1579,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 }
 
 .m-hero__stats > * {
-  background: var(--ground);
+  background: var(--paper);
 }
 
 @media (max-width: 900px) {
@@ -1607,7 +1600,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 }
 
 .m-door {
-  background: var(--ground);
+  background: var(--paper);
   box-shadow: inset 1px 0 0 var(--rule);
   padding: clamp(1.5rem, 3vw, 2.1rem) clamp(1.25rem, 2.5vw, 1.75rem);
   display: flex;
@@ -1617,11 +1610,11 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 }
 
 .m-door:hover {
-  background: var(--ground-raised);
+  background: var(--paper-raised);
 }
 
 .m-door__mark {
-  color: var(--text-2);
+  color: var(--ink-2);
   transition: color 140ms ease;
   margin-bottom: 0.4rem;
 }
@@ -1639,13 +1632,13 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 
 .m-door__p {
   font-size: var(--m-small);
-  color: var(--text-2);
+  color: var(--ink-2);
   line-height: 1.5;
 }
 
 .m-door__n {
   font-size: var(--m-tiny);
-  color: var(--text-3);
+  color: var(--ink-3);
   margin-top: auto;
   padding-top: 0.85rem;
 }
@@ -1655,7 +1648,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   margin: 0.35rem 0 0;
   font-size: 0.78rem;
   line-height: 1.45;
-  color: var(--text-3);
+  color: var(--ink-3);
 }
 
 .m-door__go {
@@ -1674,24 +1667,24 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   from reading as one undifferentiated sheet.
 */
 .m-band {
-  background: var(--text);
-  color: var(--ground);
+  background: var(--ink);
+  color: var(--paper);
   padding-block: clamp(3.5rem, 8vw, 6rem);
 }
 
 .m-band .m-head {
-  border-bottom-color: color-mix(in srgb, var(--ground) 30%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--paper) 30%, transparent);
 }
 
 .m-band__ghost {
-  border-color: color-mix(in srgb, var(--ground) 45%, transparent);
-  color: var(--ground);
+  border-color: color-mix(in srgb, var(--paper) 45%, transparent);
+  color: var(--paper);
 }
 
 .m-band__ghost:hover {
-  background: var(--ground);
-  color: var(--text);
-  border-color: var(--ground);
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--paper);
 }
 
 .m-how {
@@ -1701,12 +1694,12 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   display: grid;
   gap: 0;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  border: 1px solid color-mix(in srgb, var(--ground) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--paper) 18%, transparent);
 }
 
 .m-how__item {
-  background: var(--text);
-  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--ground) 18%, transparent);
+  background: var(--ink);
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--paper) 18%, transparent);
   padding: clamp(1.4rem, 3vw, 2rem);
   display: grid;
   gap: 0.6rem;
@@ -1729,7 +1722,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 .m-how__p {
   font-size: var(--m-small);
   line-height: 1.55;
-  color: color-mix(in srgb, var(--ground) 72%, transparent);
+  color: color-mix(in srgb, var(--paper) 72%, transparent);
 }
 
 /* ------------------------------------------------------------ receipts --- */
@@ -1756,7 +1749,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 
 .m-receipt__n {
   font-size: 1.5rem;
-  color: var(--text-3);
+  color: var(--ink-3);
   line-height: 1;
   padding-top: 0.15rem;
 }
@@ -1770,9 +1763,9 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 /* -------------------------------------------------------------- closer --- */
 
 .m-closer {
-  border-top: 1px solid var(--text);
+  border-top: 1px solid var(--ink);
   padding-block: clamp(4rem, 10vw, 7rem);
-  background: var(--ground-sunken);
+  background: var(--paper-sunken);
 }
 
 .m-closer__h {
@@ -1785,7 +1778,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   padding-top: clamp(1.75rem, 4vw, 2.75rem);
   padding-bottom: clamp(2rem, 5vw, 3rem);
   border-bottom: 1px solid var(--rule);
-  background: var(--ground-sunken);
+  background: var(--paper-sunken);
 }
 
 .m-agent-hero__row {
@@ -1797,7 +1790,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 
 .m-agent-hero__mark {
   flex: none;
-  color: var(--text-3);
+  color: var(--ink-3);
 }
 
 @media (max-width: 780px) {
@@ -1807,7 +1800,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 }
 
 .hire-card {
-  border-color: var(--text);
+  border-color: var(--ink);
 }
 
 /* Raw JSON returned by a paid call. Contained, never the main event. */
@@ -1815,7 +1808,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   font-family: var(--m-mono);
   font-size: 0.7rem;
   line-height: 1.5;
-  background: var(--ground-raised);
+  background: var(--paper-raised);
   border: 1px solid var(--rule);
   border-radius: 2px;
   padding: 0.75rem;
@@ -1839,7 +1832,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 }
 
 .m-pick__opt {
-  background: var(--ground-raised);
+  background: var(--paper-raised);
   border: 0;
   border-left: 2px solid transparent;
   box-shadow: inset 1px 0 0 var(--rule), inset 0 1px 0 var(--rule);
@@ -1850,18 +1843,18 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   display: grid;
   gap: 0.35rem;
   align-content: start;
-  color: var(--text-2);
+  color: var(--ink-2);
   transition: background 120ms ease, color 120ms ease;
 }
 
 .m-pick__opt:hover {
-  background: var(--ground-sunken);
+  background: var(--paper-sunken);
 }
 
 .m-pick__opt--on {
-  background: var(--ground);
+  background: var(--paper);
   border-left-color: var(--signal);
-  color: var(--text);
+  color: var(--ink);
 }
 
 .m-pick__opt--on .m-pick__t {
@@ -1874,7 +1867,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 }
 
 .m-pick__opt .m-mark {
-  color: var(--text-3);
+  color: var(--ink-3);
 }
 
 .m-pick__opt--on .m-mark {
@@ -1907,7 +1900,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   position: relative;
   padding-left: 1.85rem;
   font-size: var(--m-small);
-  color: var(--text-2);
+  color: var(--ink-2);
   line-height: 1.5;
 }
 
@@ -1924,11 +1917,11 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  color: var(--text-3);
+  color: var(--ink-3);
 }
 
 .m-after strong {
-  color: var(--text);
+  color: var(--ink);
   font-weight: 500;
 }
 
@@ -1937,7 +1930,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 .m-job {
   border: 1px solid var(--rule);
   border-radius: 2px;
-  background: var(--ground-raised);
+  background: var(--paper-raised);
 }
 
 .m-job__head {
@@ -1960,7 +1953,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 .m-job__act {
   padding: 1.1rem clamp(1.1rem, 2.5vw, 1.6rem) 1.3rem;
   border-top: 1px solid var(--rule);
-  background: var(--ground-sunken);
+  background: var(--paper-sunken);
 }
 
 .m-bids {
@@ -1980,7 +1973,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 }
 
 .m-bid {
-  background: var(--ground-raised);
+  background: var(--paper-raised);
   padding: 0.85rem 1rem;
   display: flex;
   align-items: center;
@@ -2008,7 +2001,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 }
 
 .m-tape__row .m-mark {
-  color: var(--text-3);
+  color: var(--ink-3);
 }
 
 @media (max-width: 640px) {
@@ -2074,12 +2067,12 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 }
 
 .m-cmp thead th {
-  border-bottom: 1px solid var(--text);
+  border-bottom: 1px solid var(--ink);
   padding-bottom: 1rem;
 }
 
 .m-cmp thead .m-mark {
-  color: var(--text-3);
+  color: var(--ink-3);
   margin-bottom: 0.4rem;
 }
 
@@ -2098,7 +2091,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 
 .m-cmp tbody th {
   font-weight: 400;
-  color: var(--text-3);
+  color: var(--ink-3);
   font-size: var(--m-tiny);
   width: 190px;
 }
@@ -2108,7 +2101,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 }
 
 .m-cmp--weak {
-  color: var(--text-3);
+  color: var(--ink-3);
 }
 
 .m-cmp__tie td,
@@ -2149,7 +2142,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 }
 
 .m-calls--off li {
-  color: var(--text-3);
+  color: var(--ink-3);
   text-decoration: line-through;
   text-decoration-color: var(--rule-strong);
 }
@@ -2171,18 +2164,22 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 /*
   A finger is not a cursor.
 
-  This used to raise controls to 40px on phones only, on the reasoning that a
-  mouse does not need the room. That was two mistakes: 40 is under the floor a
-  thumb actually needs, and a control that is hard to hit with a trackpad is
-  hard to hit with a trackpad at any width. Every control is 44px now, on
-  every screen, set on the base rules rather than here. Type and density are
-  untouched; only the target grew.
+  The small button is 30px tall, which is comfortable to click and awkward to
+  tap. Below the tablet breakpoint every control gets a 40px floor, which is
+  the size a thumb actually needs, without changing the type or the density
+  anywhere it is being used with a mouse.
 */
-.m-nav a,
-.m-footer a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
+@media (max-width: 700px) {
+  .m-btn,
+  .m-btn--sm {
+    min-height: 40px;
+  }
+
+  .m-nav a {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
 }
 
 /* ------------------------------------------------------------ hire bar --- */
@@ -2197,9 +2194,9 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 */
 .m-hirebar {
   margin-top: clamp(1.75rem, 4vw, 2.5rem);
-  border: 1px solid var(--text);
+  border: 1px solid var(--ink);
   border-radius: 2px;
-  background: var(--ground-raised);
+  background: var(--paper-raised);
   display: grid;
   gap: 0;
   grid-template-columns: minmax(0, 1fr);
@@ -2242,7 +2239,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   display: grid;
   gap: 0.6rem;
   align-content: center;
-  background: var(--ground-sunken);
+  background: var(--paper-sunken);
   box-shadow: inset 1px 0 0 var(--rule);
 }
 
@@ -2271,8 +2268,8 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 /* ---------------------------------------------------------- judge walk --- */
 
 .m-walk {
-  background: var(--text);
-  color: var(--ground);
+  background: var(--ink);
+  color: var(--paper);
 }
 
 .m-walk__in {
@@ -2313,11 +2310,11 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   font-size: 0.65rem;
   width: 1.35em;
   height: 1.35em;
-  border: 1px solid color-mix(in srgb, var(--ground) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--paper) 40%, transparent);
   border-radius: 50%;
   display: grid;
   place-items: center;
-  color: color-mix(in srgb, var(--ground) 70%, transparent);
+  color: color-mix(in srgb, var(--paper) 70%, transparent);
   flex: none;
 }
 
@@ -2325,17 +2322,17 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   content: "";
   width: 12px;
   height: 1px;
-  background: color-mix(in srgb, var(--ground) 30%, transparent);
+  background: color-mix(in srgb, var(--paper) 30%, transparent);
   margin-left: 0.15rem;
 }
 
 .m-walk__steps a {
-  color: color-mix(in srgb, var(--ground) 88%, transparent);
+  color: color-mix(in srgb, var(--paper) 88%, transparent);
   border-bottom: 1px solid transparent;
 }
 
 .m-walk__steps a:hover {
-  color: var(--ground);
+  color: var(--paper);
   border-bottom-color: var(--signal);
 }
 
@@ -2394,7 +2391,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   border: 1px solid var(--rule-strong);
   border-radius: 2px;
   text-align: center;
-  color: var(--text-3);
+  color: var(--ink-3);
 }
 
 .m-finding--act .m-finding__flag {
@@ -2418,7 +2415,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
 .m-head .m-mark {
   display: inline-block;
   vertical-align: -0.35em;
-  color: var(--text-3);
+  color: var(--ink-3);
 }
 
 @media (max-width: 560px) {
@@ -2473,7 +2470,7 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   width: 100%;
   max-width: 960px;
   aspect-ratio: 16 / 9;
-  background: var(--ground-sunken);
+  background: var(--paper-sunken);
   border: 1px solid var(--rule);
   border-radius: 2px;
   overflow: hidden;
@@ -2530,718 +2527,4 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   font-size: 1.9rem;
   line-height: 1;
   color: var(--signal);
-}
-
-
-/* ------------------------------------------------------------- paper --- */
-
-/*
-  The document scope.
-
-  A receipt and a certificate are not screens, they are things a person prints
-  or sends to somebody who will hold us to them. So they invert: paper ground,
-  ink text, no radius, and every rule drawn dark rather than as a light
-  hairline. Opt in by putting `m-paper` on a section or on the app itself.
-
-  Everything inside keeps working, because the sheet only ever names these
-  tokens and never a literal colour.
-*/
-
-.m-paper,
-.m-app .m-paper {
-  --signal-on: #fff;
-  background: var(--ground);
-  color: var(--text);
-  color-scheme: light;
-}
-
-/* A certificate has square corners. Paper does not round. */
-.m-paper .m-panel,
-.m-paper .m-card,
-.m-paper .m-receipt {
-  border-radius: var(--r-flat);
-}
-
-@media print {
-  .m-paper {
-    background: #fff;
-  }
-  .m-app .m-header,
-  .m-app .m-footer,
-  .m-paper .m-btn {
-    display: none;
-  }
-}
-
-/* ------------------------------------------------------------ source --- */
-
-/*
-  A number's provenance, set next to it.
-
-  Small, quiet, and always present. It is focusable because the detail lives
-  in the title, and a keyboard reader has as much right to the block number as
-  somebody with a pointer.
-*/
-
-.m-src {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--s2);
-  font-family: var(--m-mono);
-  font-size: var(--m-tiny);
-  color: var(--text-3);
-  white-space: nowrap;
-}
-.m-src:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-.m-src__k {
-  color: var(--text-2);
-  border-bottom: 1px dotted var(--rule-strong);
-  cursor: help;
-}
-.m-src__b,
-.m-src__a {
-  font-variant-numeric: tabular-nums;
-}
-
-.m-figure {
-  display: inline-flex;
-  flex-direction: column;
-  gap: var(--s1);
-}
-.m-figure__n {
-  font-size: var(--m-h2);
-  line-height: 1.05;
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
-}
-.m-figure__u {
-  font-size: var(--m-small);
-  color: var(--text-3);
-  margin-left: var(--s2);
-}
-
-/* ------------------------------------------------------------ funnel --- */
-
-/*
-  The drop from 356,000 registered to the handful that can actually be hired.
-
-  Drawn to linear scale against the top rung, so the collapse is the shape of
-  the thing rather than a claim about it. A rung we have not measured draws no
-  bar at all and prints the word unknown: a zero-length bar would read as
-  "none", which is a different and false statement.
-*/
-
-.m-funnel {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--s2);
-  border-top: 1px solid var(--rule);
-}
-
-.m-funnel__row {
-  padding: var(--s4) 0 var(--s3);
-  border-bottom: 1px solid var(--rule-hair);
-}
-
-.m-funnel__link {
-  display: grid;
-  grid-template-columns: minmax(6.5rem, auto) 1fr;
-  grid-template-areas: "n name" "n track";
-  column-gap: var(--s4);
-  row-gap: var(--s2);
-  align-items: baseline;
-  text-decoration: none;
-  color: inherit;
-  min-height: 44px;
-  align-content: center;
-}
-a.m-funnel__link:hover .m-funnel__name {
-  color: var(--hallmark);
-}
-a.m-funnel__link:hover .m-funnel__bar {
-  background: var(--hallmark-hi);
-}
-
-.m-funnel__n {
-  grid-area: n;
-  font-size: var(--m-h3);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-  color: var(--text);
-}
-.m-funnel__at {
-  color: var(--text-3);
-  font-size: var(--m-tiny);
-}
-.m-funnel__unknown {
-  color: var(--text-3);
-  font-size: var(--m-small);
-  font-style: normal;
-}
-
-.m-funnel__name {
-  grid-area: name;
-  font-size: var(--m-small);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-2);
-  transition: color var(--m-fast) var(--m-ease);
-}
-
-.m-funnel__track {
-  grid-area: track;
-  display: block;
-  height: 6px;
-  background: var(--ground-raised);
-  border-radius: var(--r-flat);
-  overflow: hidden;
-}
-.m-funnel__bar {
-  display: block;
-  height: 100%;
-  background: var(--hallmark);
-  transition:
-    width var(--m-slow) var(--m-ease),
-    background var(--m-fast) var(--m-ease);
-}
-.m-funnel__bar[data-measured="0"] {
-  background: transparent;
-}
-
-.m-funnel__test,
-.m-funnel__why {
-  margin: var(--s2) 0 0;
-  font-size: var(--m-tiny);
-  color: var(--text-3);
-  max-width: 62ch;
-}
-.m-funnel__why {
-  color: var(--text-3);
-  font-style: italic;
-}
-
-.m-funnel__row[data-measured="0"] .m-funnel__n {
-  color: var(--text-3);
-}
-
-@media (min-width: 860px) {
-  .m-funnel__link {
-    grid-template-columns: minmax(7.5rem, auto) minmax(9rem, auto) 1fr;
-    grid-template-areas: "n name track";
-    row-gap: 0;
-  }
-}
-
-/* ----------------------------------------------------------- doorway --- */
-
-/*
-  The first screen. Two doors, both able to act without scrolling.
-
-  Somebody arrives with one of two things: a wallet that has a problem in it,
-  or a job they want done. Anything else on this screen is an essay, and an
-  essay is what was here before.
-*/
-
-.m-doorway {
-  padding: var(--s7) 0 var(--s6);
-  border-bottom: 1px solid var(--rule);
-}
-.m-doorway__k {
-  color: var(--hallmark);
-  margin: 0 0 var(--s6);
-}
-
-.m-doorway__pair {
-  display: grid;
-  gap: var(--s6);
-}
-
-.m-gate2 {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s4);
-}
-.m-gate2__h {
-  font-family: var(--m-serif);
-  font-size: var(--m-h1);
-  line-height: 1.02;
-  letter-spacing: -0.015em;
-  margin: 0;
-}
-.m-gate2__p {
-  margin: 0;
-  color: var(--text-2);
-  max-width: 46ch;
-}
-.m-gate2__form {
-  margin: 0;
-}
-
-/* The four rooms, equal weight. Nothing here gets a hero slot. */
-.m-rooms {
-  display: grid;
-  gap: var(--s2);
-}
-.m-room {
-  display: grid;
-  grid-template-columns: 40px 1fr;
-  grid-template-areas: "mark t" "mark n" "mark who";
-  column-gap: var(--s4);
-  row-gap: var(--s1);
-  align-items: center;
-  padding: var(--s3) var(--s4);
-  min-height: 44px;
-  border: 1px solid var(--rule);
-  border-radius: var(--r-card);
-  background: var(--ground-raised);
-  text-decoration: none;
-  color: inherit;
-  transition:
-    border-color var(--m-fast) var(--m-ease),
-    background var(--m-fast) var(--m-ease);
-}
-.m-room:hover {
-  border-color: var(--rule-strong);
-  background: var(--ground-sunken);
-}
-.m-room:hover .m-room__t {
-  color: var(--hallmark);
-}
-.m-room__mark {
-  grid-area: mark;
-}
-.m-room__t {
-  grid-area: t;
-  font-size: var(--m-h3);
-  transition: color var(--m-fast) var(--m-ease);
-}
-.m-room__n {
-  grid-area: n;
-  font-size: var(--m-small);
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-.m-room__of {
-  color: var(--text-3);
-}
-.m-room__who {
-  grid-area: who;
-  font-size: var(--m-tiny);
-  color: var(--text-3);
-}
-
-@media (min-width: 860px) {
-  .m-doorway {
-    padding: var(--s8) 0 var(--s7);
-  }
-  .m-doorway__pair {
-    grid-template-columns: 1fr 1fr;
-    gap: var(--s8);
-    align-items: start;
-  }
-  .m-rooms {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-/* -------------------------------------------------------------- room --- */
-
-.m-crumbs {
-  font-size: var(--m-small);
-  color: var(--text-3);
-  margin-bottom: var(--s4);
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-}
-/* A breadcrumb is still a tap target on a phone, and 44px is the floor. */
-.m-crumbs a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-}
-
-.m-roomhead {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--s5);
-  align-items: start;
-}
-.m-roomhead__mark {
-  margin-top: var(--s2);
-}
-
-.m-roomstat {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s5);
-  align-items: baseline;
-  margin-top: var(--s6);
-  padding-top: var(--s4);
-  border-top: 1px solid var(--rule);
-  font-size: var(--m-small);
-  color: var(--text-2);
-}
-.m-roomstat__n {
-  font-size: var(--m-h3);
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-  margin-right: var(--s2);
-}
-
-/*
-  An empty shelf teaches the next verb.
-
-  "No data" is the state every competitor renders and it is the one moment a
-  person decides the product is broken. A room with nobody hireable is a
-  finding about the market, so it says the finding and offers somewhere to go.
-*/
-.m-empty {
-  border: 1px dashed var(--rule-strong);
-  border-radius: var(--r-card);
-  padding: var(--s6);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s3);
-}
-.m-empty__h {
-  margin: 0;
-  font-family: var(--m-serif);
-  font-size: var(--m-h3);
-  color: var(--text);
-}
-.m-empty__p {
-  margin: 0;
-  color: var(--text-2);
-  max-width: 62ch;
-  font-size: var(--m-small);
-}
-
-@media (min-width: 1180px) {
-  .m-rooms--four {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-/* --------------------------------------------------------- graveyard --- */
-
-/*
-  Failures, at the same weight as successes.
-
-  The plan's rule is that losses render in the same type size as wins, and
-  this is where that rule is tested: it would be very easy to set these small
-  and grey. A row we caused is marked as ours and drawn in caution rather than
-  in dead, because attributing our own bug to somebody else's agent is the
-  failure mode this page exists to avoid.
-*/
-
-.m-grave {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--s4);
-}
-
-.m-grave__row {
-  border: 1px solid var(--rule);
-  border-left: 3px solid var(--dead);
-  border-radius: var(--r-card);
-  background: var(--ground-raised);
-  padding: var(--s5);
-  display: flex;
-  flex-direction: column;
-  gap: var(--s3);
-}
-.m-grave__row[data-fault="ours"] {
-  border-left-color: var(--caution);
-}
-
-.m-grave__who {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--s3);
-}
-.m-grave__name {
-  font-size: var(--m-h3);
-  color: var(--text);
-  text-decoration: none;
-}
-a.m-grave__name:hover {
-  color: var(--hallmark);
-  text-decoration: underline;
-}
-
-.m-grave__what {
-  margin: 0;
-  color: var(--text);
-  font-size: var(--m-body);
-}
-
-/* The seller's own words, quoted exactly and never paraphrased. */
-.m-grave__bytes {
-  margin: 0;
-  padding: var(--s3);
-  background: var(--ground-sunken);
-  border-radius: var(--r-flat);
-  font-size: var(--m-tiny);
-  color: var(--text-2);
-  overflow-wrap: anywhere;
-  max-height: 11rem;
-  overflow-y: auto;
-}
-
-.m-grave__note {
-  margin: 0;
-  font-size: var(--m-small);
-  color: var(--caution);
-  max-width: 68ch;
-}
-
-.m-grave__foot {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s4);
-  align-items: center;
-  padding-top: var(--s2);
-  border-top: 1px solid var(--rule-hair);
-}
-
-
-/* ------------------------------------------------------------ search --- */
-
-.m-search {
-  gap: var(--s2);
-}
-/*
-  The header line is finite. Below the medium breakpoint the search control
-  moves into the Menu rather than pushing the disclosure off the right edge,
-  which is what it did when it was added.
-*/
-@media (max-width: 859px) {
-  .m-search {
-    display: none;
-  }
-}
-@media (min-width: 860px) {
-  .m-menu__search {
-    display: none;
-  }
-}
-
-.m-menu__search {
-  display: flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0.65rem 0.75rem;
-  font: inherit;
-  font-size: var(--m-small);
-  color: var(--text-2);
-  background: transparent;
-  border: none;
-  border-left: 2px solid transparent;
-  text-align: left;
-  cursor: pointer;
-}
-.m-menu__search:hover {
-  color: var(--text);
-  background: color-mix(in srgb, var(--text) 5%, transparent);
-}
-.m-kbd {
-  font-family: var(--m-mono);
-  font-size: var(--m-tiny);
-  line-height: 1;
-  padding: 0.2em 0.4em;
-  border: 1px solid var(--rule-strong);
-  border-radius: 2px;
-  color: var(--text-3);
-}
-
-/*
-  The secondary navigation, behind a disclosure on the line itself.
-
-  It sits inside the main nav rather than at the right-hand end, so the
-  pages behind it read as part of the same list rather than as settings.
-*/
-.m-menu--more {
-  position: relative;
-}
-.m-more {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  min-width: 44px;
-  padding: 0 var(--s3);
-  cursor: pointer;
-  color: var(--text-2);
-  list-style: none;
-  letter-spacing: 0.1em;
-}
-.m-more::-webkit-details-marker {
-  display: none;
-}
-.m-more:hover,
-.m-menu--more[open] .m-more {
-  color: var(--text);
-}
-.m-menu--more .m-menu__panel {
-  right: auto;
-  left: 0;
-}
-
-@media (max-width: 1179px) {
-  .m-menu--more {
-    display: none;
-  }
-}
-
-/* -------------------------------------------------------------- proof --- */
-
-/*
-  The lock, the score, and the six tasks.
-
-  The rule that governs this whole section is that a loss is set exactly as
-  large as a win. The verdict chip changes colour and nothing else changes:
-  no smaller type, no lower contrast, no collapsing the losing tasks behind a
-  disclosure. A report where the agent wins everything is a report nobody
-  should believe, and the first thing a careful reader checks is whether the
-  losses were allowed to look like losses.
-*/
-
-.m-lock {
-  margin-top: var(--s6);
-  padding: var(--s5);
-  border: 1px solid var(--rule);
-  border-radius: var(--r-flat);
-  background: var(--ground-raised);
-  display: grid;
-  gap: var(--s3);
-}
-.m-lock__row {
-  display: grid;
-  gap: var(--s1);
-}
-.m-lock__v {
-  font-size: var(--m-small);
-  overflow-wrap: anywhere;
-}
-
-.m-scoreline {
-  margin: var(--s6) 0 var(--s2);
-  font-size: var(--m-h3);
-  color: var(--text-2);
-}
-.m-scoreline__n {
-  font-size: var(--m-h2);
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-
-.m-tasks {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--s4);
-  counter-reset: task;
-}
-
-.m-task {
-  border: 1px solid var(--rule);
-  border-left: 3px solid var(--rule-strong);
-  border-radius: var(--r-card);
-  background: var(--ground-raised);
-  padding: var(--s5);
-  display: grid;
-  gap: var(--s3);
-}
-.m-task[data-verdict="win"] {
-  border-left-color: var(--verified);
-}
-.m-task[data-verdict="loss"] {
-  border-left-color: var(--dead);
-}
-.m-task[data-verdict="mixed"] {
-  border-left-color: var(--caution);
-}
-
-.m-task__head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--s3);
-}
-.m-task__id {
-  font-size: var(--m-tiny);
-  color: var(--text-3);
-  letter-spacing: 0.08em;
-}
-.m-task__t {
-  margin: 0;
-  font-size: var(--m-h3);
-  flex: 1 1 14rem;
-}
-.m-task__v {
-  font-size: var(--m-tiny);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-2);
-}
-.m-task[data-verdict="win"] .m-task__v {
-  color: var(--verified);
-}
-.m-task[data-verdict="loss"] .m-task__v {
-  color: var(--dead);
-}
-.m-task[data-verdict="mixed"] .m-task__v {
-  color: var(--caution);
-}
-
-/* The sentence. Same size whichever way it went. */
-.m-task__line {
-  margin: 0;
-  font-size: var(--m-body);
-  color: var(--text);
-  max-width: 74ch;
-}
-
-.m-task__arms {
-  display: grid;
-  gap: var(--s3);
-  margin: 0;
-}
-.m-task__arms dd {
-  margin: var(--s1) 0 0;
-  font-size: var(--m-small);
-  color: var(--text-2);
-  max-width: 74ch;
-}
-
-.m-rerun {
-  display: grid;
-  gap: var(--s5);
-}
-.m-rerun__bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--s4);
-}
-.m-rerun__stamp {
-  margin: 0;
-}
-
-@media (min-width: 860px) {
-  .m-task__arms {
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--s5);
-  }
 }

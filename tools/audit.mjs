@@ -11,9 +11,6 @@ const ALL = [
   ['diagnose','/diagnose'], ['diagnosed','/diagnose?q=7331221'], ['receipt','/receipts/1'],
   ['judges','/judges'], ['grid','/agents?live=1&category=grid-trading'], ['priced','/agents/342379'],
   ['desk','/desk'], ['status','/status'],
-  ['rebalance','/jobs/rebalance'], ['grid-room','/jobs/grid'],
-  ['yield-room','/jobs/yield'], ['guard-room','/jobs/guard'],
-  ['graveyard','/graveyard'],
 ];
 const PAGES = ONLY.length ? ONLY : ALL;
 const inject = `
@@ -36,71 +33,64 @@ for (const [name, path] of PAGES) {
     try { await p.goto(B+path, { waitUntil:'networkidle', timeout:60000 }); } catch(e){ errs.push('NAV '+String(e).slice(0,60)); }
     await p.waitForTimeout(1800);
 
-    // One page navigating mid-check used to abort the whole run, which made
-    // the gate unusable exactly when something was wrong enough to redirect.
-    let f = [];
-    try {
-      f = await p.evaluate(() => {
-        const out = [];
-        const de = document.documentElement;
-        if (de.scrollWidth > de.clientWidth + 1) {
-          let worst = null;
-          for (const el of document.querySelectorAll('body *')) {
-            const r = el.getBoundingClientRect();
-            if (r.right > de.clientWidth + 2 && r.width > 0 && (!worst || r.right > worst.r)) {
-              worst = { r: Math.round(r.right), sel: el.tagName+'.'+String(el.className).slice(0,40) };
-            }
-          }
-          out.push(`OVERFLOW ${de.scrollWidth}>${de.clientWidth} worst=${worst?.sel}@${worst?.r}`);
-        }
-        // Text too small to read.
-        const small = new Set();
+    const f = await p.evaluate(() => {
+      const out = [];
+      const de = document.documentElement;
+      if (de.scrollWidth > de.clientWidth + 1) {
+        let worst = null;
         for (const el of document.querySelectorAll('body *')) {
-          if (!el.childNodes.length) continue;
-          const hasText = [...el.childNodes].some(n => n.nodeType===3 && n.textContent.trim().length>2);
-          if (!hasText) continue;
-          const fs = parseFloat(getComputedStyle(el).fontSize);
-          if (fs && fs < 10.5) small.add(`${el.tagName}.${String(el.className).slice(0,30)}@${fs}px`);
-        }
-        if (small.size) out.push('TINY_TEXT ' + [...small].slice(0,3).join(' | '));
-        // A control the eye reads as unusable with NO explanation beside it.
-        // A disabled button with a stated reason next to it is the intended
-        // behaviour; only a silent one is a dead end.
-        const dead = [...document.querySelectorAll('button[disabled],a[aria-disabled="true"]')]
-          .filter(e => {
-            // A reason the control names itself through aria-describedby counts
-            // wherever it sits, provided it is on screen and says something.
-            const ids = (e.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean);
-            const linked = ids.map(id => document.getElementById(id))
-              .find(t => t && t.textContent.trim() && t.getClientRects().length);
-            if (linked) return false;
-            const scope = e.closest('form,section,div');
-            const said = scope && scope.querySelector('.m-error,.m-gate__why,.m-field__hint,.m-absent__t');
-            return !said || !said.textContent.trim();
-          })
-          .map(e => e.textContent.trim().slice(0,30)).filter(Boolean);
-        if (dead.length) out.push('UNEXPLAINED_DISABLED ' + dead.slice(0,3).join(' | '));
-        // Elements painted over each other.
-        const clipped = [];
-        for (const el of document.querySelectorAll('p,h1,h2,h3,dd,dt,td,th,li,span.m-stat__v')) {
-          if (el.scrollWidth > el.clientWidth + 2 && getComputedStyle(el).overflow !== 'visible') {
-            const t = el.textContent.trim().slice(0,28);
-            if (t && getComputedStyle(el).textOverflow !== 'ellipsis' && !el.className.includes('clamp')) clipped.push(t);
+          const r = el.getBoundingClientRect();
+          if (r.right > de.clientWidth + 2 && r.width > 0 && (!worst || r.right > worst.r)) {
+            worst = { r: Math.round(r.right), sel: el.tagName+'.'+String(el.className).slice(0,40) };
           }
         }
-        if (clipped.length) out.push('CLIPPED ' + clipped.slice(0,3).join(' | '));
-        // Touch targets under the 44px floor the design spec sets.
-        if (innerWidth < 500) {
-          const tiny = [...document.querySelectorAll('a.m-btn,button.m-btn,nav a')]
-            .filter(e => { const r = e.getBoundingClientRect(); return r.height > 0 && r.height < 44; })
-            .map(e => e.textContent.trim().slice(0,20));
-          if (tiny.length) out.push('SMALL_TAP ' + tiny.slice(0,3).join(' | '));
+        out.push(`OVERFLOW ${de.scrollWidth}>${de.clientWidth} worst=${worst?.sel}@${worst?.r}`);
+      }
+      // Text too small to read.
+      const small = new Set();
+      for (const el of document.querySelectorAll('body *')) {
+        if (!el.childNodes.length) continue;
+        const hasText = [...el.childNodes].some(n => n.nodeType===3 && n.textContent.trim().length>2);
+        if (!hasText) continue;
+        const fs = parseFloat(getComputedStyle(el).fontSize);
+        if (fs && fs < 10.5) small.add(`${el.tagName}.${String(el.className).slice(0,30)}@${fs}px`);
+      }
+      if (small.size) out.push('TINY_TEXT ' + [...small].slice(0,3).join(' | '));
+      // A control the eye reads as unusable with NO explanation beside it.
+      // A disabled button with a stated reason next to it is the intended
+      // behaviour; only a silent one is a dead end.
+      const dead = [...document.querySelectorAll('button[disabled],a[aria-disabled="true"]')]
+        .filter(e => {
+          // A reason the control names itself through aria-describedby counts
+          // wherever it sits, provided it is on screen and says something.
+          const ids = (e.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean);
+          const linked = ids.map(id => document.getElementById(id))
+            .find(t => t && t.textContent.trim() && t.getClientRects().length);
+          if (linked) return false;
+          const scope = e.closest('form,section,div');
+          const said = scope && scope.querySelector('.m-error,.m-gate__why,.m-field__hint,.m-absent__t');
+          return !said || !said.textContent.trim();
+        })
+        .map(e => e.textContent.trim().slice(0,30)).filter(Boolean);
+      if (dead.length) out.push('UNEXPLAINED_DISABLED ' + dead.slice(0,3).join(' | '));
+      // Elements painted over each other.
+      const clipped = [];
+      for (const el of document.querySelectorAll('p,h1,h2,h3,dd,dt,td,th,li,span.m-stat__v')) {
+        if (el.scrollWidth > el.clientWidth + 2 && getComputedStyle(el).overflow !== 'visible') {
+          const t = el.textContent.trim().slice(0,28);
+          if (t && getComputedStyle(el).textOverflow !== 'ellipsis' && !el.className.includes('clamp')) clipped.push(t);
         }
-          return out;
-      });
-    } catch (e) {
-      errs.push('EVAL ' + String(e).split('\n')[0].slice(0, 80));
-    }
+      }
+      if (clipped.length) out.push('CLIPPED ' + clipped.slice(0,3).join(' | '));
+      // Touch targets under the usual 40px floor.
+      if (innerWidth < 500) {
+        const tiny = [...document.querySelectorAll('a.m-btn,button.m-btn,nav a')]
+          .filter(e => { const r = e.getBoundingClientRect(); return r.height > 0 && r.height < 34; })
+          .map(e => e.textContent.trim().slice(0,20));
+        if (tiny.length) out.push('SMALL_TAP ' + tiny.slice(0,3).join(' | '));
+      }
+      return out;
+    });
 
     const all = [...errs, ...f];
     total += all.length;

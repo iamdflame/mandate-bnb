@@ -74,11 +74,11 @@ table {
   --score: #24282d;
 
   /* --- the metals: these carry all meaning ------------------------------ */
-  --gold-999: #e8a317;   /* fine gold: hallmarked, settled */
-  --gold-750: #c98b14;   /* 18ct: assayed and passing */
-  --silver-925: #b8bec6; /* sterling: live, capable, unbonded */
+  --gold-999: #e8a317;   /* fine gold — hallmarked, settled */
+  --gold-750: #c98b14;   /* 18ct — assayed and passing */
+  --silver-925: #b8bec6; /* sterling — live, capable, unbonded */
   --pewter-500: #6b7280; /* resolvable but unproven */
-  --base: #3a4048;       /* base metal: registered and nothing more */
+  --base: #3a4048;       /* base metal — registered and nothing more */
 
   /* --- signals: used almost never --------------------------------------- */
   --struck: #e8e4dc;     /* the instant a mark lands */

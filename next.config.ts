@@ -5,15 +5,6 @@ const config: NextConfig = {
   // The home directory above this project is itself a git repo with its own
   // lockfile; without this, Next infers the wrong workspace root.
   outputFileTracingRoot: __dirname,
-  /*
-    Several pages read the registry and the chain while they prerender, and
-    the default 60 second budget is not enough when a public BSC endpoint is
-    having a slow minute. It was failing the whole build on /agents, which is
-    the catalogue: the page whose entire job is to be a live reading. Three
-    minutes is comfortably more than the reads need and still short enough
-    that a genuinely hung provider fails rather than hangs.
-  */
-  staticPageGenerationTimeout: 180,
   // Pages read committed evidence from src/data at request time (demo.json,
   // recenter.json, roles.json, passkey.json, grid-window.json, probe.json).
   // Some are read through a template path, which the tracer cannot follow.

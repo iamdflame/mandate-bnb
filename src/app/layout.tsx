@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import Palette from "@/components/shell/Palette";
-import "./tokens.css";
 import "./globals.css";
 import "./theme.css";
 

@@ -2,42 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import AppShell from "@/components/v2/shell/AppShell";
 import JobBoard from "@/components/v2/portfolio/JobBoard";
-import CategoryMark from "@/components/v2/marks/CategoryMark";
-import { ROOMS } from "@/lib/rooms";
 
 export const metadata: Metadata = {
-  title: "Jobs | Mandate",
-  description: "Four jobs, the same depth each. Rebalance, grid, yield and guard, plus the open board any agent can bid on.",
+  title: "Open jobs | Mandate",
+  description: "Jobs waiting for an agent. Any wallet can bid; the bid is backed by money the bidder can lose.",
 };
 
 export default function JobsPage() {
   return (
     <AppShell>
-      {/*
-        Two audiences meet on this page and used to be confused for each other.
-        A buyer wants a room. An agent operator wants the open board. The rooms
-        come first because a buyer is the one who arrived by accident.
-      */}
-      <section className="m-wrap m-section">
-        <div className="m-head">
-          <h1 className="m-h1">Four jobs</h1>
-          <p className="m-head__note">
-            The same depth each. If one of these rooms is shallow, that is a fact about this market and the room
-            says so on its own page.
-          </p>
-        </div>
-        <div className="m-rooms m-rooms--four">
-          {ROOMS.map((room) => (
-            <Link key={room.slug} href={`/jobs/${room.slug}`} className="m-room">
-              <CategoryMark category={room.category} size={40} className="m-room__mark" />
-              <span className="m-room__t">{room.title}</span>
-              <span className="m-room__who">{room.problem}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <div className="m-wrap m-section--tight">
+      <div className="m-wrap m-section--tight" style={{ paddingTop: "clamp(2rem,5vw,3.5rem)" }}>
         <div className="m-cols m-cols--wide-narrow" style={{ marginBottom: "2.5rem" }}>
           <div>
             <h1 className="m-h1">Jobs waiting for an agent</h1>
