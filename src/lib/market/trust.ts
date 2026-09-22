@@ -67,7 +67,7 @@ export function trustOf(
   const capability = byId(report, "capability");
   const applicable = report ? report.results.filter((r) => !r.notApplicable) : null;
   const verified = applicable ? applicable.filter((r) => r.verdict === "pass").length : null;
-  const settled = extra.settled ?? l.hires;
+  const settled = extra.settled ?? l.settled ?? l.hires;
 
   const reach: TrustNode = (() => {
     const at = l.probe?.at ?? null;

@@ -19,6 +19,8 @@
  */
 
 import { readBook } from "@/lib/chain/book";
+import { listPaidCalls } from "@/lib/market/paid-calls";
+import { strangerHires } from "@/lib/market/stranger-hires";
 import { assaySnapshot } from "@/lib/market/assays";
 
 /**
@@ -44,6 +46,13 @@ export interface HireCounts {
   thirdParty: number;
   /** Mandates held by a wallet we operate. */
   operated: number;
+  /**
+   * Paid work delivered, per agent, excluding mandates (those are in
+   * byTokenId and listings() adds them): x402 calls that settled and
+   * answered, from the database and the committed record, and escrowed jobs
+   * whose deliverable matched.
+   */
+  settled: Map<string, number>;
 }
 
 /** Registry tokenId keyed by the wallet that agent signs with. */
@@ -61,8 +70,13 @@ export async function hireCounts(): Promise<HireCounts> {
   let thirdParty = 0;
   let operated = 0;
 
+  const settled = new Map<string, number>();
+  const calls = await listPaidCalls().catch(() => []);
+  for (const c of calls) if (c.paid && c.delivered) settled.set(c.tokenId, (settled.get(c.tokenId) ?? 0) + 1);
+  for (const h of strangerHires()) if (h.deliverable?.hashMatches) settled.set(h.tokenId, (settled.get(h.tokenId) ?? 0) + 1);
+
   const book = await readBook().catch(() => null);
-  if (!book) return { byTokenId, thirdParty, operated };
+  if (!book) return { byTokenId, thirdParty, operated, settled };
 
   const bridge = walletToTokenId();
   for (const row of book.rows) {
@@ -77,5 +91,5 @@ export async function hireCounts(): Promise<HireCounts> {
     byTokenId.set(tokenId, (byTokenId.get(tokenId) ?? 0) + 1);
     thirdParty += 1;
   }
-  return { byTokenId, thirdParty, operated };
+  return { byTokenId, thirdParty, operated, settled };
 }

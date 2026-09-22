@@ -11,6 +11,7 @@ const ALL = [
   ['diagnose','/diagnose'], ['diagnosed','/diagnose?q=7331221'], ['receipt','/receipts/1'],
   ['judges','/judges'], ['grid','/agents?live=1&category=grid-trading'], ['priced','/agents/342379'],
   ['desk','/desk'], ['status','/status'],
+  ['categories','/categories'], ['compare-ids','/compare?ids=342377,269704,342379'], ['search','/agents?q=protect+a+loan'], ['empty','/agents?settled=1&max=0.05&category=grid-trading'],
 ];
 const PAGES = ONLY.length ? ONLY : ALL;
 const inject = `
@@ -76,16 +77,34 @@ for (const [name, path] of PAGES) {
       // Elements painted over each other.
       const clipped = [];
       for (const el of document.querySelectorAll('p,h1,h2,h3,dd,dt,td,th,li,span.m-stat__v')) {
-        if (el.scrollWidth > el.clientWidth + 2 && getComputedStyle(el).overflow !== 'visible') {
+        if (el.closest('.x-sr,.sr-only')) continue; // visually hidden on purpose, for screen readers
+          if (el.scrollWidth > el.clientWidth + 2 && getComputedStyle(el).overflow !== 'visible') {
           const t = el.textContent.trim().slice(0,28);
           if (t && getComputedStyle(el).textOverflow !== 'ellipsis' && !el.className.includes('clamp')) clipped.push(t);
         }
       }
       if (clipped.length) out.push('CLIPPED ' + clipped.slice(0,3).join(' | '));
+      // Wider than the screen but hidden by an overflow:hidden parent, so the
+      // page does not scroll and the overflow check above never sees it. This
+      // is how the phone hero lost the end of its search button.
+      const wide = [...document.querySelectorAll('main *')]
+        .filter(e => {
+          const r = e.getBoundingClientRect();
+          if (!(r.width > 0 && r.right > innerWidth + 1)) return false;
+          if (e.closest('svg,details:not([open]),.x-tray,.x-tick__main')) return false;
+          // Inside something that scrolls sideways on purpose: reachable, not lost.
+          for (let a = e.parentElement; a && a !== document.body; a = a.parentElement) {
+            const ox = getComputedStyle(a).overflowX;
+            if ((ox === 'auto' || ox === 'scroll') && a.scrollWidth > a.clientWidth) return false;
+          }
+          return true;
+        })
+        .map(e => e.tagName + '.' + String(e.className).slice(0,30));
+      if (wide.length) out.push('OFFSCREEN ' + wide.slice(0,3).join(' | '));
       // Touch targets under the usual 40px floor.
       if (innerWidth < 500) {
-        const tiny = [...document.querySelectorAll('a.m-btn,button.m-btn,nav a')]
-          .filter(e => { const r = e.getBoundingClientRect(); return r.height > 0 && r.height < 34; })
+        const tiny = [...document.querySelectorAll('a.m-btn,button.m-btn,a.x-btn,button.x-btn,nav a')]
+          .filter(e => { const r = e.getBoundingClientRect(); return r.height > 0 && r.height < 44; })
           .map(e => e.textContent.trim().slice(0,20));
         if (tiny.length) out.push('SMALL_TAP ' + tiny.slice(0,3).join(' | '));
       }

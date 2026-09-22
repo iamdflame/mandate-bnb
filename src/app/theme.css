@@ -100,17 +100,18 @@ html:has(.m-app) body {
 
 /* --------------------------------------------------------------- type --- */
 
-.m-app h1,
-.m-app h2,
-.m-app h3,
-.m-app h4 {
+:where(.m-app) h1,
+:where(.m-app) h2,
+:where(.m-app) h3,
+:where(.m-app) h4 {
   margin: 0;
-  font-weight: 400;
-  letter-spacing: -0.012em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .m-display {
   font-family: var(--m-serif);
+  font-weight: 600;
   font-size: var(--m-display);
   line-height: 0.96;
   letter-spacing: -0.028em;
@@ -118,6 +119,7 @@ html:has(.m-app) body {
 
 .m-h1 {
   font-family: var(--m-serif);
+  font-weight: 600;
   font-size: var(--m-h1);
   line-height: 1.03;
   letter-spacing: -0.022em;
@@ -125,6 +127,7 @@ html:has(.m-app) body {
 
 .m-h2 {
   font-family: var(--m-serif);
+  font-weight: 600;
   font-size: var(--m-h2);
   line-height: 1.1;
   letter-spacing: -0.018em;
@@ -138,7 +141,7 @@ html:has(.m-app) body {
   letter-spacing: -0.008em;
 }
 
-.m-app p {
+:where(.m-app) p {
   margin: 0;
 }
 
@@ -202,7 +205,8 @@ html:has(.m-app) body {
   letter-spacing: -0.02em;
 }
 
-.m-app a {
+/* Zero specificity, so a button or link class always decides its own colour. */
+:where(.m-app) a {
   color: inherit;
   text-decoration: none;
 }
@@ -2525,4 +2529,21 @@ a.m-mkt-cat.m-mkt-cat--on:hover {
   font-size: 1.9rem;
   line-height: 1;
   color: var(--signal);
+}
+
+/*
+  Interim floor for pages not yet rebuilt on the marketplace system: every
+  legacy button gets the same 44px phone target, and wide ledger tables scroll
+  inside themselves instead of running off the screen.
+*/
+@media (max-width: 767px) {
+  .m-app .m-btn,
+  .m-app .m-btn--sm {
+    min-height: 44px;
+  }
+  .m-app .tbl {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+  }
 }

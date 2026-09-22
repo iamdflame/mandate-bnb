@@ -39,7 +39,6 @@ export default function AgentTile({ l, forPosition }: { l: Listing; forPosition?
         <AgentArtwork category={l.category} seed={`${l.tokenId}:${l.name}`} />
         <div className="x-agent__over">
           <Status liveness={l.liveness} />
-          {verdict.ours ? <span className="x-tag">Reference, run by Mandate</span> : null}
         </div>
       </div>
 
@@ -50,7 +49,13 @@ export default function AgentTile({ l, forPosition }: { l: Listing; forPosition?
       <div className="x-agent__body">
         <div className="x-agent__top">
           <span className="x-eyebrow">{l.category ? CATEGORY_LABEL[l.category] : "Unfiled"}</span>
-          <span className="x-agent__id">#{l.tokenId}</span>
+          {verdict.ours ? (
+            <span className="x-tag x-tag--ref" title="One of Mandate's own reference agents. Listed with the same checks as everyone else.">
+              Reference
+            </span>
+          ) : (
+            <span className="x-agent__id">#{l.tokenId}</span>
+          )}
         </div>
 
         <Link href={detail} className="x-agent__name">

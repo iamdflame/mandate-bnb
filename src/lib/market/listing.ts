@@ -26,6 +26,8 @@ import { getAgentIndex, type IndexedAgent } from "@/lib/data/agents";
 import { reviewQuality, type ReviewQuality } from "@/lib/market/reviews";
 import { assayFor } from "@/lib/market/assays";
 import { humanAmount, type Quote } from "@/lib/x402/quote";
+import { paidCallsFromFile } from "@/lib/market/paid-calls";
+import { strangerHires } from "@/lib/market/stranger-hires";
 
 export type Grade = "measured" | "declared" | "absent" | "untested";
 
@@ -85,6 +87,13 @@ export interface Listing {
   quote: Quote | null;
   /** The price as a person would say it, when there is one. */
   priceLabel: string | null;
+  /**
+   * The price in US dollars, only when the agent prices in a dollar
+   * stablecoin. Null for anything else rather than a converted guess.
+   */
+  usdPrice: number | null;
+  /** When the agent was registered, from the ERC-8004 registry. */
+  createdAt: string | null;
   /** The registry itself confirmed the endpoint answered. Rare: five agents. */
   registryVerified: boolean;
   reviews: number;
@@ -103,6 +112,12 @@ export interface Listing {
 
   /** Mandates this agent holds or has held on our market. Usually zero. */
   hires: number;
+  /**
+   * Paid work it actually delivered: x402 calls that settled and answered,
+   * escrowed ERC-8183 jobs whose deliverable matched its commitment, and
+   * mandates held. This is the one number every "settled history" reads.
+   */
+  settled: number;
 
   signals: Signal[];
   /**
@@ -165,7 +180,28 @@ function firstSentences(text: string | null, max = 260): string | null {
   return stop > 120 ? cut.slice(0, stop + 1) : `${cut.replace(/[,;\s]+\S*$/, "")}…`;
 }
 
-export function toListing(a: IndexedAgent, hires = 0): Listing {
+/*
+  Symbols as a buyer reads them. Sellers name their asset in their own words
+  ("Tether USD", "World Liberty Financial USD"), which is accurate and too long
+  for a price tag, so known tokens are shown by symbol and anything else keeps
+  the seller's own name rather than a guess.
+*/
+const SYMBOL: Record<string, string> = {
+  "0x55d398326f99059ff775485246999027b3197955": "USDT",
+  "0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d": "USD1",
+  "0xce24439f2d9c6a2289f741120fe202248b666666": "U",
+  "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d": "USDC",
+  "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913": "USDC",
+  "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": "USDC",
+};
+const STABLE: Record<string, true> = { USDT: true, USD1: true, U: true, USDC: true };
+/** A token's symbol by address, or null when it is not one we know. */
+export const assetSymbol = (address: string | null | undefined): string | null => (address ? (SYMBOL[address.toLowerCase()] ?? null) : null);
+function symbolOf(q: Quote): string {
+  return SYMBOL[(q.asset ?? "").toLowerCase()] ?? q.assetName ?? "";
+}
+
+export function toListing(a: IndexedAgent, hires = 0, settled?: number): Listing {
   const probe = probes().get(a.tokenId) ?? null;
   const category = a.category ?? null;
 
@@ -329,9 +365,9 @@ export function toListing(a: IndexedAgent, hires = 0): Listing {
     probe,
     declaresPayment: Boolean(a.x402),
     quote,
-    priceLabel: quote
-      ? `${humanAmount(quote.amount, quote.decimals)} ${quote.assetName === "World Liberty Financial USD" ? "USD1" : (quote.assetName ?? "")}`.trim()
-      : null,
+    priceLabel: quote ? `${humanAmount(quote.amount, quote.decimals)} ${symbolOf(quote)}`.trim() : null,
+    usdPrice: quote && STABLE[symbolOf(quote)] ? Number(quote.amount) / 10 ** quote.decimals : null,
+    createdAt: a.createdAt ?? null,
     registryVerified: Boolean(a.endpointVerified),
     reviews: a.feedbacks ?? 0,
     reviewQuality: reviewQuality(a.tokenId),
@@ -340,9 +376,26 @@ export function toListing(a: IndexedAgent, hires = 0): Listing {
     avgScore: a.avgScore,
     registryScore: a.registryScore,
     hires,
+    settled: settled ?? settledFromRecord().get(a.tokenId) ?? hires,
     signals,
     readiness: Math.min(100, readiness),
   };
+}
+
+/*
+  The synchronous floor for settled work, read from the committed record of
+  paid calls and escrow hires. hireCounts() computes the same figure from the
+  database as well and passes it in; this is only used when nobody did, so a
+  page that forgets to ask still agrees with the pages that remembered.
+*/
+let settledMemo: { at: number; map: Map<string, number> } | null = null;
+export function settledFromRecord(): Map<string, number> {
+  if (settledMemo && Date.now() - settledMemo.at < 60_000) return settledMemo.map;
+  const map = new Map<string, number>();
+  for (const c of paidCallsFromFile()) if (c.paid && c.delivered) map.set(c.tokenId, (map.get(c.tokenId) ?? 0) + 1);
+  for (const h of strangerHires()) if (h.deliverable?.hashMatches) map.set(h.tokenId, (map.get(h.tokenId) ?? 0) + 1);
+  settledMemo = { at: Date.now(), map };
+  return map;
 }
 
 /**
@@ -353,16 +406,16 @@ export function toListing(a: IndexedAgent, hires = 0): Listing {
  * over; callers that do not get zero, which is the truth today for every agent
  * on this registry.
  */
-export function listings(hires?: Map<string, number>): Listing[] {
+export function listings(hires?: Map<string, number>, settled?: Map<string, number>): Listing[] {
   return getAgentIndex()
     .agents.filter((a) => a.category)
-    .map((a) => toListing(a, hires?.get(a.tokenId) ?? 0))
+    .map((a) => toListing(a, hires?.get(a.tokenId) ?? 0, settled ? (settled.get(a.tokenId) ?? 0) + (hires?.get(a.tokenId) ?? 0) : undefined))
     .sort((a, b) => b.readiness - a.readiness || b.confidence - a.confidence);
 }
 
-export function listingFor(tokenId: string, hires = 0): Listing | null {
+export function listingFor(tokenId: string, hires = 0, settled?: number): Listing | null {
   const a = getAgentIndex().agents.find((x) => x.tokenId === tokenId);
-  return a ? toListing(a, hires) : null;
+  return a ? toListing(a, hires, settled) : null;
 }
 
 /**

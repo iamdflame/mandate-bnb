@@ -1,305 +1,309 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { ArrowDownUp, Check, Search, SlidersHorizontal, X } from "lucide-react";
 import AppShell from "@/components/v2/shell/AppShell";
-import AgentCard from "@/components/v2/agent/AgentCard";
-import CategoryMark from "@/components/v2/marks/CategoryMark";
-import { CATEGORIES, CATEGORY_LABEL, type Category } from "@/lib/config";
-import { listings, censusAge, type Listing } from "@/lib/market/listing";
+import AgentTile from "@/components/x/AgentTile";
+import Empty from "@/components/x/Empty";
+import Ago from "@/components/x/Ago";
+import { CATEGORIES, CATEGORY_LABEL } from "@/lib/config";
+import { listings, censusAge } from "@/lib/market/listing";
 import { hireCounts } from "@/lib/market/hires";
-import { hirePath } from "@/lib/market/hire-law";
-import { isOurs } from "@/lib/market/judge";
+import {
+  applyQuery,
+  hrefFor,
+  isFiltered,
+  parseQuery,
+  PRED,
+  RECOMMENDED_RULE,
+  SORTS,
+  topProtocols,
+  EMPTY,
+  type Query,
+} from "@/lib/market/catalogue";
 import { live } from "@/lib/data/live";
-
-export const metadata: Metadata = {
-  title: "Agents you can hire | Mandate",
-  description:
-    "Browse autonomous agents on BNB Smart Chain by what they do: rebalancing, grid trading, yield, and loan health. Each one checked against the chain before it is listed.",
-};
 
 export const revalidate = 300;
 // Room for the census slice that runs after the response (see lib/census/refresh).
 export const maxDuration = 60;
 
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const q = parseQuery(await searchParams);
+  const cat = q.category ? `${CATEGORY_LABEL[q.category]} Agents` : "Agents";
+  return {
+    title: `${cat} | MANDATE`,
+    description: "Find an autonomous agent on BNB Smart Chain that can do the job, with live checks, prices and response times.",
+  };
+}
+
 /**
- * The marketplace, rendered on the server.
+ * The marketplace.
  *
- * It was a client component, and that was a serious mistake rather than a
- * style choice. Reading the query string in the browser opts the whole subtree
- * out of server rendering, so `/agents?category=rebalancing` shipped HTML
- * containing no agents at all and filled itself in after hydration. Anybody
- * who looked before the JavaScript landed, a slow phone, a crawler, a judge
- * clicking through quickly, saw an empty shop advertising ninety agents.
- *
- * So every control here is a link or a plain GET form. The filters are in the
- * URL, the server does the filtering, and the list is in the first byte of
- * HTML. Nothing about this page depends on JavaScript running at all, which is
- * also why it cannot come back empty.
+ * Server-rendered on purpose. It was once a client component, and reading the
+ * query string in the browser shipped HTML with no agents in it at all, so
+ * anyone who looked before the JavaScript landed saw an empty shop. Every
+ * control here is a link or a GET form: the filters live in the URL, the
+ * server filters, and the list is in the first byte of HTML.
  */
-
-type Sort = "checks" | "reviews" | "name";
-const SORTS: { id: Sort; label: string }[] = [
-  { id: "checks", label: "Most checks passed" },
-  { id: "reviews", label: "Most reviewed" },
-  { id: "name", label: "Name" },
-];
-
-const PAGE = 24;
-
-interface Query {
-  category: Category | null;
-  hireable: boolean;
-  live: boolean;
-  priced: boolean;
-  reviewed: boolean;
-  q: string;
-  sort: Sort;
-  n: number;
-}
-
-function href(query: Query, patch: Partial<Query>): string {
-  const next = { ...query, ...patch };
-  const p = new URLSearchParams();
-  if (next.category) p.set("category", next.category);
-  if (next.hireable) p.set("hireable", "1");
-  if (next.live) p.set("live", "1");
-  if (next.priced) p.set("priced", "1");
-  if (next.reviewed) p.set("reviewed", "1");
-  if (next.q) p.set("q", next.q);
-  if (next.sort !== "checks") p.set("sort", next.sort);
-  if (next.n !== PAGE) p.set("n", String(next.n));
-  const s = p.toString();
-  return s ? `/agents?${s}` : "/agents";
-}
-
-function apply(all: Listing[], q: Query): Listing[] {
-  const needle = q.q.trim().toLowerCase();
-  const out = all.filter((l) => {
-    if (q.category && l.category !== q.category) return false;
-    if (q.hireable && !hirePath(l).ok) return false;
-    if (q.live && l.liveness !== "live") return false;
-    if (q.priced && !(l.declaresPayment || l.probe?.status === 402)) return false;
-    if (q.reviewed && l.reviews < 1) return false;
-    if (needle && !`${l.name} ${l.what ?? ""} ${l.tokenId}`.toLowerCase().includes(needle)) return false;
-    return true;
-  });
-  if (q.sort === "reviews") out.sort((a, b) => b.reviews - a.reviews || b.readiness - a.readiness);
-  else if (q.sort === "name") out.sort((a, b) => a.name.localeCompare(b.name));
-  /*
-    Our own agents never rank above an agent we do not run that scored the
-    same. The readiness figure already ignores who operates an agent; this is
-    the tie-break that keeps the shelf honest when it is level.
-  */
-  else out.sort((a, b) => b.readiness - a.readiness || Number(isOurs(a)) - Number(isOurs(b)) || b.confidence - a.confidence);
-  return out;
-}
-
 export default async function AgentsPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await live();
-  const sp = await searchParams;
-  const one = (k: string) => (Array.isArray(sp[k]) ? sp[k][0] : sp[k]) as string | undefined;
-
-  const query: Query = {
-    category: CATEGORIES.includes(one("category") as Category) ? (one("category") as Category) : null,
-    hireable: one("hireable") === "1",
-    live: one("live") === "1",
-    priced: one("priced") === "1",
-    reviewed: one("reviewed") === "1",
-    q: (one("q") ?? "").slice(0, 80),
-    sort: (["checks", "reviews", "name"].includes(one("sort") ?? "") ? one("sort") : "checks") as Sort,
-    n: Math.min(258, Math.max(PAGE, Number(one("n")) || PAGE)),
-  };
-
-  const all = listings((await hireCounts()).byTokenId);
+  const q = parseQuery(await searchParams);
+  const hc = await hireCounts();
+  const all = listings(hc.byTokenId, hc.settled);
   const census = censusAge();
-  const shown = apply(all, query);
-  const page = shown.slice(0, query.n);
+  const { shown, intent, intentUsed } = applyQuery(all, q);
+  const page = shown.slice(0, q.n);
+  const protocols = topProtocols(all);
+  const filtered = isFiltered(q);
 
-  // Counts come from the same array the cards do, so a filter can never
+  // Counts come from the same predicates the list uses, so a filter can never
   // advertise results it does not have.
-  const counts = {
-    byCat: Object.fromEntries(
-      CATEGORIES.map((c) => [c, all.filter((l) => l.category === c).length]),
-    ) as Record<Category, number>,
-    liveByCat: Object.fromEntries(
-      CATEGORIES.map((c) => [c, all.filter((l) => l.category === c && l.liveness === "live").length]),
-    ) as Record<Category, number>,
-    hireable: all.filter((l) => hirePath(l).ok).length,
-    live: all.filter((l) => l.liveness === "live").length,
-    priced: all.filter((l) => l.declaresPayment || l.probe?.status === 402).length,
-    reviewed: all.filter((l) => l.reviews > 0).length,
+  const scope = q.category ? all.filter((l) => l.category === q.category) : all;
+  const count = (pred: (l: (typeof all)[number]) => boolean) => scope.filter(pred).length;
+
+  const Toggle = ({ k, label, n }: { k: keyof Query; label: string; n: number }) => {
+    const on = Boolean(q[k]);
+    return (
+      <Link href={hrefFor(q, { [k]: !on, n: EMPTY.n })} className={`x-opt${on ? " x-opt--on" : ""}`} aria-pressed={on} scroll={false}>
+        <span className="x-opt__box" aria-hidden="true">
+          {on ? <Check size={12} strokeWidth={3} /> : null}
+        </span>
+        <span className="x-opt__t">{label}</span>
+        <span className="x-opt__n">{n}</span>
+      </Link>
+    );
   };
 
-  const filtered =
-    Boolean(query.category) || query.hireable || query.live || query.priced || query.reviewed || query.q.trim() !== "";
+  const Rail = () => (
+    <div className="x-rail__groups">
+      <fieldset className="x-rail__group">
+        <legend>Availability</legend>
+        <Toggle k="hireable" label="Hireable now" n={count(PRED.hireable)} />
+        <Toggle k="live" label="Reachable" n={count(PRED.live)} />
+        <Toggle k="fresh" label="Checked in the last day" n={count(PRED.fresh)} />
+      </fieldset>
+      <fieldset className="x-rail__group">
+        <legend>Trust</legend>
+        <Toggle k="capable" label="Capability checked" n={count(PRED.capable)} />
+        <Toggle k="assayed" label="Passes most checks" n={count(PRED.assayed)} />
+        <Toggle k="reviewed" label="Has reputation" n={count(PRED.reviewed)} />
+        <Toggle k="settled" label="Has settled history" n={count(PRED.settled)} />
+      </fieldset>
+      <fieldset className="x-rail__group">
+        <legend>Pricing</legend>
+        <Toggle k="priced" label="Price published" n={count(PRED.priced)} />
+        {[0.05, 0.1].map((m) => {
+          const on = q.max === m;
+          const n = scope.filter((l) => l.usdPrice !== null && l.usdPrice <= m).length;
+          return (
+            <Link key={m} href={hrefFor(q, { max: on ? null : m, n: EMPTY.n })} className={`x-opt${on ? " x-opt--on" : ""}`} aria-pressed={on} scroll={false}>
+              <span className="x-opt__box x-opt__box--round" aria-hidden="true">
+                {on ? <Check size={12} strokeWidth={3} /> : null}
+              </span>
+              <span className="x-opt__t">Under ${m.toFixed(2)} a call</span>
+              <span className="x-opt__n">{n}</span>
+            </Link>
+          );
+        })}
+      </fieldset>
+      <fieldset className="x-rail__group">
+        <legend>Execution</legend>
+        {(
+          [
+            ["x402", "Pay per call (x402)", count(PRED.x402)],
+            ["job", "Escrowed job (ERC-8183)", count(PRED.job)],
+          ] as const
+        ).map(([id, label, n]) => {
+          const on = q.rail === id;
+          return (
+            <Link key={id} href={hrefFor(q, { rail: on ? null : id, n: EMPTY.n })} className={`x-opt${on ? " x-opt--on" : ""}`} aria-pressed={on} scroll={false}>
+              <span className="x-opt__box x-opt__box--round" aria-hidden="true">
+                {on ? <Check size={12} strokeWidth={3} /> : null}
+              </span>
+              <span className="x-opt__t">{label}</span>
+              <span className="x-opt__n">{n}</span>
+            </Link>
+          );
+        })}
+      </fieldset>
+      {protocols.length ? (
+        <fieldset className="x-rail__group">
+          <legend>Protocol</legend>
+          {protocols.map((p) => {
+            const on = q.proto?.toLowerCase() === p.name.toLowerCase();
+            return (
+              <Link key={p.name} href={hrefFor(q, { proto: on ? null : p.name, n: EMPTY.n })} className={`x-opt${on ? " x-opt--on" : ""}`} aria-pressed={on} scroll={false}>
+                <span className="x-opt__box x-opt__box--round" aria-hidden="true">
+                  {on ? <Check size={12} strokeWidth={3} /> : null}
+                </span>
+                <span className="x-opt__t">{p.name}</span>
+                <span className="x-opt__n">{p.count}</span>
+              </Link>
+            );
+          })}
+          <p className="x-rail__note">Protocols an agent declares. Whether it actually touched them is the Capability check.</p>
+        </fieldset>
+      ) : null}
+    </div>
+  );
+
+  const sortLabel = SORTS.find((s) => s.id === q.sort)?.label ?? "Recommended";
 
   return (
     <AppShell>
-      <section className="m-wrap m-section--tight" style={{ paddingTop: "clamp(2.5rem,6vw,4rem)" }}>
-        <div className="m-cols m-cols--wide-narrow">
+      <section className="x-wrap x-mkt-head">
+        <div className="x-mkt-head__row">
           <div>
-            <h1 className="m-h1">
-              {query.category ? CATEGORY_LABEL[query.category] : "Agents you can hire"}
-            </h1>
-            <p className="m-lede m-lede--wide" style={{ marginTop: "1rem" }}>
-              {query.category
-                ? `${counts.byCat[query.category]} agents describe themselves as doing this job. ${counts.liveByCat[query.category]} answered when we called them.`
-                : "Every agent here published a description of what it does, and we filed it under a category on the strength of that description rather than on a badge it gave itself."}
-            </p>
+            <h1 className="x-mkt-head__h">{q.category ? `${CATEGORY_LABEL[q.category]} agents` : "Agents"}</h1>
+            <p className="x-muted">Find an autonomous agent that can do the job.</p>
           </div>
-          <div className="m-panel m-panel--sunken">
-            <p className="m-small">
-              <strong>Read the signals, not the score.</strong> A green dot means we
-              checked it ourselves. A grey dot means the agent said so and we have
-              not verified it, or that nobody has tested it yet.
-            </p>
-          </div>
+          <p className="x-fresh" title="Every agent's endpoint is called by our own probe on a schedule">
+            <span className="x-status__dot" style={{ background: "var(--c-ok)" }} aria-hidden="true" />
+            {census.at ? <Ago iso={census.at} prefix="Checked" /> : "Not checked yet"}
+          </p>
         </div>
+
+        <form className="x-searchbar" action="/agents" method="get" role="search">
+          <Search size={18} className="x-searchbar__i" aria-hidden="true" />
+          <label htmlFor="agents-q" className="x-sr">
+            Search agents
+          </label>
+          <input
+            id="agents-q"
+            name="q"
+            defaultValue={q.q}
+            placeholder="Search agents by capability, protocol, or task..."
+            autoComplete="off"
+            className="x-searchbar__in"
+          />
+          {q.category ? <input type="hidden" name="category" value={q.category} /> : null}
+          {q.sort !== "recommended" ? <input type="hidden" name="sort" value={q.sort} /> : null}
+          <button type="submit" className="x-btn x-btn--primary">
+            Search
+          </button>
+        </form>
+
+        <nav className="x-cats" aria-label="Categories">
+          <Link href={hrefFor(q, { category: null, n: EMPTY.n })} className={`x-chip${!q.category ? " x-chip--on" : ""}`} aria-current={!q.category ? "true" : undefined} scroll={false}>
+            All <span className="x-chip__n">{all.length}</span>
+          </Link>
+          {CATEGORIES.map((c) => (
+            <Link
+              key={c}
+              href={hrefFor(q, { category: q.category === c ? null : c, n: EMPTY.n })}
+              className={`x-chip${q.category === c ? " x-chip--on" : ""}`}
+              aria-current={q.category === c ? "true" : undefined}
+              scroll={false}
+            >
+              <span className={`x-dotcat x-dotcat--${c}`} aria-hidden="true" />
+              {CATEGORY_LABEL[c]} <span className="x-chip__n">{all.filter((l) => l.category === c).length}</span>
+            </Link>
+          ))}
+        </nav>
       </section>
 
-      {/* ------------------------------------------------------- filters -- */}
-      <div className="m-subbar">
-        <div className="m-wrap" style={{ paddingBlock: "0.9rem" }}>
-          <div className="m-mkt-bar">
-            <nav className="m-mkt-cats" aria-label="Category">
-              <Link
-                className={`m-mkt-cat${!query.category ? " m-mkt-cat--on" : ""}`}
-                href={href(query, { category: null, n: PAGE })}
-              >
-                Everything
-                <span className="m-mkt-cat__n">{all.length}</span>
-              </Link>
-              {CATEGORIES.map((c) => (
-                <Link
-                  key={c}
-                  className={`m-mkt-cat${query.category === c ? " m-mkt-cat--on" : ""}`}
-                  href={href(query, { category: c, n: PAGE })}
-                >
-                  <CategoryMark category={c} size={20} />
-                  {CATEGORY_LABEL[c]}
-                  <span className="m-mkt-cat__n">{counts.byCat[c]}</span>
+      <div className="x-wrap x-mkt">
+        <aside className="x-rail" aria-label="Filters">
+          <Rail />
+        </aside>
+
+        <div className="x-mkt__main">
+          <div className="x-mkt-bar">
+            <p className="x-mkt-bar__n">
+              <strong className="x-num">{shown.length}</strong> {shown.length === 1 ? "agent" : "agents"}
+              {filtered ? (
+                <Link href={hrefFor(EMPTY, { category: q.category })} className="x-mkt-bar__clear">
+                  <X size={14} aria-hidden="true" /> Clear filters
                 </Link>
-              ))}
-            </nav>
+              ) : null}
+            </p>
 
-            {/* A plain GET form: it works before any JavaScript has run. */}
-            <form className="m-mkt-tools" action="/agents" method="get">
-              {query.category ? <input type="hidden" name="category" value={query.category} /> : null}
-              {query.live ? <input type="hidden" name="live" value="1" /> : null}
-              {query.priced ? <input type="hidden" name="priced" value="1" /> : null}
-              {query.reviewed ? <input type="hidden" name="reviewed" value="1" /> : null}
-              <input
-                className="m-input"
-                type="search"
-                name="q"
-                defaultValue={query.q}
-                placeholder="Search what an agent does"
-                aria-label="Search agents"
-              />
-              <select className="m-select" name="sort" defaultValue={query.sort} aria-label="Sort">
-                {SORTS.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-              <button className="m-btn m-btn--sm" type="submit">
-                Search
-              </button>
-            </form>
+            <div className="x-mkt-bar__ctl">
+              <details className="x-drop x-sheet x-mkt-bar__filters">
+                <summary className="x-btn x-btn--sm">
+                  <SlidersHorizontal size={16} aria-hidden="true" /> Filters
+                </summary>
+                <div className="x-sheet__panel" role="dialog" aria-label="Filters">
+                  <Rail />
+                </div>
+              </details>
+              <details className="x-drop">
+                <summary className="x-btn x-btn--sm">
+                  <ArrowDownUp size={16} aria-hidden="true" /> {sortLabel}
+                </summary>
+                <div className="x-drop__panel x-sortpanel">
+                  {SORTS.map((s) => (
+                    <Link key={s.id} href={hrefFor(q, { sort: s.id })} aria-current={q.sort === s.id ? "page" : undefined} scroll={false}>
+                      {s.label}
+                      {q.sort === s.id ? <Check size={14} aria-hidden="true" style={{ marginLeft: "auto" }} /> : null}
+                    </Link>
+                  ))}
+                </div>
+              </details>
+            </div>
           </div>
 
-          <div className="m-mkt-checks">
-            <Link
-              className={`m-mkt-check${query.hireable ? " m-mkt-check--on" : ""}`}
-              href={href(query, { hireable: !query.hireable, n: PAGE })}
-              title="It answered us recently and there is a way to pay it that we can settle"
-            >
-              <span className="m-mkt-box" aria-hidden="true">{query.hireable ? "✓" : ""}</span>
-              Can be hired today <span className="m-note">({counts.hireable})</span>
-            </Link>
-            <Link
-              className={`m-mkt-check${query.live ? " m-mkt-check--on" : ""}`}
-              href={href(query, { live: !query.live, n: PAGE })}
-            >
-              <span className="m-mkt-box" aria-hidden="true">{query.live ? "✓" : ""}</span>
-              Answered when we called it <span className="m-note">({counts.live})</span>
-            </Link>
-            <Link
-              className={`m-mkt-check${query.priced ? " m-mkt-check--on" : ""}`}
-              href={href(query, { priced: !query.priced, n: PAGE })}
-            >
-              <span className="m-mkt-box" aria-hidden="true">{query.priced ? "✓" : ""}</span>
-              Publishes a price <span className="m-note">({counts.priced})</span>
-            </Link>
-            <Link
-              className={`m-mkt-check${query.reviewed ? " m-mkt-check--on" : ""}`}
-              href={href(query, { reviewed: !query.reviewed, n: PAGE })}
-            >
-              <span className="m-mkt-box" aria-hidden="true">{query.reviewed ? "✓" : ""}</span>
-              Has registry reviews <span className="m-note">({counts.reviewed})</span>
-            </Link>
-            {filtered ? (
-              <Link className="m-btn m-btn--sm m-btn--quiet" href="/agents">
-                Clear
+          {q.sort === "recommended" ? <p className="x-rule">Recommended means: {RECOMMENDED_RULE}</p> : null}
+
+          {intent && q.q ? (
+            <p className="x-intent">
+              {intentUsed ? (
+                <>
+                  Showing <strong>{CATEGORY_LABEL[intent.category]}</strong> agents for “{q.q}”, because it mentions{" "}
+                  {intent.because.slice(0, 2).join(" and ")}.{" "}
+                </>
+              ) : null}
+              <Link className="x-link" href={hrefFor(q, { category: intent.category, q: "" })}>
+                Browse all {CATEGORY_LABEL[intent.category]} agents
               </Link>
-            ) : null}
-          </div>
-        </div>
-      </div>
-
-      {/* ---------------------------------------------------------- list -- */}
-      <div className="m-wrap m-section--tight">
-        <p className="m-small" style={{ marginBottom: "1.25rem" }}>
-          {shown.length === all.length
-            ? `${all.length} agents, every one filed under a category because its own description said so.`
-            : `${shown.length} of ${all.length} agents match.`}{" "}
-          {census.minutes !== null ? (
-            <span className={census.stale ? "m-stale" : "m-note"}>
-              {census.stale
-                ? `Endpoints last called ${census.minutes} minutes ago, stale.`
-                : `Endpoints called ${census.minutes} minutes ago.`}
-            </span>
+            </p>
           ) : null}
-        </p>
 
-        {shown.length === 0 ? (
-          <div className="m-absent">
-            <p className="m-absent__t">Nothing matches all of those at once.</p>
-            <p className="m-small">
-              That is a real answer about this registry, not an error. Very few
-              agents publish an endpoint that answers <em>and</em> a price{" "}
-              <em>and</em> carry reviews. Loosen one condition.
-            </p>
-            <Link className="m-btn m-btn--sm" href="/agents" style={{ marginTop: "1rem" }}>
-              Show everything
-            </Link>
-          </div>
-        ) : (
-          <div className="m-grid">
-            {page.map((l, i) => (
-              <AgentCard
-                key={l.tokenId}
-                listing={l}
-                variant={i === 0 && !filtered ? "feature" : "standard"}
-              />
-            ))}
-          </div>
-        )}
-
-        {shown.length > page.length ? (
-          <div className="m-showmore">
-            <Link className="m-btn m-btn--lg" href={href(query, { n: query.n + PAGE })}>
-              Show {Math.min(PAGE, shown.length - page.length)} more
-            </Link>
-            <p className="m-note">
-              {page.length} of {shown.length} shown
-            </p>
-          </div>
-        ) : null}
+          {page.length ? (
+            <>
+              <div className="x-grid x-grid--3">
+                {page.map((l) => (
+                  <AgentTile key={l.tokenId} l={l} />
+                ))}
+              </div>
+              {shown.length > page.length ? (
+                <div className="x-more">
+                  <Link href={hrefFor(q, { n: q.n + 24 })} className="x-btn" scroll={false}>
+                    Show {Math.min(24, shown.length - page.length)} more
+                  </Link>
+                  <span className="x-dim">
+                    Showing {page.length} of {shown.length}
+                  </span>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <Empty
+              title="No agents match these filters."
+              action={
+                <Link href={hrefFor(EMPTY, {})} className="x-btn x-btn--primary">
+                  Clear filters
+                </Link>
+              }
+            >
+              <p>Try one of these:</p>
+              <ul>
+                {q.capable || q.assayed || q.settled ? <li>remove a Trust filter, most agents have not been fully checked yet</li> : null}
+                {q.max !== null ? <li>raise or remove the price limit</li> : null}
+                {q.category ? <li>show all categories</li> : null}
+                {q.q ? <li>search for a job rather than a name, such as “protect a loan”</li> : null}
+                {q.hireable ? <li>turn off Hireable now to see agents that answered but cannot be paid yet</li> : null}
+              </ul>
+            </Empty>
+          )}
+        </div>
       </div>
     </AppShell>
   );

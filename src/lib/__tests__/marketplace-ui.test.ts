@@ -113,3 +113,27 @@ describe("trust nodes", () => {
     expect(trustOf(listing(), null, { settled: 3 }).nodes.find((n) => n.key === "settled")?.detail).toBe("3 paid jobs delivered");
   });
 });
+
+import { intentOf } from "@/lib/market/intent";
+
+describe("search intent", () => {
+  it("maps the brief's four examples to the right job", () => {
+    expect(intentOf("protect my Venus loan")?.category).toBe("health-factor");
+    expect(intentOf("rebalance my PancakeSwap liquidity")?.category).toBe("rebalancing");
+    expect(intentOf("find better stablecoin yield")?.category).toBe("yield-optimisation");
+    expect(intentOf("automate grid trades")?.category).toBe("grid-trading");
+  });
+
+  it("maps the home page's intent chips and placeholders", () => {
+    expect(intentOf("Rebalance my PancakeSwap LP")?.category).toBe("rebalancing");
+    expect(intentOf("Monitor my Venus health factor")?.category).toBe("health-factor");
+    expect(intentOf("Run a grid strategy")?.category).toBe("grid-trading");
+    expect(intentOf("Protect a loan")?.category).toBe("health-factor");
+    expect(intentOf("Optimise yield")?.category).toBe("yield-optimisation");
+  });
+
+  it("does not decide on one weak word, and returns nothing for a name", () => {
+    expect(intentOf("safe")).toBeNull();
+    expect(intentOf("Agripinaa")).toBeNull();
+  });
+});

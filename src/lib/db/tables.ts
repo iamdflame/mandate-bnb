@@ -88,22 +88,87 @@ const STATEMENTS: { name: string; run: () => Promise<unknown> }[] = [
 
 let once: Promise<boolean> | null = null;
 
+/*
+  What the catalogue says about our tables, in one round trip.
+
+  This used to run ALTER TABLE ... ENABLE ROW LEVEL SECURITY and REVOKE on all
+  fourteen tables on every cold start of every instance. That cost about five
+  seconds of sequential round trips, and worse, ALTER TABLE takes an access
+  exclusive lock: while one instance's ALTER waits behind any open transaction,
+  every ordinary SELECT on that table from every other instance queues behind
+  the ALTER. A marketplace page that reads paid calls then waits for minutes,
+  which is what a local run hit once the catalogue started reading them.
+
+  So it asks first. A table that exists, has row-level security, and grants
+  nothing to the public roles needs nothing, which after the first run is all
+  of them, and a cold start costs one catalogue read.
+*/
+interface TableState {
+  exists: boolean;
+  rls: boolean;
+  publicGrant: boolean;
+}
+
+async function catalogue(names: string[]): Promise<Map<string, TableState> | null> {
+  try {
+    const rows = (await pg!`
+      select c.relname as name,
+             c.relrowsecurity as rls,
+             exists (
+               select 1 from aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) a
+               join pg_roles r on r.oid = a.grantee
+               where r.rolname in ('anon', 'authenticated')
+             ) as public_grant
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relkind = 'r' and c.relname = any(${names})
+    `) as { name: string; rls: boolean; public_grant: boolean }[];
+    const out = new Map<string, TableState>(names.map((n) => [n, { exists: false, rls: false, publicGrant: false }]));
+    for (const r of rows) out.set(r.name, { exists: true, rls: r.rls, publicGrant: r.public_grant });
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+/*
+  DDL that must never hold up readers. A lock it cannot get in a few seconds
+  is abandoned and retried on the next cold start, rather than queueing and
+  taking every reader of the table down with it.
+*/
+async function ddl(statement: string): Promise<void> {
+  // The timeouts are transaction-local, so the statement has to run on the
+  // same transaction, not on a fresh connection from the pool.
+  await pg!.begin(async (tx) => {
+    await tx`set local lock_timeout = '3s'`;
+    await tx`set local statement_timeout = '10s'`;
+    await tx.unsafe(statement);
+  });
+}
+
 /** True when the tables exist (or there is no database and nothing to do). */
 export function ensureTables(): Promise<boolean> {
   if (!pg) return Promise.resolve(false);
   once ??= (async () => {
+    const state = await catalogue(STATEMENTS.map((s) => s.name));
     for (const s of STATEMENTS) {
+      const st = state?.get(s.name) ?? { exists: false, rls: false, publicGrant: true };
       try {
-        await s.run();
+        if (!st.exists) await s.run();
         /*
           Supabase serves every table in `public` over its REST API to anyone
           holding the project's anon key unless row-level security is on, and
           grants that role full rights by default. Nothing here should ever be
           reachable that way (the site connects directly as the owner, which
-          bypasses RLS), so each table is locked the moment it exists.
+          bypasses RLS), so each table is locked the moment it exists, and only
+          touched again if something has unlocked it.
         */
-        await pg!.unsafe(`alter table public."${s.name}" enable row level security`);
-        await pg!.unsafe(`revoke all on table public."${s.name}" from anon, authenticated`).catch(() => undefined);
+        if (!st.exists || !st.rls) {
+          await ddl(`alter table public."${s.name}" enable row level security`);
+        }
+        if (!st.exists || st.publicGrant) {
+          await ddl(`revoke all on table public."${s.name}" from anon, authenticated`).catch(() => undefined);
+        }
       } catch {
         /* a table this deployment cannot create is reported by its reader */
       }
