@@ -57,6 +57,8 @@ const config: NextConfig = {
       { source: "/offices", destination: "/agents", permanent: false },
       // The V1 session page; /desk reads the KeyStore and replaces it.
       { source: "/authority", destination: "/desk", permanent: false },
+      // Your agents live at the top of My Desk now.
+      { source: "/dashboard", destination: "/desk", permanent: false },
       /*
         Pages the new navigation names before they are built. Each one points
         at the page that currently holds that content and is removed in the

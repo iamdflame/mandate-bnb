@@ -109,6 +109,29 @@ describe("the hire law", () => {
     expect(hirePath(stranger(), { now: NOW, outcomes: seen }).ok).toBe(true);
   });
 
+  it("gives every refusal a short form for a tile, and an offer none", () => {
+    const refusals = [
+      hirePath(stranger({ quote: null, priceLabel: null }), { now: NOW }),
+      hirePath(stranger({ quote: quote(false, "it settles on eip155:8453, not BNB Smart Chain") }), { now: NOW }),
+      hirePath(stranger({ probe: { answered: true, status: 402, latencyMs: 1, endpoint: "x", at: minutesAgo(26 * 60) } }), { now: NOW }),
+      hirePath(stranger({ probe: null, liveness: "untested" }), { now: NOW }),
+      hirePath(stranger({ liveness: "no-endpoint" }), { now: NOW }),
+    ];
+    for (const v of refusals) {
+      expect(v.ok).toBe(false);
+      expect(v.short).toBeTruthy();
+      expect(v.short!.length).toBeLessThan(v.reason!.length);
+    }
+    expect(refusals.map((v) => v.short)).toEqual([
+      "No price we can pay yet",
+      "Its price is in a token we cannot pay",
+      "Last answered 26 h ago",
+      "Not checked yet",
+      "Publishes nothing to call",
+    ]);
+    expect(hirePath(stranger(), { now: NOW }).short).toBeNull();
+  });
+
   it("knows the answer is not 'now' after fifteen minutes, while still offering the hire", () => {
     const v = hirePath(stranger({ probe: { answered: true, status: 402, latencyMs: 1, endpoint: "x", at: minutesAgo(40) } }), { now: NOW });
     expect(v.ok).toBe(true);

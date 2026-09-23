@@ -27,6 +27,8 @@ import CompareToggle from "./CompareToggle";
  */
 
 const RAIL: Record<string, string> = { x402: "x402", mandate: "ERC-8183" };
+// The chip sits on the art beside "Run by Mandate"; the full name is on the agent page.
+const SHORT: Record<string, string> = { "health-factor": "Health Factor" };
 /*
   The census calls every agent in slices, so each one is re-checked roughly
   every hour and a quarter. Flagging anything over thirty minutes marked
@@ -55,7 +57,7 @@ export default function AgentTile({ l, forPosition }: { l: Listing; forPosition?
           {l.category ? (
             <span className="x-catchip">
               <span className={`x-dotcat x-dotcat--${l.category}`} aria-hidden="true" />
-              {CATEGORY_LABEL[l.category]}
+              {SHORT[l.category] ?? CATEGORY_LABEL[l.category]}
             </span>
           ) : null}
           {verdict.ours ? (
@@ -119,7 +121,11 @@ export default function AgentTile({ l, forPosition }: { l: Listing; forPosition?
             </Link>
           ) : null}
         </div>
-        {!verdict.ok && verdict.reason ? <p className="x-agent__why">{verdict.reason}</p> : null}
+        {!verdict.ok && verdict.short ? (
+          <p className="x-agent__why" title={verdict.reason ?? undefined}>
+            {verdict.short}
+          </p>
+        ) : null}
       </div>
     </article>
   );

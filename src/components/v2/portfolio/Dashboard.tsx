@@ -7,7 +7,7 @@ import CategoryMark from "@/components/v2/marks/CategoryMark";
 import { CATEGORIES, CATEGORY_LABEL } from "@/lib/config";
 import { marketChain } from "@/lib/chain/market";
 import { useWallet, sendMarketTx, type TxState } from "@/lib/chain/wallet";
-import type { MarketMandate, MarketBid } from "@/app/api/market/state/route";
+import type { MarketMandate, MarketBid } from "@/lib/market/market-state";
 
 /**
  * Everything you have hired, and the one thing each job is waiting on.

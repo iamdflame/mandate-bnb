@@ -200,8 +200,8 @@ function RevokeButton({ mandateId }: { mandateId: number }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ mandateId }),
       });
-      const body = (await res.json()) as { error?: string };
-      if (!res.ok) throw new Error(body.error ?? `The revoke service answered ${res.status}.`);
+      const body = (await res.json()) as { reason?: string; error?: string };
+      if (!res.ok) throw new Error(body.reason ?? body.error ?? `The revoke service answered ${res.status}.`);
       setState("done");
     } catch (e) {
       setWhy(e instanceof Error ? e.message : "Revocation failed.");

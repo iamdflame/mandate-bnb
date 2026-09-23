@@ -549,8 +549,15 @@ export async function revokeMandateSession(
       revokedAt: new Date().toISOString(),
       ...(cause ? { revokedBecause: cause.because, dismissalTx: cause.dismissalTx } : {}),
     };
-    writeFileSync(metaPath(mandateId), JSON.stringify(revoked, null, 2));
-    writePublic(mandateId, revoked);
+    // On a read-only deployment these local copies cannot be written. The
+    // revocation already happened on chain and markRevoked recorded it in the
+    // database, so a failed file write is not a failed revoke.
+    try {
+      writeFileSync(metaPath(mandateId), JSON.stringify(revoked, null, 2));
+      writePublic(mandateId, revoked);
+    } catch {
+      /* the chain and the database hold the record */
+    }
   }
 }
 

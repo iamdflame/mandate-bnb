@@ -62,6 +62,8 @@ export interface HireVerdict {
   rails: Rail[];
   /** Why not, when not. */
   reason: string | null;
+  /** The same reason in a few words, for a tile. The full sentence is on the agent page. */
+  short: string | null;
   /** Minutes since we last saw it answer, or null when it never has. */
   answeredMinutesAgo: number | null;
   answeringNow: boolean;
@@ -84,14 +86,14 @@ export function hirePath(
   const at = l.probe?.at ? Date.parse(l.probe.at) : NaN;
   const minutes = l.probe?.answered && Number.isFinite(at) ? Math.max(0, (now - at) / 60_000) : null;
   const base = { answeredMinutesAgo: minutes, answeringNow: minutes !== null && minutes <= LIVE_MINUTES, ours };
-  const refuse = (reason: string): HireVerdict => ({ ok: false, rails: [], reason, ...base });
+  const refuse = (reason: string, short: string): HireVerdict => ({ ok: false, rails: [], reason, short, ...base });
 
-  if (l.liveness === "no-endpoint") return refuse("Its registry card names nothing to call, so there is nothing to hire.");
-  if (l.liveness === "untested" || !l.probe) return refuse("We have not called it yet, so we cannot say it will pick up.");
-  if (!l.probe.answered) return refuse("It did not answer when we last called it.");
-  if (minutes === null) return refuse("We have no time for its last answer, so we cannot say it is still there.");
+  if (l.liveness === "no-endpoint") return refuse("Its registry card names nothing to call, so there is nothing to hire.", "Publishes nothing to call");
+  if (l.liveness === "untested" || !l.probe) return refuse("We have not called it yet, so we cannot say it will pick up.", "Not checked yet");
+  if (!l.probe.answered) return refuse("It did not answer when we last called it.", "Did not answer our last call");
+  if (minutes === null) return refuse("We have no time for its last answer, so we cannot say it is still there.", "No recent answer on record");
   if (minutes > FRESH_HOURS * 60) {
-    return refuse(`It last answered ${ago(minutes)}. A hire is only offered on an answer from the last day.`);
+    return refuse(`It last answered ${ago(minutes)}. A hire is only offered on an answer from the last day.`, `Last answered ${ago(minutes)}`);
   }
 
   /*
@@ -107,7 +109,7 @@ export function hirePath(
       const what = seen.paidNotDelivered
         ? `We paid it on ${shortDate(seen.lastAt)} and it answered with an error instead of the work`
         : `We offered it a correctly signed payment on ${shortDate(seen.lastAt)} and it refused`;
-      return refuse(`${what}: ${(seen.lastWhy ?? "no reason given").slice(0, 220)}`);
+      return refuse(`${what}: ${(seen.lastWhy ?? "no reason given").slice(0, 220)}`, seen.paidNotDelivered ? "Took payment, returned an error" : "Refused a correct payment");
     }
   }
 
@@ -122,9 +124,10 @@ export function hirePath(
       l.quote
         ? `It quoted a price we cannot pay: ${l.quote.unpayable}.`
         : "It has not quoted a price, and it does not bid on jobs in this market, so a hire here would not reach it.",
+      l.quote ? "Its price is in a token we cannot pay" : "No price we can pay yet",
     );
   }
-  return { ok: true, rails, reason: null, ...base };
+  return { ok: true, rails, reason: null, short: null, ...base };
 }
 
 /** The first rail a surface should lead with: paying the agent itself beats a job it must bid on. */

@@ -26,7 +26,7 @@ export default function AppFooter() {
           <div>
             <h4>Your account</h4>
             <ul>
-              <li><Link href="/dashboard">Agents you have hired</Link></li>
+              <li><Link href="/desk#yours">Agents you have hired</Link></li>
               <li><Link href="/activity">Everything that happened</Link></li>
               <li><Link href="/jobs">Bid on open jobs</Link></li>
               <li><Link href="/list-your-agent">List your own agent</Link></li>

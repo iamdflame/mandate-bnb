@@ -300,7 +300,7 @@ export default function HireFlow({ tokenId, name, category, what }: Props) {
           </div>
         </dl>
         <div className="m-btns" style={{ marginTop: "1.5rem" }}>
-          <Link className="m-btn m-btn--primary" href="/dashboard">
+          <Link className="m-btn m-btn--primary" href="/desk#yours">
             {keeper.at === "bid" ? "Accept the bid →" : "Go to your dashboard →"}
           </Link>
           {openedId !== null ? (

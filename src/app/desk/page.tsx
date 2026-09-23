@@ -1,23 +1,30 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { formatEther, keccak256, type Address, type Hex } from "viem";
+import { formatEther, formatUnits, keccak256, type Address, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { Check, X } from "lucide-react";
 import AppShell from "@/components/v2/shell/AppShell";
+import AgentArtwork from "@/components/x/AgentArtwork";
+import RevokeDialog from "@/components/x/RevokeDialog";
+import YourAgents from "@/components/x/YourAgents";
 import { live } from "@/lib/data/live";
 import { snapshot } from "@/lib/data/snapshots";
 import { listSessions, type SessionRecord } from "@/lib/chain/session-store";
 import { activeKeys, comparePolicy, readKey, KEYSTORE, type PolicyMatch } from "@/lib/chain/keystore";
 import { bscClient } from "@/lib/chain/rpc";
 import { RECIPIENT_BOUND, SWAP_BOUND, USDT, WBNB } from "@/lib/chain/leash";
+import { HOUSE_LEASHES, houseSessionId } from "@/lib/chain/house";
+import { allowedCalls, CANNOT, capsOf } from "@/lib/chain/leash-words";
+import { referenceRegistrations } from "@/lib/house";
+import { performanceOf } from "@/lib/market/performance";
 import { readGridWindow, type GridWindow } from "@/lib/grid/window";
 import { withTimeout } from "@/lib/cache";
-import { PROTOCOL_LABEL } from "@/lib/config";
+import { CATEGORY_LABEL, PROTOCOL_LABEL } from "@/lib/config";
 import { DEMO_ADDRESS, bscscanAddress, bscscanTx, passkeyRecord, recenterRecord, short } from "@/lib/demo";
 
 export const metadata: Metadata = {
-  title: "Desk | Mandate",
-  description:
-    "Every key that can act on the demo account, what it may do, what the Altana KeyStore says about it right now, and the control that ends it.",
+  title: "My Desk | MANDATE",
+  description: "Your agents, what each one may do, and the control that ends it. The demo account's agents and every key that can act on it, read from the Altana KeyStore.",
 };
 
 export const dynamic = "force-dynamic";
@@ -47,11 +54,41 @@ const VERDICT_TAG: Record<PolicyMatch["verdict"], string> = {
 
 const when = (unix: number) => new Date(unix * 1000).toISOString().slice(0, 16).replace("T", " ") + " UTC";
 
-export default async function DeskPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
+/** "in 12 days", "3 hours ago": how long until, or since, a unix time. */
+function until(unix: number, now = Date.now()): string {
+  const ms = unix * 1000 - now;
+  const past = ms < 0;
+  const h = Math.abs(ms) / 3_600_000;
+  const words = h < 1 ? `${Math.max(1, Math.round(h * 60))} min` : h < 48 ? `${Math.round(h)} h` : `${Math.round(h / 24)} days`;
+  return past ? `${words} ago` : `in ${words}`;
+}
+
+function Can({ items, no = false }: { items: string[]; no?: boolean }) {
+  return (
+    <ul className={`x-can${no ? " x-can--no" : ""}`}>
+      {items.map((t) => (
+        <li key={t}>
+          {no ? <X size={14} strokeWidth={2.5} aria-hidden="true" /> : <Check size={14} strokeWidth={2.5} aria-hidden="true" />}
+          <span>{t}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+const STATUS_WORD = { live: "Active", expired: "Expired", revoked: "Revoked", missing: "No session" } as const;
+
+/**
+ * My Desk.
+ *
+ * Your agents first: the jobs you opened and the permissions agents hold over
+ * your wallet, with the real controls. Then the demo account, where our four
+ * reference agents act through scoped sessions: what each may do, its caps,
+ * when its session ends, what the KeyStore says about it, and the control
+ * that ends it. The technical record (every key, the registry reading, the
+ * threat model) is kept in full underneath, one click away.
+ */
+export default async function DeskPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await live(["grid-window"]);
   const sp = await searchParams;
   const one = (k: string) => (Array.isArray(sp[k]) ? sp[k]![0] : (sp[k] as string | undefined));
@@ -76,11 +113,9 @@ export default async function DeskPage({
     : null;
   const held = new Set(sessions.map((s) => s.keyId.toLowerCase()));
   const others = keys
-    ? (
-        await Promise.all(
-          keys.filter((k) => !held.has(k.toLowerCase())).map((k) => withTimeout(readKey(DEMO_ADDRESS, k).catch(() => null), 5_000)),
-        )
-      ).filter((e): e is NonNullable<typeof e> => Boolean(e))
+    ? (await Promise.all(keys.filter((k) => !held.has(k.toLowerCase())).map((k) => withTimeout(readKey(DEMO_ADDRESS, k).catch(() => null), 5_000)))).filter(
+        (e): e is NonNullable<typeof e> => Boolean(e),
+      )
     : null;
   const unaccounted = others?.filter((e) => e.valid && e.expiry !== 0 && e.keyId.toLowerCase() !== ownKey) ?? [];
   const admins = others?.filter((e) => e.valid && (e.expiry === 0 || e.keyId.toLowerCase() === ownKey)) ?? [];
@@ -91,61 +126,223 @@ export default async function DeskPage({
   const liveRows = rows.filter((r) => !r.s.revokedAt && r.s.expiry * 1000 > Date.now());
   const pastRows = rows.filter((r) => !liveRows.includes(r));
 
+  // The demo account's four agents, each with its session as it stands now.
+  const regs = referenceRegistrations();
+  const house = HOUSE_LEASHES.map((leash) => {
+    const id = houseSessionId(leash.slug);
+    const row = rows.find((r) => r.s.id === id && !r.s.revokedAt) ?? rows.find((r) => r.s.id === id) ?? null;
+    const s = row?.s ?? null;
+    const status: keyof typeof STATUS_WORD = !s ? "missing" : s.revokedAt ? "revoked" : s.expiry * 1000 > Date.now() ? "live" : "expired";
+    const tokenId = regs[leash.slug]?.tokenId ?? null;
+    const name = leash.slug.replace(/^./, (c) => c.toUpperCase());
+    return {
+      leash,
+      name,
+      s,
+      m: row?.m ?? null,
+      status,
+      tokenId,
+      can: allowedCalls(s?.allowlist?.length ? s.allowlist : leash.calls).map((a) => a.words),
+      caps: s ? capsOf(s.permissions) : leash.tokenSpend.map((t) => `${formatUnits(t.limit, 18)} ${TOKEN_LABEL[t.token.toLowerCase()] ?? "tokens"} a day`),
+      perf: tokenId ? performanceOf(tokenId, 0) : null,
+    };
+  });
+
+  // "0.002 BNB · 0.05 USDT a day" rather than repeating the period per token.
+  const compact = (caps: string[]) => (caps.length && caps.every((c) => c.endsWith(" a day")) ? `${caps.map((c) => c.slice(0, -6)).join(" · ")} a day` : caps.join(" · "));
+
+  const revoked = one("revoked");
+  const error = one("error");
+  const revokedAgent = revoked ? house.find((h) => h.s?.id === revoked)?.name ?? revoked : null;
+
   return (
     <AppShell>
-      <div className="m-wrap m-section--tight" style={{ paddingTop: "clamp(2rem,5vw,3.5rem)" }}>
-        <h1 className="m-h1">Desk</h1>
-        <p className="m-lede m-lede--wide" style={{ marginTop: "1rem", maxWidth: "62ch" }}>
-          Every key that can act on the demo account, exactly what it may call, and what the Altana
-          KeyStore says about it, read now. Ending a key is one transaction.
-        </p>
-        <p className="m-small" style={{ marginTop: "0.8rem" }}>
+      <section className="x-wrap x-mkt-head">
+        <div className="x-mkt-head__row">
+          <h1 className="x-mkt-head__h">My Desk</h1>
+          <p className="x-mkt-head__sub">Your agents, what each may do, and the control that ends it.</p>
+          <p className="x-fresh x-mkt-head__fresh">
+            {block ? (
+              <>
+                <span className="x-status__dot" style={{ background: "var(--c-ok)" }} aria-hidden="true" />
+                Read at block {Number(block).toLocaleString("en-GB")}
+              </>
+            ) : (
+              "The chain did not answer this time"
+            )}
+          </p>
+        </div>
+
+        {revoked ? (
+          <p className="x-banner x-banner--ok" role="status">
+            <Check size={16} strokeWidth={3} aria-hidden="true" />
+            <span>
+              Access revoked onchain for {revokedAgent}.{" "}
+              {one("tx") ? (
+                <a className="x-link x-mono" href={bscscanTx(one("tx")!)} target="_blank" rel="noreferrer">
+                  {short(one("tx")!)}
+                </a>
+              ) : null}
+            </span>
+          </p>
+        ) : null}
+        {error ? (
+          <p className="x-banner x-banner--err" role="alert">
+            <X size={16} strokeWidth={3} aria-hidden="true" />
+            <span>
+              Not revoked:{" "}
+              {error === "token"
+                ? "the operator token did not match."
+                : error === "rate"
+                  ? "too many attempts; wait a minute."
+                  : error === "no-operator"
+                    ? "this deployment has no operator token configured."
+                    : `${one("why") ?? "the revoke failed"}.`}{" "}
+              Nothing changed on chain.
+            </span>
+          </p>
+        ) : null}
+      </section>
+
+      {/* -------------------------------------------------------- your agents */}
+      <section className="x-wrap x-section--tight" aria-labelledby="h-yours" id="yours">
+        <div className="x-head">
+          <div>
+            <h2 id="h-yours">Your agents</h2>
+            <p>Jobs you opened and agents holding permissions over your wallet.</p>
+          </div>
+        </div>
+        <YourAgents />
+      </section>
+
+      {/* ------------------------------------------------------ demo account */}
+      <section className="x-wrap x-section--tight" aria-labelledby="h-demo" id="demo">
+        <div className="x-head">
+          <div>
+            <h2 id="h-demo">The demo account</h2>
+            <p>
+              Our four reference agents act on{" "}
+              <a className="x-link x-mono" href={bscscanAddress(DEMO_ADDRESS)} target="_blank" rel="noreferrer">
+                {short(DEMO_ADDRESS)}
+              </a>{" "}
+              through scoped sessions. This is what each may do right now.
+            </p>
+          </div>
+        </div>
+        <ol className="x-house-list">
+          {house.map((h) => (
+            <li key={h.leash.slug} className="x-house" id={h.leash.slug}>
+              <div className="x-house__row">
+                <span className="x-house__art" aria-hidden="true">
+                  <AgentArtwork category={h.leash.category} seed={`${h.tokenId ?? h.leash.slug}:Mandate ${h.name}`} shape="square" />
+                </span>
+                <span className="x-house__main">
+                  {h.tokenId ? (
+                    <Link href={`/agents/${h.tokenId}`} className="x-house__name">
+                      {h.name}
+                    </Link>
+                  ) : (
+                    <span className="x-house__name">{h.name}</span>
+                  )}
+                  <span className="x-house__sub">
+                    {CATEGORY_LABEL[h.leash.category]}
+                    {h.perf && h.perf.kind !== "none" ? ` · ${h.perf.title}` : ""}
+                  </span>
+                </span>
+                <span className={`x-house__st x-house__st--${h.status}`}>
+                  <span className="x-status__dot" aria-hidden="true" />
+                  {STATUS_WORD[h.status]}
+                </span>
+                <span className="x-house__cell">
+                  <span className="x-house__k">Daily cap</span>
+                  {compact(h.caps) || "None"}
+                </span>
+                <span className="x-house__cell">
+                  <span className="x-house__k">{h.status === "expired" ? "Expired" : "Expires"}</span>
+                  {h.s ? until(h.s.expiry) : "Not granted"}
+                </span>
+                <details className="x-house__manage">
+                  <summary className="x-btn x-btn--sm">Manage</summary>
+                  <div className="x-house__panel">
+                    <div>
+                      <h3 className="x-hire__h">It can</h3>
+                      <Can items={h.can} />
+                    </div>
+                    <div>
+                      <h3 className="x-hire__h">It cannot</h3>
+                      <Can no items={CANNOT} />
+                    </div>
+                    <dl className="x-kv">
+                      <div>
+                        <dt>Daily cap</dt>
+                        <dd>{compact(h.caps) || "None"}</dd>
+                      </div>
+                      <div>
+                        <dt>{h.status === "expired" ? "Expired" : "Expires"}</dt>
+                        <dd>{h.s ? `${when(h.s.expiry)} (${until(h.s.expiry)})` : "No session"}</dd>
+                      </div>
+                      <div>
+                        <dt>KeyStore, now</dt>
+                        <dd>{h.m ? <span className={VERDICT_TAG[h.m.verdict]}>{h.m.verdict}</span> : h.s ? "Unreadable" : "Nothing registered"}</dd>
+                      </div>
+                      {h.s ? (
+                        <div>
+                          <dt>Session key</dt>
+                          <dd className="x-mono">{short(h.s.keyId, 12, 6)}</dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                    <div className="x-house__act">
+                      {h.status === "live" && h.s ? (
+                        <RevokeDialog sessionId={h.s.id} agent={h.name} calls={h.can} />
+                      ) : (
+                        <p className="x-pay__note">
+                          {h.status === "expired"
+                            ? "Nothing to revoke: the session has expired and can no longer act. Renewing it is one mainnet transaction by the operator."
+                            : h.status === "revoked"
+                              ? "Already revoked. It can no longer act."
+                              : "No session has been granted, so it cannot act on the account."}
+                        </p>
+                      )}
+                      {h.leash.slug === "range-1" && recenter ? (
+                        <a href="#range-1-record" className="x-btn x-btn--sm x-btn--ghost">
+                          Its record
+                        </a>
+                      ) : h.leash.slug === "grid-1" && grid ? (
+                        <a href="#grid-1-window" className="x-btn x-btn--sm x-btn--ghost">
+                          Its trading window
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
+                </details>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* ---------------------------------------------- technical record below */}
+      <section className="x-wrap x-section--tight x-records" aria-labelledby="h-advanced">
+        <h2 id="h-advanced">Advanced controls and the record</h2>
+        <p className="x-ad-src">
           Account{" "}
-          <a className="m-link m-mono" href={bscscanAddress(DEMO_ADDRESS)} target="_blank" rel="noreferrer">
+          <a className="x-link x-mono" href={bscscanAddress(DEMO_ADDRESS)} target="_blank" rel="noreferrer">
             {DEMO_ADDRESS}
           </a>{" "}
           · KeyStore{" "}
-          <a className="m-link m-mono" href={bscscanAddress(KEYSTORE)} target="_blank" rel="noreferrer">
+          <a className="x-link x-mono" href={bscscanAddress(KEYSTORE)} target="_blank" rel="noreferrer">
             {short(KEYSTORE)}
           </a>
-          {block ? ` · read at block ${Number(block).toLocaleString("en-GB")}` : " · the chain did not answer this time"}
         </p>
 
-        {one("revoked") ? (
-          <p className="m-callout m-small" style={{ marginTop: "1.2rem" }}>
-            Revoked {one("revoked")}.{" "}
-            {one("tx") ? (
-              <a className="m-link m-mono" href={bscscanTx(one("tx")!)} target="_blank" rel="noreferrer">
-                {short(one("tx")!)}
-              </a>
-            ) : null}
-          </p>
-        ) : null}
-        {one("error") ? (
-          <p className="m-callout m-small" style={{ marginTop: "1.2rem" }}>
-            Not revoked:{" "}
-            {one("error") === "token"
-              ? "the operator token did not match."
-              : one("error") === "rate"
-                ? "too many attempts; wait a minute."
-                : one("error") === "no-operator"
-                  ? "this deployment has no operator token configured."
-                  : `${one("why") ?? "the revoke failed"}.`}
-          </p>
-        ) : null}
-
-        {/* ----------------------------------------------------------- live keys */}
-        <section className="m-section--tight" id="keys">
-          <div className="m-head">
-            <h2 className="m-h2">Keys that can act right now</h2>
-            <p className="m-head__note">
-              The policy is what this site granted. The KeyStore column is the registry, read live. They should agree.
-            </p>
-          </div>
+        <details className="x-record" id="keys" open={Boolean(revoked || error)}>
+          <summary>
+            Keys that can act right now <span className="x-chip__n">{liveRows.length}</span>
+          </summary>
+          <p className="x-ad-src">The policy is what this site granted. The KeyStore column is the registry, read live. They should agree.</p>
           {liveRows.length === 0 ? (
-            <div className="m-absent">
-              <p className="m-absent__t">No live session on the demo account.</p>
-            </div>
+            <p className="x-muted">No live session on the demo account.</p>
           ) : (
             <div className="m-scroll">
               <table className="m-table">
@@ -207,136 +404,123 @@ export default async function DeskPage({
               </table>
             </div>
           )}
-          <p className="m-note" style={{ marginTop: "0.8rem", maxWidth: "70ch" }}>
-            Revoking needs the operator token because it spends the account&rsquo;s gas. Nothing on this page can grant a key.
-            Rebalancing keys are granted on{" "}
-            <a className="m-link m-mono" href={`https://repo.sourcify.dev/56/${RECIPIENT_BOUND}`} target="_blank" rel="noreferrer">
+          <p className="x-ad-src">
+            Revoking needs the operator token because it spends the account&rsquo;s gas. Nothing on this page can grant a key. Rebalancing keys are granted on{" "}
+            <a className="x-link x-mono" href={`https://repo.sourcify.dev/56/${RECIPIENT_BOUND}`} target="_blank" rel="noreferrer">
               RecipientBound
             </a>{" "}
             and grid keys on{" "}
-            <a className="m-link m-mono" href={`https://repo.sourcify.dev/56/${SWAP_BOUND}`} target="_blank" rel="noreferrer">
+            <a className="x-link x-mono" href={`https://repo.sourcify.dev/56/${SWAP_BOUND}`} target="_blank" rel="noreferrer">
               SwapBound
             </a>
-            , never on PancakeSwap directly: both write the principal as the recipient from immutable storage, so no key here can
-            name where the money goes.
+            , never on PancakeSwap directly: both write the principal as the recipient from immutable storage, so no key here can name where the money goes.
           </p>
-        </section>
+        </details>
 
-        {/* ----------------------------------------------------- unaccounted keys */}
-        <section className="m-section--tight">
-          <div className="m-head">
-            <h2 className="m-h2">Keys on the account this site does not hold</h2>
-            <p className="m-head__note">Read from the KeyStore, not from our records.</p>
-          </div>
+        <details className="x-record">
+          <summary>KeyStore: keys this site does not hold</summary>
           {others === null ? (
-            <p className="m-small">The KeyStore did not answer, so this list is unknown rather than empty.</p>
+            <p className="x-muted">The KeyStore did not answer, so this list is unknown rather than empty.</p>
           ) : unaccounted.length === 0 ? (
-            <p className="m-small">
+            <p className="x-ad-p">
               None. {admins.length ? `${admins.length} admin key${admins.length === 1 ? "" : "s"} (the account's own signer, no expiry). ` : ""}
               Every other valid key on the account is listed above.
             </p>
           ) : (
-            <ul className="m-small">
+            <ul className="x-ad-p">
               {unaccounted.map((e) => (
-                <li key={e.keyId} className="m-mono">
+                <li key={e.keyId} className="x-mono">
                   {short(e.keyId, 14, 6)} valid until {e.expiry ? when(e.expiry) : "no expiry"}
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </details>
 
-        {/* ------------------------------------------------------------ Range-1 */}
-        <section className="m-section--tight" id="range-1">
-          <div className="m-head">
-            <h2 className="m-h2">Range-1 used its key</h2>
-            <p className="m-head__note">An out-of-range position, recentered through RecipientBound. The NFTs never left the account.</p>
-          </div>
+        <details className="x-record" id="range-1-record">
+          <summary>Range-1 used its key</summary>
+          <p className="x-ad-src">An out-of-range position, recentered through RecipientBound. The NFTs never left the account.</p>
           {recenter ? (
-            <div className="m-scroll">
-              <table className="m-table">
-                <tbody>
-                  <tr>
-                    <th>Before</th>
-                    <td>
-                      Position #{recenter.before.tokenId}, range [{recenter.before.range[0]}, {recenter.before.range[1]}), pool tick {recenter.before.tick}: out of range
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Withdraw</th>
-                    <td>
-                      <a className="m-link m-mono" href={bscscanTx(recenter.txs.decreaseLiquidity)} target="_blank" rel="noreferrer">{short(recenter.txs.decreaseLiquidity)}</a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Collect</th>
-                    <td>
-                      <a className="m-link m-mono" href={bscscanTx(recenter.txs.collect)} target="_blank" rel="noreferrer">{short(recenter.txs.collect)}</a>{" "}
-                      <span className="m-note">to the principal; RecipientBound&rsquo;s collect has no recipient argument</span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Re-mint</th>
-                    <td>
-                      <a className="m-link m-mono" href={bscscanTx(recenter.txs.mint)} target="_blank" rel="noreferrer">{short(recenter.txs.mint)}</a>{" "}
-                      <span className="m-note">
-                        position #{recenter.after.tokenId}, range [{recenter.after.range[0]}, {recenter.after.range[1]}), tick {recenter.after.tick}: {recenter.after.inRange ? "in range" : "out of range"}
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Owner</th>
-                    <td>
-                      {recenter.sameOwnerThroughout ? "The same account before and after: " : "Owner changed: "}
-                      <span className="m-mono">{short(recenter.after.owner)}</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <dl className="x-kv">
+              <div>
+                <dt>Before</dt>
+                <dd>
+                  Position #{recenter.before.tokenId}, range [{recenter.before.range[0]}, {recenter.before.range[1]}), pool tick {recenter.before.tick}: out of range
+                </dd>
+              </div>
+              <div>
+                <dt>Withdraw</dt>
+                <dd>
+                  <a className="x-link x-mono" href={bscscanTx(recenter.txs.decreaseLiquidity)} target="_blank" rel="noreferrer">
+                    {short(recenter.txs.decreaseLiquidity)}
+                  </a>
+                </dd>
+              </div>
+              <div>
+                <dt>Collect</dt>
+                <dd>
+                  <a className="x-link x-mono" href={bscscanTx(recenter.txs.collect)} target="_blank" rel="noreferrer">
+                    {short(recenter.txs.collect)}
+                  </a>{" "}
+                  to the principal; RecipientBound&rsquo;s collect has no recipient argument
+                </dd>
+              </div>
+              <div>
+                <dt>Re-mint</dt>
+                <dd>
+                  <a className="x-link x-mono" href={bscscanTx(recenter.txs.mint)} target="_blank" rel="noreferrer">
+                    {short(recenter.txs.mint)}
+                  </a>{" "}
+                  position #{recenter.after.tokenId}, range [{recenter.after.range[0]}, {recenter.after.range[1]}), tick {recenter.after.tick}:{" "}
+                  {recenter.after.inRange ? "in range" : "out of range"}
+                </dd>
+              </div>
+              <div>
+                <dt>Owner</dt>
+                <dd>
+                  {recenter.sameOwnerThroughout ? "The same account before and after: " : "Owner changed: "}
+                  <span className="x-mono">{short(recenter.after.owner)}</span>
+                </dd>
+              </div>
+            </dl>
           ) : (
-            <p className="m-small">Not run yet.</p>
+            <p className="x-muted">Not run yet.</p>
           )}
-        </section>
+        </details>
 
-        {/* -------------------------------------------------------------- Grid-1 */}
-        <section className="m-section--tight" id="grid-1">
-          <div className="m-head">
-            <h2 className="m-h2">Grid-1&rsquo;s window</h2>
-            <p className="m-head__note">
-              Read from SwapBound&rsquo;s own Swapped events. A simulated fill emits nothing, so none can appear here.
-            </p>
-          </div>
+        <details className="x-record" id="grid-1-window">
+          <summary>Grid-1&rsquo;s window</summary>
+          <p className="x-ad-src">Read from SwapBound&rsquo;s own Swapped events. A simulated fill emits nothing, so none can appear here.</p>
           {grid ? (
             <>
-              <div className="m-stats">
+              <dl className="x-perf">
                 <div>
-                  <span className="m-label m-stat__k">Fills</span>
-                  <span className="m-stat__v m-fig">{grid.fills.length}</span>
+                  <dt>Fills</dt>
+                  <dd className="x-mono">{grid.fills.length}</dd>
                 </div>
                 <div>
-                  <span className="m-label m-stat__k">Win rate</span>
-                  <span className="m-stat__v m-fig">
-                    {grid.winRate === null ? "no round trip yet" : `${Math.round(grid.winRate * 100)}% of ${grid.roundTrips.length}`}
-                  </span>
+                  <dt>Win rate</dt>
+                  <dd className="x-mono">{grid.winRate === null ? "No round trip yet" : `${Math.round(grid.winRate * 100)}% of ${grid.roundTrips.length}`}</dd>
                 </div>
-                <div>
-                  <span className="m-label m-stat__k">Against doing nothing</span>
-                  <span className="m-stat__v m-fig">{grid.pnlUsd >= 0 ? "+" : "-"}${Math.abs(grid.pnlUsd).toFixed(4)}</span>
+                <div className={grid.pnlUsd >= 0 ? "x-perf--up" : "x-perf--down"}>
+                  <dt>Against doing nothing</dt>
+                  <dd className="x-mono">
+                    {grid.pnlUsd >= 0 ? "+" : "−"}${Math.abs(grid.pnlUsd).toFixed(4)}
+                  </dd>
                 </div>
-                <div>
-                  <span className="m-label m-stat__k">Worst drawdown</span>
-                  <span className="m-stat__v m-fig">${grid.maxDrawdownUsd.toFixed(4)}</span>
+                <div className={grid.maxDrawdownUsd > 0 ? "x-perf--down" : undefined}>
+                  <dt>Worst drawdown</dt>
+                  <dd className="x-mono">${grid.maxDrawdownUsd.toFixed(4)}</dd>
                 </div>
-              </div>
-              <p className="m-note" style={{ marginTop: "0.6rem" }}>
+              </dl>
+              <p className="x-ad-src">
                 {grid.window.start
                   ? `Window ${grid.window.start.slice(0, 16).replace("T", " ")} to ${grid.window.end?.slice(0, 16).replace("T", " ")} UTC (${(grid.window.hours ?? 0).toFixed(1)} h). `
                   : "No fill yet. "}
                 Gas ${grid.gasUsd.toFixed(4)} at the chain&apos;s price, included. Read to block {grid.toBlock.toLocaleString("en-GB")}.
               </p>
               {grid.fills.length ? (
-                <div className="m-scroll" style={{ marginTop: "0.8rem" }}>
+                <div className="m-scroll">
                   <table className="m-table">
                     <thead>
                       <tr>
@@ -357,7 +541,9 @@ export default async function DeskPage({
                           <td className="m-num">{f.wbnb.toFixed(6)}</td>
                           <td className="m-num">{f.price.toFixed(2)}</td>
                           <td>
-                            <a className="m-link m-mono" href={bscscanTx(f.tx)} target="_blank" rel="noreferrer">{short(f.tx)}</a>
+                            <a className="m-link m-mono" href={bscscanTx(f.tx)} target="_blank" rel="noreferrer">
+                              {short(f.tx)}
+                            </a>
                           </td>
                         </tr>
                       ))}
@@ -367,67 +553,71 @@ export default async function DeskPage({
               ) : null}
             </>
           ) : (
-            <p className="m-small">The window could not be read from the chain just now. That is our read failing, not a result.</p>
+            <p className="x-muted">The window could not be read from the chain just now. That is our read failing, not a result.</p>
           )}
-        </section>
+        </details>
 
-        {/* ------------------------------------------------------------- passkey */}
-        <section className="m-section--tight" id="passkey">
-          <div className="m-head">
-            <h2 className="m-h2">A passkey wallet, start to finish</h2>
-            <p className="m-head__note">Grant, act, revoke, on mainnet, with the KeyStore read at each step.</p>
-          </div>
+        <details className="x-record" id="passkey">
+          <summary>A passkey wallet, start to finish</summary>
+          <p className="x-ad-src">Grant, act, revoke, on mainnet, with the KeyStore read at each step.</p>
           {passkey ? (
-            <div className="m-scroll">
-              <table className="m-table">
-                <tbody>
-                  <tr>
-                    <th>Wallet</th>
-                    <td>
-                      <a className="m-link m-mono" href={bscscanAddress(passkey.wallet)} target="_blank" rel="noreferrer">{passkey.wallet}</a>
-                      <div className="m-note">Admin: {passkey.admin.kind}</div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <th>Policy granted</th>
-                    <td className="m-note">
-                      {passkey.session.calls.map((c) => `${fn(c.signature)} on ${target(c.to)}`).join(", ")}; spend{" "}
-                      {passkey.session.spend.map((s) => `${Number(formatEther(BigInt(s.limit))).toString()} ${s.token ? TOKEN_LABEL[s.token.toLowerCase()] ?? short(s.token) : "BNB"}/${s.period}`).join(", ")}; expires {when(passkey.session.expiry)}
-                    </td>
-                  </tr>
-                  {Object.entries(passkey.txs).map(([k, h]) => (
-                    <tr key={k}>
-                      <th>{k}</th>
-                      <td>{h ? <a className="m-link m-mono" href={bscscanTx(h)} target="_blank" rel="noreferrer">{short(h)}</a> : <span className="m-note">the relay did not report a hash</span>}</td>
-                    </tr>
-                  ))}
-                  {Object.entries(passkey.keystore).map(([k, v]) => (
-                    <tr key={`ks-${k}`}>
-                      <th>KeyStore {k}</th>
-                      <td className="m-note">
-                        session key {v.sessionValid ? "valid" : "not valid"}
-                        {v.adminValid === undefined || v.adminValid === null ? "" : `, admin key ${v.adminValid ? "valid" : "not valid"}`} at block {v.block.toLocaleString("en-GB")}
-                      </td>
-                    </tr>
-                  ))}
-                  <tr>
-                    <th>Afterwards</th>
-                    <td className="m-note">{passkey.discarded}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <dl className="x-kv">
+              <div>
+                <dt>Wallet</dt>
+                <dd>
+                  <a className="x-link x-mono" href={bscscanAddress(passkey.wallet)} target="_blank" rel="noreferrer">
+                    {short(passkey.wallet)}
+                  </a>{" "}
+                  (admin: {passkey.admin.kind})
+                </dd>
+              </div>
+              <div>
+                <dt>Policy granted</dt>
+                <dd>
+                  {passkey.session.calls.map((c) => `${fn(c.signature)} on ${target(c.to)}`).join(", ")}; spend{" "}
+                  {passkey.session.spend
+                    .map((s) => `${Number(formatEther(BigInt(s.limit))).toString()} ${s.token ? TOKEN_LABEL[s.token.toLowerCase()] ?? short(s.token) : "BNB"}/${s.period}`)
+                    .join(", ")}
+                  ; expires {when(passkey.session.expiry)}
+                </dd>
+              </div>
+              {Object.entries(passkey.txs).map(([k, h]) => (
+                <div key={k}>
+                  <dt>{k}</dt>
+                  <dd>
+                    {h ? (
+                      <a className="x-link x-mono" href={bscscanTx(h)} target="_blank" rel="noreferrer">
+                        {short(h)}
+                      </a>
+                    ) : (
+                      "the relay did not report a hash"
+                    )}
+                  </dd>
+                </div>
+              ))}
+              {Object.entries(passkey.keystore).map(([k, v]) => (
+                <div key={`ks-${k}`}>
+                  <dt>KeyStore {k}</dt>
+                  <dd>
+                    session key {v.sessionValid ? "valid" : "not valid"}
+                    {v.adminValid === undefined || v.adminValid === null ? "" : `, admin key ${v.adminValid ? "valid" : "not valid"}`} at block{" "}
+                    {v.block.toLocaleString("en-GB")}
+                  </dd>
+                </div>
+              ))}
+              <div>
+                <dt>Afterwards</dt>
+                <dd>{passkey.discarded}</dd>
+              </div>
+            </dl>
           ) : (
-            <p className="m-small">Not run yet.</p>
+            <p className="x-muted">Not run yet.</p>
           )}
-        </section>
+        </details>
 
-        {/* -------------------------------------------------------- threat model */}
-        <section className="m-section--tight" id="stolen">
-          <div className="m-head">
-            <h2 className="m-h2">If a key is stolen</h2>
-            <p className="m-head__note">What the thief gets, by key. Written against the allowlists above and the contracts behind them.</p>
-          </div>
+        <details className="x-record" id="stolen">
+          <summary>If a key is stolen</summary>
+          <p className="x-ad-src">What the thief gets, by key. Written against the allowlists above and the contracts behind them.</p>
           <div className="m-scroll">
             <table className="m-table">
               <thead>
@@ -440,12 +630,18 @@ export default async function DeskPage({
               <tbody>
                 <tr>
                   <td>Rebalancing session</td>
-                  <td>Withdraw the principal&rsquo;s positions and re-mint them, up to RecipientBound&rsquo;s remaining caps, with everything landing back on the principal. Spend a little of the account&rsquo;s BNB on gas.</td>
+                  <td>
+                    Withdraw the principal&rsquo;s positions and re-mint them, up to RecipientBound&rsquo;s remaining caps, with everything landing back on the principal.
+                    Spend a little of the account&rsquo;s BNB on gas.
+                  </td>
                   <td>Send tokens or positions to any other address. Call the position manager directly. Approve anything. Act after expiry or revoke.</td>
                 </tr>
                 <tr>
                   <td>Grid session</td>
-                  <td>Trade USDT and WBNB in the one 0.05% pool, up to SwapBound&rsquo;s lifetime caps (3 USDT, 0.005 WBNB sold), at a price of their choosing above zero. Bad trades can lose value up to those caps.</td>
+                  <td>
+                    Trade USDT and WBNB in the one 0.05% pool, up to SwapBound&rsquo;s lifetime caps (3 USDT, 0.005 WBNB sold), at a price of their choosing above zero.
+                    Bad trades can lose value up to those caps.
+                  </td>
                   <td>Receive the proceeds, which go to the principal. Trade any other token or pool. Approve anything. Act after expiry or revoke.</td>
                 </tr>
                 <tr>
@@ -471,19 +667,19 @@ export default async function DeskPage({
               </tbody>
             </table>
           </div>
-          <p className="m-note" style={{ marginTop: "0.8rem" }}>
-            The same table, with the reasoning, is in <span className="m-mono">docs/threat-model.md</span>.{" "}
-            <Link className="m-link" href="/status">
-              Is the judge path up right now →
+          <p className="x-ad-src">
+            The same table, with the reasoning, is in <span className="x-mono">docs/threat-model.md</span>.{" "}
+            <Link className="x-link" href="/status">
+              Is the judge path up right now
             </Link>
           </p>
-        </section>
+        </details>
 
         {pastRows.length ? (
-          <section className="m-section--tight">
-            <div className="m-head">
-              <h2 className="m-h2">Keys that have ended</h2>
-            </div>
+          <details className="x-record">
+            <summary>
+              Keys that have ended <span className="x-chip__n">{pastRows.length}</span>
+            </summary>
             <div className="m-scroll">
               <table className="m-table">
                 <thead>
@@ -505,7 +701,9 @@ export default async function DeskPage({
                         {s.revokeTx ? (
                           <>
                             {" "}
-                            <a className="m-link m-mono" href={bscscanTx(s.revokeTx)} target="_blank" rel="noreferrer">{short(s.revokeTx)}</a>
+                            <a className="m-link m-mono" href={bscscanTx(s.revokeTx)} target="_blank" rel="noreferrer">
+                              {short(s.revokeTx)}
+                            </a>
                           </>
                         ) : null}
                         {s.revokedBecause ? <div>{s.revokedBecause}</div> : null}
@@ -516,9 +714,9 @@ export default async function DeskPage({
                 </tbody>
               </table>
             </div>
-          </section>
+          </details>
         ) : null}
-      </div>
+      </section>
     </AppShell>
   );
 }
