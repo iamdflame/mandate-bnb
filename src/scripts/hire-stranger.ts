@@ -22,7 +22,8 @@
  */
 
 import { formatUnits, type Hex } from "viem";
-import { exchange, payAndCall, readRequirements, whyUnpayable } from "@/lib/x402/pay";
+import { readRequirements, whyUnpayable } from "@/lib/x402/pay";
+import { exchange, payAndCall } from "@/lib/x402/pay-server";
 import { recordPaidCall, toRecord, writeEvidence } from "@/lib/market/paid-calls";
 import { listingFor } from "@/lib/market/listing";
 import { DEMO_ADDRESS } from "@/lib/demo";

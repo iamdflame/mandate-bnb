@@ -17,7 +17,7 @@
 
 import { NextResponse } from "next/server";
 import type { Address } from "viem";
-import { payAndCall } from "@/lib/x402/pay";
+import { payAndCall } from "@/lib/x402/pay-server";
 import { allowance, callerHash, noteSponsored, sponsorAddress, MAX_CALL, sponsorKey } from "@/lib/market/judge-mode";
 import { SPONSORED, sponsoredIds } from "@/lib/market/sponsored-targets";
 import { listingFor } from "@/lib/market/listing";

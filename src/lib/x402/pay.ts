@@ -37,7 +37,7 @@ import {
   type LocalAccount,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { logClients, marketClient, walletFor } from "@/lib/chain/market";
+import { marketClient, walletFor } from "@/lib/chain/market";
 import { gasPrice } from "@/lib/chain/marketV2";
 import { TRANSFER_TYPES } from "./index";
 
@@ -65,7 +65,7 @@ const ERC20 = parseAbi([
   "function balanceOf(address owner) view returns (uint256)",
   "function DOMAIN_SEPARATOR() view returns (bytes32)",
 ]);
-const TRANSFER = parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 value)");
+export const TRANSFER = parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 value)");
 
 export const PERMIT2_WITNESS_TYPES = {
   PermitWitnessTransferFrom: [
@@ -140,7 +140,7 @@ export function fromBase64(b64: string): string {
   return new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0)));
 }
 
-function decodeHeader(value: string | null | undefined): Record<string, unknown> | null {
+export function decodeHeader(value: string | null | undefined): Record<string, unknown> | null {
   if (!value) return null;
   for (const attempt of [() => fromBase64(value), () => value]) {
     try {
@@ -422,8 +422,8 @@ export async function ensurePermit2Allowance(key: Hex, token: Address, amount: b
 // The exchange, kept byte for byte
 // ---------------------------------------------------------------------------
 
-const CAP_BYTES = 256 * 1024;
-const KEPT_HEADERS = /^(content-type|payment-required|payment-response|x-payment-response|x-payment|payment-signature|mcp-session-id|www-authenticate|retry-after)$/i;
+export const CAP_BYTES = 256 * 1024;
+export const KEPT_HEADERS = /^(content-type|payment-required|payment-response|x-payment-response|x-payment|payment-signature|mcp-session-id|www-authenticate|retry-after)$/i;
 
 export interface Exchange {
   at: string;
@@ -459,36 +459,6 @@ export async function readCapped(res: Response, cap = CAP_BYTES): Promise<{ text
   return { text: new TextDecoder().decode(joined), truncated };
 }
 
-export async function exchange(
-  url: string,
-  init: { method?: string; headers?: Record<string, string>; body?: string; timeoutMs?: number },
-): Promise<{ ex: Exchange; res: Response; text: string }> {
-  const started = Date.now();
-  const method = init.method ?? "GET";
-  const res = await fetch(url, {
-    method,
-    headers: init.headers,
-    body: init.body,
-    redirect: "follow",
-    signal: AbortSignal.timeout(init.timeoutMs ?? 30_000),
-  });
-  const { text, truncated } = await readCapped(res);
-  const headers: Record<string, string> = {};
-  res.headers.forEach((v, k) => {
-    if (KEPT_HEADERS.test(k)) headers[k] = v;
-  });
-  const sentHeaders = Object.fromEntries(Object.entries(init.headers ?? {}).filter(([k]) => KEPT_HEADERS.test(k) || /^accept$/i.test(k)));
-  return {
-    ex: {
-      at: new Date(started).toISOString(),
-      request: { method, url, headers: sentHeaders, ...(init.body ? { body: init.body } : {}) },
-      response: { status: res.status, headers, body: text, truncated, ms: Date.now() - started },
-    },
-    res,
-    text,
-  };
-}
-
 // ---------------------------------------------------------------------------
 // Settlement
 // ---------------------------------------------------------------------------
@@ -497,47 +467,6 @@ export interface Settlement {
   tx: Hex;
   block: number | null;
   source: "payment-response header" | "token Transfer log";
-}
-
-function txFromHeader(ex: Exchange): Hex | null {
-  const raw = ex.response.headers["payment-response"] ?? ex.response.headers["x-payment-response"];
-  const doc = decodeHeader(raw);
-  const tx = (doc?.transaction ?? doc?.txHash ?? doc?.tx ?? doc?.transactionHash) as string | undefined;
-  return tx && /^0x[0-9a-fA-F]{64}$/.test(tx) ? (tx as Hex) : null;
-}
-
-/**
- * Finds the transfer that paid the seller, on chain.
- *
- * A seller may settle after answering, or never say how it settled. The
- * payment is the token moving from payer to payee for the amount, after the
- * block the call was made at; that is looked for directly, for up to a
- * couple of minutes.
- */
-export async function findSettlement(
-  r: Requirement,
-  from: Address,
-  fromBlock: bigint,
-  opts: { waitMs?: number } = {},
-): Promise<Settlement | null> {
-  const deadline = Date.now() + (opts.waitMs ?? 120_000);
-  while (Date.now() < deadline) {
-    const head = await marketClient.getBlockNumber().catch(() => null);
-    if (head !== null) {
-      for (const c of logClients) {
-        try {
-          const logs = await c.getLogs({ address: r.asset, event: TRANSFER, args: { from, to: r.payTo }, fromBlock, toBlock: head });
-          const hit = logs.find((l) => (l.args as { value?: bigint }).value === r.amount) ?? logs[0];
-          if (hit) return { tx: hit.transactionHash!, block: Number(hit.blockNumber), source: "token Transfer log" };
-          break;
-        } catch {
-          /* next provider */
-        }
-      }
-    }
-    await new Promise((ok) => setTimeout(ok, 4_000));
-  }
-  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -562,126 +491,9 @@ export interface PaidCall {
   ms: number;
 }
 
-const serialisable = (r: Requirement) => ({ ...r, amount: r.amount.toString() });
-
-/**
- * Asks unpaid, reads the terms, signs, asks again carrying the payment, and
- * finds the settlement. Refuses to pay above `maxAmount` or in any token
- * outside `PAYABLE_ASSETS`.
- */
-export async function payAndCall(opts: {
-  url: string;
-  key: Hex;
-  maxAmount: bigint;
-  method?: "GET" | "POST";
-  body?: unknown;
-  headers?: Record<string, string>;
-  settleWaitMs?: number;
-}): Promise<PaidCall> {
-  const started = Date.now();
-  const account = privateKeyToAccount(opts.key);
-  const method = opts.method ?? "GET";
-  const body = opts.body === undefined ? undefined : JSON.stringify(opts.body);
-  const baseHeaders: Record<string, string> = {
-    accept: "application/json, text/event-stream",
-    ...(body ? { "content-type": "application/json" } : {}),
-    ...(opts.headers ?? {}),
-  };
-  const exchanges: Exchange[] = [];
-  const out = (partial: Partial<PaidCall>): PaidCall => ({
-    url: opts.url,
-    paid: false,
-    delivered: false,
-    refused: null,
-    requirement: null,
-    payer: account.address,
-    approveTx: null,
-    settlement: null,
-    deliverable: null,
-    exchanges,
-    ms: Date.now() - started,
-    ...partial,
-  });
-
-  const first = await exchange(opts.url, { method, headers: baseHeaders, body });
-  exchanges.push(first.ex);
-  if (first.res.status !== 402) {
-    return out({ refused: `it answered ${first.res.status} without asking for payment`, deliverable: parseMaybe(first.text) });
-  }
-
-  const offers = readRequirements(parseMaybe(first.text), first.res.headers.get("payment-required"));
-  const usable = offers.find((o) => !whyUnpayable(o) && o.amount <= opts.maxAmount);
-  if (!usable) {
-    const reasons = offers.map((o) => whyUnpayable(o) ?? `it asks ${o.amount}, above the ${opts.maxAmount} this call may spend`);
-    return out({ refused: reasons.join("; ") || "its 402 names no requirement this client can read" });
-  }
-
-  let approveTx: Hex | null = null;
-  if (usable.method === "permit2") approveTx = await ensurePermit2Allowance(opts.key, usable.asset, usable.amount);
-
-  const startBlock = await marketClient.getBlockNumber();
-  const signed = await signPayment(account, usable);
-  const second = await exchange(opts.url, { method, headers: { ...baseHeaders, [signed.header]: signed.value }, body });
-  exchanges.push(second.ex);
-  const deliverable = parseMaybe(second.text);
-
-  if (second.res.status >= 400) {
-    /*
-      A seller can take the money and still answer with an error. Agripinaa's
-      facilitator broadcast a settlement and then answered 402, because its own
-      RPC refused to read the receipt. So the transfer is looked for anyway: a
-      payment that moved is recorded as paid, with no deliverable, whatever the
-      status code said.
-    */
-    const moved = await findSettlement(usable, account.address, startBlock, { waitMs: Math.min(opts.settleWaitMs ?? 45_000, 45_000) });
-    return out({
-      paid: Boolean(moved),
-      requirement: serialisable(usable),
-      approveTx,
-      settlement: moved,
-      refused: `it answered ${second.res.status} to the signed payment: ${refusalText(second.ex)}`,
-      deliverable,
-    });
-  }
-
-  const fromHeader = txFromHeader(second.ex);
-  const settlement: Settlement | null = fromHeader
-    ? { tx: fromHeader, block: null, source: "payment-response header" }
-    : await findSettlement(usable, account.address, startBlock, { waitMs: opts.settleWaitMs });
-
-  return out({ paid: true, delivered: true, requirement: serialisable(usable), approveTx, settlement, deliverable });
-}
-
-/**
- * The seller's own words for a refusal.
- *
- * Some sellers put the reason in the body; others leave the body `{}` and put
- * it in the re-issued `PAYMENT-REQUIRED` header's `error`. Hallmark did the
- * latter, and its reason (no facilitator configured) was the whole story.
- */
-export function refusalText(ex: Exchange): string {
-  const fromHeader = decodeHeader(ex.response.headers["payment-required"])?.error;
-  const body = ex.response.body.trim();
-  const parts = [body && body !== "{}" ? body.slice(0, 600) : null, typeof fromHeader === "string" ? fromHeader : null].filter(Boolean);
-  return parts.length ? parts.join(" | ") : "no reason given";
-}
-
-function parseMaybe(text: string): unknown {
-  try {
-    return JSON.parse(text);
-  } catch {
-    // An SSE answer from an MCP server: keep the last `data:` line's JSON.
-    const data = text
-      .split("\n")
-      .filter((l) => l.startsWith("data:"))
-      .map((l) => l.slice(5).trim());
-    for (let i = data.length - 1; i >= 0; i--) {
-      try {
-        return JSON.parse(data[i]);
-      } catch {
-        /* earlier line */
-      }
-    }
-    return text;
-  }
-}
+/*
+  The requests to sellers (exchange), the settlement search and the whole paid
+  call (payAndCall) live in ./pay-server. They call strangers' URLs through the
+  network guard, which uses Node's DNS, and this module is also loaded in the
+  browser by the buy button.
+*/

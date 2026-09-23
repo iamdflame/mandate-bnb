@@ -185,7 +185,7 @@ export default async function ComparePage({
                     ),
                   )}
                 </Row>
-                {(["reachable", "active", "capability", "custody", "reputation", "settled"] as const).map((key) => (
+                {(["reachable", "tools", "active", "capability", "custody", "reputation", "settled"] as const).map((key) => (
                   <Row key={key} k={cols[0].trust.proofs.find((n) => n.key === key)?.label ?? key}>
                     {cols.map((c) => {
                       const n = c.trust.proofs.find((x) => x.key === key)!;

@@ -16,13 +16,15 @@
  */
 
 import { NextResponse } from "next/server";
-import { exchange, fromBase64, readRequirements, type Requirement } from "@/lib/x402/pay";
+import { fromBase64, readRequirements, type Requirement } from "@/lib/x402/pay";
+import { exchange } from "@/lib/x402/pay-server";
 import { recordPaidCall, toRecord } from "@/lib/market/paid-calls";
 import type { Address } from "viem";
 import { SPONSORED } from "@/lib/market/sponsored-targets";
 import { listingFor } from "@/lib/market/listing";
 import { take, callerOf, limitHeaders } from "@/lib/api/ratelimit";
 import { live } from "@/lib/data/live";
+import { whyUnsafe, whyUnsafeHost } from "@/lib/net/safe-fetch";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,10 +55,9 @@ export async function POST(request: Request) {
   const listing = listingFor(tokenId);
   const url = sponsored ? sponsored.url(subject) : listing?.quote?.endpoint;
   if (!url) return NextResponse.json({ error: "That agent has no endpoint we have a quote from." }, { status: 404 });
-  const target = new URL(url);
-  if (target.protocol !== "https:" || /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[)/.test(target.hostname)) {
-    return NextResponse.json({ error: "That endpoint is not one this relay will call." }, { status: 400 });
-  }
+  // The same rule as every other call to a stranger; exchange() also checks each redirect.
+  const unsafe = whyUnsafe(url) ?? (await whyUnsafeHost(new URL(url).hostname));
+  if (unsafe) return NextResponse.json({ error: `That endpoint is not one this relay will call: ${unsafe}.` }, { status: 400 });
 
   const method = sponsored?.method ?? "GET";
   const body = sponsored?.body === undefined ? undefined : JSON.stringify(sponsored.body);

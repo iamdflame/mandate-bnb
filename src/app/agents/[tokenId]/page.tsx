@@ -268,6 +268,14 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
                   </details>
                 ) : null}
                 <p className="x-ad-src">In its own words, as published in its registration.</p>
+                {l.copies > 1 ? (
+                  <p className="x-ad-src x-ad-copies">
+                    The same card, word for word, is registered {l.copies} times{l.firstOfProduct ? ", and this is the earliest" : ""}.{" "}
+                    <Link className="x-link" href={`/agents?q=${encodeURIComponent(l.name)}`}>
+                      See every copy
+                    </Link>
+                  </p>
+                ) : null}
               </>
             ) : (
               <p className="x-ad-p">
@@ -323,7 +331,7 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
               ))}
             </div>
             <p className="x-ad-src">
-              Six checks against BNB Smart Chain and the agent itself. Open any row for the evidence.{" "}
+              {trust.proofs.length} checks against BNB Smart Chain and the agent itself. Open any row for the evidence.{" "}
               <a className="x-link" href="#verification">
                 See evidence
               </a>

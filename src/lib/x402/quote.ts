@@ -20,7 +20,8 @@
  * price it calls unpayable carries the exact reason.
  */
 
-import { readCapped, readRequirements, whyUnpayable, type TransferMethod } from "./pay";
+import { readRequirements, whyUnpayable, type TransferMethod } from "./pay";
+import { safeFetch } from "@/lib/net/safe-fetch";
 
 export interface Quote {
   /** The URL that answered with a price. */
@@ -121,12 +122,9 @@ export function parseChallenge(endpoint: string, body: unknown, paymentRequiredH
 /** Ask an endpoint, unpaid, and read the price it names. */
 export async function readQuote(endpoint: string, timeoutMs = 8_000): Promise<Quote | null> {
   try {
-    const res = await fetch(endpoint, {
-      headers: { accept: "application/json" },
-      signal: AbortSignal.timeout(timeoutMs),
-    });
+    const res = await safeFetch(endpoint, { headers: { accept: "application/json" }, timeoutMs });
     if (res.status !== 402) return null;
-    const { text } = await readCapped(res);
+    const { text } = res;
     let body: unknown = null;
     try {
       body = JSON.parse(text);
@@ -157,12 +155,9 @@ export interface Preview {
 export async function readPreview(endpoint: string, timeoutMs = 8_000): Promise<Preview | null> {
   const url = endpoint.includes("?") ? `${endpoint}&preview=1` : `${endpoint}?preview=1`;
   try {
-    const res = await fetch(url, {
-      headers: { accept: "application/json" },
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-    if (!res.ok) return null;
-    const { text } = await readCapped(res);
+    const res = await safeFetch(url, { headers: { accept: "application/json" }, timeoutMs });
+    if (res.status < 200 || res.status >= 300) return null;
+    const { text } = res;
     const body = JSON.parse(text) as Record<string, unknown>;
     if (!body || typeof body !== "object" || "accepts" in body) return null;
     const price = (body.price ?? {}) as { human?: string };

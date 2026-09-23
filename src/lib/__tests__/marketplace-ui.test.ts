@@ -95,7 +95,29 @@ describe("the four verification states", () => {
 
   it("counts proven, not yet proven, failed and no data separately", () => {
     const t = trustOf(listing(), report({ identity: "pass", custody: "fail", activity: "pass", capability: "fail", reputation: "inconclusive", performance: "inconclusive" }));
-    expect(t.counts).toEqual({ proven: 2, unproven: 1, failed: 1, nodata: 2 });
+    // Seven rows: the Tools row has no list to read on this agent, so it is "not enough data".
+    expect(t.counts).toEqual({ proven: 2, unproven: 1, failed: 1, nodata: 3 });
+  });
+
+  it("says which protocol answered, and keeps an answer that is not an agent apart from silence", () => {
+    const mcp = trustOf(listing({ probe: { answered: true, status: 200, latencyMs: 90, endpoint: "https://x.test/mcp", at: "2026-09-22T10:00:00Z", protocol: "mcp" } as never }), null);
+    expect(mcp.proofs[0]).toMatchObject({ state: "proven", headline: "Answered in 90 ms over MCP" });
+    const site = trustOf(listing({ liveness: "not-agent", probe: { answered: false, status: 200, latencyMs: 90, endpoint: "https://x.test", protocol: "http" } as never }), null);
+    expect(site.proofs[0]).toMatchObject({ state: "unproven", headline: "Answers, but not as an agent" });
+    const refused = trustOf(
+      listing({ liveness: "no-endpoint", probe: { answered: false, status: null, latencyMs: null, endpoint: "http://10.0.0.1/x", refused: true, error: "we only call https, and that is http" } as never }),
+      null,
+    );
+    expect(refused.proofs[0]).toMatchObject({ state: "failed", headline: "Points somewhere we will not call" });
+  });
+
+  it("proves tools only when what the server offers fits the card's job", () => {
+    const withTools = (tools: { name: string; description?: string }[]) =>
+      trustOf(listing({ probe: { answered: true, status: 200, latencyMs: 90, endpoint: "https://x.test/mcp", protocol: "mcp", tools } as never }), null).proofs.find((x) => x.key === "tools")!;
+    expect(withTools([{ name: "get_position_range" }, { name: "ping" }])).toMatchObject({ state: "proven" });
+    expect(withTools([{ name: "getWeather" }, { name: "tellJoke" }])).toMatchObject({ state: "failed", headline: "Its tools do not fit the job: getWeather, tellJoke" });
+    expect(withTools([{ name: "ping" }, { name: "status" }])).toMatchObject({ state: "nodata" });
+    expect(trustOf(listing({ probe: { answered: true, status: 200, latencyMs: 90, endpoint: "https://x.test/mcp", protocol: "mcp", tools: [{ name: "rebalance_lp" }] } as never }), null).badges).toContain("Tools fit its job");
   });
 
   it("calls a capability it did not see 'not yet proven', never failed", () => {

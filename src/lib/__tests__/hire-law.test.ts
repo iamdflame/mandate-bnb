@@ -132,6 +132,37 @@ describe("the hire law", () => {
     expect(hirePath(stranger(), { now: NOW }).short).toBeNull();
   });
 
+  it("does not hire per call an endpoint that answers in no agent protocol", () => {
+    const site = { answered: false, status: 200, latencyMs: 80, endpoint: "https://example.test", at: minutesAgo(5), protocol: "http" as const };
+    const v = hirePath(stranger({ liveness: "not-agent", probe: site, quote: null, priceLabel: null }), { now: NOW });
+    expect(v).toMatchObject({ ok: false, short: "No agent protocol" });
+    // A bidder in this market is reached through the contract, so its plain answer is enough for a job.
+    const bidding = hirePath(stranger({ liveness: "not-agent", probe: site, quote: null, priceLabel: null }), {
+      now: NOW,
+      bidders: new Set(["0x1111111111111111111111111111111111111111"]),
+    });
+    expect(bidding.ok).toBe(true);
+    expect(primaryRail(bidding)).toEqual({ kind: "mandate" });
+  });
+
+  it("says why it will not call an endpoint, rather than that there is none", () => {
+    const v = hirePath(
+      stranger({ liveness: "no-endpoint", probe: { answered: false, status: null, latencyMs: null, endpoint: "http://x.test", refused: true, error: "we only call https, and that is http" } }),
+      { now: NOW },
+    );
+    expect(v).toMatchObject({ ok: false, short: "Endpoint we will not call" });
+    expect(v.reason).toMatch(/we only call https/);
+  });
+
+  it("refuses an agent whose own server contradicts its card, naming what it offers", () => {
+    const v = hirePath(
+      { ...stranger({ probe: { answered: true, status: 200, latencyMs: 80, endpoint: "https://x.test/mcp", at: minutesAgo(5), protocol: "mcp", tools: [{ name: "getWeather" }] } }), category: "grid-trading" },
+      { now: NOW },
+    );
+    expect(v).toMatchObject({ ok: false, short: "Tools do not fit its job" });
+    expect(v.reason).toMatch(/offers getWeather/);
+  });
+
   it("knows the answer is not 'now' after fifteen minutes, while still offering the hire", () => {
     const v = hirePath(stranger({ probe: { answered: true, status: 402, latencyMs: 1, endpoint: "x", at: minutesAgo(40) } }), { now: NOW });
     expect(v.ok).toBe(true);

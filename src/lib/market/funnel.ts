@@ -61,9 +61,9 @@ export async function funnel(all: Listing[]): Promise<Stage[]> {
     },
     {
       key: "reachable",
-      label: "answered our call",
+      label: "answer as agents",
       n: all.filter(PRED.live).length,
-      source: "Our own probe called the endpoint each one publishes",
+      source: "Our own probe called the endpoint each one publishes and it answered in MCP, A2A or x402, not just any reply",
       at: census.at,
       href: "/agents?live=1",
     },

@@ -14,6 +14,7 @@
  */
 
 import { keccak256, sha256, toBytes, type Hex } from "viem";
+import { safeFetch } from "@/lib/net/safe-fetch";
 
 export interface DeliverableCheck {
   url: string | null;
@@ -52,8 +53,9 @@ export async function verifyDeliverable(url: string | null, committed: string, t
   const base: DeliverableCheck = { url, bytes: 0, committed, matchedAs: null, candidates: [], body: null, readAt: new Date().toISOString() };
   if (!url) return { ...base, error: "the job names no deliverable url" };
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
-    const text = await res.text();
+    // A URL the provider wrote into the job, so it is called through the guard like any other.
+    const res = await safeFetch(url, { timeoutMs, maxBytes: 2 * 1024 * 1024 });
+    const text = res.text;
     const candidates = readings(text).map((r) => ({ reading: r.reading, keccak256: keccak256(toBytes(r.value)), sha256: sha256(toBytes(r.value)) }));
     const hit = candidates.find((c) => c.keccak256.toLowerCase() === committed.toLowerCase() || c.sha256.toLowerCase() === committed.toLowerCase());
     return {
@@ -62,7 +64,7 @@ export async function verifyDeliverable(url: string | null, committed: string, t
       candidates,
       matchedAs: hit ? `${hit.reading}, ${hit.keccak256.toLowerCase() === committed.toLowerCase() ? "keccak256" : "sha256"}` : null,
       body: text.slice(0, 40_000),
-      ...(res.ok ? {} : { error: `the provider answered ${res.status}` }),
+      ...(res.status >= 200 && res.status < 300 ? {} : { error: `the provider answered ${res.status}` }),
     };
   } catch (e) {
     return { ...base, error: (e as Error).message.split("\n")[0].slice(0, 160) };

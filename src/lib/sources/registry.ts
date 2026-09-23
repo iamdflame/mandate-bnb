@@ -31,6 +31,7 @@ import { createPublicClient, http, type Address } from "viem";
 import { bsc } from "viem/chains";
 import { CHAIN_ID, IDENTITY_REGISTRY, RPC_FALLBACKS, RPC_URL } from "@/lib/config";
 import { memo } from "@/lib/cache";
+import { safeFetch } from "@/lib/net/safe-fetch";
 
 const ERC721 = [
   {
@@ -156,15 +157,13 @@ async function readCard(
   let last = "The card URL did not answer.";
   for (const url of urls) {
     try {
-      const res = await fetch(url, {
-        signal: AbortSignal.timeout(6_000),
-        headers: { accept: "application/json" },
-      });
-      if (!res.ok) {
+      // The tokenURI is whatever the registrant wrote, so it goes through the same guard as an endpoint.
+      const res = await safeFetch(url, { headers: { accept: "application/json" }, timeoutMs: 6_000, maxBytes: 512 * 1024 });
+      if (res.status < 200 || res.status >= 300) {
         last = `The card URL answered ${res.status}.`;
         continue;
       }
-      return { card: (await res.json()) as Record<string, unknown>, source: "http", error: null };
+      return { card: JSON.parse(res.text) as Record<string, unknown>, source: "http", error: null };
     } catch {
       last = "The card URL did not answer.";
     }

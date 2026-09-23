@@ -100,7 +100,8 @@ export async function runCensus(opts: CensusOptions): Promise<CensusRun> {
   const now = new Date().toISOString();
   const callable = targets.filter((t) => !t.unread && t.endpoint);
   log(`${callable.length} of ${targets.length} advertise an endpoint; calling them`);
-  const results = overBudget() ? [] : await probeAll(callable, opts.probeConcurrency ?? 8);
+  // A slow host must not hold the slice: past the budget no new agent is started.
+  const results = overBudget() ? [] : await probeAll(callable, opts.probeConcurrency ?? 8, started + budget - 2_000);
 
   const fresh = new Map<string, ProbeResult>(results.map((r) => [r.tokenId, r]));
   let resolvedFailed = 0;

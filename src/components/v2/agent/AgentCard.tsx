@@ -36,6 +36,22 @@ function Liveness({ l }: { l: Listing }) {
       </span>
     );
   }
+  if (l.liveness === "not-agent") {
+    return (
+      <span className="m-card__signal" title={`We called ${l.probe?.endpoint}: it answered, but not in MCP, A2A or x402`}>
+        <span className="m-dot m-dot--cold" />
+        Answers, not as an agent
+      </span>
+    );
+  }
+  if (l.liveness === "paused") {
+    return (
+      <span className="m-card__signal" title="One of our agents, paused on purpose">
+        <span className="m-dot m-dot--cold" />
+        Paused
+      </span>
+    );
+  }
   if (l.liveness === "no-endpoint") {
     return (
       <span className="m-card__signal" title="Its registry card names no endpoint to call">

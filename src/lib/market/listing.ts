@@ -28,6 +28,8 @@ import { assayFor } from "@/lib/market/assays";
 import { humanAmount, type Quote } from "@/lib/x402/quote";
 import { paidCallsFromFile } from "@/lib/market/paid-calls";
 import { strangerHires } from "@/lib/market/stranger-hires";
+import { pauseFor } from "@/lib/market/paused";
+import { collapse } from "@/lib/dedup";
 
 export type Grade = "measured" | "declared" | "absent" | "untested";
 
@@ -54,12 +56,20 @@ export interface Listing {
 
   /** Called by us, with the result. `null` means never called. */
   probe: {
+    /** True only when it answered in an agent protocol: MCP, A2A, or x402's 402. */
     answered: boolean;
     status: number | null;
     latencyMs: number | null;
     /** Null when the agent's card advertises no endpoint to call. */
     endpoint: string | null;
     at?: string;
+    /** Which handshake it answered; "http" when it answered, but not as an agent. */
+    protocol?: "mcp" | "a2a" | "x402" | "http" | null;
+    /** What its tools/list or agent card offered. */
+    tools?: { name: string; description?: string }[];
+    /** We would not call the endpoint at all: plain http, or a private address. */
+    refused?: boolean;
+    error?: string | null;
   } | null;
   /**
    * The card's one-line liveness verdict.
@@ -77,7 +87,15 @@ export interface Listing {
    * a call that was never placed is a false claim, and it is precisely the
    * kind this product exists to object to.
    */
-  liveness: "live" | "silent" | "no-endpoint" | "untested";
+  /**
+   *   live        answered in an agent protocol (MCP, A2A, or a price over x402)
+   *   not-agent   answered, but not in any agent protocol: a website or a bare API
+   *   silent      did not answer, or answered with an error
+   *   no-endpoint publishes nothing we will call
+   *   untested    not called yet
+   *   paused      one of ours, paused on purpose (lib/market/paused)
+   */
+  liveness: "live" | "not-agent" | "silent" | "no-endpoint" | "untested" | "paused";
   /** The card declares a paid endpoint. */
   declaresPayment: boolean;
   /**
@@ -125,6 +143,13 @@ export interface Listing {
    * Explicitly not a performance score and never presented as one.
    */
   readiness: number;
+  /**
+   * How many registrations carry this same product (same name and
+   * description, whoever owns them). 1 when it is the only one.
+   */
+  copies: number;
+  /** True for the one registration that stands for its product: the earliest. */
+  firstOfProduct: boolean;
 }
 
 interface ProbeRow {
@@ -133,6 +158,10 @@ interface ProbeRow {
   answered: boolean;
   status: number | null;
   latencyMs: number | null;
+  protocol?: "mcp" | "a2a" | "x402" | "http" | null;
+  tools?: { name: string; description?: string }[];
+  refused?: boolean;
+  error?: string | null;
 }
 
 let probeIndex: Map<string, ProbeRow> | null = null;
@@ -343,13 +372,17 @@ export function toListing(a: IndexedAgent, hires = 0, settled?: number): Listing
   const custodyResult = stored?.results.find((r) => r.id === "custody") ?? null;
   const custody = custodyResult ? custodyResult.verdict === "pass" : null;
 
-  const liveness: Listing["liveness"] = !probe
-    ? "untested"
-    : !probe.endpoint
-      ? "no-endpoint"
-      : probe.answered
-        ? "live"
-        : "silent";
+  const liveness: Listing["liveness"] = pauseFor(a.tokenId)
+    ? "paused"
+    : !probe
+      ? "untested"
+      : !probe.endpoint || probe.refused
+        ? "no-endpoint"
+        : probe.answered
+          ? "live"
+          : probe.protocol === "http"
+            ? "not-agent"
+            : "silent";
 
   return {
     tokenId: a.tokenId,
@@ -379,7 +412,28 @@ export function toListing(a: IndexedAgent, hires = 0, settled?: number): Listing
     settled: settled ?? settledFromRecord().get(a.tokenId) ?? hires,
     signals,
     readiness: Math.min(100, readiness),
+    ...copiesOf(a.tokenId),
   };
+}
+
+/*
+  One product registered many times arrives as many rows. The clusters come
+  from lib/dedup, the same measurement the ladder publishes, recomputed only
+  when the index changes.
+*/
+let copyIndex: { at: string; byToken: Map<string, { copies: number; first: string }> } | null = null;
+
+function copiesOf(tokenId: string): { copies: number; firstOfProduct: boolean } {
+  const index = getAgentIndex();
+  if (!copyIndex || copyIndex.at !== index.capturedAt) {
+    const byToken = new Map<string, { copies: number; first: string }>();
+    for (const c of collapse(index.agents).clusters) {
+      for (const id of c.tokenIds) byToken.set(id, { copies: c.count, first: c.tokenIds[0]! });
+    }
+    copyIndex = { at: index.capturedAt, byToken };
+  }
+  const hit = copyIndex.byToken.get(tokenId);
+  return hit ? { copies: hit.copies, firstOfProduct: hit.first === tokenId } : { copies: 1, firstOfProduct: true };
 }
 
 /*

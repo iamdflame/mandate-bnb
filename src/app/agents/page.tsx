@@ -65,8 +65,9 @@ export default async function AgentsPage({
   const pills: { label: string; href: string }[] = [
     ...(q.q ? [{ label: `“${q.q}”`, href: hrefFor(q, { q: "", n: EMPTY.n }) }] : []),
     ...(q.hireable ? [{ label: "Hireable now", href: hrefFor(q, { hireable: false }) }] : []),
-    ...(q.live ? [{ label: "Reachable", href: hrefFor(q, { live: false }) }] : []),
+    ...(q.live ? [{ label: "Answers as an agent", href: hrefFor(q, { live: false }) }] : []),
     ...(q.fresh ? [{ label: "Checked in the last day", href: hrefFor(q, { fresh: false }) }] : []),
+    ...(q.unique ? [{ label: "One per product", href: hrefFor(q, { unique: false }) }] : []),
     ...(q.capable ? [{ label: "Capability checked", href: hrefFor(q, { capable: false }) }] : []),
     ...(q.assayed ? [{ label: "Passes most checks", href: hrefFor(q, { assayed: false }) }] : []),
     ...(q.reviewed ? [{ label: "Has reputation", href: hrefFor(q, { reviewed: false }) }] : []),
@@ -100,8 +101,9 @@ export default async function AgentsPage({
       <details className="x-rail__group" open>
         <summary>Availability</summary>
         <Toggle k="hireable" label="Hireable now" n={count(PRED.hireable)} />
-        <Toggle k="live" label="Reachable" n={count(PRED.live)} />
+        <Toggle k="live" label="Answers as an agent" n={count(PRED.live)} />
         <Toggle k="fresh" label="Checked in the last day" n={count(PRED.fresh)} />
+        <Toggle k="unique" label="One per product" n={count(PRED.unique)} />
       </details>
       <details className="x-rail__group" open>
         <summary>Trust</summary>

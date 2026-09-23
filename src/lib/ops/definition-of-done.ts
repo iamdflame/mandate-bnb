@@ -111,14 +111,20 @@ async function build(): Promise<Box[]> {
   const oldest = ages.length ? Math.max(...ages) : null;
   const withinTwoHours = ages.filter((m) => m <= 120).length;
   const cycling = oldest !== null && oldest <= 6 * 60;
+  // Readings taken by the protocol probe carry a protocol; older ones do not, until each agent is called again.
+  const spoken = callable.filter((l) => l.probe?.protocol !== undefined);
+  const said = (p: string) => spoken.filter((l) => l.probe?.protocol === p).length;
+  const copies = all.filter((l) => l.copies > 1).length;
   boxes.push({
     id: "probe",
     claim: "Probe is live (15 minutes or less) on A2A and MCP; failures visible; clones badged.",
-    state: cycling ? "partly" : "open",
+    state: cycling && oldest !== null && oldest <= 15 && spoken.length === callable.length ? "done" : cycling ? "partly" : "open",
     detail:
       `${withinTwoHours} of ${callable.length} agents with an endpoint were called in the last two hours; the oldest reading is ` +
       `${oldest === null ? "unknown" : oldest < 120 ? `${Math.round(oldest)} min` : `${(oldest / 60).toFixed(1)} h`} old` +
-      `${census.minutes !== null ? ` (census stamp ${census.minutes} min ago)` : ""}. Failures stay listed and dimmed. The probe is still a single GET: it does not yet speak A2A JSON-RPC or MCP initialize, and clones are not clustered.`,
+      `${census.minutes !== null ? ` (census stamp ${census.minutes} min ago)` : ""}. ` +
+      `${spoken.length} of ${callable.length} have been read by the protocol probe so far: ${said("x402")} answered with a price, ${said("mcp")} over MCP, ${said("a2a")} over A2A, and ${said("http")} answered in no agent protocol. ` +
+      `Failures stay listed and dimmed. ${copies} listed registrations are copies of another's card, and /agents can show one per product.`,
     link: "/agents",
   });
 

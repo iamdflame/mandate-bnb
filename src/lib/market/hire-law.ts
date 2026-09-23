@@ -24,6 +24,7 @@ import type { Listing } from "@/lib/market/listing";
 import { isOurs } from "@/lib/market/judge";
 import { outcomes, paidCallsFromFile, type Outcome } from "@/lib/market/paid-calls";
 import { pauseFor } from "@/lib/market/paused";
+import { nameSome, toolsFit } from "@/lib/assay/tools";
 
 /** A hire is only offered on an answer from the last day. */
 export const FRESH_HOURS = 24;
@@ -79,13 +80,20 @@ function ago(minutes: number): string {
 }
 
 export function hirePath(
-  l: Pick<Listing, "tokenId" | "owner" | "probe" | "liveness" | "quote" | "priceLabel">,
+  l: Pick<Listing, "tokenId" | "owner" | "probe" | "liveness" | "quote" | "priceLabel"> & { category?: Listing["category"] },
   opts: { now?: number; bidders?: ReadonlySet<string>; outcomes?: Map<string, Outcome> } = {},
 ): HireVerdict {
   const now = opts.now ?? Date.now();
   const ours = isOurs(l);
+  const bidder = ours || Boolean(l.owner && opts.bidders?.has(l.owner.toLowerCase()));
+  /*
+    An endpoint that answers, but in no agent protocol, cannot be paid per
+    call. It can still take a job in this market, which reaches it through the
+    contract rather than its endpoint, so for a bidder that answer counts.
+  */
+  const responded = Boolean(l.probe?.answered) || (l.liveness === "not-agent" && bidder);
   const at = l.probe?.at ? Date.parse(l.probe.at) : NaN;
-  const minutes = l.probe?.answered && Number.isFinite(at) ? Math.max(0, (now - at) / 60_000) : null;
+  const minutes = responded && Number.isFinite(at) ? Math.max(0, (now - at) / 60_000) : null;
   const base = { answeredMinutesAgo: minutes, answeringNow: minutes !== null && minutes <= LIVE_MINUTES, ours };
   const refuse = (reason: string, short: string): HireVerdict => ({ ok: false, rails: [], reason, short, ...base });
 
@@ -93,12 +101,25 @@ export function hirePath(
   const pause = pauseFor(l.tokenId);
   if (pause) return refuse(pause.reason, pause.short);
 
-  if (l.liveness === "no-endpoint") return refuse("Its registry card names nothing to call, so there is nothing to hire.", "Publishes nothing to call");
+  if (l.liveness === "no-endpoint") {
+    return l.probe?.refused
+      ? refuse(`Its registration names an endpoint we will not call: ${l.probe.error ?? "plain http, or an address on a private network"}.`, "Endpoint we will not call")
+      : refuse("Its registry card names nothing to call, so there is nothing to hire.", "Publishes nothing to call");
+  }
   if (l.liveness === "untested" || !l.probe) return refuse("We have not called it yet, so we cannot say it will pick up.", "Not checked yet");
-  if (!l.probe.answered) return refuse("It did not answer when we last called it.", "Did not answer our last call");
+  if (l.liveness === "not-agent" && !bidder) {
+    return refuse("It answers, but not in MCP, A2A or x402, so there is nothing here we know how to hire.", "No agent protocol");
+  }
+  if (!responded) return refuse("It did not answer when we last called it.", "Did not answer our last call");
   if (minutes === null) return refuse("We have no time for its last answer, so we cannot say it is still there.", "No recent answer on record");
   if (minutes > FRESH_HOURS * 60) {
     return refuse(`It last answered ${ago(minutes)}. A hire is only offered on an answer from the last day.`, `Last answered ${ago(minutes)}`);
+  }
+
+  // The software behind the card offers something else: a claim its own server contradicts.
+  const fit = toolsFit(l.category ?? null, l.probe.tools);
+  if (fit.state === "mismatch") {
+    return refuse(`The software behind it offers ${nameSome(fit.listed)}, and none of it fits the job its card claims.`, "Tools do not fit its job");
   }
 
   /*
@@ -122,7 +143,7 @@ export function hirePath(
   if (l.quote?.payable) {
     rails.push({ kind: "x402", price: l.priceLabel ?? l.quote.amount, method: l.quote.transferMethod ?? null, endpoint: l.quote.endpoint });
   }
-  if (ours || (l.owner && opts.bidders?.has(l.owner.toLowerCase()))) rails.push({ kind: "mandate" });
+  if (bidder) rails.push({ kind: "mandate" });
 
   if (!rails.length) {
     return refuse(
