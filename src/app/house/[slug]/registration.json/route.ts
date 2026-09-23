@@ -12,6 +12,7 @@ import { referenceBySlug, referenceRegistrations } from "@/lib/house";
 import { IDENTITY_REGISTRY } from "@/lib/config";
 import { RECIPIENT_BOUND, SWAP_BOUND } from "@/lib/chain/leash";
 import { DEMO_ADDRESS } from "@/lib/demo";
+import { pauseForSlug } from "@/lib/market/paused";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +24,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   const agent = referenceBySlug(slug);
   if (!agent) return NextResponse.json({ error: "No reference agent by that name." }, { status: 404 });
   const reg = referenceRegistrations()[slug];
+  // A paused agent says so to anyone reading its registration, and stops advertising a price it will not take.
+  const pause = pauseForSlug(slug);
   const leash =
     slug === "range-1"
       ? { contract: RECIPIENT_BOUND, what: "RecipientBound: mint and collect write the principal as recipient" }
@@ -37,17 +40,18 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
       description: agent.description,
       category: agent.category,
       services: [
-        { name: "x402", endpoint: `${HOST}/api/x402/house/${slug}` },
+        ...(pause ? [] : [{ name: "x402", endpoint: `${HOST}/api/x402/house/${slug}` }]),
         { name: "A2A", endpoint: `${HOST}/house/${slug}/agent-card.json`, version: "0.3.0" },
         { name: "MCP", endpoint: `${HOST}/api/mcp` },
         { name: "web", endpoint: `${HOST}/desk#${slug}` },
       ],
-      x402Support: true,
-      active: true,
+      x402Support: !pause,
+      active: !pause,
+      ...(pause ? { paused: { since: pause.since, reason: pause.reason } } : {}),
       registrations: reg ? [{ agentId: Number(reg.tokenId), agentRegistry: `eip155:56:${IDENTITY_REGISTRY}` }] : [],
       supportedTrust: ["crypto-economic"],
       operates: { account: DEMO_ADDRESS, through: "Altana session keys the account's owner granted", leash },
-      price: { amount: "0.05", asset: "USD1", scheme: "x402 exact, EIP-3009" },
+      ...(pause ? {} : { price: { amount: "0.05", asset: "USD1", scheme: "x402 exact, EIP-3009" } }),
     },
     { headers: { "cache-control": "public, max-age=60", "access-control-allow-origin": "*" } },
   );

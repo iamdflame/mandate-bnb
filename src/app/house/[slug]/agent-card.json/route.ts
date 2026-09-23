@@ -16,6 +16,7 @@ import { NextResponse } from "next/server";
 import { houseBySlug, referenceBySlug, referenceRegistrations } from "@/lib/house";
 import { HOUSE_SERVICES } from "@/lib/house/services";
 import { CATEGORY_LABEL } from "@/lib/config";
+import { pauseForSlug } from "@/lib/market/paused";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,11 +32,12 @@ export async function GET(
   if (ref) {
     const service = HOUSE_SERVICES[slug];
     const reg = referenceRegistrations()[slug];
+    const pause = pauseForSlug(slug);
     return NextResponse.json(
       {
         protocolVersion: "0.3.0",
         name: ref.name,
-        description: ref.description,
+        description: pause ? `${pause.reason} ${ref.description}` : ref.description,
         url: `${HOST}/api/x402/house/${slug}`,
         version: "1.0.0",
         documentationUrl: `${HOST}/desk#${slug}`,
@@ -47,7 +49,9 @@ export async function GET(
           {
             id: slug,
             name: service?.name ?? ref.name,
-            description: `${service?.description ?? ref.description} Paid over x402: 0.05 USD1, EIP-3009, answered with 402 then the work.`,
+            description: pause
+              ? `${pause.reason} Its x402 endpoint answers 410 and takes no payment until the pause is lifted.`
+              : `${service?.description ?? ref.description} Paid over x402: 0.05 USD1, EIP-3009, answered with 402 then the work.`,
             tags: ["erc-8004", "bsc", "x402", ref.category],
             examples: [`GET ${HOST}/api/x402/house/${slug}${service?.inputs[0] ? `?${service.inputs[0].name}=...` : ""}`],
             inputModes: ["application/json"],

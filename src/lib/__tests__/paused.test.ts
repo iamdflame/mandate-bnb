@@ -66,6 +66,25 @@ describe("a paused agent", () => {
     expect(session.grantScopedSession).not.toHaveBeenCalled();
   });
 
+  it("says so in its public registration: inactive, no x402 service, no price, and why", async () => {
+    const { GET } = await import("../../app/house/[slug]/registration.json/route");
+    const read = async (slug: string) => (await (await GET(new Request(`https://mandate.test/house/${slug}/registration.json`), { params: Promise.resolve({ slug }) })).json()) as {
+      active: boolean;
+      services: { name: string }[];
+      price?: unknown;
+      paused?: { reason: string };
+    };
+    const grid = await read("grid-1");
+    expect(grid.active).toBe(false);
+    expect(grid.services.map((x) => x.name)).not.toContain("x402");
+    expect(grid.price).toBeUndefined();
+    expect(grid.paused?.reason).toMatch(/^Paused:/);
+    const range = await read("range-1");
+    expect(range.active).toBe(true);
+    expect(range.services.map((x) => x.name)).toContain("x402");
+    expect(range.paused).toBeUndefined();
+  });
+
   it("stops its x402 endpoint taking money, even when a payment is attached", async () => {
     const { GET } = await import("../../app/api/x402/house/[slug]/route");
     const res = await GET(new Request("https://mandate.test/api/x402/house/grid-1", { headers: { "x-payment": "e30=" } }), {
