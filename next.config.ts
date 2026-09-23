@@ -63,6 +63,8 @@ const config: NextConfig = {
         commit that builds the real route, so no link in the nav is ever dead.
       */
       { source: "/trust", destination: "/verify", permanent: false },
+      // What a visitor would call the walkthrough; the route keeps its old name.
+      { source: "/demo", destination: "/judges", permanent: false },
       { source: "/list", destination: "/list-your-agent", permanent: false },
     ];
   },

@@ -34,6 +34,8 @@ export interface MarketEvent {
   source: "probe" | "chain" | "registry" | "session store";
   /** A link to the proof, when there is one. */
   proof?: string;
+  /** A sentence of context: why a payment failed, whose mistake it was. */
+  note?: string;
 }
 
 const bsc = (tx: string) => `https://bscscan.com/tx/${tx}`;
@@ -43,6 +45,37 @@ export interface Feed {
   events: MarketEvent[];
   /** When each source was last read, so the feed can say how fresh it is. */
   sources: { probe: string | null };
+}
+
+/**
+ * How a revocation reads in the feed. Keys the site found on the demo account
+ * and could not account for are real revocations, but "Orphaned key" means
+ * nothing to a visitor, so they are named for what they are.
+ */
+export function revokedWords(label: string): { actor: string; what: string } {
+  return /orphan/i.test(label)
+    ? { actor: "A leftover key on the demo account", what: "was revoked" }
+    : { actor: label, what: "had its permission revoked" };
+}
+
+/** Events grouped under Today, Yesterday or a date, newest first. */
+export function byDay(events: MarketEvent[], now = Date.now()): { day: string; events: MarketEvent[] }[] {
+  const out: { day: string; events: MarketEvent[] }[] = [];
+  const dayOf = (iso: string) => {
+    const d = new Date(iso);
+    const today = new Date(now);
+    const diff = Math.floor((Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()) - Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())) / 86_400_000);
+    if (diff <= 0) return "Today";
+    if (diff === 1) return "Yesterday";
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: "UTC" });
+  };
+  for (const e of events) {
+    const day = dayOf(e.at);
+    const last = out[out.length - 1];
+    if (last && last.day === day) last.events.push(e);
+    else out.push({ day, events: [e] });
+  }
+  return out;
 }
 
 /**
@@ -109,6 +142,7 @@ export async function marketEvents(opts: { limit?: number; since?: number } = {}
       figure: amount(c.amount) ? `${amount(c.amount)} ${assetSymbol(c.asset) ?? ""}`.trim() : undefined,
       source: "chain",
       proof: c.tx ? bsc(c.tx) : undefined,
+      note: c.fault === "ours" ? `Our mistake, not the seller's. ${c.note ?? ""}`.trim() : (c.note ?? c.refused ?? undefined)?.slice(0, 280),
     });
   }
 
@@ -134,8 +168,8 @@ export async function marketEvents(opts: { limit?: number; since?: number } = {}
         id: `rev:${s.id}`,
         kind: "revoked",
         at: s.revokedAt,
-        actor: s.label,
-        what: "had its permission revoked",
+        ...revokedWords(s.label),
+        note: s.revokedBecause ?? undefined,
         source: "session store",
         proof: s.revokeTx ? bsc(s.revokeTx) : undefined,
       });

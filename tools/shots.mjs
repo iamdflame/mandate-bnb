@@ -1,23 +1,31 @@
-// Screenshots for visual review at phone, tablet and desktop widths.
-//   OUT=/some/dir node tools/shots.mjs   (needs the dev server on :3311)
+// Screenshots for visual review at the widths the design brief names.
+//   BASE=http://localhost:3312 OUT=/some/dir [ROUTES="name:/path,..."] [WIDTHS="1440,390"] node tools/shots.mjs
 import { chromium } from 'playwright-core';
+
+const B = process.env.BASE || 'http://localhost:3312';
 const OUT = process.env.OUT;
+if (!OUT) throw new Error('set OUT to a directory');
+const SIZES = { 1440: 1000, 1280: 900, 1024: 900, 390: 844 };
+const WIDTHS = (process.env.WIDTHS || '1440,1280,1024,390').split(',').map(Number);
+const ROUTES = (process.env.ROUTES || [
+  'home:/', 'agents:/agents', 'agent:/agents/342377', 'categories:/categories', 'jobs:/jobs',
+  'activity:/activity', 'verify:/verify', 'desk:/desk', 'status:/status', 'list:/list',
+].join(',')).split(',').filter(Boolean).map((x) => { const i = x.indexOf(':'); return [x.slice(0, i), x.slice(i + 1)]; });
+const FULL = process.env.FULL === '1';
+
 const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' });
-const jobs = [
-  ['home-390', '/', 390, 844, true],
-  ['agents-390', '/agents', 390, 844, false],
-  ['agents-1024', '/agents', 1024, 900, false],
-  ['compare-1440', '/compare?ids=342377%2C269704%2C342379', 1440, 1000, false],
-  ['categories-1440', '/categories', 1440, 1000, false],
-  ['search-1440', '/agents?q=protect+a+loan', 1440, 1000, false],
-  ['empty-1440', '/agents?settled=1&max=0.05&category=grid-trading', 1440, 1000, false],
-];
-for (const [name, path, w, h, full] of jobs) {
-  const p = await b.newPage({ viewport: { width: w, height: h } });
-  await p.goto('http://localhost:3311' + path, { waitUntil: 'domcontentloaded', timeout: 120000 });
-  await p.waitForTimeout(2500);
-  await p.screenshot({ path: `${OUT}/${name}.png`, fullPage: full });
-  await p.close();
+for (const [name, path] of ROUTES) {
+  for (const w of WIDTHS) {
+    const p = await b.newPage({ viewport: { width: w, height: SIZES[w] ?? 900 } });
+    try {
+      await p.goto(B + path, { waitUntil: 'networkidle', timeout: 90000 });
+    } catch {
+      /* screenshot whatever rendered */
+    }
+    await p.waitForTimeout(1000);
+    await p.screenshot({ path: `${OUT}/${name}-${w}.png`, fullPage: FULL });
+    await p.close();
+  }
 }
 await b.close();
-console.log('shots done');
+console.log(`shots: ${ROUTES.length} routes x ${WIDTHS.length} widths -> ${OUT}`);

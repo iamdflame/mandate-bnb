@@ -41,17 +41,33 @@ export default function WalletButton() {
     };
   }, []);
 
+  /*
+    Always "Connect wallet". It used to say "Get a wallet" whenever the browser
+    had none, which is true and reads like a sign on a locked door. Now the
+    same button explains, in place, that no wallet was found and that nothing
+    on the site needs one until the moment you pay.
+  */
   if (!available) {
     return (
-      <a className="m-btn m-btn--sm m-btn--quiet" href="https://www.bnbchain.org/en/wallets" target="_blank" rel="noreferrer">
-        Get a wallet
-      </a>
+      <details className="m-wallet" ref={ref}>
+        <summary className="x-btn x-btn--sm x-btn--primary">Connect wallet</summary>
+        <div className="m-wallet__panel">
+          <p className="m-label">No wallet found</p>
+          <p className="m-small">
+            This browser has no wallet extension. You can browse, compare and even try some agents for free without
+            one. You only need a wallet at the moment you pay.
+          </p>
+          <a className="x-btn x-btn--sm x-btn--block" href="https://www.bnbchain.org/en/wallets" target="_blank" rel="noreferrer">
+            Get a BNB Smart Chain wallet
+          </a>
+        </div>
+      </details>
     );
   }
 
   if (!address) {
     return (
-      <button className="m-btn m-btn--sm m-btn--primary" onClick={() => void connect().catch(() => undefined)} type="button">
+      <button className="x-btn x-btn--sm x-btn--primary" onClick={() => void connect().catch(() => undefined)} type="button">
         Connect wallet
       </button>
     );

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Check, HelpCircle, Minus, X } from "lucide-react";
 import AppShell from "@/components/v2/shell/AppShell";
 import AgentArtwork from "@/components/x/AgentArtwork";
 import Status from "@/components/x/Status";
@@ -12,7 +11,9 @@ import { listings, listingFor, type Listing } from "@/lib/market/listing";
 import { hireCounts } from "@/lib/market/hires";
 import { hireHref, hirePath } from "@/lib/market/hire-law";
 import { assayFor } from "@/lib/market/assays";
-import { trustOf, type NodeState } from "@/lib/market/trust";
+import { trustOf } from "@/lib/market/trust";
+import { ProofGlyph } from "@/components/x/Proof";
+import Price from "@/components/x/Price";
 import { live } from "@/lib/data/live";
 
 export const metadata: Metadata = {
@@ -26,13 +27,6 @@ export const maxDuration = 60;
 const SLOTS = 3;
 // Shown when nobody has picked anything yet: two answering agents doing the same job.
 const DEFAULT_PAIR = ["342377", "269704"];
-
-function StateIcon({ s }: { s: NodeState }) {
-  if (s === "pass") return <Check size={16} strokeWidth={2.5} className="x-cmpt__pass" aria-label="passed" />;
-  if (s === "fail") return <X size={16} strokeWidth={2.5} className="x-cmpt__fail" aria-label="not shown" />;
-  if (s === "na") return <Minus size={16} className="x-dim" aria-label="does not apply" />;
-  return <HelpCircle size={16} className="x-dim" aria-label="not checked yet" />;
-}
 
 /**
  * Two or three agents, one column each, on facts we hold.
@@ -80,7 +74,7 @@ export default async function ComparePage({
   };
   const bestPrice = best(cols.map((c) => c.l.usdPrice), (a, b) => a < b);
   const bestSpeed = best(cols.map((c) => (c.l.probe?.answered ? c.l.probe.latencyMs : null)), (a, b) => (a ?? 9e9) < (b ?? 9e9));
-  const bestChecks = best(cols.map((c) => c.trust.verified), (a, b) => (a ?? -1) > (b ?? -1));
+  const bestChecks = best(cols.map((c) => c.trust.counts.proven), (a, b) => a > b);
 
   const Row = ({ k, children, hint }: { k: string; children: ReactNode[]; hint?: string }) => (
     <tr>
@@ -157,7 +151,7 @@ export default async function ComparePage({
               </thead>
               <tbody>
                 <Row k="Price" hint="read from its own 402">
-                  {cols.map((c, i) => mark(i, bestPrice, <span className="x-mono">{c.l.priceLabel ?? <span className="x-dim">Not published</span>}</span>))}
+                  {cols.map((c, i) => mark(i, bestPrice, <Price key={c.l.tokenId} l={c.l} size="sm" />))}
                 </Row>
                 <Row k="Response" hint="our last call">
                   {cols.map((c, i) =>
@@ -172,29 +166,32 @@ export default async function ComparePage({
                 <Row k="Last checked">
                   {cols.map((c) => (c.l.probe?.at ? <Ago key={c.l.tokenId} iso={c.l.probe.at} /> : <span key={c.l.tokenId} className="x-dim">Never</span>))}
                 </Row>
-                <Row k="Checks passed" hint="of those that apply">
+                <Row k="Proven" hint="checks that passed">
                   {cols.map((c, i) =>
-                    mark(i, bestChecks, <span className="x-mono">{c.trust.verified === null ? <span className="x-dim">Unchecked</span> : `${c.trust.verified} of ${c.trust.applicable}`}</span>),
+                    mark(
+                      i,
+                      bestChecks,
+                      <span key={c.l.tokenId} className="x-mono">
+                        {c.trust.counts.proven} proven
+                        {c.trust.counts.unproven ? <span className="x-dim"> · {c.trust.counts.unproven} not yet</span> : null}
+                        {c.trust.counts.failed ? <span className="x-dim"> · {c.trust.counts.failed} failed</span> : null}
+                      </span>,
+                    ),
                   )}
                 </Row>
-                {(["reachable", "active", "capability", "settled"] as const).map((key) => (
-                  <Row key={key} k={cols[0].trust.nodes.find((n) => n.key === key)?.label ?? key}>
+                {(["reachable", "active", "capability", "custody", "reputation", "settled"] as const).map((key) => (
+                  <Row key={key} k={cols[0].trust.proofs.find((n) => n.key === key)?.label ?? key}>
                     {cols.map((c) => {
-                      const n = c.trust.nodes.find((x) => x.key === key)!;
+                      const n = c.trust.proofs.find((x) => x.key === key)!;
                       return (
                         <span key={c.l.tokenId} className="x-cmpt__node">
-                          <StateIcon s={n.state} />
-                          <span>{n.detail}</span>
+                          <ProofGlyph state={n.state} />
+                          <span>{n.headline}</span>
                         </span>
                       );
                     })}
                   </Row>
                 ))}
-                <Row k="Wallet separation" hint="agent key apart from owner">
-                  {cols.map((c) => (
-                    <span key={c.l.tokenId}>{c.l.custodySeparate === null ? <span className="x-dim">Unchecked</span> : c.l.custodySeparate ? "Separate" : "Same wallet"}</span>
-                  ))}
-                </Row>
                 <Row k="Protocols" hint="as declared">
                   {cols.map((c) => (
                     <span key={c.l.tokenId} className="x-cmpt__tags">

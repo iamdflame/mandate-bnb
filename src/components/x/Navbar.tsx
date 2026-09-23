@@ -25,6 +25,7 @@ const MORE = [
   { href: "/trust", label: "Trust", note: "How every agent is checked" },
   { href: "/api", label: "Docs", note: "Public API and MCP" },
   { href: "/status", label: "Status", note: "Is everything working" },
+  { href: "/judges", label: "See it work", note: "A 90 second walk through a real hire" },
 ] as const;
 
 export default function Navbar() {

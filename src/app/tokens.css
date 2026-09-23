@@ -57,6 +57,21 @@
   --c-cat-yield: #6fcf6a;
   --c-cat-health: #ef7a6a;
 
+  /* A lighter tone per category, for the second layer inside the art. */
+  --c-cat-rebalance-2: #86e3d6;
+  --c-cat-grid-2: #f4cf86;
+  --c-cat-yield-2: #b0e8a6;
+  --c-cat-health-2: #f6b0a3;
+
+  /*
+    Each category's own ground: the base surface with its hue mixed in, so the
+    four jobs read as four places rather than four labels on one grey.
+  */
+  --c-cat-rebalance-bg: #0c1a1b;
+  --c-cat-grid-bg: #1b150c;
+  --c-cat-yield-bg: #0f190f;
+  --c-cat-health-bg: #1c1011;
+
   /* --- type ------------------------------------------------------------ */
   --f-sans: var(--font-geist-sans), "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-mono: var(--font-geist-mono), "Geist Mono", ui-monospace, "SFMono-Regular", monospace;

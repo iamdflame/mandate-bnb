@@ -15,6 +15,8 @@ import AgentArtwork from "@/components/x/AgentArtwork";
 import { trustOf } from "@/lib/market/trust";
 import type { Listing } from "@/lib/market/listing";
 import type { AssayReport } from "@/lib/assay/types";
+import { applyQuery, EMPTY, PRED } from "@/lib/market/catalogue";
+import { revokedWords } from "@/lib/market/events";
 
 const art = (category: Parameters<typeof AgentArtwork>[0]["category"], seed: string) =>
   renderToStaticMarkup(createElement(AgentArtwork, { category, seed }));
@@ -63,6 +65,9 @@ const listing = (over: Partial<Listing> = {}): Listing =>
     avgScore: null,
     registryScore: null,
     hires: 0,
+    settled: 0,
+    usdPrice: null,
+    createdAt: null,
     signals: [],
     readiness: 0,
     ...over,
@@ -84,33 +89,72 @@ const report = (verdicts: Record<string, "pass" | "fail" | "inconclusive" | "na"
     assayedAt: "2026-09-20T00:00:00Z",
   }) as unknown as AssayReport;
 
-describe("trust nodes", () => {
-  it("counts only applicable checks, and only the ones that passed", () => {
-    const t = trustOf(listing(), report({ identity: "pass", custody: "na", activity: "pass", capability: "fail", reputation: "inconclusive", performance: "fail" }));
-    expect(t.verified).toBe(2);
-    expect(t.applicable).toBe(5);
+describe("the four verification states", () => {
+  const proof = (t: ReturnType<typeof trustOf>, key: string) => t.proofs.find((p) => p.key === key)!;
+
+  it("counts proven, not yet proven, failed and no data separately", () => {
+    const t = trustOf(listing(), report({ identity: "pass", custody: "fail", activity: "pass", capability: "fail", reputation: "inconclusive", performance: "inconclusive" }));
+    expect(t.counts).toEqual({ proven: 2, unproven: 1, failed: 1, nodata: 2 });
   });
 
-  it("says nothing was checked when there is no stored assay, rather than zero", () => {
-    const t = trustOf(listing(), null);
-    expect(t.verified).toBeNull();
-    expect(t.nodes.find((n) => n.key === "assayed")?.detail).toBe("Not checked yet");
+  it("calls a capability it did not see 'not yet proven', never failed", () => {
+    const p = proof(trustOf(listing(), report({ capability: "fail" })), "capability");
+    expect(p.state).toBe("unproven");
+    expect(p.meaning).toMatch(/act rarely/);
   });
 
-  it("never badges a capability the assay did not pass", () => {
-    const t = trustOf(listing(), report({ activity: "pass", capability: "fail" }));
-    expect(t.badges).toContain("Wallet active");
-    expect(t.badges).not.toContain("Capability checked");
+  it("calls a silent endpoint a failed check, and one never called 'not enough data'", () => {
+    expect(proof(trustOf(listing({ liveness: "silent" }), null), "reachable").state).toBe("failed");
+    expect(proof(trustOf(listing({ liveness: "untested", probe: null }), null), "reachable").state).toBe("nodata");
   });
 
-  it("reports a silent endpoint as not reachable, and an uncalled one as unknown", () => {
-    expect(trustOf(listing({ liveness: "silent" }), null).nodes.find((n) => n.key === "reachable")?.state).toBe("fail");
-    expect(trustOf(listing({ liveness: "untested", probe: null }), null).nodes.find((n) => n.key === "reachable")?.state).toBe("unknown");
+  it("calls an agent that signs with its owner's wallet a failed custody check", () => {
+    expect(proof(trustOf(listing(), report({ custody: "fail" })), "custody").state).toBe("failed");
+  });
+
+  it("says a seller of answers never holds funds rather than failing custody", () => {
+    const p = proof(trustOf(listing(), report({ custody: "na" })), "custody");
+    expect(p.state).toBe("nodata");
+    expect(p.headline).toBe("Never holds your funds");
+  });
+
+  it("never shows a proven state or a badge without a passing check", () => {
+    const t = trustOf(listing({ liveness: "untested", probe: null }), report({ activity: "fail", capability: "fail", custody: "fail", reputation: "fail" }));
+    expect(t.proofs.filter((p) => p.state === "proven")).toHaveLength(0);
+    expect(t.badges).toEqual([]);
   });
 
   it("shows settled work only when there is some", () => {
-    expect(trustOf(listing({ hires: 0 }), null).nodes.find((n) => n.key === "settled")?.state).toBe("unknown");
-    expect(trustOf(listing(), null, { settled: 3 }).nodes.find((n) => n.key === "settled")?.detail).toBe("3 paid jobs delivered");
+    expect(proof(trustOf(listing(), null, { settled: 0 }), "settled").state).toBe("nodata");
+    expect(proof(trustOf(listing(), null, { settled: 3 }), "settled").headline).toBe("3 paid jobs delivered");
+  });
+
+  it("runs the timeline in the order a buyer reads it", () => {
+    expect(trustOf(listing(), null).timeline.map((n) => n.key)).toEqual(["registered", "reachable", "active", "capability", "assayed", "settled"]);
+  });
+});
+
+import { priceParts, usd } from "@/components/x/Price";
+
+describe("price", () => {
+  it("shows dollars when the agent prices in a dollar stablecoin, with the exact quote underneath", () => {
+    expect(priceParts({ usdPrice: 0.05, priceLabel: "0.05 USDT", declaresPayment: true })).toMatchObject({ value: "$0.05", unit: "/ call", exact: "0.05 USDT" });
+  });
+
+  it("keeps the seller's own unit when it is not a dollar", () => {
+    expect(priceParts({ usdPrice: null, priceLabel: "0.001 WBNB", declaresPayment: true })).toMatchObject({ value: "0.001 WBNB", unit: "/ call" });
+  });
+
+  it("never presents a missing price as free", () => {
+    expect(priceParts({ usdPrice: null, priceLabel: null, declaresPayment: false })).toMatchObject({ value: null, none: "No price published" });
+    expect(priceParts({ usdPrice: null, priceLabel: null, declaresPayment: true }).none).toMatch(/not read yet/);
+  });
+
+  it("does not round a real small charge down to nothing", () => {
+    expect(usd(0.005)).toBe("$0.005");
+    expect(usd(0.02)).toBe("$0.02");
+    expect(usd(1.5)).toBe("$1.50");
+    expect(usd(0)).toBe("$0.00");
   });
 });
 
@@ -135,5 +179,53 @@ describe("search intent", () => {
   it("does not decide on one weak word, and returns nothing for a name", () => {
     expect(intentOf("safe")).toBeNull();
     expect(intentOf("Agripinaa")).toBeNull();
+  });
+});
+
+describe("marketplace sorts", () => {
+  const at = (m: number) => new Date(Date.now() - m * 60_000).toISOString();
+  const probe = (m: number, answered = true) => ({ answered, status: 200, latencyMs: 100, endpoint: "https://x.test", at: at(m) });
+
+  it("orders Recently active by our latest answer, and silent agents last", () => {
+    const shelf = [
+      listing({ tokenId: "1", probe: probe(90) as never }),
+      listing({ tokenId: "2", probe: probe(5, false) as never, liveness: "silent" }),
+      listing({ tokenId: "3", probe: probe(10) as never }),
+    ];
+    const ids = applyQuery(shelf, { ...EMPTY, sort: "recent" }).shown.map((l) => l.tokenId);
+    expect(ids).toEqual(["3", "1", "2"]);
+  });
+
+  it("orders Fastest by response time, and never puts a silent agent first", () => {
+    const shelf = [
+      listing({ tokenId: "1", probe: { ...probe(5), latencyMs: 400 } as never }),
+      listing({ tokenId: "2", probe: probe(5, false) as never, liveness: "silent" }),
+      listing({ tokenId: "3", probe: { ...probe(5), latencyMs: 60 } as never }),
+    ];
+    const ids = applyQuery(shelf, { ...EMPTY, sort: "fastest" }).shown.map((l) => l.tokenId);
+    expect(ids).toEqual(["3", "1", "2"]);
+  });
+
+  it("orders Most activity by settled work, then reviews, then hires", () => {
+    const shelf = [
+      listing({ tokenId: "1", reviews: 9 }),
+      listing({ tokenId: "2", settled: 2 }),
+      listing({ tokenId: "3", reviews: 9, hires: 4 }),
+      listing({ tokenId: "4" }),
+    ];
+    const ids = applyQuery(shelf, { ...EMPTY, sort: "activity" }).shown.map((l) => l.tokenId);
+    expect(ids).toEqual(["2", "3", "1", "4"]);
+  });
+
+  it("filters Price published to agents whose price we actually read", () => {
+    expect(PRED.priced(listing({ declaresPayment: true, quote: null }))).toBe(false);
+    expect(PRED.priced(listing({ quote: { payable: true, amount: "50000", decimals: 6 } as never }))).toBe(true);
+  });
+});
+
+describe("market events", () => {
+  it("names a leftover key for what it is rather than as an internal orphan", () => {
+    expect(revokedWords("Orphaned key 0x12ab")).toEqual({ actor: "A leftover key on the demo account", what: "was revoked" });
+    expect(revokedWords("Mandate Range-1")).toEqual({ actor: "Mandate Range-1", what: "had its permission revoked" });
   });
 });

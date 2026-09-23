@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { encodeFunctionData, parseAbi, type Address, type Hex } from "viem";
 import { useWallet, readableError } from "@/lib/chain/wallet";
 import { marketChain, marketClient } from "@/lib/chain/market";
@@ -30,7 +30,7 @@ import {
  * them. Nothing is signed before the price is on screen.
  */
 
-type Phase =
+export type Phase =
   | { at: "idle" }
   | { at: "quoting" }
   | { at: "quoted"; req: Requirement }
@@ -75,6 +75,27 @@ function sellerError(body: unknown, status: number): string {
   return status === 402 ? "The payment was refused. Nothing was charged." : `The seller answered ${status}.`;
 }
 
+/**
+ * A refusal in the wallet is the buyer's decision, not an error, and the one
+ * thing they want to know after it is that no money moved.
+ */
+function whyFailed(e: unknown, stage: "approve" | "sign" | "other"): string {
+  const raw = e instanceof Error ? e.message : String(e);
+  if (/User rejected|denied|rejected the request|4001/i.test(raw)) {
+    return stage === "approve" ? "You declined the approval. Nothing was charged." : "Your signature was rejected. Nothing was charged.";
+  }
+  return readableError(e);
+}
+
+/** What the drawer around this needs to know, each time the state moves. */
+export interface PhaseReport {
+  at: Phase["at"];
+  tx?: string | null;
+  body?: unknown;
+  why?: string;
+  price?: string;
+}
+
 /** Decodes a settlement receipt header, in either of the two spellings. */
 function txFrom(res: Answer): string | null {
   const raw = res.header("payment-response") ?? res.header("x-payment-response");
@@ -101,6 +122,9 @@ export default function BuyOneCall({
   body,
   tokenId,
   subject,
+  onPhase,
+  autoQuote = false,
+  quiet = false,
 }: {
   path: string;
   what: string;
@@ -114,6 +138,12 @@ export default function BuyOneCall({
    */
   tokenId?: string;
   subject?: string;
+  /** Called on every state change, so a surrounding flow can show where the payment is. */
+  onPhase?: (p: PhaseReport) => void;
+  /** Ask for the price as soon as it mounts, for a flow where the buyer already chose to pay. */
+  autoQuote?: boolean;
+  /** Leave the result to the surrounding flow instead of printing it here. */
+  quiet?: boolean;
 }) {
   const { address, ready, available, connect, switchChain } = useWallet();
   const [phase, setPhase] = useState<Phase>({ at: "idle" });
@@ -179,7 +209,7 @@ export default function BuyOneCall({
         setAllowance(allow as bigint | null);
       }
     } catch (e) {
-      setPhase({ at: "failed", why: readableError(e) });
+      setPhase({ at: "failed", why: whyFailed(e, "other") });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, method, body, address, tokenId, subject]);
@@ -200,7 +230,7 @@ export default function BuyOneCall({
         setAllowance(req.amount);
         setPhase({ at: "quoted", req });
       } catch (e) {
-        setPhase({ at: "failed", why: readableError(e) });
+        setPhase({ at: "failed", why: whyFailed(e, "approve") });
       }
     },
     [address],
@@ -250,7 +280,7 @@ export default function BuyOneCall({
         if (res.status >= 400) throw new Error(sellerError(parsed, res.status));
         setPhase({ at: "done", body: parsed, tx: txFrom(res) });
       } catch (e) {
-        setPhase({ at: "failed", why: readableError(e) });
+        setPhase({ at: "failed", why: whyFailed(e, "sign") });
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -260,51 +290,72 @@ export default function BuyOneCall({
   const req = "req" in phase ? phase.req : null;
   const short = (h: string) => `${h.slice(0, 10)}…${h.slice(-8)}`;
 
+  // Report every move to whoever is listening; the ref keeps a new callback from re-reporting.
+  const report = useRef(onPhase);
+  report.current = onPhase;
+  useEffect(() => {
+    const price = "req" in phase ? `${human(phase.req.amount)} ${symbolOf(phase.req)}` : undefined;
+    report.current?.({
+      at: phase.at,
+      tx: phase.at === "done" ? phase.tx : undefined,
+      body: phase.at === "done" ? phase.body : undefined,
+      why: phase.at === "failed" ? phase.why : undefined,
+      price,
+    });
+  }, [phase]);
+
+  const started = useRef(false);
+  useEffect(() => {
+    if (autoQuote && !started.current) {
+      started.current = true;
+      void quote();
+    }
+  }, [autoQuote, quote]);
+
   if (phase.at === "idle") {
     return (
-      <>
-        <p className="m-small" style={{ margin: "0.6rem 0 1rem" }}>
-          {what}
-        </p>
-        <button className="m-btn m-btn--block" onClick={() => void quote()} type="button">
+      <div className="x-pay">
+        <p className="x-pay__what">{what}</p>
+        <button className="x-btn x-btn--block" onClick={() => void quote()} type="button">
           Ask for a price
         </button>
-        <p className="m-note" style={{ marginTop: "0.6rem" }}>
-          Nothing is signed until the price is on screen.
-        </p>
-      </>
+        <p className="x-pay__note">Nothing is signed until the price is on screen.</p>
+      </div>
     );
   }
 
-  if (phase.at === "quoting") return <p className="m-small">Asking the seller for a price…</p>;
+  if (phase.at === "quoting") return <p className="x-pay__wait">Asking the seller for its current price…</p>;
 
   if (phase.at === "failed") {
     return (
-      <>
-        <p className="m-error">{phase.why}</p>
-        <button className="m-btn m-btn--sm" style={{ marginTop: "0.8rem" }} onClick={() => setPhase({ at: "idle" })} type="button">
+      <div className="x-pay">
+        <p className="x-pay__err" role="alert">
+          {phase.why}
+        </p>
+        <button className="x-btn x-btn--sm" onClick={() => setPhase({ at: "idle" })} type="button">
           Try again
         </button>
-      </>
+      </div>
     );
   }
 
   if (phase.at === "done") {
+    if (quiet) return null;
     return (
-      <>
-        <p className="m-ok">
+      <div className="x-pay">
+        <p className="x-pay__ok">
           {phase.tx ? "Paid, and the agent answered. " : "The agent answered. "}
           {phase.tx ? (
-            <a className="m-link m-mono" href={`${marketChain.blockExplorers?.default.url}/tx/${phase.tx}`} target="_blank" rel="noreferrer">
+            <a className="x-link x-mono" href={`${marketChain.blockExplorers?.default.url}/tx/${phase.tx}`} target="_blank" rel="noreferrer">
               {short(phase.tx)}
             </a>
           ) : null}
         </p>
-        <pre className="m-pre">{typeof phase.body === "string" ? phase.body.slice(0, 4000) : JSON.stringify(phase.body, null, 2).slice(0, 4000)}</pre>
-        <button className="m-btn m-btn--sm" style={{ marginTop: "0.8rem" }} onClick={() => setPhase({ at: "idle" })} type="button">
+        <pre className="x-pre">{typeof phase.body === "string" ? phase.body.slice(0, 4000) : JSON.stringify(phase.body, null, 2).slice(0, 4000)}</pre>
+        <button className="x-btn x-btn--sm" onClick={() => setPhase({ at: "idle" })} type="button">
           Buy another
         </button>
-      </>
+      </div>
     );
   }
 
@@ -314,55 +365,57 @@ export default function BuyOneCall({
   const needsApproval = req!.method === "permit2" && allowance !== null && allowance < req!.amount;
 
   return (
-    <>
-      <dl className="m-kv" style={{ marginBottom: "1rem" }}>
+    <div className="x-pay">
+      <dl className="x-kv">
         <div>
-          <dt>Price</dt>
-          <dd className="m-fig">
+          <dt>Price now</dt>
+          <dd className="x-mono">
             {price} {sym}
           </dd>
         </div>
         <div>
           <dt>You pay in gas</dt>
-          <dd className="m-fig">{req!.method === "permit2" ? "one approval, once" : "nothing"}</dd>
+          <dd>{req!.method === "permit2" ? "One approval, once" : "Nothing"}</dd>
         </div>
         <div>
           <dt>What it buys</dt>
-          <dd>{(req!.raw.description as string | undefined) ?? req!.resource?.description ?? "one call"}</dd>
+          <dd>{(req!.raw.description as string | undefined) ?? req!.resource?.description ?? "One call"}</dd>
         </div>
       </dl>
 
       {unpayable ? (
-        <p className="m-small">We cannot settle this one for you, because {unpayable}.</p>
+        <p className="x-pay__what">We cannot settle this one for you, because {unpayable}.</p>
       ) : !available ? (
-        <p className="m-small">There is no wallet in this browser. The same call is available over the API with a signed payment header.</p>
+        <p className="x-pay__what">
+          There is no wallet in this browser. Install one, or pay the same call over the API with a signed payment header.
+        </p>
       ) : !address ? (
-        <button className="m-btn m-btn--primary m-btn--block" onClick={() => void connect()} type="button">
-          Connect a wallet
+        <button className="x-btn x-btn--primary x-btn--block x-btn--lg" onClick={() => void connect()} type="button">
+          Connect wallet
         </button>
       ) : !ready ? (
-        <button className="m-btn m-btn--primary m-btn--block" onClick={() => void switchChain()} type="button">
+        <button className="x-btn x-btn--primary x-btn--block x-btn--lg" onClick={() => void switchChain()} type="button">
           Switch to {marketChain.name}
         </button>
       ) : balance !== null && balance < req!.amount ? (
-        <p className="m-small">
+        <p className="x-pay__err">
           This wallet holds {human(balance)} {sym} and the call costs {price}. Nothing has been signed.
         </p>
       ) : needsApproval ? (
-        <button className="m-btn m-btn--primary m-btn--block" onClick={() => void approve(req!)} disabled={phase.at !== "quoted"} type="button">
-          {phase.at === "approving" ? "Waiting for the approval…" : `Approve exactly ${price} ${sym} for Permit2`}
+        <button className="x-btn x-btn--primary x-btn--block x-btn--lg" onClick={() => void approve(req!)} disabled={phase.at !== "quoted"} type="button">
+          {phase.at === "approving" ? "Waiting for the approval…" : `Approve exactly ${price} ${sym}`}
         </button>
       ) : (
-        <button className="m-btn m-btn--primary m-btn--block" onClick={() => void pay(req!)} disabled={phase.at !== "quoted"} type="button">
+        <button className="x-btn x-btn--primary x-btn--block x-btn--lg" onClick={() => void pay(req!)} disabled={phase.at !== "quoted"} type="button">
           {phase.at === "signing" ? "Waiting for your signature…" : phase.at === "settling" ? "The seller is settling it…" : `Sign to pay ${price} ${sym}`}
         </button>
       )}
 
-      <p className="m-note" style={{ marginTop: "0.6rem" }}>
+      <p className="x-pay__note">
         {req!.method === "permit2"
-          ? "Permit2 moves the tokens on your signature; the approval is for this amount only and is spent by this call."
+          ? "Permit2 moves the tokens on your signature. The approval is for this amount only and this call spends it."
           : "You sign an authorisation. The seller submits the transfer and pays the gas."}
       </p>
-    </>
+    </div>
   );
 }

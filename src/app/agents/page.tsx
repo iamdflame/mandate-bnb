@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowDownUp, Check, Search, SlidersHorizontal, X } from "lucide-react";
+import { ArrowDownUp, Check, HelpCircle, Search, SlidersHorizontal, X } from "lucide-react";
 import AppShell from "@/components/v2/shell/AppShell";
 import AgentTile from "@/components/x/AgentTile";
 import Empty from "@/components/x/Empty";
@@ -11,7 +11,6 @@ import { hireCounts } from "@/lib/market/hires";
 import {
   applyQuery,
   hrefFor,
-  isFiltered,
   parseQuery,
   PRED,
   RECOMMENDED_RULE,
@@ -61,7 +60,22 @@ export default async function AgentsPage({
   const { shown, intent, intentUsed } = applyQuery(all, q);
   const page = shown.slice(0, q.n);
   const protocols = topProtocols(all);
-  const filtered = isFiltered(q);
+
+  // Every active filter as a pill that removes itself, like a shop's.
+  const pills: { label: string; href: string }[] = [
+    ...(q.q ? [{ label: `“${q.q}”`, href: hrefFor(q, { q: "", n: EMPTY.n }) }] : []),
+    ...(q.hireable ? [{ label: "Hireable now", href: hrefFor(q, { hireable: false }) }] : []),
+    ...(q.live ? [{ label: "Reachable", href: hrefFor(q, { live: false }) }] : []),
+    ...(q.fresh ? [{ label: "Checked in the last day", href: hrefFor(q, { fresh: false }) }] : []),
+    ...(q.capable ? [{ label: "Capability checked", href: hrefFor(q, { capable: false }) }] : []),
+    ...(q.assayed ? [{ label: "Passes most checks", href: hrefFor(q, { assayed: false }) }] : []),
+    ...(q.reviewed ? [{ label: "Has reputation", href: hrefFor(q, { reviewed: false }) }] : []),
+    ...(q.settled ? [{ label: "Has settled history", href: hrefFor(q, { settled: false }) }] : []),
+    ...(q.priced ? [{ label: "Price published", href: hrefFor(q, { priced: false }) }] : []),
+    ...(q.max !== null ? [{ label: `Under $${q.max.toFixed(2)}`, href: hrefFor(q, { max: null }) }] : []),
+    ...(q.rail ? [{ label: q.rail === "x402" ? "Pay per call" : "Escrowed job", href: hrefFor(q, { rail: null }) }] : []),
+    ...(q.proto ? [{ label: q.proto, href: hrefFor(q, { proto: null }) }] : []),
+  ];
 
   // Counts come from the same predicates the list uses, so a filter can never
   // advertise results it does not have.
@@ -83,21 +97,21 @@ export default async function AgentsPage({
 
   const Rail = () => (
     <div className="x-rail__groups">
-      <fieldset className="x-rail__group">
-        <legend>Availability</legend>
+      <details className="x-rail__group" open>
+        <summary>Availability</summary>
         <Toggle k="hireable" label="Hireable now" n={count(PRED.hireable)} />
         <Toggle k="live" label="Reachable" n={count(PRED.live)} />
         <Toggle k="fresh" label="Checked in the last day" n={count(PRED.fresh)} />
-      </fieldset>
-      <fieldset className="x-rail__group">
-        <legend>Trust</legend>
+      </details>
+      <details className="x-rail__group" open>
+        <summary>Trust</summary>
         <Toggle k="capable" label="Capability checked" n={count(PRED.capable)} />
         <Toggle k="assayed" label="Passes most checks" n={count(PRED.assayed)} />
         <Toggle k="reviewed" label="Has reputation" n={count(PRED.reviewed)} />
         <Toggle k="settled" label="Has settled history" n={count(PRED.settled)} />
-      </fieldset>
-      <fieldset className="x-rail__group">
-        <legend>Pricing</legend>
+      </details>
+      <details className="x-rail__group" open>
+        <summary>Price</summary>
         <Toggle k="priced" label="Price published" n={count(PRED.priced)} />
         {[0.05, 0.1].map((m) => {
           const on = q.max === m;
@@ -112,9 +126,9 @@ export default async function AgentsPage({
             </Link>
           );
         })}
-      </fieldset>
-      <fieldset className="x-rail__group">
-        <legend>Execution</legend>
+      </details>
+      <details className="x-rail__group" open={Boolean(q.rail)}>
+        <summary>Execution</summary>
         {(
           [
             ["x402", "Pay per call (x402)", count(PRED.x402)],
@@ -132,10 +146,10 @@ export default async function AgentsPage({
             </Link>
           );
         })}
-      </fieldset>
+      </details>
       {protocols.length ? (
-        <fieldset className="x-rail__group">
-          <legend>Protocol</legend>
+        <details className="x-rail__group" open={Boolean(q.proto)}>
+          <summary>Protocol</summary>
           {protocols.map((p) => {
             const on = q.proto?.toLowerCase() === p.name.toLowerCase();
             return (
@@ -149,7 +163,7 @@ export default async function AgentsPage({
             );
           })}
           <p className="x-rail__note">Protocols an agent declares. Whether it actually touched them is the Capability check.</p>
-        </fieldset>
+        </details>
       ) : null}
     </div>
   );
@@ -160,11 +174,9 @@ export default async function AgentsPage({
     <AppShell>
       <section className="x-wrap x-mkt-head">
         <div className="x-mkt-head__row">
-          <div>
-            <h1 className="x-mkt-head__h">{q.category ? `${CATEGORY_LABEL[q.category]} agents` : "Agents"}</h1>
-            <p className="x-muted">Find an autonomous agent that can do the job.</p>
-          </div>
-          <p className="x-fresh" title="Every agent's endpoint is called by our own probe on a schedule">
+          <h1 className="x-mkt-head__h">{q.category ? `${CATEGORY_LABEL[q.category]} agents` : "Agents"}</h1>
+          <p className="x-mkt-head__sub">Find an autonomous agent for the job.</p>
+          <p className="x-fresh x-mkt-head__fresh" title="Every agent's endpoint is called by our own probe on a schedule">
             <span className="x-status__dot" style={{ background: "var(--c-ok)" }} aria-hidden="true" />
             {census.at ? <Ago iso={census.at} prefix="Checked" /> : "Not checked yet"}
           </p>
@@ -218,17 +230,12 @@ export default async function AgentsPage({
           <div className="x-mkt-bar">
             <p className="x-mkt-bar__n">
               <strong className="x-num">{shown.length}</strong> {shown.length === 1 ? "agent" : "agents"}
-              {filtered ? (
-                <Link href={hrefFor(EMPTY, { category: q.category })} className="x-mkt-bar__clear">
-                  <X size={14} aria-hidden="true" /> Clear filters
-                </Link>
-              ) : null}
             </p>
 
             <div className="x-mkt-bar__ctl">
               <details className="x-drop x-sheet x-mkt-bar__filters">
                 <summary className="x-btn x-btn--sm">
-                  <SlidersHorizontal size={16} aria-hidden="true" /> Filters
+                  <SlidersHorizontal size={16} aria-hidden="true" /> Filters{pills.length ? ` (${pills.length})` : ""}
                 </summary>
                 <div className="x-sheet__panel" role="dialog" aria-label="Filters">
                   <Rail />
@@ -241,16 +248,42 @@ export default async function AgentsPage({
                 <div className="x-drop__panel x-sortpanel">
                   {SORTS.map((s) => (
                     <Link key={s.id} href={hrefFor(q, { sort: s.id })} aria-current={q.sort === s.id ? "page" : undefined} scroll={false}>
-                      {s.label}
-                      {q.sort === s.id ? <Check size={14} aria-hidden="true" style={{ marginLeft: "auto" }} /> : null}
+                      <span>
+                        {s.label}
+                        <span className="x-drop__note">{s.how}</span>
+                      </span>
+                      {q.sort === s.id ? <Check size={14} aria-hidden="true" style={{ marginLeft: "auto", flex: "none" }} /> : null}
                     </Link>
                   ))}
                 </div>
               </details>
+              <details className="x-why">
+                <summary aria-label="Why this order?">
+                  <HelpCircle size={16} aria-hidden="true" />
+                  <span className="x-why__t">Why this order?</span>
+                </summary>
+                <p className="x-why__p">{q.sort === "recommended" ? RECOMMENDED_RULE : SORTS.find((x) => x.id === q.sort)?.how}</p>
+              </details>
             </div>
           </div>
 
-          {q.sort === "recommended" ? <p className="x-rule">Recommended means: {RECOMMENDED_RULE}</p> : null}
+          {pills.length ? (
+            <ul className="x-pills" aria-label="Active filters">
+              {pills.map((p) => (
+                <li key={p.label}>
+                  <Link href={p.href} className="x-pill" scroll={false} aria-label={`Remove ${p.label}`}>
+                    {p.label}
+                    <X size={13} aria-hidden="true" />
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <Link href={hrefFor(EMPTY, { category: q.category, sort: q.sort })} className="x-pills__clear" scroll={false}>
+                  Clear all
+                </Link>
+              </li>
+            </ul>
+          ) : null}
 
           {intent && q.q ? (
             <p className="x-intent">

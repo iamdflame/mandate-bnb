@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Minus } from "lucide-react";
+import { Check, HelpCircle, Zap } from "lucide-react";
 import { CATEGORY_LABEL } from "@/lib/config";
 import type { Listing } from "@/lib/market/listing";
 import { hireHref, hirePath } from "@/lib/market/hire-law";
@@ -7,30 +7,41 @@ import { assayFor } from "@/lib/market/assays";
 import { trustOf } from "@/lib/market/trust";
 import AgentArtwork from "./AgentArtwork";
 import Status from "./Status";
-import Metric from "./Metric";
+import Price from "./Price";
+import Ago from "./Ago";
 import CompareToggle from "./CompareToggle";
 
 /**
  * One agent, as a product on a shelf.
  *
- * Everything on the tile is a fact we hold, not a claim we repeated: the
- * status is our own call to its endpoint, the price is read from its own 402,
- * the response time is what we measured, and the checks are the stored
- * assay. What we do not know says so ("Not published") instead of showing a
- * zero. The Use button appears only when the hire law finds a rail we can
- * actually settle; otherwise the reason sits where the button would be.
+ * The hierarchy is the brief's: the picture, the name, what it does, what it
+ * costs, whether it is alive and what we have proven, and then the action.
+ * Technical detail (token id, rail, exact token amount) is present but small,
+ * because a person choosing between agents reads the price long before the
+ * payment scheme.
+ *
+ * Everything shown is a fact we hold: the status is our own call, the price
+ * is read from its own 402, the response time is what we measured, and a ✓
+ * only ever marks something a check proved. Use now appears only when the
+ * hire law finds a rail we can settle; otherwise the reason sits there.
  */
 
 const RAIL: Record<string, string> = { x402: "x402", mandate: "ERC-8183" };
+/*
+  The census calls every agent in slices, so each one is re-checked roughly
+  every hour and a quarter. Flagging anything over thirty minutes marked
+  nearly every tile stale; three hours means a check has genuinely been missed.
+*/
+const STALE_MIN = 180;
 
 export default function AgentTile({ l, forPosition }: { l: Listing; forPosition?: string }) {
   const verdict = hirePath(l);
   const href = hireHref(l.tokenId, verdict);
   const trust = trustOf(l, assayFor(l.tokenId));
-  const rails = verdict.rails.map((r) => RAIL[r.kind]).filter(Boolean);
+  const rail = verdict.rails.map((r) => RAIL[r.kind]).find(Boolean) ?? (l.quote || l.declaresPayment ? "x402" : null);
   const detail = `/agents/${l.tokenId}${forPosition ? `?about=${encodeURIComponent(forPosition)}` : ""}`;
-
-  const tags = [...new Set([...l.protocols.slice(0, 2), ...rails])].slice(0, 4);
+  const checkedAt = l.probe?.at ?? null;
+  const stale = checkedAt ? (Date.now() - Date.parse(checkedAt)) / 60_000 > STALE_MIN : false;
   const shown = trust.badges.slice(0, 2);
 
   return (
@@ -40,6 +51,19 @@ export default function AgentTile({ l, forPosition }: { l: Listing; forPosition?
         <div className="x-agent__over">
           <Status liveness={l.liveness} />
         </div>
+        <div className="x-agent__under">
+          {l.category ? (
+            <span className="x-catchip">
+              <span className={`x-dotcat x-dotcat--${l.category}`} aria-hidden="true" />
+              {CATEGORY_LABEL[l.category]}
+            </span>
+          ) : null}
+          {verdict.ours ? (
+            <span className="x-catchip x-catchip--ref" title="One of Mandate's own reference agents, listed with the same checks as everyone else">
+              Run by Mandate
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <div className="x-agent__cmp">
@@ -47,70 +71,46 @@ export default function AgentTile({ l, forPosition }: { l: Listing; forPosition?
       </div>
 
       <div className="x-agent__body">
-        <div className="x-agent__top">
-          <span className="x-eyebrow">{l.category ? CATEGORY_LABEL[l.category] : "Unfiled"}</span>
-          {verdict.ours ? (
-            <span className="x-tag x-tag--ref" title="One of Mandate's own reference agents. Listed with the same checks as everyone else.">
-              Reference
-            </span>
-          ) : (
-            <span className="x-agent__id">#{l.tokenId}</span>
-          )}
-        </div>
-
         <Link href={detail} className="x-agent__name">
           {l.name}
         </Link>
-
         <p className="x-agent__what">{l.what ?? "Published no description of what it does."}</p>
 
-        {tags.length ? (
-          <div className="x-agent__tags">
-            {tags.map((t) => (
-              <span key={t} className="x-tag">
-                {t}
+        <div className="x-agent__buy">
+          <Price l={l} rail={rail} />
+          <span className="x-agent__live">
+            {l.probe?.answered && l.probe.latencyMs != null ? (
+              <span className="x-agent__ms x-mono">
+                <Zap size={13} aria-hidden="true" />
+                {l.probe.latencyMs} ms
               </span>
-            ))}
-          </div>
-        ) : null}
-
-        <div className="x-agent__metrics">
-          <Metric
-            value={l.priceLabel}
-            label={l.priceLabel ? "per call" : "price"}
-            accent
-            source="Read from the agent's own payment response"
-          />
-          <Metric
-            value={l.probe?.answered && l.probe.latencyMs != null ? `${l.probe.latencyMs} ms` : null}
-            label="response"
-            source="Measured by our own call to its endpoint"
-          />
-          <Metric
-            value={trust.verified === null ? null : `${trust.verified}/${trust.applicable}`}
-            label="checks"
-            source="Stored checks against the chain, not the agent's description"
-          />
+            ) : null}
+            {checkedAt ? (
+              <span className={`x-agent__ago${stale ? " x-agent__ago--stale" : ""}`}>
+                <Ago iso={checkedAt} prefix={stale ? "last checked" : "checked"} />
+              </span>
+            ) : null}
+          </span>
         </div>
 
-        <div className="x-agent__trust">
+        <ul className="x-agent__trust" aria-label="What we have proven">
           {shown.length ? (
             shown.map((b) => (
-              <span key={b} className="x-check x-check--pass">
-                <Check size={14} strokeWidth={2.25} aria-hidden="true" />
+              <li key={b} className="x-proofchip x-proofchip--proven">
+                <Check size={13} strokeWidth={2.5} aria-hidden="true" />
                 {b}
-              </span>
+              </li>
             ))
           ) : (
-            <span className="x-check x-check--unknown">
-              <Minus size={14} strokeWidth={2.25} aria-hidden="true" />
-              Nothing verified yet
-            </span>
+            <li className="x-proofchip x-proofchip--unproven">
+              <HelpCircle size={13} aria-hidden="true" />
+              Nothing proven yet
+            </li>
           )}
-        </div>
+        </ul>
 
         <div className="x-agent__foot">
-          <Link href={detail} className="x-btn x-btn--sm">
+          <Link href={detail} className="x-btn x-btn--sm x-btn--ghost x-agent__view">
             View agent
           </Link>
           {verdict.ok && href ? (

@@ -12,6 +12,7 @@ const ALL = [
   ['judges','/judges'], ['grid','/agents?live=1&category=grid-trading'], ['priced','/agents/342379'],
   ['desk','/desk'], ['status','/status'],
   ['categories','/categories'], ['compare-ids','/compare?ids=342377,269704,342379'], ['search','/agents?q=protect+a+loan'], ['empty','/agents?settled=1&max=0.05&category=grid-trading'],
+  ['filtered','/agents?live=1&priced=1&sort=fastest&q=grid'], ['stranger','/agents/342377'],
 ];
 const PAGES = ONLY.length ? ONLY : ALL;
 const inject = `
@@ -24,7 +25,8 @@ try { localStorage.setItem('mandate:wallet-connected','1'); } catch {}
 const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' });
 let total = 0;
 for (const [name, path] of PAGES) {
-  for (const [label, w, h] of [['desktop',1440,980],['tablet',834,1100],['phone',390,844]]) {
+  // The brief's review widths: a desktop, a small laptop that collapses the nav, a phone.
+  for (const [label, w, h] of [['desktop',1440,1000],['laptop',1024,900],['phone',390,844]]) {
     const p = await b.newPage({ viewport:{width:w,height:h} });
     const errs = [];
     p.on('pageerror', e => errs.push('JS: ' + String(e).slice(0,100)));

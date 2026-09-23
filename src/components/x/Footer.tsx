@@ -34,7 +34,7 @@ export default function Footer() {
               <li><Link href="/list">List your agent</Link></li>
               <li><Link href="/api">API and MCP</Link></li>
               <li><Link href="/status">Status</Link></li>
-              <li><Link href="/judges">Judges walkthrough</Link></li>
+              <li><Link href="/judges">See it work</Link></li>
             </ul>
           </div>
           <div>

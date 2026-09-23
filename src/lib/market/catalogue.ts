@@ -20,20 +20,25 @@ import { isOurs } from "@/lib/market/judge";
 import { assayFor } from "@/lib/market/assays";
 import { intentOf, type Intent } from "@/lib/market/intent";
 
-export type Sort = "recommended" | "fastest" | "price" | "evidence" | "recent" | "newest" | "name";
+export type Sort = "recommended" | "recent" | "fastest" | "price" | "activity" | "evidence" | "newest";
 
-export const SORTS: { id: Sort; label: string }[] = [
-  { id: "recommended", label: "Recommended" },
-  { id: "fastest", label: "Fastest response" },
-  { id: "price", label: "Lowest price" },
-  { id: "evidence", label: "Most evidence" },
-  { id: "recent", label: "Recently checked" },
-  { id: "newest", label: "Newest" },
-  { id: "name", label: "Name" },
+/*
+  Every sort says what it orders by, because "recommended" with no reason is
+  a score in disguise. "Recently active" is the most recent answer to our own
+  call; "most activity" is paid work delivered, then reviews, then mandates.
+*/
+export const SORTS: { id: Sort; label: string; how: string }[] = [
+  { id: "recommended", label: "Recommended", how: "Reachable now, then priced on a rail we can pay, then how clearly it matches the job, then past hires." },
+  { id: "recent", label: "Recently active", how: "Answered our most recent check first." },
+  { id: "fastest", label: "Fastest", how: "Quickest answer to our last call. Agents that did not answer come last." },
+  { id: "price", label: "Lowest price", how: "Cheapest published price in dollar stablecoins. Unpriced agents come last." },
+  { id: "activity", label: "Most activity", how: "Paid work delivered through this marketplace, then registry reviews, then mandates held." },
+  { id: "evidence", label: "Most evidence", how: "Most checks proven against the chain, then settled work." },
+  { id: "newest", label: "Newest", how: "Most recently registered on ERC-8004." },
 ];
 
 export const RECOMMENDED_RULE =
-  "answered our call, then quotes a price we can pay, then how clearly it matches the job, then past hires. Our own agents never outrank an equal stranger.";
+  "Reachable now, then priced on a rail we can pay, then how clearly it matches the job, then past hires. Our own agents never outrank an equal agent we do not run.";
 
 export const PAGE = 24;
 
@@ -141,7 +146,10 @@ export const PRED = {
   },
   reviewed: (l: Listing) => l.reviews > 0,
   settled: (l: Listing) => l.settled > 0,
-  priced: (l: Listing) => Boolean(l.quote) || l.declaresPayment || l.probe?.status === 402,
+  // A price we can show, read from its own 402. Agents that only say they
+  // charge are not "priced" here: a filter called Price published that
+  // returns "price not read yet" would be the shop lying about its shelf.
+  priced: (l: Listing) => Boolean(l.quote),
   x402: (l: Listing) => Boolean(l.quote) || l.declaresPayment,
   job: (l: Listing) => hirePath(l).rails.some((r) => r.kind === "mandate"),
 } as const;
@@ -178,14 +186,16 @@ export function applyQuery(all: Listing[], q: Query): Result {
   const ours = (l: Listing) => Number(isOurs(l));
   const cmp: Record<Sort, (a: Listing, b: Listing) => number> = {
     recommended: (a, b) => b.readiness - a.readiness || ours(a) - ours(b) || b.confidence - a.confidence,
+    // Agents that answered come first in both of these; a silent one has no speed.
     fastest: (a, b) =>
-      Number(!b.probe?.answered) - Number(!a.probe?.answered) ||
+      Number(!a.probe?.answered) - Number(!b.probe?.answered) ||
       (a.probe?.latencyMs ?? 9e9) - (b.probe?.latencyMs ?? 9e9),
     price: (a, b) => (a.usdPrice ?? 9e9) - (b.usdPrice ?? 9e9) || b.readiness - a.readiness,
     evidence: (a, b) => (b.checksPassed ?? -1) - (a.checksPassed ?? -1) || b.settled - a.settled || b.reviews - a.reviews,
-    recent: (a, b) => Date.parse(b.probe?.at ?? "0") - Date.parse(a.probe?.at ?? "0"),
+    recent: (a, b) =>
+      Number(!a.probe?.answered) - Number(!b.probe?.answered) || Date.parse(b.probe?.at ?? "0") - Date.parse(a.probe?.at ?? "0"),
+    activity: (a, b) => b.settled - a.settled || b.reviews - a.reviews || b.hires - a.hires || b.readiness - a.readiness,
     newest: (a, b) => Date.parse(b.createdAt ?? "0") - Date.parse(a.createdAt ?? "0"),
-    name: (a, b) => a.name.localeCompare(b.name),
   };
   if (!needle) return { shown: [...base].sort(cmp[q.sort]), intent: null, intentUsed: false };
 

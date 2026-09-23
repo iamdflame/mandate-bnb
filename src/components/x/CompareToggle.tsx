@@ -5,7 +5,7 @@ import { Check, Plus } from "lucide-react";
 import { MAX_COMPARE, onPicked, readPicked, writePicked } from "./compare-store";
 
 /** Adds this agent to the comparison, up to three. */
-export default function CompareToggle({ tokenId, name }: { tokenId: string; name: string }) {
+export default function CompareToggle({ tokenId, name, variant = "icon" }: { tokenId: string; name: string; variant?: "icon" | "label" }) {
   const [on, setOn] = useState(false);
   const [full, setFull] = useState(false);
   const ref = useRef<HTMLButtonElement>(null);
@@ -34,13 +34,13 @@ export default function CompareToggle({ tokenId, name }: { tokenId: string; name
     <button
       ref={ref}
       type="button"
-      className={`x-cmp${on ? " x-cmp--on" : ""}`}
+      className={`x-cmp${variant === "icon" ? " x-cmp--icon" : ""}${on ? " x-cmp--on" : ""}`}
       aria-pressed={on}
       onClick={toggle}
       title={full ? `You can compare up to ${MAX_COMPARE}. Remove one from the tray first.` : on ? "Remove from comparison" : "Add to comparison"}
     >
-      {on ? <Check size={14} strokeWidth={2.5} aria-hidden="true" /> : <Plus size={14} strokeWidth={2.5} aria-hidden="true" />}
-      <span>{on ? "Comparing" : "Compare"}</span>
+      {on ? <Check size={15} strokeWidth={2.5} aria-hidden="true" /> : <Plus size={15} strokeWidth={2.5} aria-hidden="true" />}
+      <span className={variant === "icon" ? "x-sr" : undefined}>{on ? "Comparing" : "Compare"}</span>
     </button>
   );
 }
