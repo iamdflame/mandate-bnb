@@ -84,6 +84,26 @@ const STATEMENTS: { name: string; run: () => Promise<unknown> }[] = [
       )
     `,
   },
+  {
+    // What each house agent decided every time it looked, including "nothing to do".
+    name: "house_runs",
+    run: async () => {
+      await pg!`
+        create table if not exists house_runs (
+          id bigserial primary key,
+          slug text not null,
+          at timestamptz not null default now(),
+          mode text not null,
+          outcome text not null,
+          reason text not null,
+          readings jsonb not null default '{}',
+          txs jsonb not null default '[]',
+          state jsonb
+        )
+      `;
+      await pg!`create index if not exists house_runs_slug_at on house_runs (slug, at desc)`;
+    },
+  },
 ];
 
 let once: Promise<boolean> | null = null;

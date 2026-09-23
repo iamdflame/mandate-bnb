@@ -24,6 +24,7 @@ import { hireCounts } from "@/lib/market/hires";
 import { SPONSORED } from "@/lib/market/sponsored-targets";
 import { STATE_WORD, trustOf, type ProofState } from "@/lib/market/trust";
 import { houseSlug, performanceOf } from "@/lib/market/performance";
+import { houseActivity } from "@/lib/house/runs";
 import { listPaidCalls } from "@/lib/market/paid-calls";
 import { HOUSE_LEASHES } from "@/lib/chain/house";
 import { allowedCalls, CANNOT } from "@/lib/chain/leash-words";
@@ -86,7 +87,9 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
   const snapshot = assaySnapshot();
   const stored = assayFor(l.tokenId);
   const trust = trustOf(l, stored);
-  const perf = performanceOf(l.tokenId, l.settled);
+  const slugOf = houseSlug(l.tokenId);
+  const action = slugOf ? ((await houseActivity().catch(() => null))?.[slugOf]?.action ?? null) : null;
+  const perf = performanceOf(l.tokenId, l.settled, action);
   const calls = (await listPaidCalls().catch(() => [])).filter((c) => c.tokenId === l.tokenId).slice(0, 8);
   const preview = previewFor(l.tokenId);
 
@@ -101,7 +104,7 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
   const sponsor = verdict.ok ? SPONSORED[l.tokenId] : undefined;
   const rail = verdict.rails.map((r) => RAIL[r.kind]).find(Boolean) ?? (l.quote || l.declaresPayment ? "x402" : null);
   const cat = l.category ? CATEGORY_LABEL[l.category] : null;
-  const slug = houseSlug(l.tokenId);
+  const slug = slugOf;
   const leash = slug ? HOUSE_LEASHES.find((h) => h.slug === slug) : undefined;
   const pp = priceParts(l);
   const said = sentences(agent.description);

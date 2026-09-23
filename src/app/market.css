@@ -2634,7 +2634,8 @@ summary.x-tl__row::-webkit-details-marker {
   background: var(--c-ok);
 }
 .x-tl__dot--paid,
-.x-tl__dot--job {
+.x-tl__dot--job,
+.x-tl__dot--acted {
   background: var(--c-accent);
 }
 .x-tl__dot--failed,
@@ -4352,6 +4353,28 @@ a.x-house__name:hover {
 .x-house__st--revoked .x-status__dot {
   background: var(--c-err);
 }
+/* When the agent last looked, and what it concluded: one line, the whole sentence on hover and in Manage. */
+.x-house__check {
+  font-size: var(--ts-2xs);
+  color: var(--c-text-3);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.x-house__check--acted,
+.x-house__check--partial {
+  color: var(--c-ok);
+}
+.x-house__check--failed {
+  color: var(--c-err);
+}
+.x-house__did {
+  grid-column: 1 / -1;
+  font-size: var(--ts-sm);
+  line-height: 1.55;
+  color: var(--c-text-2);
+}
+
 /* Paused is a decision, not a fault: neutral, with a hollow dot. */
 .x-house__st--paused {
   color: var(--c-text-2);

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { formatEther, formatUnits, keccak256, type Address, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { Check, X } from "lucide-react";
+import Ago from "@/components/x/Ago";
 import AppShell from "@/components/v2/shell/AppShell";
 import AgentArtwork from "@/components/x/AgentArtwork";
 import RevokeDialog from "@/components/x/RevokeDialog";
@@ -15,6 +16,8 @@ import { bscClient } from "@/lib/chain/rpc";
 import { RECIPIENT_BOUND, SWAP_BOUND, USDT, WBNB } from "@/lib/chain/leash";
 import { HOUSE_LEASHES, houseSessionId } from "@/lib/chain/house";
 import { pauseForSlug } from "@/lib/market/paused";
+import { houseActivity } from "@/lib/house/runs";
+import { houseLive } from "@/lib/house/run";
 import { allowedCalls, CANNOT, capsOf } from "@/lib/chain/leash-words";
 import { referenceRegistrations } from "@/lib/house";
 import { performanceOf } from "@/lib/market/performance";
@@ -94,11 +97,13 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
   const sp = await searchParams;
   const one = (k: string) => (Array.isArray(sp[k]) ? sp[k]![0] : (sp[k] as string | undefined));
 
-  const [sessions, keys, block] = await Promise.all([
+  const [sessions, keys, block, activity] = await Promise.all([
     listSessions().catch(() => [] as SessionRecord[]),
     withTimeout(activeKeys(DEMO_ADDRESS).catch(() => null), 6_000),
     withTimeout(bscClient().getBlockNumber().catch(() => null), 4_000),
+    withTimeout(houseActivity().catch(() => null), 4_000),
   ]);
+  const agentsLive = houseLive();
   const rows = await Promise.all(
     sessions.map(async (s) => ({
       s,
@@ -150,7 +155,8 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
       tokenId,
       can: allowedCalls(s?.allowlist?.length ? s.allowlist : leash.calls).map((a) => a.words),
       caps: s ? capsOf(s.permissions) : leash.tokenSpend.map((t) => `${formatUnits(t.limit, 18)} ${TOKEN_LABEL[t.token.toLowerCase()] ?? "tokens"} a day`),
-      perf: tokenId ? performanceOf(tokenId, 0) : null,
+      perf: tokenId ? performanceOf(tokenId, 0, activity?.[leash.slug]?.action ?? null) : null,
+      run: activity?.[leash.slug] ?? null,
     };
   });
 
@@ -247,6 +253,11 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
                     {CATEGORY_LABEL[h.leash.category]}
                     {h.perf && h.perf.kind !== "none" ? ` · ${h.perf.title}` : ""}
                   </span>
+                  {h.run?.last ? (
+                    <span className={`x-house__check x-house__check--${h.run.last.outcome}`} title={h.run.last.reason}>
+                      <Ago iso={h.run.last.at} prefix={h.run.last.mode === "dry" ? "Dry check" : "Checked"} />: {h.run.last.reason}
+                    </span>
+                  ) : null}
                 </span>
                 <span className={`x-house__st x-house__st--${h.status}`}>
                   <span className="x-status__dot" aria-hidden="true" />
@@ -290,7 +301,30 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
                           <dd className="x-mono">{short(h.s.keyId, 12, 6)}</dd>
                         </div>
                       ) : null}
+                      {h.pause ? null : (
+                        <div>
+                          <dt>Acts</dt>
+                          <dd>{agentsLive ? "On its own, on the site's clock" : "Dry: it decides and records, and sends nothing yet"}</dd>
+                        </div>
+                      )}
+                      {h.run?.action ? (
+                        <div>
+                          <dt>Last action</dt>
+                          <dd>
+                            <Ago iso={h.run.action.at} />
+                            {h.run.action.txs.map((t) => (
+                              <span key={t.tx}>
+                                {" · "}
+                                <a className="x-link x-mono" href={bscscanTx(t.tx)} target="_blank" rel="noreferrer">
+                                  {t.step}
+                                </a>
+                              </span>
+                            ))}
+                          </dd>
+                        </div>
+                      ) : null}
                     </dl>
+                    {h.run?.action ? <p className="x-house__did">{h.run.action.reason}</p> : null}
                     {h.pause ? (
                       <p className="x-house__pause">
                         {h.pause.reason} Its session is left to {h.alive ? "run out" : "stay expired"} rather than revoked, and nothing acts through it.

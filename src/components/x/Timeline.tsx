@@ -11,6 +11,7 @@ const KIND_WORD: Record<MarketEvent["kind"], string> = {
   granted: "Permission",
   revoked: "Revoked",
   listed: "New agent",
+  acted: "Agent action",
 };
 
 /**

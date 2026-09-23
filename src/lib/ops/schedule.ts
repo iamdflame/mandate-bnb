@@ -21,6 +21,7 @@ import { store } from "@/lib/data/snapshots";
 import { beat } from "@/lib/heartbeat";
 import { sweepOurJobs, sweeperOn } from "@/lib/market/sweeper";
 import { renewHouseSessions } from "@/lib/chain/house";
+import { runHouse, HOUSE_CADENCE_MIN } from "@/lib/house/run";
 
 export interface Job {
   name: string;
@@ -36,6 +37,14 @@ export interface Job {
   the long reads after it.
 */
 export const JOBS: Job[] = [
+  /*
+    The house agents come first. A turn that finds nothing to do costs a few
+    reads; one that acts is the reason the clock exists, and must not be the
+    job deferred for lack of time. Range-1 starts no transaction more than
+    eight seconds into its turn and resumes on the next one.
+  */
+  { name: "guard-1", everyMinutes: HOUSE_CADENCE_MIN["guard-1"], budgetMs: 15_000, run: () => runHouse("guard-1") },
+  { name: "range-1", everyMinutes: HOUSE_CADENCE_MIN["range-1"], budgetMs: 20_000, run: () => runHouse("range-1") },
   {
     // Six beats and one row in the history. Cheap, so it runs on every tick.
     name: "status",
@@ -94,6 +103,7 @@ export const JOBS: Job[] = [
       return { dry, checked: r.checked, actions: r.actions };
     },
   },
+  { name: "yield-1", everyMinutes: HOUSE_CADENCE_MIN["yield-1"], budgetMs: 15_000, run: () => runHouse("yield-1") },
   {
     /*
       A session expires, and nothing used to notice. Guard-1, Yield-1 and

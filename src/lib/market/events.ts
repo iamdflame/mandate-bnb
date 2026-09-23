@@ -15,8 +15,10 @@ import { listPaidCalls } from "@/lib/market/paid-calls";
 import { strangerHires } from "@/lib/market/stranger-hires";
 import { listSessions } from "@/lib/chain/session-store";
 import { assetSymbol } from "@/lib/market/listing";
+import { houseActions, type HouseRun } from "@/lib/house/runs";
+import { referenceRegistrations } from "@/lib/house";
 
-export type EventKind = "responded" | "silent" | "paid" | "failed" | "job" | "granted" | "revoked" | "listed";
+export type EventKind = "responded" | "silent" | "paid" | "failed" | "job" | "granted" | "revoked" | "listed" | "acted";
 
 export interface MarketEvent {
   id: string;
@@ -56,6 +58,18 @@ export function revokedWords(label: string): { actor: string; what: string } {
   return /orphan/i.test(label)
     ? { actor: "A leftover key on the demo account", what: "was revoked" }
     : { actor: label, what: "had its permission revoked" };
+}
+
+/** What a house agent's action was, as a verb for the feed. */
+export function houseVerb(a: Pick<HouseRun, "slug" | "outcome" | "txs">): string {
+  const step = a.txs[a.txs.length - 1]?.step;
+  if (a.slug === "range-1") {
+    if (a.outcome === "acted") return "opened a new range around the price, on its own";
+    return step === "collect" ? "collected a withdrawn position to the account" : "withdrew a position the price had left";
+  }
+  if (a.slug === "guard-1") return "repaid part of the account's own loan, on its own";
+  if (a.slug === "yield-1") return "supplied idle USDT to Venus, on its own";
+  return "acted on its own";
 }
 
 /** Events grouped under Today, Yesterday or a date, newest first. */
@@ -127,6 +141,26 @@ export async function marketEvents(opts: { limit?: number; since?: number } = {}
         source: "probe",
       });
     }
+  }
+
+  // Our reference agents acting on their own, each step with its transaction.
+  const regs = referenceRegistrations();
+  for (const a of await houseActions(40).catch(() => [] as HouseRun[])) {
+    const tokenId = regs[a.slug]?.tokenId;
+    const last = a.txs[a.txs.length - 1];
+    out.push({
+      id: `house:${a.id}`,
+      kind: "acted",
+      at: a.at,
+      actor: tokenId ? nameOf(tokenId) : `Mandate ${a.slug.replace(/^./, (c) => c.toUpperCase())}`,
+      tokenId,
+      category: tokenId ? catOf(tokenId) : null,
+      what: houseVerb(a),
+      figure: typeof a.readings.amount === "string" ? `${a.readings.amount} USDT` : undefined,
+      source: "chain",
+      proof: last ? bsc(last.tx) : undefined,
+      note: a.reason,
+    });
   }
 
   const calls = await listPaidCalls().catch(() => []);

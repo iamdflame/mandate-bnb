@@ -16,6 +16,7 @@ import { snapshot } from "@/lib/data/snapshots";
 import { recenterRecord } from "@/lib/demo";
 import { referenceRegistrations } from "@/lib/house";
 import { pauseForSlug } from "@/lib/market/paused";
+import type { HouseRun } from "@/lib/house/runs";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -57,8 +58,60 @@ export function houseSlug(tokenId: string): "range-1" | "grid-1" | "yield-1" | "
   return null;
 }
 
-export function performanceOf(tokenId: string, settled: number): Performance {
+/**
+ * `action` is the agent's newest live action from the database, when there is
+ * one: the agents act on the site's clock now, and their newest record is a
+ * row, not the file the first run by hand left behind.
+ */
+export function performanceOf(tokenId: string, settled: number, action: HouseRun | null = null): Performance {
   const slug = houseSlug(tokenId);
+  const fromRun = action && action.mode === "live" && action.outcome === "acted" ? action : null;
+
+  if (slug === "range-1" && fromRun) {
+    const b = fromRun.readings.before as { tokenId?: string } | undefined;
+    const a = fromRun.readings.after as { tokenId?: string; inRange?: boolean } | undefined;
+    if (b?.tokenId && a?.tokenId) {
+      return {
+        kind: "recenter",
+        title: "Recentered a drifted position on its own, same owner throughout",
+        figures: [
+          { label: "Old position", value: `#${b.tokenId}` },
+          { label: "New position", value: `#${a.tokenId}` },
+          { label: "Now in range", value: a.inRange ? "Yes" : "No", tone: a.inRange ? "up" : "down" },
+          { label: "Owner changed", value: fromRun.readings.sameOwnerThroughout ? "Never" : "Yes", tone: fromRun.readings.sameOwnerThroughout ? "up" : "down" },
+        ],
+        summary: fromRun.reason,
+        proof: fromRun.txs.map((t) => ({ label: t.step.replace(/^./, (c) => c.toUpperCase()), url: bsc(t.tx) })),
+        at: fromRun.at,
+        source: "Its own transactions, sent on the site's schedule through its session on the demo account",
+      };
+    }
+  }
+
+  if ((slug === "guard-1" || slug === "yield-1") && fromRun) {
+    const r = fromRun.readings;
+    const figures: Figure[] =
+      slug === "guard-1"
+        ? [
+            { label: "Health factor before", value: typeof r.healthFactor === "number" ? r.healthFactor.toFixed(2) : "unread", tone: "down" },
+            { label: "After its repay", value: typeof r.healthFactorAfter === "number" ? r.healthFactorAfter.toFixed(2) : "unread", tone: "up" },
+            { label: "Repaid", value: `${String(r.amount ?? "?")} USDT` },
+          ]
+        : [
+            { label: "Supplied", value: `${String(r.amount ?? "?")} USDT` },
+            { label: "Venus paid", value: typeof r.venusApr === "number" ? `${(r.venusApr * 100).toFixed(2)}%` : "unread" },
+            { label: "Aave paid", value: typeof r.aaveApr === "number" ? `${(r.aaveApr * 100).toFixed(2)}%` : "unread" },
+          ];
+    return {
+      kind: "run",
+      title: slug === "guard-1" ? "Repaid a loan under its trigger, on its own" : "Put idle cash to work, on its own",
+      figures,
+      summary: fromRun.reason,
+      proof: fromRun.txs.map((t) => ({ label: "Transaction", url: bsc(t.tx) })),
+      at: fromRun.at,
+      source: "Its own transaction, sent on the site's schedule through its session on the demo account",
+    };
+  }
 
   if (slug === "grid-1") {
     const snap = snapshot<GridWindow>("grid-window");

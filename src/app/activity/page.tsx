@@ -25,6 +25,7 @@ const FILTERS: { id: string; label: string; kinds: EventKind[] | null }[] = [
   { id: "responses", label: "Responses", kinds: ["responded", "silent"] },
   { id: "payments", label: "Payments", kinds: ["paid", "failed"] },
   { id: "jobs", label: "Jobs", kinds: ["job"] },
+  { id: "actions", label: "Agent actions", kinds: ["acted"] },
   { id: "permissions", label: "Permissions", kinds: ["granted", "revoked"] },
   { id: "agents", label: "New agents", kinds: ["listed"] },
 ];

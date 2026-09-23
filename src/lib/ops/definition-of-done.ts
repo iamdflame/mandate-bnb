@@ -24,6 +24,9 @@ import { listSessions } from "@/lib/chain/session-store";
 import { CATEGORIES, CATEGORY_LABEL, type Category } from "@/lib/config";
 import { allowance, judgeModeOn } from "@/lib/market/judge-mode";
 import { memo, withTimeout } from "@/lib/cache";
+import { houseActivity } from "@/lib/house/runs";
+import { HOUSE_CADENCE_MIN, houseLive } from "@/lib/house/run";
+import { PAUSED, pauseForSlug } from "@/lib/market/paused";
 
 export interface Box {
   id: string;
@@ -169,7 +172,31 @@ async function build(): Promise<Box[]> {
     link: "/desk",
   });
 
-  // 8 to 13: the pages and paths the plan still owes.
+  // 8. The house agents act on the site's own clock, not on the operator's machine.
+  type Activity = Awaited<ReturnType<typeof houseActivity>>;
+  const activity: Activity = (await withTimeout(houseActivity().catch((): Activity => ({})), 4_000)) ?? {};
+  const named = (slug: string) => slug.replace(/^./, (c) => c.toUpperCase());
+  const agents = (Object.keys(HOUSE_CADENCE_MIN) as (keyof typeof HOUSE_CADENCE_MIN)[]).filter((s) => !pauseForSlug(s));
+  const seen = agents.map((slug) => {
+    const last = activity[slug]?.last ?? null;
+    const minutes = last ? Math.round((Date.now() - Date.parse(last.at)) / 60_000) : null;
+    // Twice its cadence, and five minutes for the pinger's own interval.
+    const fresh = minutes !== null && minutes <= HOUSE_CADENCE_MIN[slug] * 2 + 5;
+    return { fresh, text: last ? `${named(slug)}, ${minutes} min ago: ${last.reason}` : `${named(slug)} has no run on record yet.` };
+  });
+  const allFresh = seen.length > 0 && seen.every((x) => x.fresh);
+  boxes.push({
+    id: "unattended",
+    claim: "Agents run when we are asleep: the house agents look and act on the site's own clock, not the operator's machine.",
+    state: allFresh && houseLive() ? "done" : seen.some((x) => x.fresh) ? "partly" : "open",
+    detail:
+      `${houseLive() ? "Live: they send their own transactions, inside their leashes." : "Dry: they decide and record what they would send, and send nothing, until HOUSE_AGENTS is live."} ` +
+      seen.map((x) => x.text).join(" ") +
+      (PAUSED.length ? ` ${PAUSED.map((x) => named(x.slug)).join(", ")} paused.` : ""),
+    link: "/desk",
+  });
+
+  // 9 to 14: the pages and paths the plan still owes.
   boxes.push({
     id: "advantage",
     claim: "/advantage has three or more both-way tasks with raw outputs, trading and security present.",
@@ -177,11 +204,15 @@ async function build(): Promise<Box[]> {
     detail: route("/advantage") ? "The page exists." : "The report exists as JSON and markdown under docs/advantage, with its spec hash anchored on chain, but there is no page yet.",
     link: "/evidence",
   });
+  // True only once a recenter with real minimums has landed, not because the code now sends them.
+  const bounded = activity["range-1"]?.action?.outcome === "acted" && activity["range-1"]?.action?.readings?.bounded === true ? activity["range-1"]!.action! : null;
   boxes.push({
     id: "pancake",
     claim: "The Pancake path uses a non-zero minimum out, the recipient is the hirer, and the receipt is public.",
-    state: "open",
-    detail: "RecipientBound makes the hirer the only possible recipient and the recenter is on chain, but that run passed zero as both minimum amounts. It has to be run again with real slippage bounds before this is true.",
+    state: bounded ? "done" : "open",
+    detail: bounded
+      ? `Range-1 recentered through RecipientBound with a bound on the withdrawal and a price bound on the mint, ${bounded.txs.map((t) => `${t.step} ${t.tx.slice(0, 10)}…`).join(", ")}, and the account owned every position throughout.`
+      : "RecipientBound makes the hirer the only possible recipient. The first recenter passed zero as both minimum amounts; Range-1 now sends a 2% bound on the withdrawal and a price bound on the mint, and this turns green when its first bounded recenter lands.",
     link: "/desk",
   });
   boxes.push({
