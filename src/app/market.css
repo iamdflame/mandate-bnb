@@ -4694,8 +4694,9 @@ a.x-house__name:hover {
 .x-score__item--loss .x-score__n {
   color: var(--c-err);
 }
+/* Yellow is kept for actions and selected filters; a mixed result is blue. */
 .x-score__item--mixed .x-score__n {
-  color: var(--c-warn);
+  color: var(--c-info);
 }
 
 .x-lock {
@@ -4763,7 +4764,7 @@ a.x-house__name:hover {
   color: var(--c-err);
 }
 .x-verdict--mixed {
-  color: var(--c-warn);
+  color: var(--c-info);
 }
 .x-verdict--inconclusive {
   color: var(--c-text-3);
@@ -4785,7 +4786,12 @@ a.x-house__name:hover {
   cursor: pointer;
   font-size: var(--ts-xs);
   font-weight: 500;
-  color: var(--c-accent);
+  color: var(--c-text-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.x-task__more > summary:hover {
+  color: var(--c-text);
 }
 .x-task__arms > div {
   display: grid;
@@ -4874,8 +4880,8 @@ a.x-house__name:hover {
   scroll-margin-top: calc(var(--h-nav) + var(--s-4));
 }
 .x-grave:target {
-  background: var(--c-accent-soft);
-  box-shadow: 0 0 0 var(--s-3) var(--c-accent-soft);
+  background: var(--c-surface-2);
+  box-shadow: 0 0 0 var(--s-3) var(--c-surface-2);
 }
 .x-grave__who {
   display: flex;
@@ -4888,7 +4894,7 @@ a.x-house__name:hover {
   color: var(--c-text);
 }
 .x-grave__name:hover {
-  color: var(--c-accent);
+  text-decoration: underline;
 }
 .x-grave__ours {
   padding: 1px var(--s-2);
@@ -4989,15 +4995,15 @@ a.x-house__name:hover {
   gap: var(--s-1);
   padding: var(--s-4);
   border-radius: var(--r-sm);
-  background: var(--c-accent-soft);
-  border: 1px solid var(--c-accent-line);
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-line-strong);
 }
 .x-listing__next-k {
   font-size: var(--ts-2xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--c-accent);
+  color: var(--c-text-2);
 }
 .x-listing__next-t {
   font-size: var(--ts-md);
@@ -5130,7 +5136,7 @@ a.x-house__name:hover {
 }
 .x-gap__turn {
   font-weight: 600;
-  color: var(--c-accent);
+  color: var(--c-text);
   text-align: right;
 }
 .x-gap__pool {
