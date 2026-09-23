@@ -23,6 +23,7 @@ import { registeredCount } from "@/lib/registry/count";
 import { withTimeout } from "@/lib/cache";
 import { DEMO_ADDRESS } from "@/lib/demo";
 import { HOUSE_LEASHES, houseSessionId } from "@/lib/chain/house";
+import { pauseForSlug } from "@/lib/market/paused";
 
 export interface Check {
   beat: number;
@@ -92,7 +93,9 @@ export async function judgePathChecks(): Promise<Check[]> {
         act at all. A lapsed leash is an agent that is listed, holds a key, and
         is authority over nothing.
       */
-      const lapsed = HOUSE_LEASHES.map((l) => ({ slug: l.slug, rec: all.find((x) => x.id === houseSessionId(l.slug) && !x.revokedAt) }))
+      const paused = HOUSE_LEASHES.filter((l) => pauseForSlug(l.slug)).map((l) => l.slug);
+      const lapsed = HOUSE_LEASHES.filter((l) => !pauseForSlug(l.slug))
+        .map((l) => ({ slug: l.slug, rec: all.find((x) => x.id === houseSessionId(l.slug) && !x.revokedAt) }))
         .filter((h) => !h.rec || h.rec.expiry * 1000 <= Date.now())
         .map((h) => (h.rec ? `${h.slug} expired ${new Date(h.rec.expiry * 1000).toISOString().slice(0, 10)}` : `${h.slug} has no session`));
       const s = live[0];
@@ -114,7 +117,10 @@ export async function judgePathChecks(): Promise<Check[]> {
         if (e?.valid) unaccounted += 1;
       }
       const tail = unaccounted ? `; ${unaccounted} valid key(s) on the account that no session accounts for` : `; every valid key on the account is accounted for`;
-      const leashes = lapsed.length ? `; ${lapsed.length} of ${HOUSE_LEASHES.length} house leashes lapsed (${lapsed.join(", ")})` : `; all ${HOUSE_LEASHES.length} house leashes live`;
+      const active = HOUSE_LEASHES.length - paused.length;
+      const leashes =
+        (lapsed.length ? `; ${lapsed.length} of ${active} house leashes lapsed (${lapsed.join(", ")})` : `; all ${active} active house leashes live`) +
+        (paused.length ? `; ${paused.join(", ")} paused, left to expire` : "");
       return { ok: m.verdict === "matches" && unaccounted === 0 && lapsed.length === 0, detail: `${s.label}: ${m.verdict} at block ${m.block ?? "?"}${tail}${leashes}` };
     }),
     timed(6, "The funnel reads the registry", async () => {

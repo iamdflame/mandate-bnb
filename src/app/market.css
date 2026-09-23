@@ -4352,6 +4352,22 @@ a.x-house__name:hover {
 .x-house__st--revoked .x-status__dot {
   background: var(--c-err);
 }
+/* Paused is a decision, not a fault: neutral, with a hollow dot. */
+.x-house__st--paused {
+  color: var(--c-text-2);
+}
+.x-house__st--paused .x-status__dot {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--c-text-3);
+}
+.x-house__pause {
+  grid-column: 1 / -1;
+  padding: var(--s-3) var(--s-4);
+  border-left: 2px solid var(--c-line-strong);
+  font-size: var(--ts-sm);
+  line-height: 1.55;
+  color: var(--c-text-2);
+}
 .x-house__st--missing {
   color: var(--c-text-3);
 }

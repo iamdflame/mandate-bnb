@@ -116,11 +116,20 @@ export const JOBS: Job[] = [
       */
       if (process.env.LEASE_RENEWAL !== "on") {
         const due = await renewHouseSessions({ withinDays: 3, max: 0 });
-        return { off: "LEASE_RENEWAL is not on, so nothing was granted", lapsing: due.filter((x) => x.was !== "live").map((x) => `${x.slug} ${x.was}`) };
+        return {
+          off: "LEASE_RENEWAL is not on, so nothing was granted",
+          lapsing: due.filter((x) => x.was !== "live" && !x.skipped).map((x) => `${x.slug} ${x.was}`),
+          paused: due.filter((x) => x.skipped === "paused").map((x) => x.slug),
+        };
       }
       const r = await renewHouseSessions({ days: 21, withinDays: 3, max: 2 });
       const did = r.filter((x) => x.renewed);
-      return { renewed: did.map((x) => x.slug), failed: r.filter((x) => x.error).map((x) => `${x.slug}: ${x.error}`), live: r.filter((x) => x.was === "live").length };
+      return {
+        renewed: did.map((x) => x.slug),
+        failed: r.filter((x) => x.error).map((x) => `${x.slug}: ${x.error}`),
+        live: r.filter((x) => x.was === "live" && !x.skipped).length,
+        paused: r.filter((x) => x.skipped === "paused").map((x) => x.slug),
+      };
     },
   },
   {

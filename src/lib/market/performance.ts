@@ -15,6 +15,7 @@ import type { GridWindow } from "@/lib/grid/window";
 import { snapshot } from "@/lib/data/snapshots";
 import { recenterRecord } from "@/lib/demo";
 import { referenceRegistrations } from "@/lib/house";
+import { pauseForSlug } from "@/lib/market/paused";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -76,7 +77,7 @@ export function performanceOf(tokenId: string, settled: number): Performance {
         ],
         summary:
           g.pnlUsd < 0
-            ? "It lost to simply holding over this window, mostly to gas on very small trades. The loss is published rather than hidden, and the agent is paused."
+            ? `It lost to simply holding over this window, mostly to gas on very small trades. The loss is published rather than hidden.${pauseForSlug("grid-1") ? " Grid-1 is paused: it is not offered for hire until a new window beats holding." : ""}`
             : "It beat simply holding over this window, net of gas.",
         proof: last ? [{ label: "Latest fill", url: bsc(last.tx) }] : [],
         at: g.readAt,

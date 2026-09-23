@@ -14,6 +14,7 @@ import { activeKeys, comparePolicy, readKey, KEYSTORE, type PolicyMatch } from "
 import { bscClient } from "@/lib/chain/rpc";
 import { RECIPIENT_BOUND, SWAP_BOUND, USDT, WBNB } from "@/lib/chain/leash";
 import { HOUSE_LEASHES, houseSessionId } from "@/lib/chain/house";
+import { pauseForSlug } from "@/lib/market/paused";
 import { allowedCalls, CANNOT, capsOf } from "@/lib/chain/leash-words";
 import { referenceRegistrations } from "@/lib/house";
 import { performanceOf } from "@/lib/market/performance";
@@ -76,7 +77,7 @@ function Can({ items, no = false }: { items: string[]; no?: boolean }) {
   );
 }
 
-const STATUS_WORD = { live: "Active", expired: "Expired", revoked: "Revoked", missing: "No session" } as const;
+const STATUS_WORD = { live: "Active", paused: "Paused", expired: "Expired", revoked: "Revoked", missing: "No session" } as const;
 
 /**
  * My Desk.
@@ -132,7 +133,10 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
     const id = houseSessionId(leash.slug);
     const row = rows.find((r) => r.s.id === id && !r.s.revokedAt) ?? rows.find((r) => r.s.id === id) ?? null;
     const s = row?.s ?? null;
-    const status: keyof typeof STATUS_WORD = !s ? "missing" : s.revokedAt ? "revoked" : s.expiry * 1000 > Date.now() ? "live" : "expired";
+    const pause = pauseForSlug(leash.slug);
+    const alive = Boolean(s && !s.revokedAt && s.expiry * 1000 > Date.now());
+    // Paused outranks the session: a live key nothing acts through is not an active agent.
+    const status: keyof typeof STATUS_WORD = pause ? "paused" : !s ? "missing" : s.revokedAt ? "revoked" : alive ? "live" : "expired";
     const tokenId = regs[leash.slug]?.tokenId ?? null;
     const name = leash.slug.replace(/^./, (c) => c.toUpperCase());
     return {
@@ -141,6 +145,8 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
       s,
       m: row?.m ?? null,
       status,
+      pause,
+      alive,
       tokenId,
       can: allowedCalls(s?.allowlist?.length ? s.allowlist : leash.calls).map((a) => a.words),
       caps: s ? capsOf(s.permissions) : leash.tokenSpend.map((t) => `${formatUnits(t.limit, 18)} ${TOKEN_LABEL[t.token.toLowerCase()] ?? "tokens"} a day`),
@@ -251,7 +257,7 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
                   {compact(h.caps) || "None"}
                 </span>
                 <span className="x-house__cell">
-                  <span className="x-house__k">{h.status === "expired" ? "Expired" : "Expires"}</span>
+                  <span className="x-house__k">{h.s && !h.alive ? "Expired" : "Expires"}</span>
                   {h.s ? until(h.s.expiry) : "Not granted"}
                 </span>
                 <details className="x-house__manage">
@@ -271,7 +277,7 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
                         <dd>{compact(h.caps) || "None"}</dd>
                       </div>
                       <div>
-                        <dt>{h.status === "expired" ? "Expired" : "Expires"}</dt>
+                        <dt>{h.s && !h.alive ? "Expired" : "Expires"}</dt>
                         <dd>{h.s ? `${when(h.s.expiry)} (${until(h.s.expiry)})` : "No session"}</dd>
                       </div>
                       <div>
@@ -285,12 +291,17 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
                         </div>
                       ) : null}
                     </dl>
+                    {h.pause ? (
+                      <p className="x-house__pause">
+                        {h.pause.reason} Its session is left to {h.alive ? "run out" : "stay expired"} rather than revoked, and nothing acts through it.
+                      </p>
+                    ) : null}
                     <div className="x-house__act">
-                      {h.status === "live" && h.s ? (
+                      {h.alive && h.s ? (
                         <RevokeDialog sessionId={h.s.id} agent={h.name} calls={h.can} />
                       ) : (
                         <p className="x-pay__note">
-                          {h.status === "expired"
+                          {h.status === "expired" || (h.status === "paused" && h.s && !h.s.revokedAt)
                             ? "Nothing to revoke: the session has expired and can no longer act. Renewing it is one mainnet transaction by the operator."
                             : h.status === "revoked"
                               ? "Already revoked. It can no longer act."

@@ -20,6 +20,7 @@ import { GRID_CALLS, RANGE_CALLS, USDT, WBNB } from "@/lib/chain/leash";
 import { grantScopedSession } from "@/lib/chain/session";
 import { listSessions } from "@/lib/chain/session-store";
 import { DEMO_ADDRESS } from "@/lib/demo";
+import { pauseForSlug } from "@/lib/market/paused";
 
 /** Venus vUSDT, the market Guard-1 repays into and Yield-1 supplies to. */
 export const VUSDT: Address = "0xfD5840Cd36d94D7229439859C0112a4185BC0255";
@@ -94,6 +95,8 @@ export interface RenewalOutcome {
   expiry: number | null;
   registrationTx?: string | null;
   error?: string;
+  /** Left alone on purpose, and why. Not a failure. */
+  skipped?: string;
 }
 
 /**
@@ -118,6 +121,11 @@ export async function renewHouseSessions(opts: { days?: number; withinDays?: num
     const current = sessions.find((s) => s.id === id && !s.revokedAt) ?? null;
     const secondsLeft = current ? current.expiry - Math.floor(Date.now() / 1000) : -1;
     const was: RenewalOutcome["was"] = !current ? "missing" : secondsLeft <= 0 ? "expired" : secondsLeft < withinDays * 86_400 ? "due" : "live";
+    // A paused agent's leash is left to run out: renewing it would spend a registration on authority nothing uses.
+    if (pauseForSlug(leash.slug)) {
+      out.push({ slug: leash.slug, was, renewed: false, expiry: current?.expiry ?? null, skipped: "paused" });
+      continue;
+    }
     if (was === "live") {
       out.push({ slug: leash.slug, was, renewed: false, expiry: current!.expiry });
       continue;

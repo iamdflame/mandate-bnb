@@ -23,6 +23,7 @@
 import type { Listing } from "@/lib/market/listing";
 import { isOurs } from "@/lib/market/judge";
 import { outcomes, paidCallsFromFile, type Outcome } from "@/lib/market/paid-calls";
+import { pauseFor } from "@/lib/market/paused";
 
 /** A hire is only offered on an answer from the last day. */
 export const FRESH_HOURS = 24;
@@ -87,6 +88,10 @@ export function hirePath(
   const minutes = l.probe?.answered && Number.isFinite(at) ? Math.max(0, (now - at) / 60_000) : null;
   const base = { answeredMinutesAgo: minutes, answeringNow: minutes !== null && minutes <= LIVE_MINUTES, ours };
   const refuse = (reason: string, short: string): HireVerdict => ({ ok: false, rails: [], reason, short, ...base });
+
+  // A decision we took about our own agent outranks anything it answers.
+  const pause = pauseFor(l.tokenId);
+  if (pause) return refuse(pause.reason, pause.short);
 
   if (l.liveness === "no-endpoint") return refuse("Its registry card names nothing to call, so there is nothing to hire.", "Publishes nothing to call");
   if (l.liveness === "untested" || !l.probe) return refuse("We have not called it yet, so we cannot say it will pick up.", "Not checked yet");
