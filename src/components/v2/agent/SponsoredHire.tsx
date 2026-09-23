@@ -66,18 +66,17 @@ export default function SponsoredHire({
   const answer = result?.deliverable ? JSON.stringify(result.deliverable, null, 2) : null;
 
   return (
-    <div className="m-panel" id="sponsored">
-      <p className="m-label">Hire it now, we pay</p>
-      <p className="m-small" style={{ marginTop: "0.6rem" }}>
-        {name} sells {asks} for {price ?? "its own price"}. Press the button and Mandate pays it from its own wallet:
-        no wallet, no BNB, no account. The payment settles on chain and you get the transaction and the answer.
+    <div className="x-pay" id="sponsored">
+      <p className="x-pay__what">
+        {name} sells {asks} for {price ?? "its own price"}. Mandate pays it from its own wallet: no wallet, no BNB, no account. The payment settles on chain
+        and you get the transaction and the answer.
       </p>
 
       {takesSubject ? (
-        <label className="m-field" style={{ marginTop: "0.9rem" }}>
-          <span className="m-label m-field__label">Ask about a wallet (optional)</span>
+        <label className="x-field">
+          <span className="x-field__l">Ask about a wallet (optional)</span>
           <input
-            className="m-input"
+            className="x-input"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="0x… defaults to our demo address"
@@ -86,46 +85,37 @@ export default function SponsoredHire({
         </label>
       ) : null}
 
-      <button
-        className="m-btn m-btn--primary m-btn--block m-btn--lg"
-        style={{ marginTop: "1rem" }}
-        type="button"
-        disabled={phase === "working"}
-        onClick={() => void hire()}
-      >
+      <button className="x-btn x-btn--primary x-btn--block x-btn--lg" type="button" disabled={phase === "working"} onClick={() => void hire()}>
         {phase === "working" ? "Paying the agent…" : `Hire ${name.length > 20 ? "it" : name} for free`}
       </button>
 
       {phase === "done" && result ? (
-        <div style={{ marginTop: "1rem" }}>
+        <>
           {result.delivered ? (
-            <p className="m-ok">
+            <p className="x-pay__ok">
               Paid {result.price} and answered in {((result.ms ?? 0) / 1000).toFixed(1)} s.{" "}
               {result.settlement ? (
-                <a className="m-link m-mono" href={result.settlement.url} target="_blank" rel="noreferrer">
+                <a className="x-link x-mono" href={result.settlement.url} target="_blank" rel="noreferrer">
                   {result.settlement.tx.slice(0, 10)}…{result.settlement.tx.slice(-8)}
                 </a>
               ) : null}
             </p>
           ) : (
-            <p className="m-error">
+            <p className="x-pay__err" role="alert">
               {result.paid
                 ? "It took the payment and answered with an error. That is recorded, and it will not be offered as hireable until it delivers again."
                 : "It would not take the payment."}{" "}
-              {result.reason ? <span className="m-note">{String(result.reason).slice(0, 300)}</span> : null}
+              {result.reason ? <span className="x-pay__note">{String(result.reason).slice(0, 300)}</span> : null}
             </p>
           )}
-          {answer ? <pre className="m-pre" style={{ marginTop: "0.8rem" }}>{answer.slice(0, 1800)}</pre> : null}
-          <p className="m-note" style={{ marginTop: "0.6rem" }}>
-            Paid by {result.paidBy ? `${result.paidBy.slice(0, 8)}…${result.paidBy.slice(-6)}` : "Mandate"}, which is
-            ours and is not the agent. Check the answer against {checkWith}.
-            {typeof result.left === "number" ? ` ${result.left} sponsored calls left today.` : ""}
+          {answer ? <pre className="x-pre">{answer.slice(0, 1800)}</pre> : null}
+          <p className="x-pay__note">
+            Paid by {result.paidBy ? `${result.paidBy.slice(0, 8)}…${result.paidBy.slice(-6)}` : "Mandate"}, which is ours and is not the agent. Check the answer
+            against {checkWith}.{typeof result.left === "number" ? ` ${result.left} sponsored calls left today.` : ""}
           </p>
-        </div>
+        </>
       ) : (
-        <p className="m-note" style={{ marginTop: "0.6rem" }}>
-          Limited to a few a day so the wallet lasts. Check its answer against {checkWith}.
-        </p>
+        <p className="x-pay__note">Limited to a few a day so the wallet lasts. Check its answer against {checkWith}.</p>
       )}
     </div>
   );

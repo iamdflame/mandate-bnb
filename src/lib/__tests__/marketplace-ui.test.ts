@@ -17,6 +17,7 @@ import type { Listing } from "@/lib/market/listing";
 import type { AssayReport } from "@/lib/assay/types";
 import { applyQuery, EMPTY, PRED } from "@/lib/market/catalogue";
 import { revokedWords } from "@/lib/market/events";
+import { txStepOf } from "@/components/x/TxStatus";
 
 const art = (category: Parameters<typeof AgentArtwork>[0]["category"], seed: string) =>
   renderToStaticMarkup(createElement(AgentArtwork, { category, seed }));
@@ -227,5 +228,21 @@ describe("market events", () => {
   it("names a leftover key for what it is rather than as an internal orphan", () => {
     expect(revokedWords("Orphaned key 0x12ab")).toEqual({ actor: "A leftover key on the demo account", what: "was revoked" });
     expect(revokedWords("Mandate Range-1")).toEqual({ actor: "Mandate Range-1", what: "had its permission revoked" });
+  });
+});
+
+describe("the hire drawer's payment steps", () => {
+  it("maps the payment engine's phases onto the four steps a buyer watches", () => {
+    expect(txStepOf("quoting")).toBe("preparing");
+    expect(txStepOf("quoted")).toBe("awaiting");
+    expect(txStepOf("approving")).toBe("awaiting");
+    expect(txStepOf("signing")).toBe("awaiting");
+    expect(txStepOf("settling")).toBe("submitted");
+    expect(txStepOf("done")).toBe("confirmed");
+  });
+
+  it("has no step for idle or a failure, which the drawer shows in place", () => {
+    expect(txStepOf("idle")).toBeNull();
+    expect(txStepOf("failed")).toBeNull();
   });
 });

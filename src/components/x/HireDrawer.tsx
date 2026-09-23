@@ -1,0 +1,442 @@
+"use client";
+
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { ArrowLeft, Check, Gift, X } from "lucide-react";
+import Drawer from "./Drawer";
+import TxStatus, { txStepOf, type TxStep } from "./TxStatus";
+import BuyOneCall, { type PhaseReport } from "@/components/v2/agent/BuyOneCall";
+import SponsoredHire from "@/components/v2/agent/SponsoredHire";
+
+/**
+ * Putting an agent to work, in five steps: review, permissions, confirm,
+ * processing, success.
+ *
+ * This wraps the payment engine rather than re-implementing it. BuyOneCall
+ * still reads the seller's live price, builds the envelope with the same code
+ * the server pays strangers with, and refuses to sign anything whose price is
+ * not on screen. What the drawer adds is the part a buyer was missing: what
+ * exactly they are authorising, what the agent cannot do with it, and a clear
+ * account of where their money is while it moves.
+ *
+ * It opens when the address ends in #call, so every "Use now" link on the
+ * site (which points at /agents/{id}#call) lands here, and #sponsored opens
+ * straight onto the free option.
+ */
+
+export interface HireOffer {
+  tokenId: string;
+  name: string;
+  art: ReactNode;
+  categoryLabel: string | null;
+  price: { value: string | null; unit: string | null; exact: string | null; none: string | null };
+  latencyMs: number | null;
+  /** What one call returns, or the job it does, in its own words where it gave any. */
+  task: string;
+  /** A paid call we can settle, when there is one. */
+  x402: null | {
+    path: string;
+    method: "GET" | "POST";
+    body?: unknown;
+    payTo: string;
+    network: string;
+    scheme: string;
+    asset: string;
+    assetName: string | null;
+    header: string;
+    version: number;
+    transferMethod: string | null;
+  };
+  /** A job in the escrow market, when it bids in it. */
+  job: null | { href: string; can: string[]; caps: string[]; cannot: string[] };
+  /** Mandate pays for a call to this agent, a few a day. */
+  sponsored: null | { asks: string; checkWith: string; takesSubject: boolean; price: string | null };
+  /** Why there is nothing to hire, when there is not. */
+  refuse: string | null;
+  alternatives: string;
+}
+
+type Step = "review" | "permissions" | "confirm" | "processing" | "success" | "free";
+const FLOW: { id: Step; label: string }[] = [
+  { id: "review", label: "Review" },
+  { id: "permissions", label: "Permissions" },
+  { id: "confirm", label: "Confirm" },
+  { id: "processing", label: "Processing" },
+  { id: "success", label: "Success" },
+];
+
+const short = (a: string) => (a.length > 14 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a);
+const network = (n: string) => (n === "eip155:56" || /bsc|bnb/i.test(n) ? "BNB Smart Chain" : n);
+
+function Can({ items, no = false }: { items: string[]; no?: boolean }) {
+  return (
+    <ul className={`x-can${no ? " x-can--no" : ""}`}>
+      {items.map((t) => (
+        <li key={t}>
+          {no ? <X size={14} strokeWidth={2.5} aria-hidden="true" /> : <Check size={14} strokeWidth={2.5} aria-hidden="true" />}
+          <span>{t}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export default function HireDrawer({ offer }: { offer: HireOffer }) {
+  const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<Step>("review");
+  const [tx, setTx] = useState<{ step: TxStep; failed: boolean } | null>(null);
+  const [result, setResult] = useState<{ tx: string | null; body: unknown; price?: string } | null>(null);
+  const [lastPrice, setLastPrice] = useState<string | undefined>(undefined);
+
+  // The address decides: #call opens the flow, #sponsored opens the free option.
+  useEffect(() => {
+    const read = () => {
+      const h = window.location.hash;
+      if (h === "#call" || h === "#hire") {
+        setOpen(true);
+        setStep((s) => (s === "free" ? "review" : s));
+      } else if (h === "#sponsored" && offer.sponsored) {
+        setOpen(true);
+        setStep("free");
+      }
+    };
+    read();
+    window.addEventListener("hashchange", read);
+    return () => window.removeEventListener("hashchange", read);
+  }, [offer.sponsored]);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    if (/^#(call|hire|sponsored)$/.test(window.location.hash)) {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+    // A finished or failed payment starts fresh next time; one in flight keeps its place.
+    setStep((s) => (s === "success" || s === "free" ? "review" : s));
+    if (step === "success") {
+      setResult(null);
+      setTx(null);
+    }
+  }, [step]);
+
+  const onPhase = useCallback((p: PhaseReport) => {
+    if (p.price) setLastPrice(p.price);
+    const t = txStepOf(p.at);
+    if (p.at === "failed") {
+      setTx((cur) => (cur ? { ...cur, failed: true } : { step: "preparing", failed: true }));
+      return;
+    }
+    if (!t) return;
+    setTx({ step: t, failed: false });
+    if (p.at === "approving" || p.at === "signing" || p.at === "settling") setStep("processing");
+    if (p.at === "done") {
+      setResult({ tx: p.tx ?? null, body: p.body });
+      setStep("success");
+    }
+  }, []);
+
+  const price = offer.price.value ? `${offer.price.value} ${offer.price.unit ?? ""}`.trim() : offer.price.none ?? "No price published";
+  const exact = offer.price.exact ?? offer.price.value ?? "the quoted price";
+  const flowAt = FLOW.findIndex((f) => f.id === step);
+
+  const title = step === "success" ? "Agent hired" : step === "free" ? "Try it free" : offer.refuse ? "Not available to hire" : `Use ${offer.name}`;
+
+  let body: ReactNode;
+  let foot: ReactNode = null;
+
+  if (offer.refuse) {
+    body = (
+      <div className="x-hire">
+        <p className="x-hire__lede">{offer.refuse}</p>
+        <Link href={offer.alternatives} className="x-btn x-btn--primary x-btn--block" onClick={close}>
+          See agents that can do this
+        </Link>
+      </div>
+    );
+  } else if (step === "free" && offer.sponsored) {
+    body = (
+      <div className="x-hire">
+        <button type="button" className="x-hire__back" onClick={() => setStep("review")}>
+          <ArrowLeft size={14} aria-hidden="true" /> Back to paying it yourself
+        </button>
+        <SponsoredHire
+          tokenId={offer.tokenId}
+          name={offer.name}
+          price={offer.sponsored.price}
+          asks={offer.sponsored.asks}
+          checkWith={offer.sponsored.checkWith}
+          takesSubject={offer.sponsored.takesSubject}
+        />
+      </div>
+    );
+  } else if (step === "review") {
+    body = (
+      <div className="x-hire">
+        <div className="x-hire__agent">
+          <span className="x-hire__art" aria-hidden="true">
+            {offer.art}
+          </span>
+          <span>
+            <span className="x-hire__name">{offer.name}</span>
+            {offer.categoryLabel ? <span className="x-hire__cat">{offer.categoryLabel}</span> : null}
+          </span>
+        </div>
+        <dl className="x-kv">
+          <div>
+            <dt>Task</dt>
+            <dd>{offer.task}</dd>
+          </div>
+          <div>
+            <dt>Price</dt>
+            <dd>
+              <strong>{price}</strong>
+              {offer.price.exact && offer.price.exact !== offer.price.value ? <span className="x-hire__sub x-mono">{offer.price.exact}</span> : null}
+            </dd>
+          </div>
+          {offer.latencyMs !== null ? (
+            <div>
+              <dt>Expected response</dt>
+              <dd className="x-mono">~{offer.latencyMs} ms</dd>
+            </div>
+          ) : null}
+          {offer.x402 ? (
+            <div>
+              <dt>Pays to</dt>
+              <dd className="x-mono" title={offer.x402.payTo}>
+                {short(offer.x402.payTo)}
+              </dd>
+            </div>
+          ) : null}
+          <div>
+            <dt>Settled on</dt>
+            <dd>{offer.x402 ? network(offer.x402.network) : "BNB Smart Chain"}</dd>
+          </div>
+        </dl>
+
+        {offer.sponsored ? (
+          <div className="x-hire__free">
+            <Gift size={18} aria-hidden="true" />
+            <div>
+              <p className="x-hire__free-t">Try it free, we pay</p>
+              <p className="x-hire__free-p">Mandate pays for this call from its own wallet. No wallet needed. A few a day.</p>
+            </div>
+            <button type="button" className="x-btn x-btn--sm" onClick={() => setStep("free")}>
+              Try free
+            </button>
+          </div>
+        ) : null}
+
+        {offer.job && offer.x402 ? (
+          <p className="x-hire__alt">
+            Want it to run a strategy with your capital instead?{" "}
+            <Link className="x-link" href={offer.job.href}>
+              Hire it for a job
+            </Link>
+          </p>
+        ) : null}
+      </div>
+    );
+    foot = (
+      <button type="button" className="x-btn x-btn--primary x-btn--block x-btn--lg" onClick={() => setStep("permissions")}>
+        Continue
+      </button>
+    );
+  } else if (step === "permissions") {
+    if (offer.x402) {
+      const permit2 = offer.x402.transferMethod === "permit2";
+      body = (
+        <div className="x-hire">
+          <p className="x-hire__lede">This is everything the payment allows. Read it once; it does not change after you sign.</p>
+          <h3 className="x-hire__h">It can</h3>
+          <Can items={[`Move exactly ${exact} from your wallet to ${short(offer.x402.payTo)}, once`, "Send you its answer"]} />
+          <h3 className="x-hire__h">It cannot</h3>
+          <Can no items={["Move any other funds", "Act for you after this call", "Charge you again without a new signature"]} />
+          <dl className="x-kv">
+            <div>
+              <dt>Spend cap</dt>
+              <dd>Exactly {exact}</dd>
+            </div>
+            <div>
+              <dt>Expires</dt>
+              <dd>Within 10 minutes of signing, and it can be spent once</dd>
+            </div>
+            <div>
+              <dt>Gas</dt>
+              <dd>{permit2 ? "One approval for exactly this amount" : "None. The seller pays it"}</dd>
+            </div>
+          </dl>
+          <details className="x-hire__adv">
+            <summary>Advanced</summary>
+            <dl className="x-kv">
+              <div>
+                <dt>Scheme</dt>
+                <dd className="x-mono">{offer.x402.scheme}</dd>
+              </div>
+              <div>
+                <dt>Transfer</dt>
+                <dd className="x-mono">{permit2 ? "Permit2" : "EIP-3009 authorisation"}</dd>
+              </div>
+              <div>
+                <dt>Asset</dt>
+                <dd className="x-mono">
+                  {offer.x402.assetName ? `${offer.x402.assetName} ` : ""}
+                  {offer.x402.asset}
+                </dd>
+              </div>
+              <div>
+                <dt>Pays to</dt>
+                <dd className="x-mono">{offer.x402.payTo}</dd>
+              </div>
+              <div>
+                <dt>Network</dt>
+                <dd className="x-mono">{offer.x402.network}</dd>
+              </div>
+              <div>
+                <dt>Header</dt>
+                <dd className="x-mono">
+                  {offer.x402.header} · x402 v{offer.x402.version}
+                </dd>
+              </div>
+            </dl>
+          </details>
+        </div>
+      );
+      foot = (
+        <div className="x-hire__nav">
+          <button type="button" className="x-btn x-btn--ghost" onClick={() => setStep("review")}>
+            Back
+          </button>
+          <button type="button" className="x-btn x-btn--primary x-btn--lg" onClick={() => setStep("confirm")}>
+            Continue
+          </button>
+        </div>
+      );
+    } else if (offer.job) {
+      body = (
+        <div className="x-hire">
+          <p className="x-hire__lede">
+            A job gives the agent a scoped session on your account for a term you choose. It posts a bond it loses if it falls short of your benchmark.
+          </p>
+          {offer.job.can.length ? (
+            <>
+              <h3 className="x-hire__h">It can</h3>
+              <Can items={offer.job.can} />
+            </>
+          ) : null}
+          <h3 className="x-hire__h">It cannot</h3>
+          <Can no items={offer.job.cannot} />
+          {offer.job.caps.length ? (
+            <dl className="x-kv">
+              <div>
+                <dt>Daily cap</dt>
+                <dd>{offer.job.caps.join(", ")}</dd>
+              </div>
+            </dl>
+          ) : null}
+        </div>
+      );
+      foot = (
+        <div className="x-hire__nav">
+          <button type="button" className="x-btn x-btn--ghost" onClick={() => setStep("review")}>
+            Back
+          </button>
+          <Link href={offer.job.href} className="x-btn x-btn--primary x-btn--lg">
+            Set the terms
+          </Link>
+        </div>
+      );
+    }
+  }
+
+  // Confirm, processing and success share one payment engine, which must stay
+  // mounted while money is moving, so it is rendered once here and hidden when done.
+  const paying = offer.x402 && (step === "confirm" || step === "processing" || step === "success");
+  if (paying) {
+    body = (
+      <div className="x-hire">
+        {step === "confirm" ? <p className="x-hire__lede">Nothing happens until you sign. The price below is read from the seller again, now.</p> : null}
+        {tx && step !== "confirm" ? <TxStatus step={tx.step} failed={tx.failed} /> : null}
+        <div hidden={step === "success"}>
+          <BuyOneCall
+            path={offer.x402!.path}
+            method={offer.x402!.method}
+            body={offer.x402!.body}
+            tokenId={offer.tokenId}
+            what={offer.task}
+            onPhase={onPhase}
+            autoQuote
+            quiet
+          />
+        </div>
+        {step === "success" && result ? (
+          <div className="x-hire__done">
+            <p className="x-hire__ok">
+              <Check size={18} strokeWidth={3} aria-hidden="true" />
+              {result.tx ? "Paid, and the agent answered." : "The agent answered without charging."}
+            </p>
+            <dl className="x-kv">
+              {result.tx ? (
+                <div>
+                  <dt>Transaction</dt>
+                  <dd className="x-mono">
+                    <a className="x-link" href={`https://bscscan.com/tx/${result.tx}`} target="_blank" rel="noreferrer">
+                      {short(result.tx)}
+                    </a>
+                  </dd>
+                </div>
+              ) : null}
+              <div>
+                <dt>Cost</dt>
+                <dd>{result.tx ? (lastPrice ?? exact) : "Nothing"}</dd>
+              </div>
+              <div>
+                <dt>Agent</dt>
+                <dd>{offer.name}</dd>
+              </div>
+              <div>
+                <dt>Scope</dt>
+                <dd>One call. Nothing else was authorised.</dd>
+              </div>
+            </dl>
+            <details className="x-hire__adv" open>
+              <summary>The answer</summary>
+              <pre className="x-pre">{typeof result.body === "string" ? result.body.slice(0, 6000) : JSON.stringify(result.body, null, 2).slice(0, 6000)}</pre>
+            </details>
+          </div>
+        ) : null}
+      </div>
+    );
+    foot =
+      step === "success" ? (
+        <div className="x-hire__nav">
+          <Link href="/activity" className="x-btn x-btn--ghost">
+            View activity
+          </Link>
+          <button type="button" className="x-btn x-btn--primary x-btn--lg" onClick={close}>
+            Done
+          </button>
+        </div>
+      ) : step === "confirm" ? (
+        <button type="button" className="x-btn x-btn--ghost x-btn--block" onClick={() => setStep("permissions")}>
+          Back to permissions
+        </button>
+      ) : null;
+  }
+
+  return (
+    <Drawer open={open} onClose={close} title={title} footer={foot}>
+      {!offer.refuse && offer.x402 && step !== "free" ? (
+        <ol className="x-steps" aria-label="Steps">
+          {FLOW.map((f, i) => (
+            <li key={f.id} className={i < flowAt ? "x-steps__done" : i === flowAt ? "x-steps__now" : undefined} aria-current={i === flowAt ? "step" : undefined}>
+              <span className="x-steps__n" aria-hidden="true">
+                {i < flowAt ? <Check size={12} strokeWidth={3} /> : i + 1}
+              </span>
+              <span className="x-steps__t">{f.label}</span>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      {body}
+    </Drawer>
+  );
+}
