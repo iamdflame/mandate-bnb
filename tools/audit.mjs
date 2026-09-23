@@ -13,6 +13,7 @@ const ALL = [
   ['desk','/desk'], ['status','/status'],
   ['categories','/categories'], ['compare-ids','/compare?ids=342377,269704,342379'], ['search','/agents?q=protect+a+loan'], ['empty','/agents?settled=1&max=0.05&category=grid-trading'],
   ['filtered','/agents?live=1&priced=1&sort=fastest&q=grid'], ['stranger','/agents/342377'],
+  ['proof','/proof'], ['graveyard','/graveyard'], ['list','/list'], ['listed','/list?id=342379'], ['gaps','/pool-gaps'],
 ];
 const PAGES = ONLY.length ? ONLY : ALL;
 const inject = `
