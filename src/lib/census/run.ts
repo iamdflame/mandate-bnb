@@ -45,7 +45,8 @@ export interface CensusRun {
   ms: number;
 }
 
-function endpointFor(e: Awaited<ReturnType<typeof readRegistryEntry>>): string | null {
+/** The endpoint a card offers: its x402 endpoint first, then the first http service it lists. */
+export function endpointFor(e: Awaited<ReturnType<typeof readRegistryEntry>>): string | null {
   if (!e) return null;
   if (e.x402Endpoint) return e.x402Endpoint;
   const svc = e.services?.find((s) => typeof s.endpoint === "string" && /^https?:/i.test(s.endpoint));

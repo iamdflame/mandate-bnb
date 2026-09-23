@@ -22,7 +22,7 @@ const ROUTES: Row[] = [
   { kind: "route", label: "MANDATE itself", hint: "our own entry, at whatever rung we earn", href: "/agent/336161" },
   { kind: "route", label: "Restatement", hint: "we measured our own agents wrong", href: "/evidence/restatement" },
   { kind: "route", label: "The bench", hint: "assay any agent, live", href: "/bench" },
-  { kind: "route", label: "List your agent", hint: "how to climb a rung", href: "/list-your-agent" },
+  { kind: "route", label: "List your agent", hint: "how to climb a rung", href: "/list" },
 ];
 
 const COMMANDS: Row[] = [

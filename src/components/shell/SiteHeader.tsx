@@ -20,7 +20,7 @@ const NAV = [
   { href: "/evidence", label: "Evidence" },
   { href: "/offices", label: "Categories" },
   { href: "/api", label: "API" },
-  { href: "/list-your-agent", label: "List yours" },
+  { href: "/list", label: "List yours" },
   /*
     Our own ERC-8004 entry is not in this bar.
 

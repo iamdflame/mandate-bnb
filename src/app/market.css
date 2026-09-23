@@ -4959,3 +4959,138 @@ a.x-house__name:hover {
     font-size: var(--ts-h3);
   }
 }
+
+/* ================================================================ list === */
+
+.x-list-form {
+  max-width: 720px;
+}
+.x-listing {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line-faint);
+  max-width: 880px;
+}
+.x-listing__who {
+  font-size: var(--ts-h3);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.x-listing__rung {
+  font-size: var(--ts-md);
+  color: var(--c-text-2);
+}
+/* The one thing to do next is the point of the page, so it is the loudest thing on it. */
+.x-listing__next {
+  display: grid;
+  gap: var(--s-1);
+  padding: var(--s-4);
+  border-radius: var(--r-sm);
+  background: var(--c-accent-soft);
+  border: 1px solid var(--c-accent-line);
+}
+.x-listing__next-k {
+  font-size: var(--ts-2xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-accent);
+}
+.x-listing__next-t {
+  font-size: var(--ts-md);
+  line-height: 1.55;
+  color: var(--c-text);
+}
+.x-listing__hire {
+  font-size: var(--ts-sm);
+  line-height: 1.55;
+  color: var(--c-text-2);
+}
+.x-listing__kv {
+  margin-top: var(--s-2);
+}
+.x-listing .x-src {
+  margin-top: 0;
+}
+
+.x-rungs {
+  display: grid;
+  margin: var(--s-3) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--c-line-faint);
+  max-width: 880px;
+}
+.x-rung {
+  display: grid;
+  grid-template-columns: 18px 20px minmax(0, 1fr);
+  gap: var(--s-3);
+  align-items: start;
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--c-line-faint);
+}
+.x-rung > .x-glyph {
+  margin-top: 2px;
+}
+.x-rung--nodata:not(:has(.x-glyph)) {
+  grid-template-columns: 20px minmax(0, 1fr);
+}
+.x-rung__n {
+  font-size: var(--ts-sm);
+  font-weight: 600;
+  color: var(--c-text-3);
+}
+.x-rung__body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.x-rung__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-1) var(--s-3);
+  font-size: var(--ts-sm);
+  font-weight: 600;
+  color: var(--c-text);
+}
+.x-rung__test {
+  font-size: var(--ts-xs);
+  line-height: 1.5;
+  color: var(--c-text-3);
+}
+.x-rung__saw {
+  font-size: var(--ts-xs);
+  line-height: 1.5;
+  color: var(--c-text-2);
+  overflow-wrap: anywhere;
+}
+.x-rung--failed .x-rung__n {
+  color: var(--c-err);
+}
+.x-rung--proven .x-rung__n {
+  color: var(--c-ok);
+}
+@media (max-width: 767px) {
+  .x-listing {
+    padding: var(--s-4);
+  }
+}
+
+/* Diagnose: the agents for each job the wallet needs. */
+.x-diag-cat {
+  display: grid;
+  gap: var(--s-3);
+  margin-top: var(--s-5);
+}
+.x-diag-cat__h {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.x-diag-cat__more {
+  margin-top: var(--s-1);
+}

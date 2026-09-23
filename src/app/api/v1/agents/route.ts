@@ -1,15 +1,19 @@
 /**
- * The register, as data. Filterable by rung and category.
+ * The register, as data. Filterable by rung, category and whether it can be
+ * hired right now (`hireable=1`).
  *
  * Returns what has actually been read, and says how much of the registry that
  * is. A caller must be able to tell a small answer from a small registry.
  */
 
-import { readAgentIndex } from "@/lib/data/agents";
+import { findAgent, readAgentIndex, type IndexedAgent } from "@/lib/data/agents";
 import { placeAgent, readMarketSets } from "@/lib/rung";
 import { CATEGORIES, CHAIN_ID, type Category } from "@/lib/config";
 import { fail, gate, ok, preflight } from "@/lib/api/respond";
 import { live } from "@/lib/data/live";
+import { hireCounts } from "@/lib/market/hires";
+import { hirePath } from "@/lib/market/hire-law";
+import { censusAge, listings } from "@/lib/market/listing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,6 +33,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const rungParam = url.searchParams.get("rung");
   const categoryParam = url.searchParams.get("category");
+  const hireableParam = url.searchParams.get("hireable");
   const limit = Math.min(MAX_LIMIT, Math.max(1, Number(url.searchParams.get("limit") ?? 50)));
   const offset = Math.max(0, Number(url.searchParams.get("offset") ?? 0));
 
@@ -54,11 +59,22 @@ export async function GET(request: Request) {
   if (rungParam !== null && rung === null) {
     return fail(400, `Unknown rung "${rungParam}". Rungs run 0 to 6.`, CHAIN_ID);
   }
+  if (hireableParam !== null && hireableParam !== "1" && hireableParam !== "0") {
+    return fail(400, `hireable is 1 or 0, not "${hireableParam}".`, CHAIN_ID);
+  }
+  const onlyHireable = hireableParam === "1";
   const category = (categoryParam as Category | null) ?? null;
 
-  const [index, sets] = await Promise.all([readAgentIndex(), readMarketSets()]);
+  const [index, sets, counts] = await Promise.all([readAgentIndex(), readMarketSets(), hireCounts().catch(() => null)]);
+  /*
+    Hireable is the hire law's answer, the same one every page gives: an agent
+    that answered recently in a protocol we can use, with a rail we can settle
+    and no unanswered failure on record. Computed over the census's last reading.
+  */
+  const hireable = new Set(listings(counts?.byTokenId, counts?.settled).filter((l) => hirePath(l).ok).map((l) => l.tokenId));
+  const census = censusAge();
 
-  const placed = index.agents.map((a) => {
+  const row = (a: IndexedAgent) => {
     const place = placeAgent(a, sets);
     const wallet = a.owner?.toLowerCase() ?? "";
     const standing = wallet ? sets.standing.get(wallet) : undefined;
@@ -77,11 +93,25 @@ export async function GET(request: Request) {
       bondWei: standing ? standing.bondWei.toString() : null,
       alphaBps: standing ? Number(standing.alphaBps) : null,
       lastSeen: a.lastSeen ?? index.capturedAt,
+      hireable: hireable.has(a.tokenId),
     };
-  });
+  };
+
+  const placed = index.agents.map(row);
+  /*
+    The register is the crawl of the whole registry and can trail the index the
+    census reads, so an agent registered since the last crawl is hireable on
+    every page and missing here. It is added from the census's own index rather
+    than dropped from the one answer a caller asked for.
+  */
+  const inRegister = new Set(placed.map((a) => a.tokenId));
+  for (const id of hireable) {
+    const a = inRegister.has(id) ? null : findAgent(id);
+    if (a) placed.push(row(a));
+  }
 
   const filtered = placed.filter(
-    (a) => (rung === null || a.rung === rung) && (category === null || a.category === category),
+    (a) => (rung === null || a.rung === rung) && (category === null || a.category === category) && (!onlyHireable || a.hireable),
   );
 
   return ok(
@@ -93,11 +123,13 @@ export async function GET(request: Request) {
         // have been read". Both numbers, always.
         unread: Math.max(0, index.registry.registered - placed.length),
       },
-      filter: { rung, category, limit, offset },
+      // How old the liveness behind "hireable" is. A stale census is said, not hidden.
+      census: { at: census.at, minutes: census.minutes, stale: census.stale },
+      filter: { rung, category, hireable: onlyHireable, limit, offset },
       total: filtered.length,
       agents: filtered.slice(offset, offset + limit),
     },
-    { chainId: CHAIN_ID, at: index.capturedAt },
+    { chainId: CHAIN_ID, blockNumber: index.registryBlock ? String(index.registryBlock) : null, at: index.capturedAt },
     g.headers,
   );
 }

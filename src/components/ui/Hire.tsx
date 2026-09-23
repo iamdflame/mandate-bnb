@@ -136,7 +136,7 @@ export default function Hire({
                   . Offering you a button here would be offering a transaction the
                   contract would refuse.
                 </p>
-                <a className="btn" href="/list-your-agent">
+                <a className="btn" href="/list">
                   What it would take to bid →
                 </a>
               </>

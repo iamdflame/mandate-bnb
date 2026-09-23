@@ -372,17 +372,7 @@ export function toListing(a: IndexedAgent, hires = 0, settled?: number): Listing
   const custodyResult = stored?.results.find((r) => r.id === "custody") ?? null;
   const custody = custodyResult ? custodyResult.verdict === "pass" : null;
 
-  const liveness: Listing["liveness"] = pauseFor(a.tokenId)
-    ? "paused"
-    : !probe
-      ? "untested"
-      : !probe.endpoint || probe.refused
-        ? "no-endpoint"
-        : probe.answered
-          ? "live"
-          : probe.protocol === "http"
-            ? "not-agent"
-            : "silent";
+  const liveness = livenessOf(a.tokenId, probe);
 
   return {
     tokenId: a.tokenId,
@@ -398,7 +388,7 @@ export function toListing(a: IndexedAgent, hires = 0, settled?: number): Listing
     probe,
     declaresPayment: Boolean(a.x402),
     quote,
-    priceLabel: quote ? `${humanAmount(quote.amount, quote.decimals)} ${symbolOf(quote)}`.trim() : null,
+    priceLabel: priceLabelOf(quote),
     usdPrice: quote && STABLE[symbolOf(quote)] ? Number(quote.amount) / 10 ** quote.decimals : null,
     createdAt: a.createdAt ?? null,
     registryVerified: Boolean(a.endpointVerified),
@@ -415,6 +405,24 @@ export function toListing(a: IndexedAgent, hires = 0, settled?: number): Listing
     ...copiesOf(a.tokenId),
   };
 }
+
+/** The one-line liveness verdict for a probe reading. Shared with /list, which probes fresh. */
+export function livenessOf(tokenId: string, probe: Listing["probe"]): Listing["liveness"] {
+  return pauseFor(tokenId)
+    ? "paused"
+    : !probe
+      ? "untested"
+      : !probe.endpoint || probe.refused
+        ? "no-endpoint"
+        : probe.answered
+          ? "live"
+          : probe.protocol === "http"
+            ? "not-agent"
+            : "silent";
+}
+
+/** A quote as a price tag: "0.05 USD1". */
+export const priceLabelOf = (quote: Quote | null): string | null => (quote ? `${humanAmount(quote.amount, quote.decimals)} ${symbolOf(quote)}`.trim() : null);
 
 /*
   One product registered many times arrives as many rows. The clusters come

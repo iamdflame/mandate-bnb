@@ -2,9 +2,11 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import AppShell from "@/components/v2/shell/AppShell";
 import CategoryMark from "@/components/v2/marks/CategoryMark";
-import AgentCard from "@/components/v2/agent/AgentCard";
+import AgentTile from "@/components/x/AgentTile";
 import { CATEGORY_LABEL } from "@/lib/config";
-import { diagnose, respondersFor, population } from "@/lib/diagnose";
+import { diagnose, population } from "@/lib/diagnose";
+import { agentsFor } from "@/lib/diagnose/agents";
+import { listings } from "@/lib/market/listing";
 import { hireCounts } from "@/lib/market/hires";
 import { live } from "@/lib/data/live";
 
@@ -35,7 +37,8 @@ export default async function DiagnosePage({
   const sp = await searchParams;
   const q = ((Array.isArray(sp.q) ? sp.q[0] : sp.q) ?? "").trim().slice(0, 64);
 
-  const hires = (await hireCounts().catch(() => null))?.byTokenId;
+  const counts = await hireCounts().catch(() => null);
+  const hires = counts?.byTokenId;
   const result = q ? await diagnose(q, hires).catch(() => null) : null;
   const pop = population();
   const bad = result?.findings.filter((f) => f.severity !== "fine") ?? [];
@@ -144,42 +147,49 @@ export default async function DiagnosePage({
           </p>
 
           {/* ------------------------------------------------- who can fix it */}
-          {result.needed.map((category) => {
-            const agents = respondersFor(category, hires);
-            return (
-              <section className="m-section--tight" key={category}>
-                <div className="m-head">
-                  <h2 className="m-h2">
-                    <CategoryMark category={category} size={28} />{" "}
-                    {CATEGORY_LABEL[category]} agents that answered
-                  </h2>
-                  <p className="m-head__note">
-                    Ordered by how fast they replied when we called them.
-                  </p>
-                </div>
-                {agents.length === 0 ? (
-                  <div className="m-absent">
-                    <p className="m-absent__t">
-                      No {CATEGORY_LABEL[category].toLowerCase()} agent answered when we
-                      last called.
-                    </p>
-                    <p className="m-small">
-                      We are not going to recommend one that did not.{" "}
-                      <Link className="m-link" href={`/agents?category=${category}`}>
-                        See all of them anyway →
+          {result.needed.length ? (
+            <section className="m-section--tight" aria-labelledby="h-for-wallet">
+              <div className="m-head">
+                <h2 id="h-for-wallet" className="m-h2">
+                  Agents for this {result.kind === "wallet" ? "wallet" : "position"}
+                </h2>
+                <p className="m-head__note">Only agents a buyer can hire right now, by the same rules as everywhere on this site.</p>
+              </div>
+              {agentsFor(result.needed, listings(hires, counts?.settled)).map((g) => (
+                <div className="x-diag-cat" key={g.category}>
+                  <h3 className="m-h3 x-diag-cat__h">
+                    <CategoryMark category={g.category} size={24} /> {CATEGORY_LABEL[g.category]}
+                  </h3>
+                  {g.hireable.length ? (
+                    <div className="x-grid x-grid--3">
+                      {g.hireable.map((l) => (
+                        <AgentTile key={l.tokenId} l={l} forPosition={result.input} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="m-absent">
+                      <p className="m-absent__t">No {CATEGORY_LABEL[g.category].toLowerCase()} agent can be hired right now.</p>
+                      <p className="m-small">
+                        {g.answering
+                          ? `${g.answering} answer in an agent protocol, but none has a price we can settle and a clean record. We will not recommend one we could not pay.`
+                          : "None answered in an agent protocol when we last called."}{" "}
+                        <Link className="m-link" href={`/agents?category=${g.category}`}>
+                          See all of them anyway →
+                        </Link>
+                      </p>
+                    </div>
+                  )}
+                  {g.total > g.hireable.length ? (
+                    <p className="m-small x-diag-cat__more">
+                      <Link className="m-link" href={`/agents?category=${g.category}&hireable=1`}>
+                        All {g.total} hireable {CATEGORY_LABEL[g.category].toLowerCase()} agents →
                       </Link>
                     </p>
-                  </div>
-                ) : (
-                  <div className="m-grid">
-                    {agents.map((l) => (
-                      <AgentCard key={l.tokenId} listing={l} forPosition={result.input} />
-                    ))}
-                  </div>
-                )}
-              </section>
-            );
-          })}
+                  ) : null}
+                </div>
+              ))}
+            </section>
+          ) : null}
 
           {bad.length === 0 && result.findings.length > 0 ? (
             <p className="m-small" style={{ marginTop: "1.5rem" }}>

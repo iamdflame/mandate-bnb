@@ -158,6 +158,22 @@ async function main() {
     record("/api/proof/rerun", false, `expected JSON, got ${rerun.status}`);
   }
 
+  // The seller's door: a real token placed on the ladder, with the next step named.
+  await page("/list?id=342379", [
+    { name: "a token is placed on the ladder", test: (h) => /Rung \d of 5/.test(h) || "no rung on the page" },
+    { name: "the next step or the top is named", test: (h) => h.includes("x-listing__next") || "no next step" },
+  ]);
+
+  // The buyer's door as data: the diagnosis names the block it read.
+  const diag = await get(`/api/v1/diagnose/${DEMO}`);
+  try {
+    const j = JSON.parse(diag.text) as { ok: boolean; observed: { blockNumber: string | null }; data?: { needed: string[]; agents: unknown[] } };
+    const good = j.ok && Boolean(j.observed.blockNumber) && Array.isArray(j.data?.agents);
+    record("/api/v1/diagnose: the demo wallet is read at a block", good, good ? `block ${j.observed.blockNumber}, needs ${j.data!.needed.join(", ") || "nothing"}` : diag.text.slice(0, 160));
+  } catch {
+    record("/api/v1/diagnose", false, `expected JSON, got ${diag.status}`);
+  }
+
   const width = Math.max(...checks.map((c) => c.name.length));
   for (const c of checks) console.log(`${c.ok ? "PASS" : "FAIL"}  ${c.name.padEnd(width)}  ${c.detail}`);
   const failed = checks.filter((c) => !c.ok).length;

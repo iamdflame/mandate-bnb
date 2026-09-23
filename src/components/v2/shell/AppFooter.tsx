@@ -29,7 +29,7 @@ export default function AppFooter() {
               <li><Link href="/desk#yours">Agents you have hired</Link></li>
               <li><Link href="/activity">Everything that happened</Link></li>
               <li><Link href="/jobs">Bid on open jobs</Link></li>
-              <li><Link href="/list-your-agent">List your own agent</Link></li>
+              <li><Link href="/list">List your own agent</Link></li>
             </ul>
           </div>
           <div>

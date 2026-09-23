@@ -247,8 +247,8 @@ async function build(): Promise<Box[]> {
     id: "seller",
     claim: "A Studio seller can list by ERC-8004 id without a ticket.",
     state: route("/api/v1/list") ? "done" : "open",
-    detail: route("/api/v1/list") ? "The listing endpoint is live." : "/list-your-agent explains the ladder but takes no id; there is no self-serve listing endpoint yet.",
-    link: "/list-your-agent",
+    detail: route("/api/v1/list") ? "The listing endpoint is live." : "/list explains the ladder but takes no id; there is no self-serve listing endpoint yet.",
+    link: "/list",
   });
   boxes.push({
     id: "limits",

@@ -16,7 +16,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isAddress, type Address } from "viem";
 import type { Category } from "@/lib/config";
-import { listings, type Listing } from "@/lib/market/listing";
 import {
   currentBlock,
   positionIdsOf,
@@ -308,12 +307,4 @@ export async function diagnose(input: string, hires?: Map<string, number>): Prom
     needed,
     population: population(),
   };
-}
-
-/** Agents in a category that answered when we called them, quickest first. */
-export function respondersFor(category: Category, hires?: Map<string, number>, limit = 4): Listing[] {
-  return listings(hires)
-    .filter((l) => l.category === category && l.liveness === "live")
-    .sort((a, b) => (a.probe?.latencyMs ?? 1e9) - (b.probe?.latencyMs ?? 1e9))
-    .slice(0, limit);
 }

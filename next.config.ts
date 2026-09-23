@@ -68,7 +68,8 @@ const config: NextConfig = {
       { source: "/trust", destination: "/verify", permanent: false },
       // What a visitor would call the walkthrough; the route keeps its old name.
       { source: "/demo", destination: "/judges", permanent: false },
-      { source: "/list", destination: "/list-your-agent", permanent: false },
+      // The ladder became a page that checks a token; the old explainer's URL points at it.
+      { source: "/list-your-agent", destination: "/list", permanent: false },
     ];
   },
   serverExternalPackages: [
