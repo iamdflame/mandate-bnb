@@ -16,6 +16,10 @@ Built for *The Smart Money Era*, BNB Agent Studio marketplace track.
 | Diagnose a position | https://mandate-coral.vercel.app/diagnose |
 | Catalog | https://mandate-coral.vercel.app/agents |
 | Receipts | https://mandate-coral.vercel.app/activity |
+| Does hiring beat doing it yourself | https://mandate-coral.vercel.app/proof (six tasks locked on chain first, the loss included, three re-runnable live) |
+| Agents that failed, kept | https://mandate-coral.vercel.app/graveyard |
+| List your agent | https://mandate-coral.vercel.app/list (any ERC-8004 token id, placed on the seller ladder with its next step) |
+| PancakeSwap pool gaps | https://mandate-coral.vercel.app/pool-gaps |
 | API | https://mandate-coral.vercel.app/api |
 | Video | https://youtu.be/7l_Ppu_V44o (an earlier version of the walk; where it and the site disagree, the site is right) |
 
@@ -181,15 +185,17 @@ MCP_SIGNER_KEY=0x... npm run mcp
 ## API, open, no key
 
 ```
-GET /api/v1/agents?category=grid-trading
+GET /api/v1/agents?category=grid-trading&hireable=1
 GET /api/v1/assay/56/:tokenId
+GET /api/v1/diagnose/:address        positions, Venus and idle cash, and who could be hired to fix them
+POST /api/v1/list  {"tokenId":"..."} the seller ladder: six rungs and the next step
 GET /api/v1/registry/funnel          registered count read from the registry's storage slot
 GET /api/status                      the six beats' data reads, 200 or 503
 GET /api/x402/house/:agent           grid-1, range-1, yield-1, guard-1; 402 then work
 GET /api/market/state
 ```
 
-An unknown `category` returns 400 with the valid values.
+Every answer names the block it was read at. An unknown `category` returns 400 with the valid values.
 Reproduce a settlement: `npx mandate-verify --mandate 1 --chain 56`.
 
 ---
@@ -232,7 +238,7 @@ draw it.
 
 Read the live version of this list, computed rather than typed, at
 [mandate-coral.vercel.app/status](https://mandate-coral.vercel.app/status): it
-prints the plan's fourteen boxes with what was read to decide each one.
+prints the plan's boxes with what was read to decide each one.
 
 - **No third party has bought from us.** Our own x402 endpoints are open to
   anyone and the only purchase so far came from our own keeper wallet. We have
@@ -241,18 +247,20 @@ prints the plan's fourteen boxes with what was read to decide each one.
   ([`docs/MULTISIG.md`](docs/MULTISIG.md)); it needs a second signer.
 - **The four books are dust** (about sixty cents each), measured against Hold,
   and held by wallets we operate. Label: reference against reference.
-- **Grid-1's window is short and has lost to doing nothing so far,** almost all
-  of it gas on very small fills. It stays published.
-- **The probe still calls each endpoint with one GET.** It does not speak A2A
-  JSON-RPC or MCP initialize yet, and agents that share a backend are not
-  clustered or badged. What it does call, it calls every ten minutes.
+- **Grid-1 lost to doing nothing and is paused.** Almost all of the loss was
+  gas on very small fills. It is refused for hire on every rail, its leash is
+  left to lapse, and the losing window stays published on `/proof`.
+- **The probe speaks MCP, A2A and x402, but most of the registry answers in
+  none of them.** An agent counts as live only when it completes one of those
+  handshakes; a website that answers 200 is "no agent protocol", and copies of
+  one product are badged. The strangers we can pay are few.
 - **GitHub Actions is still billing-locked.** The site's own clock replaced it:
   an external pinger calls `/api/cron/tick` every five minutes, and `/status`
   shows fourteen days of samples and when each job last ran.
-- **Our agents run from the operator's machine, not from the site.** The
-  deployment can grant and revoke session signers, settle and refund jobs, and
-  pay a stranger for a visitor, but nothing on it acts through a session with
-  authority over a buyer's funds.
+- **Our agents act on the site's clock, but only on our own demo account.**
+  Range-1, Guard-1 and Yield-1 take their turns from `/api/cron/tick` through
+  their leashes, with small caps. Nothing on the site acts through a session
+  with authority over a buyer's funds.
 - **Assay preimages are not on Greenfield.** Settlement preimages are: bucket
   `mandate-attestations` holds 5 sealed, public objects (for example
   `mandate-0/epoch-0.json`), written 04 Sep 2026 to 05 Sep 2026

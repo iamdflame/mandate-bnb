@@ -52,7 +52,12 @@ export interface ListCheck {
 /** The chain could not be read, so a missing token cannot be told from an unreachable registry. */
 export class ChainUnread extends Error {}
 
-export async function checkListing(tokenId: string): Promise<ListCheck> {
+/**
+ * `liveAssay: false` uses the stored assay instead of running one, for the
+ * clock's own check that this path answers, which cannot spend fifteen
+ * seconds on an assay every quarter of an hour.
+ */
+export async function checkListing(tokenId: string, opts: { liveAssay?: boolean } = {}): Promise<ListCheck> {
   const at = new Date().toISOString();
   const entry = await readRegistryEntry(tokenId).catch(() => null);
 
@@ -96,13 +101,15 @@ export async function checkListing(tokenId: string): Promise<ListCheck> {
 
   const [reading, live, counts] = await Promise.all([
     probe(tokenId, endpoint),
-    withTimeout(
-      assayAgent(CHAIN_ID, tokenId, undefined, { registryDeadlineMs: 12_000 }).then(
-        (r) => ({ report: r, error: null as string | null }),
-        (e: unknown) => ({ report: null, error: e instanceof Error ? e.message.slice(0, 200) : "the assay could not run" }),
-      ),
-      30_000,
-    ),
+    opts.liveAssay === false
+      ? Promise.resolve({ report: null, error: "not run: the stored assay was asked for" as string | null })
+      : withTimeout(
+          assayAgent(CHAIN_ID, tokenId, undefined, { registryDeadlineMs: 12_000 }).then(
+            (r) => ({ report: r, error: null as string | null }),
+            (e: unknown) => ({ report: null, error: e instanceof Error ? e.message.slice(0, 200) : "the assay could not run" }),
+          ),
+          30_000,
+        ),
     hireCounts().catch(() => null),
   ]);
 
@@ -112,7 +119,7 @@ export async function checkListing(tokenId: string): Promise<ListCheck> {
   const stored = assayFor(tokenId);
   const report = live?.report ?? stored;
   const assay = live?.report ? "live" : stored ? "stored" : null;
-  const assayError = live?.report ? null : (live?.error ?? "the assay did not finish in 30 seconds");
+  const assayError = live?.report || (stored && opts.liveAssay === false) ? null : (live?.error ?? "the assay did not finish in 30 seconds");
   const settled = counts?.settled.get(tokenId) ?? settledFromRecord().get(tokenId) ?? 0;
 
   const category: Category | null =

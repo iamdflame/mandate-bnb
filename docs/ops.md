@@ -44,6 +44,14 @@ GitHub Actions is refused on billing, so nothing there runs. What does:
     10 min (a census slice), `grid-window` every 30 min, `definition` every
     15 min, `sweeper` every 30 min (escrowed jobs), `leases` every 6 h,
     `heartbeat` every 15 min.
+  - After the reply, in the function's remaining time: `pool-gap`. It starts a
+    window of every PancakeSwap V3 swap every 12 h and reads it in slices, its
+    cursor kept in the database, because a thousand blocks of swaps is about
+    24,000 logs and the one free provider that serves a query across every pool
+    answers slowly on a bad day. Requests start at 200 blocks, halve after a
+    timeout and grow after an answer. The reading is published to /pool-gaps
+    only when the whole window is in. `npm run pool-gap -- --publish` does the
+    same from a laptop in one sitting.
 - `/api/cron/daily` (Vercel cron, 03:17 UTC): a census slice and a keeper sweep.
 - After every judge-facing page render: a census slice if the reading is older
   than fifteen minutes (`src/lib/census/refresh.ts`).
@@ -104,7 +112,9 @@ All take `run` to send; without it they print the plan.
 | `src/scripts/add-agents.ts <tokenId ...>` | adds newly registered tokens to the committed index from the chain |
 | `src/scripts/split-adjudicator.ts run` | moves the adjudicator role to a new key |
 | `src/scripts/demo-inventory.ts run` | puts the demo address into its published state |
-| `npm run smoke` | walks the six beats against production |
+| `npm run pool-gap` | ranks PancakeSwap V3 pools by turnover over a window; `--publish` stores it for /pool-gaps |
+| `npm run advantage:report` | re-renders the advantage report from the locked results, with the same sentences /proof prints |
+| `npm run smoke` | walks the judge path, /proof, /graveyard, /list and the diagnose API against production |
 
 Run them as `npx tsx --env-file=.env --env-file-if-exists=.env.local <script>`.
 
