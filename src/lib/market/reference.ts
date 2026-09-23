@@ -2,7 +2,7 @@
  * Our reference agents, one per category, and the evidence that each works.
  *
  * A reference agent is only "live" when it holds a live session on the demo
- * account and has a mainnet transaction to show for it. Where one has not
+ * account and has a mainnet transaction to show for it, and is not paused. Where one has not
  * been built yet, that is the state reported; the category tile still shows
  * the third-party agent that answered, so no tile is ever empty.
  */
@@ -15,11 +15,12 @@ import { snapshot } from "@/lib/data/snapshots";
 import type { GridWindow } from "@/lib/grid/window";
 import { recenterRecord } from "@/lib/demo";
 import { referenceRegistrations } from "@/lib/house";
+import { pauseForSlug } from "@/lib/market/paused";
 
 export interface Reference {
   category: Category;
   name: string;
-  status: "live" | "idle" | "not built";
+  status: "live" | "idle" | "paused" | "not built";
   evidence: string;
   href: string;
   tx?: string;
@@ -49,6 +50,7 @@ export async function referenceAgents(): Promise<Record<Category, Reference>> {
   const range = liveSession(sessions, "house:range-1:");
   const gridSession = liveSession(sessions, "house:grid-1:");
   const lastFill = grid?.fills[grid.fills.length - 1];
+  const gridPause = pauseForSlug("grid-1");
 
   return {
     rebalancing: {
@@ -65,12 +67,15 @@ export async function referenceAgents(): Promise<Record<Category, Reference>> {
     "grid-trading": {
       category: "grid-trading",
       name: "Grid-1",
-      status: gridSession && grid ? "live" : grid?.fills.length ? "idle" : "not built",
-      evidence: grid
-        ? grid.fills.length
-          ? `${grid.fills.length} real fill${grid.fills.length === 1 ? "" : "s"} through SwapBound; ${grid.winRate === null ? "no round trip closed yet" : `${Math.round(grid.winRate * 100)}% of ${grid.roundTrips.length} round trips won`}.`
-          : "Trading window open; no level crossed yet, so no fill."
-        : "No window yet.",
+      // A session can still be live on a paused agent. Paused is what it is, so that is what this says.
+      status: gridPause ? "paused" : gridSession && grid ? "live" : grid?.fills.length ? "idle" : "not built",
+      evidence: `${
+        grid
+          ? grid.fills.length
+            ? `${grid.fills.length} real fill${grid.fills.length === 1 ? "" : "s"} through SwapBound; ${grid.winRate === null ? "no round trip closed yet" : `${Math.round(grid.winRate * 100)}% of ${grid.roundTrips.length} round trips won`}.`
+            : "Trading window open; no level crossed yet, so no fill."
+          : "No window yet."
+      }${gridPause ? ` Paused since ${gridPause.since}: it lost to simply holding, and is not offered for hire.` : ""}`,
       href: "/desk#grid-1",
       tx: lastFill?.tx,
       tokenId: regs["grid-1"]?.tokenId,

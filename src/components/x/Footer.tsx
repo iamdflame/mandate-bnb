@@ -41,6 +41,8 @@ export default function Footer() {
             <h4>Trust</h4>
             <ul>
               <li><Link href="/trust">How verification works</Link></li>
+              <li><Link href="/proof">Proof</Link></li>
+              <li><Link href="/graveyard">Graveyard</Link></li>
               <li><Link href="/evidence">Evidence</Link></li>
               <li><Link href="/evidence/restatement">Where we were wrong</Link></li>
               <li>

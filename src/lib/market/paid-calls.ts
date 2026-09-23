@@ -156,7 +156,32 @@ async function listPaidCallsUncached(): Promise<PaidCallRecord[]> {
       /* the committed file stands */
     }
   }
-  return [...byId.values()].sort((a, b) => b.at.localeCompare(a.at));
+  return oneRowPerExchange([...byId.values()]).sort((a, b) => b.at.localeCompare(a.at));
+}
+
+/*
+  One exchange, one row.
+
+  A call recorded before its settlement was found, and again once it was,
+  arrives under two ids with the same transcript: the first Agripinaa payment
+  sat in the database as refused and in the file as paid, and every page that
+  listed calls showed it twice. The hash of the exchange is the identity, and
+  the reading where money moved wins, because the transaction is the stronger
+  fact.
+*/
+export function oneRowPerExchange(calls: PaidCallRecord[]): PaidCallRecord[] {
+  const weight = (c: PaidCallRecord) => (c.tx ? 2 : 0) + (c.paid ? 1 : 0);
+  const bySha = new Map<string, PaidCallRecord>();
+  const unhashed: PaidCallRecord[] = [];
+  for (const c of calls) {
+    if (!c.transcriptSha256) {
+      unhashed.push(c);
+      continue;
+    }
+    const prior = bySha.get(c.transcriptSha256);
+    if (!prior || weight(c) > weight(prior)) bySha.set(c.transcriptSha256, c);
+  }
+  return [...unhashed, ...bySha.values()];
 }
 
 /** Settled and delivered stranger hires, the earliest per category: the §15 evidence. */

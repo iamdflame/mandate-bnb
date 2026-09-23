@@ -133,6 +133,31 @@ async function main() {
   const refuses = !paused.text.includes("Set the limits") && paused.text.includes("Paused:");
   record("/hire/344121: paused Grid-1 offers no job", refuses, refuses ? "refused, with the reason" : paused.text.includes("Set the limits") ? "the job form is still offered" : "no pause reason on the page");
 
+  // Proof shows the lock and the losses; the graveyard keeps its rows, ours labelled.
+  await page("/proof", [
+    { name: "the lock transaction is shown", test: (h) => h.includes("0x00b0e484c69fc3f149") || "no lock transaction on the page" },
+    { name: "the losses are counted", test: (h) => /x-score__item--loss/.test(h) || "no loss count on the page" },
+  ]);
+  await page("/graveyard", [
+    { name: "failures are listed", test: (h) => h.includes("x-grave__who") || "no rows" },
+    { name: "our own mistake is labelled", test: (h) => h.includes("Our mistake, not theirs") || "no row labelled as ours" },
+  ]);
+
+  // The re-run is the page's live claim, so it is checked live: three reads of the head block.
+  const rerun = await get("/api/proof/rerun");
+  try {
+    const j = JSON.parse(rerun.text) as { block: number | null; checks: { id: string; verdict: string; finding: string }[] };
+    // A failed check is a finding, and the leash one failing would be the worst news on the site, so it fails here too.
+    const bad = j.checks.filter((c) => c.verdict !== "pass");
+    record(
+      "/api/proof/rerun: the live checks pass at the head block",
+      Boolean(j.block) && j.checks.length > 0 && !bad.length,
+      bad.length ? bad.map((c) => `${c.id} ${c.verdict}: ${c.finding}`).join("; ") : `${j.checks.length} checks at block ${j.block} in ${rerun.ms} ms`,
+    );
+  } catch {
+    record("/api/proof/rerun", false, `expected JSON, got ${rerun.status}`);
+  }
+
   const width = Math.max(...checks.map((c) => c.name.length));
   for (const c of checks) console.log(`${c.ok ? "PASS" : "FAIL"}  ${c.name.padEnd(width)}  ${c.detail}`);
   const failed = checks.filter((c) => !c.ok).length;

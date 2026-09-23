@@ -4612,3 +4612,350 @@ a.x-house__name:hover {
 .x-hireflow .m-panel {
   border-radius: var(--r-md);
 }
+
+/* ======================================================= proof, graveyard === */
+
+/* Where a figure came from: the source, the block, the age, on one small line. */
+.x-src {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--s-2);
+  margin-top: var(--s-3);
+  font-size: var(--ts-2xs);
+  line-height: 1.55;
+  color: var(--c-text-3);
+  max-width: 78ch;
+}
+.x-src > * + *::before {
+  content: "·";
+  margin-right: var(--s-2);
+  color: var(--c-text-3);
+}
+.x-src__k {
+  color: var(--c-text-2);
+  font-weight: 500;
+}
+/* How to check it gets its own line, not a dot at the start of one. */
+.x-src > .x-src__note {
+  flex-basis: 100%;
+}
+.x-src > .x-src__note::before {
+  content: none;
+}
+.x-src__cmd {
+  overflow-wrap: anywhere;
+  color: var(--c-text-2);
+}
+
+.x-proof-lede {
+  max-width: 72ch;
+  font-size: var(--ts-md);
+  line-height: 1.6;
+  color: var(--c-text-2);
+}
+.x-proof-h {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  font-size: var(--ts-h3);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Outcomes counted, every one at the same size: a loss is never the small print. */
+.x-score {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin: var(--s-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.x-score__item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line-faint);
+  font-size: var(--ts-sm);
+  color: var(--c-text-2);
+}
+.x-score__n {
+  font-size: var(--ts-h2);
+  font-weight: 600;
+  color: var(--c-text);
+}
+.x-score__item--win .x-score__n {
+  color: var(--c-ok);
+}
+.x-score__item--loss .x-score__n {
+  color: var(--c-err);
+}
+.x-score__item--mixed .x-score__n {
+  color: var(--c-warn);
+}
+
+.x-lock {
+  margin-top: var(--s-3);
+  max-width: 78ch;
+}
+.x-lock dd {
+  overflow-wrap: anywhere;
+}
+
+/* The six tasks. Identical cards: the verdict is a word and a colour, never a size. */
+.x-tasks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-4);
+  margin: var(--s-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.x-task,
+.x-stakes {
+  display: grid;
+  align-content: start;
+  gap: var(--s-2);
+  padding: var(--s-5);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line-faint);
+  min-width: 0;
+}
+.x-stakes {
+  margin-top: var(--s-4);
+  max-width: 880px;
+}
+.x-task__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+}
+.x-task__id {
+  font-size: var(--ts-xs);
+  font-weight: 600;
+  color: var(--c-text);
+}
+.x-task__cat {
+  font-size: var(--ts-xs);
+  color: var(--c-text-3);
+}
+.x-verdict {
+  margin-left: auto;
+  padding: 2px var(--s-2);
+  border-radius: var(--r-pill);
+  font-size: var(--ts-2xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: 1px solid currentColor;
+}
+.x-verdict--win {
+  color: var(--c-ok);
+}
+.x-verdict--loss {
+  color: var(--c-err);
+}
+.x-verdict--mixed {
+  color: var(--c-warn);
+}
+.x-verdict--inconclusive {
+  color: var(--c-text-3);
+}
+.x-task__t {
+  font-size: var(--ts-lg);
+  font-weight: 600;
+  line-height: 1.35;
+}
+.x-task__line {
+  font-size: var(--ts-sm);
+  line-height: 1.6;
+  color: var(--c-text);
+}
+.x-task__more > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+  font-size: var(--ts-xs);
+  font-weight: 500;
+  color: var(--c-accent);
+}
+.x-task__arms > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+}
+.x-task__arms dd {
+  text-align: left;
+  color: var(--c-text-2);
+  line-height: 1.55;
+}
+.x-pre {
+  margin-top: var(--s-3);
+  max-height: 280px;
+  overflow: auto;
+  padding: var(--s-3);
+  border-radius: var(--r-sm);
+  background: var(--c-bg);
+  border: 1px solid var(--c-line-faint);
+  font-size: var(--ts-2xs);
+  line-height: 1.5;
+  color: var(--c-text-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* The live re-run. */
+.x-rerun {
+  margin-top: var(--s-4);
+}
+.x-rerun__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3) var(--s-4);
+  margin-bottom: var(--s-3);
+}
+.x-rerun__hint {
+  font-size: var(--ts-xs);
+  color: var(--c-text-3);
+  max-width: 52ch;
+}
+.x-rerun__err {
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-sm);
+  background: var(--c-err-soft);
+  color: var(--c-text);
+  font-size: var(--ts-sm);
+}
+
+.x-stakes[data-verdict="loss"] {
+  border-color: color-mix(in srgb, var(--c-err) 35%, var(--c-line-faint));
+}
+.x-stakes__pause {
+  padding: var(--s-3) var(--s-4);
+  border-left: 2px solid var(--c-line-strong);
+  font-size: var(--ts-sm);
+  line-height: 1.55;
+  color: var(--c-text-2);
+}
+.x-stakes__pause strong {
+  color: var(--c-text);
+}
+.x-stakes__kv {
+  margin-top: var(--s-2);
+}
+.x-stakes__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-5);
+  font-size: var(--ts-sm);
+}
+
+/* Graveyard rows: who, what we paid for, their own words, the proof. */
+.x-graves {
+  margin: var(--s-4) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--c-line-faint);
+}
+.x-grave {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-5) 0;
+  border-bottom: 1px solid var(--c-line-faint);
+  scroll-margin-top: calc(var(--h-nav) + var(--s-4));
+}
+.x-grave:target {
+  background: var(--c-accent-soft);
+  box-shadow: 0 0 0 var(--s-3) var(--c-accent-soft);
+}
+.x-grave__who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-1) var(--s-3);
+}
+.x-grave__name {
+  font-weight: 600;
+  color: var(--c-text);
+}
+.x-grave__name:hover {
+  color: var(--c-accent);
+}
+.x-grave__ours {
+  padding: 1px var(--s-2);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--c-line-strong);
+  font-size: var(--ts-2xs);
+  font-weight: 600;
+  color: var(--c-text-2);
+}
+.x-grave__what {
+  font-size: var(--ts-sm);
+  line-height: 1.6;
+  color: var(--c-text);
+  max-width: 78ch;
+}
+.x-grave__said {
+  margin: 0;
+  padding: var(--s-3) var(--s-4);
+  border-left: 2px solid var(--c-err);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  background: var(--c-surface);
+  max-width: 78ch;
+}
+.x-grave[data-ours] .x-grave__said {
+  border-left-color: var(--c-line-strong);
+}
+.x-grave__said p {
+  font-size: var(--ts-xs);
+  line-height: 1.55;
+  color: var(--c-text-2);
+  overflow-wrap: anywhere;
+}
+.x-grave__note {
+  font-size: var(--ts-xs);
+  line-height: 1.55;
+  color: var(--c-text-2);
+  max-width: 78ch;
+}
+.x-grave__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-4);
+  font-size: var(--ts-xs);
+}
+.x-grave .x-src {
+  margin-top: 0;
+}
+
+/* The agent page's pointer to its graveyard row. */
+.x-ad-grave {
+  margin-top: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-left: 2px solid var(--c-err);
+  font-size: var(--ts-sm);
+  line-height: 1.55;
+  color: var(--c-text-2);
+}
+
+@media (max-width: 767px) {
+  .x-tasks {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .x-task,
+  .x-stakes {
+    padding: var(--s-4);
+  }
+  .x-score__n {
+    font-size: var(--ts-h3);
+  }
+}

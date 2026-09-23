@@ -96,4 +96,17 @@ describe("a paused agent", () => {
     expect(body.settled).toBe(false);
     expect(body.error).toMatch(/^Paused:/);
   });
+
+  it("is a paused reference on the judge walk, even while its session is still live", async () => {
+    const future = Math.floor(Date.now() / 1000) + 10 * 86_400;
+    session.listSessions.mockResolvedValue([
+      { id: "house:grid-1:0x54c06cc2623aaa2dcc38b17fa07ad2e99b363c90", expiry: future },
+      { id: "house:range-1:0x54c06cc2623aaa2dcc38b17fa07ad2e99b363c90", expiry: future },
+    ]);
+    const { referenceAgents } = await import("../market/reference");
+    const refs = await referenceAgents();
+    expect(refs["grid-trading"].status).toBe("paused");
+    expect(refs["grid-trading"].evidence).toMatch(/Paused since/);
+    expect(refs.rebalancing.status).not.toBe("paused");
+  });
 });

@@ -48,12 +48,12 @@ npm run advantage:report          # re-render this file from the results
 
 | # | Task | Category | Outcome |
 |---|---|---|---|
-| T1 | Keep a PancakeSwap V3 position in range | Rebalancing | **Loss.** 0 of 9 sampled positions were past the agent's trigger; the one that crossed it during the window recovered unaided. |
-| T2 | Run a grid ladder through the observed price path | Grid | Win. 0.00091656 BNB against holding over a -1.62% window, gas and pool fees charged. |
-| T3 | Move stablecoin capital to the best Venus market | Yield | Mixed. The locked metric is unusable and is published anyway. On the 18 markets deep enough to supply into, the spread is 2.49 points and rotation repays its gas above $8.03. |
-| T4 | Repair a Venus position before it is liquidated | Health Factor | Win. Being early costs $0.0093; being late costs 10.0% of seized collateral, 53,943× more on the worked example. |
-| T5 | Decide which of 20 registry agents are safe to hire | Security | Win on correctness, **loss on coverage.** 20/20 cards contradicted by the chain, but 41 checks could not be answered at all. |
-| T6 | Detect coordinated reputation on a registry agent | Security | Win. 3,000 feedbacks from 32 wallets; 99.0% written by the 14 flagged as coordinated. |
+| T1 | Keep a PancakeSwap V3 position in range | Rebalancing | **Loss.** 0 of 9 sampled positions were past the agent's trigger, and the one that crossed it during the window recovered unaided. |
+| T2 | Run a grid ladder through the observed price path | Grid | Win. 0.00091656 BNB against holding over a -1.62% window, with gas and pool fees charged against the agent. |
+| T3 | Move stablecoin capital to the best Venus market | Yield | Mixed. The locked metric turned out to be unusable and is published anyway. On the 18 markets deep enough to supply into, the spread is 2.49 points and rotation repays its gas above $8.03. |
+| T4 | Repair a Venus position before it is liquidated | Health Factor | Win. Being early costs $0.0093. Being late costs 10.0% of seized collateral, which is 53,943 times more on the worked example. |
+| T5 | Decide which of 20 registry agents are safe to hire | Security | Win on correctness, **loss on coverage.** 20 of 20 cards were contradicted by the chain, but 41 checks could not be answered at all. |
+| T6 | Detect coordinated reputation on a registry agent | Security | Win. 3,000 feedbacks from 32 wallets, and 99.0% of them were written by the 14 wallets flagged as coordinated. |
 
 3 wins, 1 outright loss, 2 mixed, and one task whose
 pre-registered metric turned out to be badly specified, which is published as
@@ -219,7 +219,7 @@ beside it, labelled.
 
 Above about $8 of capital, one rotation repays its own
 gas inside a month. That number is low because BSC gas is cheap, and it is
-the number that decides whether this category is worth automating at all ,
+the number that decides whether this category is worth automating at all,
 which is why it was named as this task's loss condition in advance. It did
 not become a loss, but it was allowed to.
 

@@ -6,10 +6,11 @@ const config: NextConfig = {
   // lockfile; without this, Next infers the wrong workspace root.
   outputFileTracingRoot: __dirname,
   // Pages read committed evidence from src/data at request time (demo.json,
-  // recenter.json, roles.json, passkey.json, grid-window.json, probe.json).
+  // recenter.json, roles.json, passkey.json, grid-window.json, probe.json),
+  // and /proof reads the locked specification and its results from docs/advantage.
   // Some are read through a template path, which the tracer cannot follow.
   outputFileTracingIncludes: {
-    "/**/*": ["./src/data/**/*.json", "./docs/advantage/results/*.json"],
+    "/**/*": ["./src/data/**/*.json", "./docs/advantage/results/*.json", "./docs/advantage/INPUT_LOCK.json"],
   },
   images: {
     remotePatterns: [{ protocol: "https", hostname: "api.8004scan.io" }],

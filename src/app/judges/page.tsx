@@ -226,7 +226,7 @@ export default async function JudgesPage() {
                     <div style={{ minWidth: 0 }}>
                       <span className="m-card__cat">{CATEGORY_LABEL[c]}</span>
                       <span className="m-card__name">
-                        {ref.status === "live" ? "reference live" : ref.status === "idle" ? "reference idle" : "no reference yet"}
+                        {ref.status === "live" ? "reference live" : ref.status === "paused" ? "reference paused" : ref.status === "idle" ? "reference idle" : "no reference yet"}
                         {" · "}
                         {pick ? "third party live" : "no third party answered"}
                       </span>

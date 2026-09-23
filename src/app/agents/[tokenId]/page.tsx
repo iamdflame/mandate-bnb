@@ -26,6 +26,7 @@ import { STATE_WORD, trustOf, type ProofState } from "@/lib/market/trust";
 import { houseSlug, performanceOf } from "@/lib/market/performance";
 import { houseActivity } from "@/lib/house/runs";
 import { listPaidCalls } from "@/lib/market/paid-calls";
+import { buriedFor, graveAnchor, graveyard } from "@/lib/market/graveyard";
 import { HOUSE_LEASHES } from "@/lib/chain/house";
 import { allowedCalls, CANNOT } from "@/lib/chain/leash-words";
 import { USDT, WBNB } from "@/lib/chain/leash";
@@ -90,7 +91,10 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
   const slugOf = houseSlug(l.tokenId);
   const action = slugOf ? ((await houseActivity().catch(() => null))?.[slugOf]?.action ?? null) : null;
   const perf = performanceOf(l.tokenId, l.settled, action);
-  const calls = (await listPaidCalls().catch(() => [])).filter((c) => c.tokenId === l.tokenId).slice(0, 8);
+  const ownCalls = (await listPaidCalls().catch(() => [])).filter((c) => c.tokenId === l.tokenId);
+  const calls = ownCalls.slice(0, 8);
+  // Its own failure on record, if any; one of ours never counts against it.
+  const grave = buriedFor(l.tokenId, graveyard(ownCalls, paidJobs));
   const preview = previewFor(l.tokenId);
 
   /*
@@ -336,6 +340,20 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
                 See evidence
               </a>
             </p>
+            {grave ? (
+              <p className="x-ad-grave">
+                {grave.kind === "took"
+                  ? "We paid it and the work did not come back."
+                  : grave.kind === "refused"
+                    ? "It refused a payment it had quoted."
+                    : "An escrowed job it delivered does not match its own commitment."}{" "}
+                The record, with its own words, is kept on{" "}
+                <Link className="x-link" href={`/graveyard#${graveAnchor(grave)}`}>
+                  the graveyard
+                </Link>
+                .
+              </p>
+            ) : null}
           </section>
 
           {/* ------------------------------------------------------ verification */}
