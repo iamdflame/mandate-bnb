@@ -11,8 +11,8 @@
  * spends a little gas, so an open endpoint would be somebody else's budget.
  */
 
-import { NextResponse } from "next/server";
-import { scheduleState, tick } from "@/lib/ops/schedule";
+import { NextResponse, after } from "next/server";
+import { scheduleState, tick, tickAfter } from "@/lib/ops/schedule";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,6 +36,8 @@ export async function GET(request: Request) {
   // The pinger's own timeout, so a call is never cut off mid-job.
   const maxMs = Math.min(50_000, Math.max(5_000, Number(url.searchParams.get("maxMs")) || 22_000));
   const ran = await tick({ only: only.length ? only : undefined, force: url.searchParams.get("force") === "1", maxMs });
+  // Long reads go after the reply, in the time the function has left.
+  if (!only.length) after(() => tickAfter().catch(() => undefined));
   return NextResponse.json(
     { at: new Date().toISOString(), ran, schedule: await scheduleState() },
     { headers: { "cache-control": "no-store" } },

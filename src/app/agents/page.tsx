@@ -183,6 +183,15 @@ export default async function AgentsPage({
             {census.at ? <Ago iso={census.at} prefix="Checked" /> : "Not checked yet"}
           </p>
         </div>
+        {q.category === "rebalancing" ? (
+          <p className="x-ad-src x-cat-note">
+            Where PancakeSwap V3 liquidity is thinnest against the demand crossing it, measured from the chain:{" "}
+            <Link className="x-link" href="/pool-gaps">
+              Pool gaps
+            </Link>
+            .
+          </p>
+        ) : null}
 
         <form className="x-searchbar" action="/agents" method="get" role="search">
           <Search size={18} className="x-searchbar__i" aria-hidden="true" />

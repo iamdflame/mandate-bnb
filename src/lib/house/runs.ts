@@ -16,6 +16,7 @@
 
 import { sql as pg } from "@/lib/db/client";
 import { ensureTables } from "@/lib/db/tables";
+import { withLease } from "@/lib/db/lease";
 
 export type HouseSlug = "range-1" | "grid-1" | "yield-1" | "guard-1";
 export type RunMode = "live" | "dry";
@@ -154,19 +155,6 @@ export async function houseActions(limit = 40): Promise<HouseRun[]> {
 */
 const LEASE_SECONDS = 90;
 
-export async function withAgentLease<T>(slug: HouseSlug, fn: () => Promise<T>): Promise<T | null> {
-  if (!pg) return fn();
-  await ensureTables();
-  const name = `house:${slug}`;
-  const got = (await pg`
-    insert into leases (name, until) values (${name}, now() + ${`${LEASE_SECONDS} seconds`}::interval)
-    on conflict (name) do update set until = excluded.until where leases.until < now()
-    returning name
-  `) as { name: string }[];
-  if (!got.length) return null;
-  try {
-    return await fn();
-  } finally {
-    await pg`update leases set until = now() where name = ${name}`.catch(() => undefined);
-  }
+export function withAgentLease<T>(slug: HouseSlug, fn: () => Promise<T>): Promise<T | null> {
+  return withLease(`house:${slug}`, LEASE_SECONDS, fn);
 }

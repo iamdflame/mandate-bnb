@@ -25,6 +25,7 @@ const MORE = [
   { href: "/trust", label: "Trust", note: "How every agent is checked" },
   { href: "/proof", label: "Proof", note: "Does hiring beat doing it yourself" },
   { href: "/graveyard", label: "Graveyard", note: "Agents that took money and failed" },
+  { href: "/pool-gaps", label: "Pool gaps", note: "Where PancakeSwap liquidity is thin" },
   { href: "/api", label: "Docs", note: "Public API and MCP" },
   { href: "/status", label: "Status", note: "Is everything working" },
   { href: "/judges", label: "See it work", note: "A 90 second walk through a real hire" },

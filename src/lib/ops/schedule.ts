@@ -22,12 +22,19 @@ import { beat } from "@/lib/heartbeat";
 import { sweepOurJobs, sweeperOn } from "@/lib/market/sweeper";
 import { renewHouseSessions } from "@/lib/chain/house";
 import { runHouse, HOUSE_CADENCE_MIN } from "@/lib/house/run";
+import { continuePoolGap } from "@/lib/pancake/pool-gap";
 
 export interface Job {
   name: string;
   everyMinutes: number;
   budgetMs: number;
   run: () => Promise<unknown>;
+  /**
+   * Runs after the tick has answered, on its own budget. For long reads that
+   * would otherwise eat the pinger's thirty seconds and starve every job
+   * behind them: the function lives on for its full duration after the reply.
+   */
+  afterResponse?: boolean;
 }
 
 /*
@@ -151,6 +158,19 @@ export const JOBS: Job[] = [
       return { wrote: "cron" };
     },
   },
+  /*
+    PancakeSwap's pool gaps. A new window starts every twelve hours; reading
+    one takes many slices, since a thousand blocks of V3 swaps is 24 MB, so the
+    job looks in on every tick, reads what fits, and publishes when done.
+  */
+  {
+    name: "pool-gap",
+    everyMinutes: 5,
+    // The tick takes at most 22 of the function's 60 seconds; this takes at most 36 of the rest.
+    budgetMs: 36_000,
+    afterResponse: true,
+    run: () => continuePoolGap({ budgetMs: 34_000 }),
+  },
 ];
 
 export interface Ran {
@@ -193,6 +213,10 @@ export async function tick(opts: { only?: string[]; force?: boolean; maxMs?: num
   const out: Ran[] = [];
   for (const job of JOBS) {
     if (opts.only?.length && !opts.only.includes(job.name)) continue;
+    if (job.afterResponse && !opts.only?.length) {
+      out.push({ job: job.name, ok: true, ms: 0, detail: null, skipped: "runs after the response" });
+      continue;
+    }
     const spent = Date.now() - began;
     if (!opts.only?.length && spent + 2_000 > maxMs) {
       out.push({ job: job.name, ok: true, ms: 0, detail: null, skipped: `deferred: ${Math.round(spent / 1000)}s of the ${Math.round(maxMs / 1000)}s budget already spent` });
@@ -205,6 +229,33 @@ export async function tick(opts: { only?: string[]; force?: boolean; maxMs?: num
       out.push({ job: job.name, ok: true, ms: 0, detail: null, skipped: `not due for ${minutes} more minutes` });
       continue;
     }
+    const started = Date.now();
+    try {
+      const detail = await Promise.race([
+        job.run(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error(`over budget after ${job.budgetMs} ms`)), job.budgetMs)),
+      ]);
+      await note(job.name, true, detail);
+      out.push({ job: job.name, ok: true, ms: Date.now() - started, detail });
+    } catch (e) {
+      const detail = (e as Error).message.slice(0, 200);
+      await note(job.name, false, detail);
+      out.push({ job: job.name, ok: false, ms: Date.now() - started, detail });
+    }
+  }
+  return out;
+}
+
+/**
+ * The jobs that run after the tick has answered, each if due, one after another.
+ * Called from the tick route inside `after()`, so the pinger never waits on them.
+ */
+export async function tickAfter(): Promise<Ran[]> {
+  const last = await lastRuns();
+  const out: Ran[] = [];
+  for (const job of JOBS.filter((j) => j.afterResponse)) {
+    const at = last.get(job.name)?.at;
+    if (at && Date.now() - new Date(at).getTime() < job.everyMinutes * 60_000) continue;
     const started = Date.now();
     try {
       const detail = await Promise.race([
