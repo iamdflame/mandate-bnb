@@ -126,8 +126,12 @@ async function main() {
     record("/api/judge/hire", false, `expected JSON, got ${judge.status}`);
   }
 
-  const hire = await get("/hire/344121");
-  record("/hire/344121: our own agent keeps its job form", hire.text.includes("Set the limits"), hire.text.includes("Set the limits") ? "the form renders" : "no job form on the page");
+  // Range-1 takes jobs; Grid-1 is paused, and a paused agent must not offer one.
+  const hire = await get("/hire/344119");
+  record("/hire/344119: our own agent keeps its job form", hire.text.includes("Set the limits"), hire.text.includes("Set the limits") ? "the form renders" : "no job form on the page");
+  const paused = await get("/hire/344121");
+  const refuses = !paused.text.includes("Set the limits") && paused.text.includes("Paused:");
+  record("/hire/344121: paused Grid-1 offers no job", refuses, refuses ? "refused, with the reason" : paused.text.includes("Set the limits") ? "the job form is still offered" : "no pause reason on the page");
 
   const width = Math.max(...checks.map((c) => c.name.length));
   for (const c of checks) console.log(`${c.ok ? "PASS" : "FAIL"}  ${c.name.padEnd(width)}  ${c.detail}`);
