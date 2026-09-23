@@ -67,13 +67,20 @@ export async function funnel(all: Listing[]): Promise<Stage[]> {
       at: census.at,
       href: "/agents?live=1",
     },
+    /*
+      Every hireable agent can be paid one of two ways: a per-call price we
+      read from its own 402, or an escrowed job it takes in this market. The
+      stage counts both, so the funnel only ever narrows. Counting prices
+      alone once showed 17 here and 19 hireable after it, because our own
+      job-taking agents are hireable without a per-call price.
+    */
     {
       key: "priced",
-      label: "publish a price",
-      n: all.filter(PRED.priced).length,
-      source: "A per-call price read from the agent's own payment response",
+      label: "can be paid here",
+      n: all.filter((l) => PRED.priced(l) || PRED.job(l)).length,
+      source: "A per-call price read from the agent's own payment response, or it takes escrowed jobs in this market",
       at: census.at,
-      href: "/agents?priced=1",
+      href: null,
     },
     {
       key: "hireable",

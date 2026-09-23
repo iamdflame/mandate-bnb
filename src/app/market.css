@@ -1989,7 +1989,12 @@ html:has(.x-app) body {
   width: 100%;
   min-width: 640px;
   border-collapse: collapse;
+  table-layout: fixed;
   font-size: var(--ts-sm);
+}
+/* The label column is fixed; the agents share the rest equally. */
+.x-cmpt__kcol {
+  width: 190px;
 }
 .x-cmpt th,
 .x-cmpt td {
@@ -2050,6 +2055,7 @@ html:has(.x-app) body {
   font-weight: 400;
   color: var(--c-text-3);
 }
+/* Best in its row: a quiet green ground. Yellow is kept for actions. */
 .x-cmpt__best {
   display: inline-flex;
   align-items: center;
@@ -2057,8 +2063,9 @@ html:has(.x-app) body {
   padding: 2px 8px;
   margin: -2px -8px;
   border-radius: var(--r-sm);
-  background: var(--c-accent-soft);
-  color: var(--c-accent);
+  background: var(--c-ok-soft);
+  color: var(--c-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-ok) 35%, transparent);
 }
 .x-cmpt__node {
   display: flex;
@@ -2300,12 +2307,13 @@ html:has(.x-app) body {
 .x-stack__k {
   margin-bottom: var(--s-3) !important;
 }
+/* Rows divided by hairlines inside the one panel: a box inside a box reads as clutter. */
 .x-stack__list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: var(--s-2);
+  border-top: 1px solid var(--c-line-faint);
 }
 .x-stack__item {
   position: relative;
@@ -2313,13 +2321,14 @@ html:has(.x-app) body {
   grid-template-columns: 76px minmax(0, 1fr) auto;
   gap: var(--s-3);
   align-items: center;
-  padding: var(--s-2);
-  border-radius: var(--r-md);
-  background: var(--c-surface-2);
+  padding: var(--s-3) var(--s-2);
+  margin: 0 calc(var(--s-2) * -1);
+  border-bottom: 1px solid var(--c-line-faint);
+  border-radius: var(--r-sm);
   transition: background var(--d-fast) var(--e-out);
 }
 .x-stack__item:hover {
-  background: var(--c-elevated);
+  background: var(--c-surface-2);
 }
 .x-stack__art {
   width: 76px;
@@ -4450,4 +4459,107 @@ a.x-house__name:hover {
   .x-dialog[open] {
     animation: none;
   }
+}
+
+/* Not connected: a single line, so the desk still opens on agents. */
+.x-connect--slim {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+}
+.x-connect--slim .x-connect__i {
+  width: 32px;
+  height: 32px;
+}
+.x-connect--slim .x-connect__p {
+  margin: 0;
+}
+.x-desk-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-1) var(--s-2);
+  margin: var(--s-6) 0 var(--s-3);
+  font-size: var(--ts-md);
+  font-weight: 600;
+  scroll-margin-top: calc(var(--h-nav) + var(--s-4));
+}
+.x-desk-sub .x-link {
+  font-size: var(--ts-xs);
+  font-weight: 400;
+}
+.x-desk-sub__n {
+  flex-basis: 100%;
+  font-size: var(--ts-xs);
+  font-weight: 400;
+  color: var(--c-text-3);
+}
+@media (max-width: 599px) {
+  .x-connect--slim {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+}
+
+/* ========================================================== job hire === */
+
+/*
+  The job form keeps its logic and its classes; this scope brings it into the
+  marketplace's look. A progress line instead of a boxed step bar, choices as
+  separate rounded options, and a flat side panel.
+*/
+.x-hireflow .m-steps {
+  gap: var(--s-2);
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+.x-hireflow .m-step {
+  padding: var(--s-2) 0 var(--s-3);
+  border: 0;
+  border-bottom: 2px solid var(--c-line);
+  background: transparent;
+  color: var(--c-text-3);
+  font-size: var(--ts-xs);
+}
+.x-hireflow .m-step--now {
+  border-bottom-color: var(--c-accent);
+  color: var(--c-text);
+}
+.x-hireflow .m-step--done {
+  border-bottom-color: var(--c-ok);
+  color: var(--c-text-2);
+}
+.x-hireflow .m-step--done .m-step__n {
+  border-color: var(--c-ok);
+  color: var(--c-ok);
+}
+.x-hireflow .m-pick {
+  gap: var(--s-2);
+  border: 0;
+  background: transparent;
+}
+.x-hireflow .m-pick__opt {
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+  box-shadow: inset 0 0 0 1px var(--c-line-faint);
+  transition:
+    background var(--d-fast) var(--e-out),
+    box-shadow var(--d-fast) var(--e-out);
+}
+.x-hireflow .m-pick__opt:hover {
+  background: var(--c-surface-2);
+  box-shadow: inset 0 0 0 1px var(--c-line-strong);
+}
+.x-hireflow .m-pick__opt--on {
+  background: var(--c-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--c-accent-line);
+}
+.x-hireflow aside .m-panel {
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+}
+.x-hireflow .m-panel {
+  border-radius: var(--r-md);
 }

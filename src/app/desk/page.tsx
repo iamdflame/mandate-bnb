@@ -209,26 +209,19 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
         <div className="x-head">
           <div>
             <h2 id="h-yours">Your agents</h2>
-            <p>Jobs you opened and agents holding permissions over your wallet.</p>
+            <p>What each agent may do, its limits, and the control that ends it.</p>
           </div>
         </div>
         <YourAgents />
-      </section>
 
-      {/* ------------------------------------------------------ demo account */}
-      <section className="x-wrap x-section--tight" aria-labelledby="h-demo" id="demo">
-        <div className="x-head">
-          <div>
-            <h2 id="h-demo">The demo account</h2>
-            <p>
-              Our four reference agents act on{" "}
-              <a className="x-link x-mono" href={bscscanAddress(DEMO_ADDRESS)} target="_blank" rel="noreferrer">
-                {short(DEMO_ADDRESS)}
-              </a>{" "}
-              through scoped sessions. This is what each may do right now.
-            </p>
-          </div>
-        </div>
+        {/* The demo account, right under it: the agents a visitor can actually see at work. */}
+        <h3 className="x-desk-sub" id="demo">
+          The demo account{" "}
+          <a className="x-link x-mono" href={bscscanAddress(DEMO_ADDRESS)} target="_blank" rel="noreferrer">
+            {short(DEMO_ADDRESS)}
+          </a>
+          <span className="x-desk-sub__n">Our four reference agents, each acting through a scoped session</span>
+        </h3>
         <ol className="x-house-list">
           {house.map((h) => (
             <li key={h.leash.slug} className="x-house" id={h.leash.slug}>

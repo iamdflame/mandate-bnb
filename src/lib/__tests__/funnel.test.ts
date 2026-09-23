@@ -55,6 +55,8 @@ const shelf: Listing[] = [
   agent("900003", {}),
   // Silent when called.
   agent("900004", { liveness: "silent", probe: { answered: false, status: null, latencyMs: null, endpoint: "https://x.test", at: minutesAgo(5) } as never }),
+  // One of ours: no per-call price, but it takes escrowed jobs, so it is hireable.
+  agent("900005", { owner: "0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90", declaresPayment: false }),
 ];
 
 beforeEach(() => {
@@ -68,9 +70,9 @@ describe("the registry funnel", () => {
     const s = Object.fromEntries((await funnel(shelf)).map((x) => [x.key, x.n]));
     expect(s.listed).toBe(shelf.length);
     expect(s.reachable).toBe(shelf.filter(PRED.live).length);
-    expect(s.priced).toBe(shelf.filter(PRED.priced).length);
+    expect(s.priced).toBe(shelf.filter((l) => PRED.priced(l) || PRED.job(l)).length);
     expect(s.hireable).toBe(shelf.filter(PRED.hireable).length);
-    expect([s.listed, s.reachable, s.priced, s.hireable]).toEqual([4, 3, 2, 1]);
+    expect([s.listed, s.reachable, s.priced, s.hireable]).toEqual([5, 4, 3, 2]);
   });
 
   it("only narrows from one stage to the next", async () => {
@@ -105,7 +107,8 @@ describe("the registry funnel", () => {
     chain.registeredCount.mockResolvedValue({ count: 1, block: 1, at: "2026-09-22T10:00:00Z" });
     const s = await funnel(shelf);
     expect(s.find((x) => x.key === "hireable")!.href).toBe("/agents?hireable=1");
-    expect(s.find((x) => x.key === "priced")!.href).toBe("/agents?priced=1");
+    // A union of two filters has no single list to open, so it links nowhere rather than to a list with a different count.
+    expect(s.find((x) => x.key === "priced")!.href).toBeNull();
   });
 
   it("draws bars on a log scale that keeps the smallest stage visible and unknown as a gap", () => {

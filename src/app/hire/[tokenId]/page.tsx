@@ -69,7 +69,7 @@ export default async function HirePage({
             ← Back to {l.name}
           </Link>
         </p>
-        <div className="m-hire-page">
+        <div className="m-hire-page x-hireflow">
           <div>
             <h1 className="m-h1" style={{ margin: "1.25rem 0 1rem" }}>
               Hire {l.name}

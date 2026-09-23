@@ -63,18 +63,18 @@ export default async function ComparePage({
     return { l, report, trust: trustOf(l, report), verdict: hirePath(l) };
   });
 
-  // Best-in-row, only where lower or higher is plainly better.
-  const best = <T,>(vals: (T | null)[], pick: (a: T, b: T) => boolean) => {
-    let idx = -1;
-    vals.forEach((v, i) => {
-      if (v === null) return;
-      if (idx === -1 || pick(v, vals[idx] as T)) idx = i;
-    });
-    return vals.filter((v) => v !== null).length > 1 ? idx : -1;
+  // Best-in-row, only where lower or higher is plainly better. Every agent
+  // that ties for best is marked, and a row where all of them tie marks none.
+  const best = (vals: (number | null)[], lower: boolean): Set<number> => {
+    const present = vals.flatMap((v, i) => (v === null ? [] : [[v, i] as const]));
+    if (present.length < 2) return new Set();
+    const target = lower ? Math.min(...present.map(([v]) => v)) : Math.max(...present.map(([v]) => v));
+    const winners = present.filter(([v]) => v === target).map(([, i]) => i);
+    return winners.length === present.length ? new Set() : new Set(winners);
   };
-  const bestPrice = best(cols.map((c) => c.l.usdPrice), (a, b) => a < b);
-  const bestSpeed = best(cols.map((c) => (c.l.probe?.answered ? c.l.probe.latencyMs : null)), (a, b) => (a ?? 9e9) < (b ?? 9e9));
-  const bestChecks = best(cols.map((c) => c.trust.counts.proven), (a, b) => a > b);
+  const bestPrice = best(cols.map((c) => c.l.usdPrice), true);
+  const bestSpeed = best(cols.map((c) => (c.l.probe?.answered ? (c.l.probe.latencyMs ?? null) : null)), true);
+  const bestChecks = best(cols.map((c) => c.trust.counts.proven), false);
 
   const Row = ({ k, children, hint }: { k: string; children: ReactNode[]; hint?: string }) => (
     <tr>
@@ -87,7 +87,7 @@ export default async function ComparePage({
       ))}
     </tr>
   );
-  const mark = (i: number, idx: number, v: ReactNode) => (i === idx ? <span className="x-cmpt__best">{v}</span> : v);
+  const mark = (i: number, winners: Set<number>, v: ReactNode) => (winners.has(i) ? <span className="x-cmpt__best">{v}</span> : v);
 
   return (
     <AppShell>
@@ -122,10 +122,16 @@ export default async function ComparePage({
         ) : (
           <div className="x-cmpt-wrap">
             <table className="x-cmpt">
+              <colgroup>
+                <col className="x-cmpt__kcol" />
+                {cols.map(({ l }) => (
+                  <col key={l.tokenId} />
+                ))}
+              </colgroup>
               <thead>
                 <tr>
-                  <th scope="col" className="x-sr">
-                    Field
+                  <th scope="col">
+                    <span className="x-sr">Field</span>
                   </th>
                   {cols.map(({ l, verdict }) => (
                     <th key={l.tokenId} scope="col">

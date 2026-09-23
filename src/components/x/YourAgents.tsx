@@ -18,24 +18,22 @@ import Permissions from "@/components/v2/portfolio/Permissions";
 export default function YourAgents() {
   const { address, available, connect } = useWallet();
 
+  // Not connected: one line, so the agents below are the first thing on the page.
   if (!address) {
     return (
-      <div className="x-connect">
+      <div className="x-connect x-connect--slim">
         <span className="x-connect__i" aria-hidden="true">
-          <Wallet size={20} />
+          <Wallet size={16} />
         </span>
-        <div>
-          <p className="x-connect__t">Connect your wallet to see your agents</p>
-          <p className="x-connect__p">
-            The jobs you opened and every permission an agent holds over your wallet, read from the chain for your address. Nothing is stored on our side.
-          </p>
-        </div>
+        <p className="x-connect__p">
+          Not connected, so this shows the demo account. Connect a wallet to see the jobs you opened and the agents with permissions over it.
+        </p>
         {available ? (
-          <button type="button" className="x-btn x-btn--primary" onClick={() => void connect()}>
+          <button type="button" className="x-btn x-btn--sm x-btn--primary" onClick={() => void connect()}>
             Connect wallet
           </button>
         ) : (
-          <Link href="/agents" className="x-btn">
+          <Link href="/agents" className="x-btn x-btn--sm">
             Browse agents
           </Link>
         )}
