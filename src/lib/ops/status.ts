@@ -24,6 +24,24 @@ import { withTimeout } from "@/lib/cache";
 import { DEMO_ADDRESS } from "@/lib/demo";
 import { HOUSE_LEASHES, houseSessionId } from "@/lib/chain/house";
 import { pauseForSlug } from "@/lib/market/paused";
+import { listings } from "@/lib/market/listing";
+import { hirePath } from "@/lib/market/hire-law";
+import { hireCounts } from "@/lib/market/hires";
+import { CATEGORIES, type Category } from "@/lib/config";
+
+/** Fewer agents a buyer can hire in a job than this, and the job is thin: one failure from none. */
+export const THIN_BELOW = 3;
+
+/** Agents a buyer can hire right now, per job: the hire law's answer, as /agents and the API give it. */
+export async function hireableByCategory(): Promise<Record<Category, string[]>> {
+  const counts = await hireCounts().catch(() => null);
+  const out = Object.fromEntries(CATEGORIES.map((c) => [c, [] as string[]])) as Record<Category, string[]>;
+  for (const l of listings(counts?.byTokenId, counts?.settled)) {
+    const c = l.category as Category | null;
+    if (c && out[c] && hirePath(l).ok) out[c].push(l.name);
+  }
+  return out;
+}
 
 export interface Check {
   beat: number;

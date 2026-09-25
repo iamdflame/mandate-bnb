@@ -53,6 +53,12 @@ export interface PaidCallRecord {
   note?: string | null;
   tx: string | null;
   block: number | null;
+  /**
+   * The settlement as the chain has it: true once the transaction was read back
+   * and moves exactly the price from the payer to the payee, false when the
+   * named transaction does not. Unset until it has been read.
+   */
+  confirmed?: boolean | null;
   approveTx: string | null;
   /** Paid by Mandate on a visitor's behalf (Judge Mode), not by the operator's script. */
   sponsored: boolean;
@@ -250,4 +256,21 @@ export function outcomes(calls: PaidCallRecord[]): Map<string, Outcome> {
     out.set(c.tokenId, o);
   }
   return out;
+}
+
+/**
+ * Paid calls whose settlement has not been read back from the chain, newest
+ * first: the queue for the scheduled confirmation pass.
+ */
+export async function unconfirmedCalls(limit = 20): Promise<PaidCallRecord[]> {
+  if (!(await ensure())) return [];
+  const rows = (await pg!`
+    select record from paid_calls
+    where record->>'payer' is not null
+      and (record->>'confirmed') is null
+      and at > now() - interval '30 days'
+    order by at desc
+    limit ${limit}
+  `) as { record: PaidCallRecord }[];
+  return rows.map((r) => r.record);
 }

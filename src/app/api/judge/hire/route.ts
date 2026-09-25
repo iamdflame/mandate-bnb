@@ -15,7 +15,7 @@
  * worth less than no demonstration at all.
  */
 
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import type { Address } from "viem";
 import { payAndCall } from "@/lib/x402/pay-server";
 import { allowance, callerHash, noteSponsored, sponsorAddress, MAX_CALL, sponsorKey } from "@/lib/market/judge-mode";
@@ -23,6 +23,7 @@ import { SPONSORED, sponsoredIds } from "@/lib/market/sponsored-targets";
 import { listingFor } from "@/lib/market/listing";
 import { hirePath } from "@/lib/market/hire-law";
 import { listPaidCalls, outcomes, recordPaidCall, toRecord } from "@/lib/market/paid-calls";
+import { confirmSettlement } from "@/lib/market/settlement";
 import { take, callerOf, limitHeaders } from "@/lib/api/ratelimit";
 import { live } from "@/lib/data/live";
 import { marketChain } from "@/lib/chain/market";
@@ -123,6 +124,10 @@ export async function POST(request: Request) {
     evidence: null,
   });
   await recordPaidCall(record).catch(() => undefined);
+  after(async () => {
+    const checked = await confirmSettlement(record).catch(() => record);
+    if (checked !== record) await recordPaidCall(checked).catch(() => undefined);
+  });
 
   return NextResponse.json(
     {

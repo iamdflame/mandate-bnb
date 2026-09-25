@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { keccak256, toHex } from "viem";
+import { zeroHash } from "viem";
 import { Star } from "lucide-react";
 import { sendMarketTx, useWallet } from "@/lib/chain/wallet";
 import { RATING_TAG, REPUTATION_ABI, REPUTATION_REGISTRY } from "@/lib/chain/reputation-abi";
@@ -13,8 +13,8 @@ import { SITE } from "@/lib/site";
  *
  * The rating is yours and on chain: it names the agent's id, a score out of a
  * hundred, the job it did as its first tag and this site as its second, and it
- * commits to the hire it follows by hashing that transaction. Nothing is
- * written for you; the button asks your wallet to sign it.
+ * names the hire it follows: its feedbackHash is that hire's settlement
+ * transaction. Nothing is written for you; the button asks your wallet to sign it.
  */
 export default function RateAgent({ tokenId, name, category, hireTx }: { tokenId: string; name: string; category: string | null; hireTx: string | null }) {
   const { address, ready, connect, switchChain, available } = useWallet();
@@ -38,7 +38,8 @@ export default function RateAgent({ tokenId, name, category, hireTx }: { tokenId
           // endpoint: none named; feedbackURI: the agent's page here, where the hire can be seen.
           "",
           `${SITE}/agents/${tokenId}`,
-          keccak256(toHex(hireTx ?? `agent:${tokenId}`)),
+          // feedbackHash: the hire this rating follows, as its settlement transaction, so it can be matched to it.
+          hireTx && /^0x[0-9a-fA-F]{64}$/.test(hireTx) ? (hireTx as `0x${string}`) : zeroHash,
         ],
         undefined,
         (s) => {

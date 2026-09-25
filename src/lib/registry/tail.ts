@@ -172,6 +172,27 @@ async function upsertMany(agents: IndexedAgent[], resolved: boolean): Promise<vo
 
 const upsert = (agent: IndexedAgent, resolved: boolean) => upsertMany([agent], resolved);
 
+/** Mints confirmed on chain for agents from the committed crawl, stored with the crawl's own reading. */
+export async function storeCrawlMints(agents: IndexedAgent[]): Promise<void> {
+  if (!pg || !agents.length) return;
+  await ensureTables();
+  for (let i = 0; i < agents.length; i += 100) await upsertMany(agents.slice(i, i + 100).map((a) => ({ ...a, source: "crawl" as const })), true);
+}
+
+/** The registry's mint of one token among a transaction's logs: its owner at mint, or null. Pure, for tests. */
+export function mintIn(logs: readonly { address: string; topics: readonly (string | null)[] }[], tokenId: string): string | null {
+  const log = logs.find(
+    (l) =>
+      l.address.toLowerCase() === IDENTITY_REGISTRY.toLowerCase() &&
+      l.topics[0] === TRANSFER_TOPIC &&
+      l.topics[1] === ZERO_TOPIC &&
+      l.topics[3] !== undefined &&
+      l.topics[3] !== null &&
+      BigInt(l.topics[3]) === BigInt(tokenId),
+  );
+  return log?.topics[2] ? `0x${log.topics[2].slice(26)}`.toLowerCase() : null;
+}
+
 /** Scan: store every mint in the next ranges of blocks, cheaply, and move the cursor. */
 export async function scanMints(opts: { budgetMs: number; maxChunks?: number }): Promise<{ cursor: number; head: number; minted: number }> {
   await ensureTables();

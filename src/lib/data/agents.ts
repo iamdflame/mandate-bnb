@@ -93,7 +93,8 @@ const EMPTY: AgentIndex = {
 
 let cached: AgentIndex | null = null;
 
-function fileIndex(): AgentIndex {
+/** The committed crawl alone, without the registry's later agents merged in. */
+export function fileIndex(): AgentIndex {
   if (cached) return cached;
   try {
     const raw = readFileSync(join(process.cwd(), "src/data/agents.json"), "utf8");

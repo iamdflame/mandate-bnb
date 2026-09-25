@@ -15,10 +15,11 @@
  * exactly what forwarding it does.
  */
 
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { fromBase64, readRequirements, type Requirement } from "@/lib/x402/pay";
 import { exchange } from "@/lib/x402/pay-server";
 import { recordPaidCall, toRecord } from "@/lib/market/paid-calls";
+import { confirmSettlement } from "@/lib/market/settlement";
 import type { Address } from "viem";
 import { SPONSORED } from "@/lib/market/sponsored-targets";
 import { listingFor } from "@/lib/market/listing";
@@ -117,7 +118,13 @@ export async function POST(request: Request) {
         exchanges: [ex],
         ms: ex.response.ms,
       };
-      await recordPaidCall(toRecord(call, { tokenId, name: listing?.name ?? `#${tokenId}`, category: sponsored?.category ?? (listing?.category as string) ?? "unclassified", sponsored: false, subject: subject ?? null, evidence: null }));
+      const rec = toRecord(call, { tokenId, name: listing?.name ?? `#${tokenId}`, category: sponsored?.category ?? (listing?.category as string) ?? "unclassified", sponsored: false, subject: subject ?? null, evidence: null });
+      await recordPaidCall(rec);
+      // Read back from the chain once the visitor has the answer: the chain, not the seller's header, says whether it was paid.
+      after(async () => {
+        const checked = await confirmSettlement(rec).catch(() => rec);
+        if (checked !== rec) await recordPaidCall(checked).catch(() => undefined);
+      });
     } catch {
       /* the tape is best effort; the visitor still gets the answer */
     }

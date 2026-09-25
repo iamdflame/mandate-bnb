@@ -40,6 +40,8 @@ export interface HireRow {
   asset: string | null;
   /** The agent answered, or the job ran its full term. */
   completed: boolean;
+  /** Read back from the chain: the settlement moved exactly the price from this wallet to the agent, or the job is in the contract. */
+  onChain: boolean;
   at: string | null;
   /** Paid by MANDATE for a visitor, so not the wallet's own hire. */
   sponsored: boolean;
@@ -52,6 +54,8 @@ export interface RatingRow {
   tag2: string | null;
   tx: string;
   block: number | null;
+  /** The paid hire this rating follows, when its feedbackHash names one this wallet made. */
+  hireTx: string | null;
   at: string;
 }
 
@@ -77,6 +81,7 @@ export function paidCallHires(calls: PaidCallRecord[], wallet: string): HireRow[
       amount: c.amount,
       asset: c.asset,
       completed: c.delivered,
+      onChain: c.confirmed === true && Boolean(c.tx),
       at: c.at,
       sponsored: c.sponsored,
     }));
@@ -110,6 +115,7 @@ async function marketJobsOf(wallet: string): Promise<HireRow[]> {
         amount: r.capitalWei.toString(),
         asset: "BNB",
         completed: r.epochsTotal > 0 && r.epochsSettled >= r.epochsTotal,
+        onChain: true,
         at: null,
         sponsored: false,
       };
@@ -119,13 +125,14 @@ async function marketJobsOf(wallet: string): Promise<HireRow[]> {
 export async function ratingsOf(wallet: string): Promise<RatingRow[]> {
   if (!pg) return [];
   await ensureTables();
-  const rows = (await pg`select tx, token_id, score, tag1, tag2, block, at from ratings where wallet = ${wallet.toLowerCase()} order by at desc`) as {
+  const rows = (await pg`select tx, token_id, score, tag1, tag2, block, hire_tx, at from ratings where wallet = ${wallet.toLowerCase()} order by at desc`) as {
     tx: string;
     token_id: string;
     score: number;
     tag1: string | null;
     tag2: string | null;
     block: string | number | null;
+    hire_tx: string | null;
     at: Date | string;
   }[];
   return rows.map((r) => ({
@@ -135,14 +142,15 @@ export async function ratingsOf(wallet: string): Promise<RatingRow[]> {
     tag2: r.tag2,
     tx: r.tx,
     block: r.block === null ? null : Number(r.block),
+    hireTx: r.hire_tx,
     at: typeof r.at === "string" ? r.at : r.at.toISOString(),
   }));
 }
 
-/** Which of the four jobs a wallet has hired an agent for, counting only its own paid hires. Pure, for tests. */
+/** Which of the four jobs a wallet has hired an agent for, counting only its own hires the chain confirms. Pure, for tests. */
 export function jobsCovered(hires: HireRow[]): Record<Category, number> {
   const out = Object.fromEntries(CATEGORIES.map((c) => [c, 0])) as Record<Category, number>;
-  for (const h of hires) if (h.category && !h.sponsored) out[h.category] += 1;
+  for (const h of hires) if (h.category && !h.sponsored && h.onChain) out[h.category] += 1;
   return out;
 }
 

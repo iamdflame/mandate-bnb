@@ -71,7 +71,9 @@
     "refresh": "npm run index && npm run backfill:cards && npm run probe:all && npm run assay:snapshot && npm run snapshot",
     "seed:books": "tsx --env-file=.env --env-file-if-exists=.env.local src/scripts/seed-books.ts",
     "backfill:cards": "tsx --env-file=.env --env-file-if-exists=.env.local src/scripts/backfill-cards.ts",
-    "registry-tail": "tsx --env-file=.env --env-file-if-exists=.env.local src/scripts/registry-tail.ts"
+    "registry-tail": "tsx --env-file=.env --env-file-if-exists=.env.local src/scripts/registry-tail.ts",
+    "confirm-calls": "tsx --env-file=.env --env-file-if-exists=.env.local src/scripts/confirm-calls.ts",
+    "registry-mints": "tsx --env-file=.env --env-file-if-exists=.env.local src/scripts/registry-mints.ts"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",

@@ -133,7 +133,7 @@ async function main() {
   const formOrClosed = hire.text.includes("Set the limits") || hire.text.includes("Jobs with capital are not open yet");
   record("/hire/344119: our own agent's job form, or why it is closed", formOrClosed, hire.text.includes("Set the limits") ? "the form renders" : formOrClosed ? "closed, with the reason" : "neither a form nor a reason");
   const paused = await get("/hire/344121");
-  const refuses = !paused.text.includes("Set the limits") && paused.text.includes("Paused:");
+  const refuses = !paused.text.includes("Set the limits") && /Trading paused:|Paused:/.test(paused.text);
   record("/hire/344121: paused Grid-1 offers no job", refuses, refuses ? "refused, with the reason" : paused.text.includes("Set the limits") ? "the job form is still offered" : "no pause reason on the page");
 
   // Proof shows the lock and the losses; the graveyard keeps its rows, ours labelled.

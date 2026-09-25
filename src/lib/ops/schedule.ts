@@ -24,6 +24,7 @@ import { renewHouseSessions } from "@/lib/chain/house";
 import { runHouse, HOUSE_CADENCE_MIN } from "@/lib/house/run";
 import { continuePoolGap } from "@/lib/pancake/pool-gap";
 import { tailRegistry } from "@/lib/registry/tail";
+import { confirmPending } from "@/lib/market/confirm";
 
 export interface Job {
   name: string;
@@ -185,6 +186,18 @@ export const JOBS: Job[] = [
     budgetMs: 36_000,
     afterResponse: true,
     run: (budgetMs = 30_000) => tailRegistry({ budgetMs }),
+  },
+  /*
+    Paid calls read back from the chain. Each call is checked the moment it is
+    answered; this catches any the chain could not answer for then, so no hire
+    stays counted on a seller's word.
+  */
+  {
+    name: "settlements",
+    everyMinutes: 5,
+    budgetMs: 12_000,
+    afterResponse: true,
+    run: (budgetMs = 10_000) => confirmPending({ budgetMs }),
   },
 ];
 

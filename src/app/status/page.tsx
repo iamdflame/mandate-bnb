@@ -2,7 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import AppShell from "@/components/v2/shell/AppShell";
 import { live } from "@/lib/data/live";
-import { judgePathChecks } from "@/lib/ops/status";
+import { hireableByCategory, judgePathChecks, THIN_BELOW } from "@/lib/ops/status";
+import { CATEGORIES, CATEGORY_LABEL } from "@/lib/config";
 import { health } from "@/lib/chain/rpc";
 import { readHeartbeats } from "@/lib/heartbeat";
 import { getProbes } from "@/lib/data/probes";
@@ -26,8 +27,9 @@ export const maxDuration = 60;
 
 export default async function StatusPage() {
   await live();
-  const [checks, rpcs, beats, who, boxes, up, schedule] = await Promise.all([
+  const [checks, depth, rpcs, beats, who, boxes, up, schedule] = await Promise.all([
     judgePathChecks(),
+    withTimeout(hireableByCategory().catch(() => null), 8_000),
     health(),
     readHeartbeats().catch(() => null),
     withTimeout(roles().catch(() => null), 6_000),
@@ -98,6 +100,42 @@ export default async function StatusPage() {
               </tbody>
             </table>
           </div>
+        </section>
+
+        {/*
+          How deep each job is: agents a buyer can hire right now, by the hire
+          law. Kept apart from the beats above, which say whether the site
+          works; a thin job is a market to grow, not a page that is broken.
+        */}
+        <section className="m-section--tight" id="depth">
+          <div className="m-head">
+            <h2 className="m-h2">Agents you can hire, per job</h2>
+            <p className="m-head__note">Counted by the same rule as the agents page. Under {THIN_BELOW} is flagged.</p>
+          </div>
+          {depth ? (
+            <div className="m-table-wrap">
+              <table className="m-table">
+                <tbody>
+                  {CATEGORIES.map((c) => (
+                    <tr key={c}>
+                      <td>
+                        <Link className="m-link" href={`/agents?category=${c}&hireable=1`}>
+                          {CATEGORY_LABEL[c]}
+                        </Link>
+                        <div className="m-note">{depth[c].join(", ") || "Nobody right now"}</div>
+                      </td>
+                      <td className="m-num m-fig">{depth[c].length}</td>
+                      <td>
+                        <span className={depth[c].length >= THIN_BELOW ? "m-tag m-tag--verified" : "m-tag m-tag--caution"}>{depth[c].length >= THIN_BELOW ? "deep enough" : "thin"}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="m-small">The count did not come back in time on this request.</p>
+          )}
         </section>
 
         {/*

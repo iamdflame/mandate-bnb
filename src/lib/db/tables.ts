@@ -137,6 +137,7 @@ const STATEMENTS: { name: string; run: () => Promise<unknown> }[] = [
           tag1 text,
           tag2 text,
           block bigint,
+          hire_tx text,
           at timestamptz not null default now()
         )
       `;

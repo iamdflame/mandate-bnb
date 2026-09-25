@@ -53,18 +53,35 @@ export async function POST(request: Request) {
   } catch {
     return fail(400, "That transaction is not a giveFeedback call.", CHAIN_ID, g.headers);
   }
-  const [agentId, score, , tag1, tag2] = decoded.args as readonly [bigint, bigint, number, string, string, string, string, string];
+  const [agentId, score, , tag1, tag2, , , feedbackHash] = decoded.args as readonly [bigint, bigint, number, string, string, string, string, string];
+  const wallet = sent.from.toLowerCase();
 
+  /*
+    A rating written here names the hire it follows: its feedbackHash is that
+    hire's settlement transaction. It is linked only when that transaction is
+    a paid call to this agent from this same wallet, so a rating cannot borrow
+    somebody else's hire.
+  */
+  let hireTx: string | null = null;
   if (pg) {
     await ensureTables();
+    if (/^0x[0-9a-f]{64}$/i.test(feedbackHash) && !/^0x0{64}$/i.test(feedbackHash)) {
+      const [hire] = (await pg`
+        select tx from paid_calls
+        where lower(tx) = ${feedbackHash.toLowerCase()} and token_id = ${agentId.toString()}
+          and lower(record->>'payer') = ${wallet} and paid
+        limit 1
+      `) as { tx: string }[];
+      hireTx = hire?.tx.toLowerCase() ?? null;
+    }
     await pg`
-      insert into ratings (tx, wallet, token_id, score, tag1, tag2, block)
-      values (${tx.toLowerCase()}, ${sent.from.toLowerCase()}, ${agentId.toString()}, ${Number(score)}, ${tag1}, ${tag2}, ${Number(receipt.blockNumber)})
-      on conflict (tx) do nothing
+      insert into ratings (tx, wallet, token_id, score, tag1, tag2, block, hire_tx)
+      values (${tx.toLowerCase()}, ${wallet}, ${agentId.toString()}, ${Number(score)}, ${tag1}, ${tag2}, ${Number(receipt.blockNumber)}, ${hireTx})
+      on conflict (tx) do update set hire_tx = coalesce(ratings.hire_tx, excluded.hire_tx)
     `;
   }
   return ok(
-    { tx: tx.toLowerCase(), wallet: sent.from.toLowerCase(), agentId: agentId.toString(), score: Number(score), tag1, tag2, block: Number(receipt.blockNumber) },
+    { tx: tx.toLowerCase(), wallet, agentId: agentId.toString(), score: Number(score), tag1, tag2, block: Number(receipt.blockNumber), hireTx },
     { chainId: CHAIN_ID, blockNumber: receipt.blockNumber },
     g.headers,
   );

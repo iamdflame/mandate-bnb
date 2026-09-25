@@ -56,11 +56,19 @@ describe("a wallet's hires", () => {
     expect(rows[0]).toMatchObject({ kind: "paid-call", agentId: "342379", category: "rebalancing", tx: "0xsettle", completed: true });
   });
 
-  it("covers a job only with the wallet's own hires, never a call we paid for it", () => {
-    const own: HireRow = { kind: "paid-call", agentId: "1", agentName: null, category: "grid-trading", tx: "0x1", block: 1, contract: null, jobId: null, amount: "1", asset: null, completed: true, at: null, sponsored: false };
-    const covered = jobsCovered([own, { ...own, category: "yield-optimisation", sponsored: true }]);
+  it("covers a job only with the wallet's own hires the chain confirms, never a call we paid for it", () => {
+    const own: HireRow = { kind: "paid-call", agentId: "1", agentName: null, category: "grid-trading", tx: "0x1", block: 1, contract: null, jobId: null, amount: "1", asset: null, completed: true, onChain: true, at: null, sponsored: false };
+    const covered = jobsCovered([own, { ...own, category: "yield-optimisation", sponsored: true }, { ...own, category: "rebalancing", onChain: false }]);
     expect(covered["grid-trading"]).toBe(1);
     expect(covered["yield-optimisation"]).toBe(0);
+    expect(covered["rebalancing"]).toBe(0);
+  });
+
+  it("marks a call on chain only once its settlement has been read back", () => {
+    const [unread] = paidCallHires([call({})], "0xabcdef0000000000000000000000000000000001");
+    const [read] = paidCallHires([call({ confirmed: true, block: 9 })], "0xabcdef0000000000000000000000000000000001");
+    expect(unread!.onChain).toBe(false);
+    expect(read).toMatchObject({ onChain: true, block: 9 });
   });
 });
 
