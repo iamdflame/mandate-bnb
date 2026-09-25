@@ -81,11 +81,10 @@ function keeperWallet(slug?: string | null) {
 /** Whether the keeper is configured at all. Used to decide what the UI promises. */
 export const keeperConfigured = () => Boolean(process.env.AGENT_A_KEY ?? process.env.AGENT_B_KEY);
 
-export async function keeperBid(mandateId: number, slug?: string | null): Promise<BidOutcome> {
-  const wallet = keeperWallet(slug);
-  if (!wallet) return { ok: false, why: "No keeper key is configured.", code: "error" };
-  const me = wallet.account!.address as Address;
+/** Our agent for each job, by the contract's category order; Grid-1's trading is paused, so grid jobs fall to the keeper. */
+const AGENT_FOR_CATEGORY = ["range-1", null, "yield-1", "guard-1"] as const;
 
+export async function keeperBid(mandateId: number, slug?: string | null): Promise<BidOutcome> {
   try {
     const params = await marketParameters();
     if (params.paused) return { ok: false, why: "The market is paused.", code: "paused" };
@@ -95,7 +94,12 @@ export async function keeperBid(mandateId: number, slug?: string | null): Promis
       abi: MANDATE_MARKET_V2_ABI,
       functionName: "getMandate",
       args: [BigInt(mandateId)],
-    } as never)) as { state: number; capital: bigint };
+    } as never)) as { state: number; capital: bigint; category: number };
+
+    // A job opened with no agent in mind is bid on by our agent for its job, from that agent's own wallet.
+    const wallet = keeperWallet(slug ?? AGENT_FOR_CATEGORY[mandate.category] ?? null);
+    if (!wallet) return { ok: false, why: "No keeper key is configured.", code: "error" };
+    const me = wallet.account!.address as Address;
 
     if (mandate.state !== 0) {
       return { ok: false, why: `Mandate ${mandateId} is not open for bids.`, code: "state" };
