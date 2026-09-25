@@ -21,9 +21,12 @@ export interface CallInput {
 }
 
 export function kindOf(name: string, description?: string | null): CallInput["kind"] {
-  const s = `${name} ${description ?? ""}`;
-  if (/position|token ?id|nft/i.test(s)) return "position";
-  if (/wallet|address|owner|account/i.test(s)) return "wallet";
+  // The name decides first: a wallet whose description mentions the positions it holds is still a wallet.
+  if (/wallet|address|owner|account/i.test(name)) return "wallet";
+  if (/position|token ?id|nft/i.test(name)) return "position";
+  const d = description ?? "";
+  if (/position|token ?id|nft/i.test(d)) return "position";
+  if (/wallet|address|owner|account/i.test(d)) return "wallet";
   return "text";
 }
 
