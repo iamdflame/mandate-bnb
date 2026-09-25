@@ -141,6 +141,14 @@ async function main() {
     { name: "the lock transaction is shown", test: (h) => h.includes("0x00b0e484c69fc3f149") || "no lock transaction on the page" },
     { name: "the losses are counted", test: (h) => /x-score__item--loss/.test(h) || "no loss count on the page" },
   ]);
+  // Every contract we read is listed, each with its BscScan link: a hard gate for Phase 2.
+  await page("/contracts", [
+    { name: "the identity registry and the escrow are listed", test: (h) => (/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432/i.test(h) && /0xEa4DAa3100A767e86FDed867729ae7446476EBA6/i.test(h)) || "a contract is missing" },
+  ]);
+  // The leash page offers both agents, and loads without the SDK until asked.
+  await page("/leash", [
+    { name: "both agents can be leashed", test: (h) => (h.includes("Yield-1") && h.includes("Guard-1")) || "an agent is missing" },
+  ]);
   // Help answers the first questions, and names who to ask.
   await page("/help", [
     { name: "every token can be bought from the page", test: (h) => (h.match(/pancakeswap\.finance\/swap/g) ?? []).length >= 3 || "fewer than three swap links" },
