@@ -60,3 +60,7 @@ docs/archive/
 docs/video/
 docs/REBUILD-PLAN.md
 docs/DONE.md
+
+# brand kit build
+tools/brand/out/
+tools/brand/.venv/

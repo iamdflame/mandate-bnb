@@ -39,12 +39,12 @@ const tokens = read("src/app/tokens.css");
 for (const t of ["--c-bg", "--c-surface", "--c-accent", "--c-text", "--f-sans", "--f-mono", "--r-md", "--d-card", "--w-max"]) {
   note(tokens.includes(`${t}:`), `tokens.css declares ${t}`);
 }
-note(/--c-bg:\s*#0b0e11/i.test(tokens), "background is #0B0E11, per the brief");
-note(/--c-accent:\s*#f0b90b/i.test(tokens), "accent is BNB yellow #F0B90B, per the brief");
+note(/--c-bg:\s*#0b0d0e/i.test(tokens), "background is ink #0B0D0E, per the Seal brand (tools/brand)");
+note(/--c-accent:\s*#13b98a/i.test(tokens), "accent is the Seal's signature green #13B98A, not BNB yellow");
 
 /*
   Raw colours belong in tokens.css and nowhere else in the new system. A hex
-  literal in a component is how a second yellow, slightly off, gets in.
+  literal in a component is how a second green, slightly off, gets in.
 */
 const system = ["src/app/market.css", "src/app/theme.css", ...walk("src/components/x")];
 for (const f of system) {

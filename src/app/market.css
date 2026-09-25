@@ -27,14 +27,14 @@ html:has(.x-app) body {
   background: var(--c-bg);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  font-feature-settings: "ss01", "cv11";
+  font-feature-settings: "cv11", "calt";
 }
 
 :where(.x-app) h1,
 :where(.x-app) h2,
 :where(.x-app) h3,
 :where(.x-app) h4 {
-  font-family: var(--f-sans);
+  font-family: var(--f-display);
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.15;
@@ -377,9 +377,10 @@ html:has(.x-app) body {
   flex: none;
 }
 .x-brand__word {
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 0.14em;
+  font-family: var(--f-display);
+  font-weight: 680;
+  font-size: 19px;
+  letter-spacing: -0.022em;
 }
 .x-nav__links {
   display: flex;
@@ -864,6 +865,23 @@ html:has(.x-app) body {
 }
 .x-agent__foot .x-btn {
   flex: 1;
+}
+/* The one proof a tile carries: the strongest thing a check has shown. */
+.x-agent__proof {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--ts-xs);
+  color: var(--c-text-2);
+  white-space: nowrap;
+}
+.x-agent__proof svg {
+  color: var(--c-accent);
+}
+.x-agent__hire {
+  position: relative;
+  z-index: 2;
+  margin-top: auto;
 }
 .x-agent__why {
   position: relative;
@@ -1773,7 +1791,7 @@ html:has(.x-app) body {
   inset: -40% -10% auto auto;
   width: 60%;
   height: 120%;
-  background: radial-gradient(closest-side, rgba(240, 185, 11, 0.07), transparent 70%);
+  background: radial-gradient(closest-side, var(--c-accent-glow), transparent 70%);
   pointer-events: none;
 }
 .x-hero__grid {
@@ -5494,4 +5512,390 @@ a.x-house__name:hover {
   color: var(--c-text-3);
   font-size: var(--ts-sm);
   max-width: 72ch;
+}
+
+/* ------------------------------------------------------------------ brand */
+.x-brandkit {
+  display: grid;
+  gap: var(--s-6);
+}
+.x-brandkit__files {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--s-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.x-brandkit__file {
+  display: grid;
+  gap: var(--s-2);
+}
+.x-brandkit__preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  padding: var(--s-6);
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+}
+.x-brandkit__preview--light {
+  background: var(--c-text);
+}
+.x-brandkit__preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.x-brandkit__t {
+  font-weight: 600;
+}
+.x-brandkit__dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-4);
+  font-size: var(--ts-sm);
+}
+.x-brandkit__h {
+  font-size: var(--ts-h2);
+  margin-top: var(--s-6);
+}
+.x-brandkit__swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--s-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.x-brandkit__chip {
+  display: block;
+  height: 72px;
+  border-radius: var(--r-md);
+  box-shadow: inset 0 0 0 1px var(--c-line);
+  margin-bottom: var(--s-2);
+}
+.x-brandkit__hex {
+  color: var(--c-text-2);
+  font-weight: 400;
+  font-size: var(--ts-sm);
+}
+.x-brandkit__use {
+  color: var(--c-text-2);
+  font-size: var(--ts-sm);
+}
+.x-brandkit__type {
+  display: grid;
+  gap: var(--s-5);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.x-brandkit__sample {
+  font-size: var(--ts-lg);
+  overflow-wrap: anywhere;
+}
+.x-brandkit__sample--display {
+  font-family: var(--f-display);
+  font-size: var(--ts-hero);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+.x-brandkit__rules {
+  color: var(--c-text-2);
+  display: grid;
+  gap: var(--s-2);
+  padding-left: 1.2em;
+}
+
+/* ------------------------------------------------------------------ home */
+.x-home {
+  position: relative;
+  padding: clamp(40px, 7vw, 88px) 0 clamp(32px, 5vw, 56px);
+  background:
+    radial-gradient(60% 70% at 92% 0%, var(--c-accent-glow), transparent 70%),
+    var(--c-bg);
+}
+.x-home__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: var(--s-8);
+  align-items: end;
+}
+.x-home__h {
+  font-family: var(--f-display);
+  font-size: clamp(2.75rem, 6.2vw, 5rem);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin: 0;
+}
+.x-home__sub {
+  margin-top: var(--s-5);
+  max-width: 44ch;
+  color: var(--c-text-2);
+  font-size: clamp(1.0625rem, 1.5vw, 1.25rem);
+  line-height: 1.5;
+}
+.x-home__cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-5);
+  margin-top: var(--s-7);
+}
+.x-home__how {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 44px;
+  color: var(--c-text);
+  font-weight: 500;
+  text-decoration: none;
+}
+.x-home__how:hover {
+  color: var(--c-accent);
+}
+.x-home__stats {
+  display: grid;
+  gap: var(--s-5);
+  margin: 0;
+  justify-items: end;
+  text-align: right;
+}
+.x-home__stats dt {
+  color: var(--c-text-2);
+  font-size: var(--ts-sm);
+}
+.x-home__fig {
+  margin: 0;
+  font-family: var(--f-mono);
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.x-home__jobs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-4);
+  list-style: none;
+  margin: clamp(40px, 6vw, 64px) 0 0;
+  padding: 0;
+}
+.x-home__job {
+  display: grid;
+  gap: var(--s-1);
+  height: 100%;
+  padding: var(--s-5);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  box-shadow: var(--shadow-1);
+  color: var(--c-text);
+  text-decoration: none;
+  transition: transform var(--d-card) var(--e-out), background var(--d-card) var(--e-out);
+}
+.x-home__job:hover {
+  transform: translateY(-2px);
+  background: var(--c-surface-2);
+}
+.x-home__icon {
+  color: var(--c-accent);
+  margin-bottom: var(--s-3);
+}
+.x-home__job-t {
+  font-weight: 600;
+  font-size: var(--ts-lg);
+}
+.x-home__job-d {
+  color: var(--c-text-2);
+  font-size: var(--ts-sm);
+}
+.x-home__job-f {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-2);
+  margin-top: var(--s-4);
+  color: var(--c-text-2);
+  font-family: var(--f-mono);
+  font-size: var(--ts-xs);
+}
+.x-home__h2 {
+  font-size: var(--ts-h2);
+  margin: 0;
+}
+.x-home__steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-6);
+  list-style: none;
+  margin: var(--s-6) 0 0;
+  padding: 0;
+}
+.x-home__n {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-pill);
+  background: var(--c-accent-soft);
+  color: var(--c-accent);
+  font-weight: 600;
+  font-size: var(--ts-sm);
+}
+.x-home__step-t {
+  margin-top: var(--s-3);
+  font-weight: 600;
+  font-size: var(--ts-lg);
+}
+.x-home__step-d {
+  margin-top: var(--s-1);
+  color: var(--c-text-2);
+  max-width: 38ch;
+}
+.x-home__quest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-6);
+  border-radius: var(--r-lg);
+  background: linear-gradient(120deg, var(--c-accent-soft), transparent 70%), var(--c-surface);
+}
+.x-home__quest-t {
+  font-family: var(--f-display);
+  font-size: var(--ts-h3);
+  font-weight: 600;
+}
+.x-home__quest-d {
+  color: var(--c-text-2);
+}
+.x-home__proof {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.x-home__proof a {
+  display: grid;
+  gap: var(--s-1);
+  height: 100%;
+  padding: var(--s-5);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  color: var(--c-text);
+  text-decoration: none;
+  transition: background var(--d-card) var(--e-out);
+}
+.x-home__proof a:hover {
+  background: var(--c-surface-2);
+}
+.x-home__proof-t {
+  font-weight: 600;
+}
+.x-home__proof-d {
+  color: var(--c-text-2);
+  font-size: var(--ts-sm);
+}
+@media (max-width: 1024px) {
+  .x-home__jobs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 768px) {
+  .x-home__hero {
+    grid-template-columns: 1fr;
+    gap: var(--s-6);
+  }
+  .x-home__stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-items: start;
+    text-align: left;
+  }
+  .x-home__fig {
+    font-size: 1.375rem;
+  }
+  .x-home__steps,
+  .x-home__proof {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 390px) {
+  .x-home__jobs {
+    grid-template-columns: 1fr;
+  }
+}
+.x-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 1023px) {
+  .x-grid--3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 599px) {
+  .x-grid--3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/*
+  The catalogue has no sidebar at any width now: the one filter most people
+  want (hireable now) sits in the bar, the job chips sit above it, and every
+  other filter is in one sheet, a popover on a desktop and a bottom sheet on a
+  phone. The shelf gets the whole width.
+*/
+.x-mkt {
+  grid-template-columns: minmax(0, 1fr);
+}
+.x-rail {
+  display: none;
+}
+.x-mkt-bar__filters {
+  display: block;
+  position: relative;
+}
+.x-mkt-bar__lead {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+@media (min-width: 1024px) {
+  .x-sheet[open] .x-sheet__panel {
+    display: block;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 340px;
+    max-height: 70vh;
+    overflow-y: auto;
+    z-index: 60;
+    padding: var(--s-5);
+    border: 1px solid var(--c-line);
+    border-radius: var(--r-lg);
+    background: var(--c-elevated);
+    box-shadow: var(--shadow-3);
+    animation: x-rise var(--d-panel) var(--e-out);
+  }
+}
+/* Tiles offer Hire quietly; the page's one green is the search, not twenty-four buttons. */
+.x-agent__hire.x-btn--primary {
+  background: var(--c-surface-2);
+  color: var(--c-text);
+  border-color: var(--c-line);
+}
+.x-agent:hover .x-agent__hire.x-btn--primary,
+.x-agent__hire.x-btn--primary:hover,
+.x-agent__hire.x-btn--primary:focus-visible {
+  background: var(--c-accent);
+  color: var(--c-accent-ink);
+  border-color: var(--c-accent);
 }

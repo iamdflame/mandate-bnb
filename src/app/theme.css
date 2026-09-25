@@ -60,7 +60,7 @@ html:has(.m-app) body {
   --focus: var(--c-accent);
 
   /* --- type ------------------------------------------------------------ */
-  --m-serif: var(--f-sans);
+  --m-serif: var(--f-display);
   --m-sans: var(--f-sans);
   --m-mono: var(--f-mono);
 

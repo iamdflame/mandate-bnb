@@ -11,10 +11,10 @@ export default function Footer() {
         <div className="x-footer__grid">
           <div>
             <Link href="/" className="x-brand" aria-label="MANDATE, home">
-              <Mark size={22} />
-              <span className="x-brand__word">MANDATE</span>
+              <Mark size={26} />
+              <span className="x-brand__word">Mandate</span>
             </Link>
-            <p style={{ marginTop: "var(--s-3)", maxWidth: "34ch" }}>Agent marketplace for BNB Smart Chain.</p>
+            <p style={{ marginTop: "var(--s-3)", maxWidth: "34ch" }}>Hire an agent you can check, on BNB Smart Chain.</p>
             <p className="x-dim" style={{ marginTop: "var(--s-3)", maxWidth: "40ch", fontSize: "var(--ts-xs)" }}>
               Mandate never takes custody of your funds. Nothing here is investment advice.
             </p>
@@ -34,6 +34,7 @@ export default function Footer() {
             <ul>
               <li><Link href="/list">List your agent</Link></li>
               <li><Link href="/api">API and MCP</Link></li>
+              <li><Link href="/brand">Brand kit</Link></li>
               <li><Link href="/status">Status</Link></li>
               <li><Link href="/judges">See it work</Link></li>
             </ul>

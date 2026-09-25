@@ -3,17 +3,18 @@
 
   Every stylesheet and component reads these. A value that is not here is a
   value that will drift, so if a new one is needed it is added here first.
-  The palette follows docs/frontendprompt.md: a dark, BNB-native marketplace,
-  with yellow reserved for action, selection, price, progress and live state.
+  The palette is the Seal's (tools/brand): ink ground, one signature green
+  reserved for the mark, the one primary action per view, selection and
+  focus, and quiet neutrals for everything else.
 */
 
 :root {
   /* --- surfaces -------------------------------------------------------- */
-  --c-bg: #0b0e11;
-  --c-surface: #101419;
-  --c-surface-2: #151a20;
-  --c-elevated: #1a2027;
-  --c-overlay: rgba(5, 7, 9, 0.72);
+  --c-bg: #0b0d0e; /* ink */
+  --c-surface: #111417; /* night */
+  --c-surface-2: #161a1e;
+  --c-elevated: #1b2025;
+  --c-overlay: rgba(5, 7, 8, 0.74);
 
   /* --- borders --------------------------------------------------------- */
   --c-line-faint: rgba(255, 255, 255, 0.06);
@@ -21,27 +22,32 @@
   --c-line-strong: rgba(255, 255, 255, 0.16);
 
   /* --- text ------------------------------------------------------------ */
-  --c-text: #f5f5f5;
-  --c-text-2: #9299a3;
+  --c-text: #fafaf8; /* paper */
+  --c-text-2: #a2a8af;
   /*
     The brief's muted grey is #626A75, which is about 3.5:1 on this ground
     and fails the 4.5:1 floor for the small text it is mostly used for. This
     is the nearest value that passes, about 4.9:1.
   */
-  --c-text-3: #7a828d;
+  --c-text-3: #858c95;
 
-  /* --- accent: BNB yellow. Action, selection, price, progress, live. -- */
-  --c-accent: #f0b90b;
-  --c-accent-hi: #fcd535;
-  --c-accent-lo: #d9a406;
-  --c-accent-ink: #0b0e11; /* text on a yellow fill */
-  --c-accent-soft: rgba(240, 185, 11, 0.12);
-  --c-accent-line: rgba(240, 185, 11, 0.4);
+  /* --- accent: the Seal's green. The mark, the primary action, selection. -- */
+  --c-accent: #13b98a; /* signature */
+  --c-accent-hi: #2dd4a4;
+  --c-accent-lo: #0b7a5c; /* deep */
+  --c-accent-ink: #06140f; /* text on a green fill */
+  --c-accent-soft: rgba(19, 185, 138, 0.12);
+  --c-accent-line: rgba(19, 185, 138, 0.42);
+  --c-accent-glow: rgba(19, 185, 138, 0.08);
+  --c-slate: #5b6168; /* the kit's neutral, for the brand page's swatch */
 
   /* --- status ---------------------------------------------------------- */
-  --c-ok: #2ebd85;
-  --c-ok-soft: rgba(46, 189, 133, 0.12);
-  --c-warn: var(--c-accent);
+  /* Live and verified are what the seal promises, so they share its green. */
+  --c-ok: var(--c-accent);
+  --c-ok-soft: var(--c-accent-soft);
+  /* Warnings had borrowed the yellow accent; with a green accent they need their own amber. */
+  --c-warn: #e8a33a;
+  --c-warn-soft: rgba(232, 163, 58, 0.12);
   --c-err: #f6465d;
   --c-err-soft: rgba(246, 70, 93, 0.12);
   --c-err-ink: #ffffff; /* text on a red fill */
@@ -73,8 +79,9 @@
   --c-cat-health-bg: #1c1011;
 
   /* --- type ------------------------------------------------------------ */
-  --f-sans: var(--font-geist-sans), "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --f-mono: var(--font-geist-mono), "Geist Mono", ui-monospace, "SFMono-Regular", monospace;
+  --f-display: var(--font-display), "Instrument Sans", var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --f-sans: var(--font-sans), "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: var(--font-mono), "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
 
   --ts-hero: clamp(2.5rem, 4.6vw, 3.5rem); /* 40 to 56 */
   --ts-h1: clamp(1.75rem, 3vw, 2.25rem);

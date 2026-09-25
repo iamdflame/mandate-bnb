@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
+import localFont from "next/font/local";
 import Palette from "@/components/shell/Palette";
 import { SITE } from "@/lib/site";
 import "./tokens.css";
@@ -9,12 +8,18 @@ import "./theme.css";
 import "./market.css";
 
 /*
-  Geist, self-hosted from the package rather than fetched at build time.
+  The brand's three faces, self-hosted from ./fonts rather than fetched at
+  build time: the build used to pull fonts from Google and that fetch timed
+  out often enough to fail deploys. Each is a Latin subset of the variable
+  font, made by pyftsubset (see tools/brand/README.md), under the OFL.
 
-  The build used to pull fonts from Google and that fetch timed out often
-  enough to fail deploys. The geist package ships its own woff2 files through
-  next/font/local, so the build needs no network for type at all.
+    Instrument Sans   display: the wordmark, headings, figures that lead
+    Inter             text: everything read
+    JetBrains Mono    addresses and hashes, nothing else
 */
+const display = localFont({ src: "./fonts/InstrumentSans.woff2", variable: "--font-display", weight: "400 700", display: "swap" });
+const sans = localFont({ src: "./fonts/Inter.woff2", variable: "--font-sans", weight: "100 900", display: "swap" });
+const mono = localFont({ src: "./fonts/JetBrainsMono.woff2", variable: "--font-mono", weight: "100 800", display: "swap" });
 
 /*
   Titles are per route; this is the template and the fallback.
@@ -32,12 +37,11 @@ export const metadata: Metadata = {
     template: "%s",
   },
   description:
-    "Find autonomous agents for liquidity, grid trading, yield and loan protection on BNB Smart Chain, with live onchain signals before you hire.",
+    "The BNB Chain agent marketplace where every agent is checked on chain before you hire it, and can only take what you sign.",
   applicationName: "MANDATE",
   openGraph: {
     title: "MANDATE | BNB Smart Chain Agent Marketplace",
-    description:
-      "Find an agent. See what it can actually do. Put it to work.",
+    description: "Every agent is checked on chain before you pay, and can only take what you sign.",
     type: "website",
     siteName: "MANDATE",
   },
@@ -53,7 +57,7 @@ export const metadata: Metadata = {
  */
 export const viewport: Viewport = {
   /* The whole product is one dark ground now, so the browser chrome matches it. */
-  themeColor: "#0b0e11",
+  themeColor: "#0b0d0e",
   colorScheme: "dark",
 };
 
@@ -65,7 +69,7 @@ export default function RootLayout({
   // the tree is invalid at that point, which silently drops the page to the
   // browser's default face.
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html lang="en" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
       <body>
         {children}
         {/* ⌘K, mounted once. It renders nothing until it is opened. */}

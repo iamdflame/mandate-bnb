@@ -233,15 +233,23 @@ export default async function AgentsPage({
       </section>
 
       <div className="x-wrap x-mkt">
-        <aside className="x-rail" aria-label="Filters">
-          <Rail />
-        </aside>
-
         <div className="x-mkt__main">
           <div className="x-mkt-bar">
-            <p className="x-mkt-bar__n">
-              <strong className="x-num">{shown.length}</strong> {shown.length === 1 ? "agent" : "agents"}
-            </p>
+            <div className="x-mkt-bar__lead">
+              <p className="x-mkt-bar__n">
+                <strong className="x-num">{shown.length}</strong> {shown.length === 1 ? "agent" : "agents"}
+              </p>
+              {/* The one filter most visitors want, out of the sheet and in reach. */}
+              <Link
+                href={hrefFor(q, { hireable: !q.hireable, n: EMPTY.n })}
+                className={`x-chip${q.hireable ? " x-chip--on" : ""}`}
+                aria-pressed={q.hireable}
+                scroll={false}
+              >
+                {q.hireable ? <Check size={13} strokeWidth={3} aria-hidden="true" /> : null}
+                Hireable now <span className="x-chip__n">{count(PRED.hireable)}</span>
+              </Link>
+            </div>
 
             <div className="x-mkt-bar__ctl">
               <details className="x-drop x-sheet x-mkt-bar__filters">
@@ -312,7 +320,7 @@ export default async function AgentsPage({
 
           {page.length ? (
             <>
-              <div className="x-grid x-grid--3">
+              <div className="x-grid x-grid--4">
                 {page.map((l) => (
                   <AgentTile key={l.tokenId} l={l} />
                 ))}
