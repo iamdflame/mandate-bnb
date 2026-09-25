@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EPOCHS_FROM } from "@/lib/market/epochs";
 import type { Metadata } from "next";
 import { formatEther } from "viem";
 import AppShell from "@/components/v2/shell/AppShell";
@@ -60,7 +61,8 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
   // market's other events are not buried under our own probe.
   const shown = filter.kinds ? feed.events.filter((e) => filter.kinds!.includes(e.kind)).slice(0, 80) : mixed(feed.events, { responded: 5, silent: 2 }, 60);
   const days = byDay(shown);
-  const running = book?.rows.filter((r) => r.state === 1 && r.deployment.status === "canonical") ?? [];
+  // Our own September tests are halted, not running; the clock leaves them as they stand.
+  const running = book?.rows.filter((r) => r.state === 1 && r.deployment.status === "canonical" && Number(r.id) >= EPOCHS_FROM) ?? [];
 
   return (
     <AppShell>

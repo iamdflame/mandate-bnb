@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EPOCHS_FROM } from "@/lib/market/epochs";
 import type { Metadata } from "next";
 import { formatEther } from "viem";
 import { ArrowRight, Briefcase } from "lucide-react";
@@ -50,8 +51,10 @@ export default async function JobsPage() {
   const open = all.filter((m) => m.canonical && m.state === 0);
   // Books left on contracts we replaced still read as "running" there, but
   // nothing will ever settle them, so they belong with the history.
-  const running = all.filter((m) => m.canonical && m.state === 1);
-  const over = all.filter((m) => m.state >= 2 || (!m.canonical && m.state === 1));
+  // Our own September tests are halted, not running: the clock leaves them as they stand (see lib/market/epochs).
+  const halted = (m: (typeof all)[number]) => m.canonical && m.state === 1 && m.id < EPOCHS_FROM;
+  const running = all.filter((m) => m.canonical && m.state === 1 && !halted(m));
+  const over = all.filter((m) => m.state >= 2 || (!m.canonical && m.state === 1) || halted(m));
 
   return (
     <AppShell>
@@ -214,7 +217,7 @@ export default async function JobsPage() {
                         {titleOf(m)}
                       </Link>
                       <span className="x-run__sub">
-                        {m.canonical ? (STATE[m.state] ?? `State ${m.state}`) : `Left on ${m.deployment}, a contract we replaced`} · {bnb(m.capitalWei)}
+                        {halted(m) ? "Our own test, halted in September" : m.canonical ? (STATE[m.state] ?? `State ${m.state}`) : `Left on ${m.deployment}, a contract we replaced`} · {bnb(m.capitalWei)}
                       </span>
                     </span>
                     <span className="x-run__ep">
