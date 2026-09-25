@@ -120,7 +120,9 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
 
   const offer = offerFor(l);
 
-  const useLabel = perCall ? "Use this agent" : "Hire this agent";
+  // The button says what it does and what it costs, so nobody clicks to find out.
+  const useLabel = perCall && pp.value ? `Hire for ${pp.value}` : "Hire this agent";
+  const token = l.quote ? assetSymbol(l.quote.asset) : null;
   const checkedAt = l.probe?.at ?? null;
 
   return (
@@ -534,17 +536,25 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
         </div>
 
         {/* ------------------------------------------------------- action panel */}
-        <aside className="x-ad-side" aria-label="Use this agent">
+        <aside className="x-ad-side" aria-label="What happens when you hire">
           <div className="x-ad-panel" id="use">
-            <Price l={l} size="lg" rail={rail} />
-            <p className="x-ad-live">
-              <Status liveness={l.liveness} at={l.probe?.at} />
-              {l.probe?.answered && l.probe.latencyMs != null ? <span className="x-mono">~{l.probe.latencyMs} ms</span> : null}
-            </p>
-            {verdict.ok ? (
-              <a href="#call" className="x-btn x-btn--primary x-btn--lg x-btn--block">
-                {useLabel}
-              </a>
+            <p className="x-ad-panel__t">What happens when you hire</p>
+            {verdict.ok && perCall ? (
+              <ol className="x-ad-how">
+                <li>
+                  <strong>You sign one payment</strong> for exactly {pp.value ?? "the price"}
+                  {token ? ` in ${token}` : ""}. {l.quote?.transferMethod === "permit2" ? "It needs one approval for exactly that amount first." : "No approval, and the agent pays the gas."}
+                </li>
+                <li>
+                  <strong>{l.name} answers</strong>
+                  {l.probe?.answered && l.probe.latencyMs != null ? ` in about ${l.probe.latencyMs < 1000 ? `${l.probe.latencyMs} ms` : `${(l.probe.latencyMs / 1000).toFixed(1)} s`}` : ""}, and the payment is read back from the chain.
+                </li>
+                <li>
+                  <strong>You rate it</strong> on chain if you like. The rating is yours and names this hire.
+                </li>
+              </ol>
+            ) : verdict.ok ? (
+              <p className="x-ad-note">It is hired for a job in the market; the job form sets its limits before anything is signed.</p>
             ) : (
               <>
                 <p className="x-ad-why">{verdict.reason}</p>
@@ -553,13 +563,22 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
                 </Link>
               </>
             )}
+            {verdict.ok ? (
+              <a href="#call" className="x-btn x-btn--primary x-btn--block">
+                {useLabel}
+              </a>
+            ) : null}
             {sponsor ? (
               <a href="#sponsored" className="x-btn x-btn--block">
                 <Gift size={16} aria-hidden="true" /> Try it free
               </a>
             ) : null}
-            <CompareToggle tokenId={l.tokenId} name={l.name} variant="label" />
-            <p className="x-ad-note">Nothing moves until you sign.</p>
+            <p className="x-ad-note">
+              Nothing moves until you sign.{" "}
+              <Link className="x-link" href="/help#sign">
+                What you sign
+              </Link>
+            </p>
           </div>
         </aside>
       </div>
@@ -572,7 +591,7 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
             <Status liveness={l.liveness} at={l.probe?.at} />
           </span>
           <a href="#call" className="x-btn x-btn--primary">
-            Use now{pp.value ? ` · ${pp.value}` : ""}
+            {useLabel}
           </a>
         </div>
       ) : null}

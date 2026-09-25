@@ -6259,3 +6259,112 @@ a.x-house__name:hover {
     grid-column: 2;
   }
 }
+
+/* The agent page's side panel explains the hire instead of repeating the price. */
+.x-ad-panel__t {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: var(--ts-lg);
+}
+.x-ad-how {
+  display: grid;
+  gap: var(--s-3);
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--c-text-2);
+  font-size: var(--ts-sm);
+  line-height: 1.55;
+}
+.x-ad-how strong {
+  color: var(--c-text);
+}
+
+/* ------------------------------------------------------------- your hires */
+.x-hires {
+  display: grid;
+  gap: var(--s-5);
+}
+.x-hires__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-2);
+}
+.x-hire-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-4);
+  padding: var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+}
+.x-hire-row__main {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+.x-hire-row__t {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  font-weight: 600;
+}
+.x-hire-row__d {
+  color: var(--c-text-2);
+  font-size: var(--ts-sm);
+}
+.x-hire-row__side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--ts-sm);
+}
+.x-hire-row__job {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--c-surface-2);
+  color: var(--c-text-2);
+  font-size: var(--ts-xs);
+  font-weight: 500;
+}
+.x-hire-row__ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--c-accent);
+}
+.x-hire-row__wait {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--c-warn);
+}
+.x-hire-row__rate {
+  flex-basis: 100%;
+}
+.x-hire-row__rate > summary {
+  cursor: pointer;
+  color: var(--c-text-2);
+  font-size: var(--ts-sm);
+}
+.x-hires__h {
+  font-weight: 600;
+  margin-bottom: var(--s-2);
+}
+.x-hires__owned ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-2);
+  font-size: var(--ts-sm);
+}
+.x-yours-empty {
+  display: grid;
+  gap: var(--s-3);
+  justify-items: start;
+}

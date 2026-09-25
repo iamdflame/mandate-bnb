@@ -9,6 +9,7 @@ import AgentArtwork from "@/components/x/AgentArtwork";
 import RevokeDialog from "@/components/x/RevokeDialog";
 import YourAgents from "@/components/x/YourAgents";
 import YourApprovals from "@/components/x/YourApprovals";
+import YourHires from "@/components/x/YourHires";
 import { live } from "@/lib/data/live";
 import { snapshot } from "@/lib/data/snapshots";
 import { listSessions, type SessionRecord } from "@/lib/chain/session-store";
@@ -173,7 +174,7 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
       <section className="x-wrap x-mkt-head">
         <div className="x-mkt-head__row">
           <h1 className="x-mkt-head__h">My Desk</h1>
-          <p className="x-mkt-head__sub">Your agents, what each may do, and the control that ends it.</p>
+          <p className="x-mkt-head__sub">Your hires, your approvals, and every control that ends one.</p>
           <p className="x-fresh x-mkt-head__fresh">
             {block ? (
               <>
@@ -215,6 +216,20 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
             </span>
           </p>
         ) : null}
+      </section>
+
+      {/* ------------------------------------------------------- your hires */}
+      <section className="x-wrap x-section--tight" aria-labelledby="h-hires" id="hires">
+        <div className="x-head">
+          <div>
+            <h2 id="h-hires">Your hires</h2>
+            <p>Every agent this wallet paid, each with the transaction that proves it.</p>
+          </div>
+          <Link href="/quest" className="x-head__link">
+            Quest progress
+          </Link>
+        </div>
+        <YourHires />
       </section>
 
       {/* ----------------------------------------------------- your approvals */}
