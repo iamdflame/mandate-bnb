@@ -26,6 +26,7 @@ import { continuePoolGap } from "@/lib/pancake/pool-gap";
 import { tailRegistry } from "@/lib/registry/tail";
 import { confirmPending } from "@/lib/market/confirm";
 import { sweepEscrow } from "@/lib/escrow/jobs";
+import { runLeashes } from "@/lib/leash/run";
 
 export interface Job {
   name: string;
@@ -211,6 +212,18 @@ export const JOBS: Job[] = [
     budgetMs: 20_000,
     afterResponse: true,
     run: (budgetMs = 18_000) => sweepEscrow({ budgetMs }),
+  },
+  /*
+    Our agents on users' leashed wallets: each wallet is looked at on its
+    agent's own cadence (loans every ten minutes, idle cash hourly), inside the
+    daily cap its owner chose.
+  */
+  {
+    name: "leashes",
+    everyMinutes: 5,
+    budgetMs: 20_000,
+    afterResponse: true,
+    run: (budgetMs = 18_000) => runLeashes({ budgetMs }),
   },
 ];
 

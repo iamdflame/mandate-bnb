@@ -125,6 +125,48 @@ const STATEMENTS: { name: string; run: () => Promise<unknown> }[] = [
     },
   },
   {
+    // Leashes users granted our agents on their own passkey wallets: the session's public half and its terms, never a private key.
+    name: "user_leashes",
+    run: async () => {
+      await pg!`
+        create table if not exists user_leashes (
+          id text primary key,
+          wallet text not null,
+          slug text not null,
+          owner text,
+          key_id text not null,
+          public_key text not null,
+          daily_usdt text not null,
+          expiry bigint not null,
+          granted_at timestamptz not null default now(),
+          revoked_at timestamptz,
+          revoke_tx text,
+          note text
+        )
+      `;
+      await pg!`create index if not exists user_leashes_wallet on user_leashes (wallet)`;
+      await pg!`create index if not exists user_leashes_owner on user_leashes (owner)`;
+    },
+  },
+  {
+    // Every turn an agent took on a user's leashed wallet, acted or not.
+    name: "leash_runs",
+    run: async () => {
+      await pg!`
+        create table if not exists leash_runs (
+          id bigserial primary key,
+          leash_id text not null,
+          at timestamptz not null default now(),
+          outcome text not null,
+          reason text not null,
+          readings jsonb not null default '{}',
+          txs jsonb not null default '[]'
+        )
+      `;
+      await pg!`create index if not exists leash_runs_leash_at on leash_runs (leash_id, at desc)`;
+    },
+  },
+  {
     // ERC-8183 jobs a buyer funded for one of our agents here, with what our agent delivered and each transaction.
     name: "escrow_jobs",
     run: async () => {

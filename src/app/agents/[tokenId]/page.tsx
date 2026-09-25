@@ -573,6 +573,11 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
                 <Gift size={16} aria-hidden="true" /> Try it free
               </a>
             ) : null}
+            {slug === "yield-1" || slug === "guard-1" ? (
+              <Link href={`/leash?agent=${slug}`} className="x-btn x-btn--block">
+                Put it on a leash on your own wallet
+              </Link>
+            ) : null}
             <p className="x-ad-note">
               Nothing moves until you sign.{" "}
               <Link className="x-link" href="/help#sign">

@@ -6368,3 +6368,158 @@ a.x-house__name:hover {
   gap: var(--s-3);
   justify-items: start;
 }
+
+/* ----------------------------------------------------------------- leash */
+.x-leashpage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--s-7);
+  align-items: start;
+  padding-bottom: var(--s-9);
+}
+.x-leashpage__side {
+  position: sticky;
+  top: calc(var(--h-nav) + var(--s-5));
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+}
+.x-leash {
+  display: grid;
+  gap: var(--s-5);
+}
+.x-leash__agents {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-3);
+}
+.x-leash__agent {
+  display: grid;
+  gap: var(--s-1);
+  text-align: left;
+  padding: var(--s-4);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--c-line);
+  background: var(--c-surface);
+  color: var(--c-text-2);
+  font: inherit;
+  font-size: var(--ts-sm);
+  cursor: pointer;
+}
+.x-leash__agent strong {
+  color: var(--c-text);
+  font-size: var(--ts-lg);
+}
+.x-leash__agent--on {
+  border-color: var(--c-accent);
+  background: var(--c-accent-soft);
+}
+.x-leash__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+}
+.x-leash__step {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border-radius: var(--r-lg);
+  background: var(--c-surface);
+  border: 1px solid transparent;
+}
+.x-leash__step--done {
+  border-color: var(--c-accent-line);
+}
+.x-leash__t {
+  font-family: var(--f-display);
+  font-weight: 600;
+  font-size: var(--ts-lg);
+}
+.x-leash__d,
+.x-leash__bal {
+  color: var(--c-text-2);
+  font-size: var(--ts-sm);
+}
+.x-leash__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+}
+.x-leash__ok {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--c-accent);
+  font-size: var(--ts-sm);
+  overflow-wrap: anywhere;
+}
+.x-leash__in {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--c-text-2);
+  font-size: var(--ts-sm);
+}
+.x-leash__in input {
+  width: 72px;
+  min-height: 40px;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--c-line);
+  background: var(--c-bg);
+  color: var(--c-text);
+  font: inherit;
+}
+.x-leash__may {
+  margin: 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: var(--s-1);
+  color: var(--c-text-2);
+  font-size: var(--ts-sm);
+  line-height: 1.55;
+}
+.x-leash__n {
+  color: var(--c-text-3);
+  font-size: var(--ts-xs);
+  overflow-wrap: anywhere;
+}
+.x-leash__live {
+  display: grid;
+  gap: var(--s-3);
+}
+.x-leash__card {
+  display: grid;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--c-surface);
+}
+.x-leash__runs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-1);
+  font-size: var(--ts-sm);
+  color: var(--c-text-2);
+}
+@media (max-width: 1023px) {
+  .x-leashpage {
+    grid-template-columns: 1fr;
+  }
+  .x-leashpage__side {
+    position: static;
+  }
+}
+@media (max-width: 599px) {
+  .x-leash__agents {
+    grid-template-columns: 1fr;
+  }
+}

@@ -232,6 +232,19 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
         <YourHires />
       </section>
 
+      {/* ------------------------------------------------------ your leashes */}
+      <section className="x-wrap x-section--tight" aria-labelledby="h-leashes" id="leashes">
+        <div className="x-head">
+          <div>
+            <h2 id="h-leashes">Agents on your wallets</h2>
+            <p>Let Yield-1 or Guard-1 act on a passkey wallet you own, within a daily cap, until you revoke it.</p>
+          </div>
+          <Link href="/leash" className="x-head__link">
+            Leash an agent
+          </Link>
+        </div>
+      </section>
+
       {/* ----------------------------------------------------- your approvals */}
       <section className="x-wrap x-section--tight" aria-labelledby="h-approvals" id="approvals">
         <div className="x-head">

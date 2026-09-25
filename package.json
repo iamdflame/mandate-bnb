@@ -76,7 +76,8 @@
     "registry-mints": "tsx --env-file=.env --env-file-if-exists=.env.local src/scripts/registry-mints.ts",
     "fund-test-wallet": "tsx --env-file=.env --env-file-if-exists=.env.local src/scripts/fund-test-wallet.ts",
     "escrow-e2e": "tsx --env-file=.env --env-file-if-exists=.env.local src/scripts/escrow-e2e.ts",
-    "quest-e2e": "tsx --env-file=.env --env-file-if-exists=.env.local src/scripts/quest-e2e.ts"
+    "quest-e2e": "tsx --env-file=.env --env-file-if-exists=.env.local src/scripts/quest-e2e.ts",
+    "leash-e2e": "tsx --env-file=.env --env-file-if-exists=.env.local src/scripts/leash-e2e.ts"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.7.1",
