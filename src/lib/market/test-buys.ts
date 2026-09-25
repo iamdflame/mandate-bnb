@@ -71,8 +71,14 @@ export async function testBuys(opts: { budgetMs: number }): Promise<string> {
         note: "Daily test purchase from MANDATE's trial pool, to keep the hire law's record current.",
       };
       const read = await confirmSettlement(rec, { waitMs: 15_000 }).catch(() => rec);
-      // Only taking the money and not delivering is held against the seller: a refusal of our test input may be ours.
-      const checked = { ...read, fault: read.paid ? (read.delivered ? null : ("seller" as const)) : ("ours" as const) };
+      /*
+        Held against the seller: taking the money and not delivering, or
+        answering a correctly signed payment in its own requested format with
+        another demand for payment, which no buyer could get past either. Any
+        other refusal may be about our test input, and is ours.
+      */
+      const askedAgain = !read.paid && /answered 402 to the signed payment/.test(read.refused ?? "");
+      const checked = { ...read, fault: read.paid ? (read.delivered ? null : ("seller" as const)) : askedAgain ? ("seller" as const) : ("ours" as const) };
       await recordPaidCall(checked);
       if (checked.paid) spent += price;
       out.push(`#${l.tokenId}: ${checked.delivered ? "delivered" : "did not deliver"}${checked.paid ? ", paid" : ""}`);

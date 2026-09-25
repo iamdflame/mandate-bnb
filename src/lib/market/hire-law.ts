@@ -24,6 +24,15 @@ import type { Listing } from "@/lib/market/listing";
 import { isOurs } from "@/lib/market/judge";
 import { listPaidCalls, outcomes, paidCallsFromFile, type Outcome } from "@/lib/market/paid-calls";
 import { pauseFor } from "@/lib/market/paused";
+import { isTeam } from "@/lib/team";
+import { referenceRegistrations } from "@/lib/house";
+
+let refTokens: { at: number; ids: Set<string> } | null = null;
+/** Our four reference agents' token ids, read from their registrations at most once a minute. */
+function referenceTokenIds(): Set<string> {
+  if (!refTokens || Date.now() - refTokens.at > 60_000) refTokens = { at: Date.now(), ids: new Set(Object.values(referenceRegistrations()).map((r) => r.tokenId)) };
+  return refTokens.ids;
+}
 import { JOBS_OPEN } from "@/lib/market/jobs-open";
 import { nameSome, toolsFit } from "@/lib/assay/tools";
 
@@ -109,6 +118,16 @@ export function hirePath(
   // A decision we took about our own agent outranks anything it answers.
   const pause = pauseFor(l.tokenId);
   if (pause && pause.scope === "all") return refuse(pause.reason, pause.short);
+
+  /*
+    Our own operating wallets registered as agents, a keeper that bids for us
+    or our marketplace's own identity, are not agents for hire. Offered, they
+    padded a job's count with us twice over. Only our four reference agents
+    are offered, on the same terms as anyone's.
+  */
+  if (isTeam(l.owner) && !referenceTokenIds().has(l.tokenId)) {
+    return refuse("One of MANDATE's own operating wallets, registered as an agent so its work is on record. It bids and settles for us; it is not for hire.", "Our operating wallet, not for hire");
+  }
 
   if (l.liveness === "no-endpoint") {
     return l.probe?.refused

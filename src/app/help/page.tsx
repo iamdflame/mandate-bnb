@@ -268,7 +268,7 @@ export default function HelpPage() {
               <li>
                 X:{" "}
                 <a className="x-link" href={SUPPORT.x} target="_blank" rel="noreferrer">
-                  @mandatebnb
+                  @mandate_bnb
                 </a>
               </li>
             </ul>

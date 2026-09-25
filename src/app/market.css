@@ -5622,9 +5622,10 @@ a.x-house__name:hover {
 }
 .x-home__hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 400px);
   gap: var(--s-8);
-  align-items: end;
+  align-items: center;
+  justify-content: space-between;
 }
 .x-home__h {
   font-family: var(--f-display);
@@ -5660,12 +5661,32 @@ a.x-house__name:hover {
 .x-home__how:hover {
   color: var(--c-accent);
 }
-.x-home__stats {
+/* The three figures that make the promise checkable, in one calm card. */
+.x-home__panel {
   display: grid;
   gap: var(--s-5);
+  padding: var(--s-6);
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--c-surface) 88%, transparent);
+  box-shadow: var(--shadow-1);
+  backdrop-filter: blur(6px);
+}
+.x-home__stats {
+  display: grid;
+  gap: var(--s-4);
   margin: 0;
-  justify-items: end;
-  text-align: right;
+}
+.x-home__stats > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding-bottom: var(--s-4);
+  border-bottom: 1px solid var(--c-line-faint);
+}
+.x-home__stats > div:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
 }
 .x-home__stats dt {
   color: var(--c-text-2);
@@ -5673,11 +5694,21 @@ a.x-house__name:hover {
 }
 .x-home__fig {
   margin: 0;
-  font-family: var(--f-mono);
-  font-size: clamp(1.75rem, 3vw, 2.25rem);
-  font-weight: 500;
+  font-family: var(--f-display);
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  font-weight: 600;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
+}
+.x-home__stats > div:first-child .x-home__fig {
+  color: var(--c-accent);
+}
+.x-home__fresh {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--c-text-2);
+  font-size: var(--ts-xs);
 }
 .x-home__jobs {
   display: grid;
@@ -5813,11 +5844,6 @@ a.x-house__name:hover {
   .x-home__hero {
     grid-template-columns: 1fr;
     gap: var(--s-6);
-  }
-  .x-home__stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    justify-items: start;
-    text-align: left;
   }
   .x-home__fig {
     font-size: 1.375rem;
@@ -6108,6 +6134,10 @@ a.x-house__name:hover {
     gap: var(--s-2);
   }
   .x-helppage__toc a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 14px;
     background: var(--c-surface);
   }
 }
@@ -6522,4 +6552,64 @@ a.x-house__name:hover {
   .x-leash__agents {
     grid-template-columns: 1fr;
   }
+}
+
+/*
+  Sentence case for every label. Spaced capitals read as noise and shout over
+  the content they introduce (design audit, rule 9). The live status chip and
+  the network badge keep their capitals: they are badges, not words to read.
+*/
+:where(.x-app, .m-app, body)
+  :is(
+    .x-eyebrow, .x-footer h4, .x-drop__label, .x-price__from, .x-proof__head, .x-proof__state, .x-ad-sec h3, .x-hire__h, .x-act__h,
+    .x-house__st, .x-verdict, .x-listing__next-k, .x-contract__name, .x-contract__kind, .x-dim,
+    .m-label, .m-tag, .m-footer h4, .m-card__cat, .m-ours, .m-finding__flag,
+    .mark-label, .register th, .kv dt, .eyebrow, .tbl thead th, .excl-rung, .op__badge
+  ) {
+  text-transform: none;
+  letter-spacing: 0;
+}
+/* In sentence case, a label needs the size and weight its capitals used to give it. */
+.x-footer h4 {
+  font-size: var(--ts-sm);
+  color: var(--c-text);
+}
+:where(.m-app, body) .m-label {
+  font-size: var(--ts-sm);
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+/* ----------------------------------------------- not found, and errors */
+.x-state {
+  display: grid;
+  justify-items: center;
+  gap: var(--s-4);
+  max-width: 640px;
+  margin: 0 auto;
+  padding: clamp(64px, 12vw, 140px) var(--w-gutter);
+  text-align: center;
+}
+.x-state__h {
+  font-family: var(--f-display);
+  font-size: var(--ts-h1);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: var(--s-3) 0 0;
+}
+.x-state__p {
+  color: var(--c-text-2);
+  font-size: var(--ts-lg);
+  line-height: 1.6;
+}
+.x-state__act {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+}
+.x-state__n {
+  color: var(--c-text-3);
+  font-size: var(--ts-sm);
 }

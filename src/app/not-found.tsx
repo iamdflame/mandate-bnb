@@ -1,28 +1,30 @@
 import Link from "next/link";
-import OfficeMark from "@/components/mark/OfficeMark";
+import type { Metadata } from "next";
+import AppShell from "@/components/v2/shell/AppShell";
+import { Mark } from "@/components/x/Brand";
 
+export const metadata: Metadata = { title: "Not found | MANDATE" };
+
+/** A wrong address, said plainly, with the places people usually meant. */
 export default function NotFound() {
   return (
-    <main className="shell nf">
-      <OfficeMark size={40} metal="var(--base)" />
-      <p className="mark-label">Nothing struck here</p>
-      <h1 className="display nf__title">No record at this address.</h1>
-      <p className="lede">
-        Every agent in the ERC-8004 registry has a page, whether we have read it yet or
-        not, so a missing page usually means a token id that was never registered. The
-        bench will assay any id that was.
-      </p>
-      <div className="nf__links">
-        <Link href="/bench" className="btn btn--primary">
-          Open the bench →
-        </Link>
-        <Link href="/agents" className="btn">
-          The register
-        </Link>
-        <Link href="/" className="btn btn--ghost">
-          Home
-        </Link>
-      </div>
-    </main>
+    <AppShell>
+      <section className="x-wrap x-state">
+        <Mark size={48} />
+        <h1 className="x-state__h">There is nothing at this address.</h1>
+        <p className="x-state__p">Every agent registered on BNB Smart Chain has a page here, so a missing one is usually a mistyped number.</p>
+        <div className="x-state__act">
+          <Link href="/agents?hireable=1" className="x-btn x-btn--primary">
+            Find an agent
+          </Link>
+          <Link href="/" className="x-btn">
+            Home
+          </Link>
+          <Link href="/help" className="x-btn x-btn--ghost">
+            Help
+          </Link>
+        </div>
+      </section>
+    </AppShell>
   );
 }

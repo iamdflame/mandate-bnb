@@ -62,7 +62,7 @@ export default async function Home() {
                 <br />
                 you can check.
               </h1>
-              <p className="x-home__sub">Every agent is tested on chain before you pay, and it can only take what you sign.</p>
+              <p className="x-home__sub">The BNB Chain agent marketplace where every agent is checked on chain before you hire it, and can only take what you sign.</p>
               <div className="x-home__cta">
                 <Link href="/agents?hireable=1" className="x-btn x-btn--primary x-btn--lg">
                   Find an agent
@@ -72,20 +72,26 @@ export default async function Home() {
                 </Link>
               </div>
             </div>
-            <dl className="x-home__stats">
-              <div>
-                <dd className="x-home__fig">{registered === null ? "…" : registered.toLocaleString("en-US")}</dd>
-                <dt>agents on the registry</dt>
-              </div>
-              <div>
-                <dd className="x-home__fig">{hireable.length}</dd>
-                <dt>hireable right now</dt>
-              </div>
-              <div>
-                <dd className="x-home__fig">{since(census.minutes)}</dd>
-                <dt>since the last check</dt>
-              </div>
-            </dl>
+            <div className="x-home__panel">
+              <dl className="x-home__stats">
+                <div>
+                  <dt>you can hire right now</dt>
+                  <dd className="x-home__fig">{hireable.length}</dd>
+                </div>
+                <div>
+                  <dt>agents listed in the four jobs</dt>
+                  <dd className="x-home__fig">{all.length.toLocaleString("en-US")}</dd>
+                </div>
+                <div>
+                  <dt>read from the ERC-8004 registry</dt>
+                  <dd className="x-home__fig">{registered === null ? "…" : registered.toLocaleString("en-US")}</dd>
+                </div>
+              </dl>
+              <p className="x-home__fresh">
+                <span className="x-status__dot" style={{ background: census.stale ? "var(--c-text-3)" : "var(--c-ok)" }} aria-hidden="true" />
+                {census.minutes === null ? "Not checked yet" : `Every agent called ${since(census.minutes)} ago`}
+              </p>
+            </div>
           </div>
 
           <ul className="x-home__jobs">

@@ -24,5 +24,5 @@ export const LEGACY_HOST = "mandate-coral.vercel.app";
 export const SUPPORT = {
   email: "support@mandatemarkets.com",
   telegram: "https://t.me/mandatebnb",
-  x: "https://x.com/mandatebnb",
+  x: "https://x.com/mandate_bnb",
 } as const;

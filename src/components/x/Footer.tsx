@@ -46,7 +46,7 @@ export default function Footer() {
               <li><Link href="/help">How it works and FAQ</Link></li>
               <li><a href={SUPPORT.telegram} target="_blank" rel="noreferrer">Telegram</a></li>
               <li><a href={`mailto:${SUPPORT.email}`}>{SUPPORT.email}</a></li>
-              <li><a href={SUPPORT.x} target="_blank" rel="noreferrer">X, @mandatebnb</a></li>
+              <li><a href={SUPPORT.x} target="_blank" rel="noreferrer">X, @mandate_bnb</a></li>
             </ul>
           </div>
           <div>

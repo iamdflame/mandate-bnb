@@ -80,7 +80,7 @@ async function main() {
     { name: "live keys are listed", test: (h) => h.includes("Keys that can act right now") },
     { name: "the KeyStore is read", test: (h) => h.includes("matches") || h.includes("registry says") || "no KeyStore verdict on the page" },
   ]);
-  await page("/status", [{ name: "the beat checks render", test: (h) => h.includes("The six beats") }]);
+  await page("/status", [{ name: "the checks render", test: (h) => h.includes("The checks") }]);
   await page("/", [{ name: "home renders", test: (h) => h.includes("</html>") }]);
   await page("/activity", [{ name: "activity renders", test: (h) => h.includes("</html>") }]);
 

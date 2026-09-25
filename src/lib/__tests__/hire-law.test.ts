@@ -37,6 +37,13 @@ const stranger = (over: Partial<L> = {}): L => ({
 });
 
 describe("the hire law", () => {
+  it("never offers one of our operating wallets registered as an agent, however it answers", () => {
+    // Keeper A, registered twice as an agent; it bids for us and is not for hire.
+    const v = hirePath(stranger({ tokenId: "336599", owner: "0xd6d11aa5046dc5c7be8d63b9223b60d7ad94cbe9" }), { now: NOW, jobsOpen: true, bidders: new Set(["0xd6d11aa5046dc5c7be8d63b9223b60d7ad94cbe9"]) });
+    expect(v.ok).toBe(false);
+    expect(v.short).toBe("Our operating wallet, not for hire");
+  });
+
   it("offers a stranger that answered recently and quoted a price we can pay, over x402", () => {
     const v = hirePath(stranger(), { now: NOW });
     expect(v.ok).toBe(true);

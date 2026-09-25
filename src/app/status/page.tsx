@@ -19,7 +19,7 @@ import { uptime } from "@/lib/ops/history";
 
 export const metadata: Metadata = {
   title: "Status | Mandate",
-  description: "Whether the judge path works right now, checked from the inside, with the providers, clocks and roles behind it.",
+  description: "Whether every part of MANDATE works right now, checked from the inside, with the providers, clocks and roles behind it.",
 };
 
 export const dynamic = "force-dynamic";
@@ -55,13 +55,10 @@ export default async function StatusPage() {
   return (
     <AppShell>
       <div className="m-wrap m-section--tight" style={{ paddingTop: "clamp(2rem,5vw,3.5rem)" }}>
-        <h1 className="m-h1">{ok ? "Everything a judge touches is working" : "Something on the judge path is broken"}</h1>
+        <h1 className="m-h1">{ok ? "Everything is working" : "Something is not working"}</h1>
         <p className="m-lede m-lede--wide" style={{ marginTop: "1rem", maxWidth: "62ch" }}>
-          Each beat on the{" "}
-          <Link className="m-link" href="/judges">
-            judge walk
-          </Link>{" "}
-          depends on a read. This page runs those reads now. The same checks answer at{" "}
+          Each check below reads what a page needs, from the chain and from our own services, right now. The same checks
+          answer at{" "}
           <a className="m-link m-mono" href="/api/status">
             /api/status
           </a>{" "}
@@ -73,13 +70,13 @@ export default async function StatusPage() {
 
         <section className="m-section--tight">
           <div className="m-head">
-            <h2 className="m-h2">The six beats</h2>
+            <h2 className="m-h2">The checks</h2>
           </div>
           <div className="m-scroll">
             <table className="m-table">
               <thead>
                 <tr>
-                  <th>Beat</th>
+                  <th>Check</th>
                   <th>What must be true</th>
                   <th>Result</th>
                   <th className="m-num">Took</th>
