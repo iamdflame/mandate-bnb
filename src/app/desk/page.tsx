@@ -10,6 +10,7 @@ import RevokeDialog from "@/components/x/RevokeDialog";
 import YourAgents from "@/components/x/YourAgents";
 import YourApprovals from "@/components/x/YourApprovals";
 import YourHires from "@/components/x/YourHires";
+import Dashboard from "@/components/v2/portfolio/Dashboard";
 import { live } from "@/lib/data/live";
 import { snapshot } from "@/lib/data/snapshots";
 import { listSessions, type SessionRecord } from "@/lib/chain/session-store";
@@ -230,6 +231,17 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
           </Link>
         </div>
         <YourHires />
+      </section>
+
+      {/* --------------------------------------------- your jobs with capital */}
+      <section className="x-wrap x-section--tight" aria-labelledby="h-jobs" id="jobs">
+        <div className="x-head">
+          <div>
+            <h2 id="h-jobs">Your jobs with capital</h2>
+            <p>Accept a bid, follow each hourly checkpoint as it settles, and take your capital back when the term is served.</p>
+          </div>
+        </div>
+        <Dashboard />
       </section>
 
       {/* ------------------------------------------------------ your leashes */}

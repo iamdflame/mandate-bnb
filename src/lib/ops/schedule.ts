@@ -27,6 +27,7 @@ import { tailRegistry } from "@/lib/registry/tail";
 import { confirmPending } from "@/lib/market/confirm";
 import { sweepEscrow } from "@/lib/escrow/jobs";
 import { runLeashes } from "@/lib/leash/run";
+import { advanceEpochs } from "@/lib/market/epochs";
 
 export interface Job {
   name: string;
@@ -224,6 +225,19 @@ export const JOBS: Job[] = [
     budgetMs: 20_000,
     afterResponse: true,
     run: (budgetMs = 18_000) => runLeashes({ budgetMs }),
+  },
+  /*
+    Jobs with capital, carried through every epoch: proposed by the
+    adjudicator once an epoch has elapsed, finalised once its challenge window
+    has passed, and closed when the term is served, so a buyer's capital never
+    waits on a person to come back.
+  */
+  {
+    name: "epochs",
+    everyMinutes: 5,
+    budgetMs: 25_000,
+    afterResponse: true,
+    run: (budgetMs = 22_000) => advanceEpochs({ budgetMs }),
   },
 ];
 

@@ -7,6 +7,9 @@ import CategoryMark from "@/components/v2/marks/CategoryMark";
 import { CATEGORIES, CATEGORY_LABEL, type Category } from "@/lib/config";
 import { marketChain } from "@/lib/chain/market";
 import { useWallet, sendMarketTx, type TxState } from "@/lib/chain/wallet";
+import { parseEventLogs } from "viem";
+import { marketClient } from "@/lib/chain/market";
+import { MANDATE_MARKET_V2_ABI } from "@/lib/chain/abiV2";
 
 /**
  * Hiring an agent, in four steps, with nothing hidden in any of them.
@@ -45,6 +48,9 @@ const BENCHMARK_PLAIN: Record<Category, string> = {
   "yield-optimisation": "leaving the money in a standard lending pool",
   "health-factor": "the protocol's own borrow rate on your position",
 };
+
+/** The largest job our agents can bond against today: a fifth of it may not exceed the keeper's 0.0002 BNB bond ceiling. */
+const MAX_CAPITAL = 0.001;
 
 const TERMS = [
   { id: "day", label: "One day", epochs: 24, note: "24 hourly checkpoints. Good for a first try." },
@@ -118,7 +124,7 @@ export default function HireFlow({ tokenId, name, category, what }: Props) {
 
   const [step, setStep] = useState(0);
   const [cat, setCat] = useState<Category>(category ?? "rebalancing");
-  const [capital, setCapital] = useState("0.01");
+  const [capital, setCapital] = useState(String(MAX_CAPITAL));
   const [capitalTouched, setCapitalTouched] = useState(false);
 
   /*
@@ -136,7 +142,7 @@ export default function HireFlow({ tokenId, name, category, what }: Props) {
     const held = Number(balanceWei) / 1e18;
     if (held <= 0) return;
     // Leave room for gas, and never propose below the market's own floor.
-    const usable = Math.max(0.0002, Math.min(0.01, (held - 0.0005) * 0.6));
+    const usable = Math.max(0.0002, Math.min(MAX_CAPITAL, (held - 0.0005) * 0.6));
     if (usable < 0.0002) return;
     const proposed = usable >= 0.001 ? usable.toFixed(3) : usable.toFixed(4);
     setCapital(proposed);
@@ -164,6 +170,8 @@ export default function HireFlow({ tokenId, name, category, what }: Props) {
     if (!Number.isFinite(capitalNum) || capitalNum <= 0) return "That is not an amount.";
     if (capitalNum < 0.0002)
       return "Below 0.0002 BNB the bond an agent would have to post falls under the market's minimum, so nobody could bid on it.";
+    if (capitalNum > MAX_CAPITAL)
+      return `While the market is young a job is capped at ${MAX_CAPITAL} BNB: an agent must bond a fifth of the capital, and that is what ours can bond today.`;
     if (balanceWei !== null && parseEther(capital as `${number}`) > balanceWei)
       return `This wallet holds ${(Number(balanceWei) / 1e18).toFixed(5)} BNB, which is less than the job. Gas is on top.`;
     return null;
@@ -174,7 +182,7 @@ export default function HireFlow({ tokenId, name, category, what }: Props) {
   const submit = async () => {
     if (!address || refusal) return;
     try {
-      await sendMarketTx(
+      const opened = await sendMarketTx(
         address,
         "openMandate",
         [
@@ -207,7 +215,10 @@ export default function HireFlow({ tokenId, name, category, what }: Props) {
         A failure here is not a failure of the hire. The mandate is open and
         agents can still bid from /jobs, so this reports and does not throw.
       */
-      const id = await newestMandateId();
+      // The job's number, from the MandateOpened event in its own receipt; the newest id is only a fallback.
+      const receipt = await marketClient.getTransactionReceipt({ hash: opened }).catch(() => null);
+      const log = receipt ? parseEventLogs({ abi: MANDATE_MARKET_V2_ABI, eventName: "MandateOpened", logs: receipt.logs })[0] : undefined;
+      const id = log ? Number((log.args as { mandateId: bigint }).mandateId) : await newestMandateId();
       setOpenedId(id);
       if (id !== null) {
         setKeeper({ at: "asking" });
@@ -215,7 +226,7 @@ export default function HireFlow({ tokenId, name, category, what }: Props) {
           const res = await fetch("/api/keeper/bid", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ mandateId: id }),
+            body: JSON.stringify({ mandateId: id, tokenId }),
           });
           const body = (await res.json()) as
             | { ok: true; hash: string }
@@ -251,7 +262,11 @@ export default function HireFlow({ tokenId, name, category, what }: Props) {
           bid to accept.
         </p>
         <p className="m-body" style={{ marginTop: "1rem" }}>
-          Until you accept one you can cancel and take the capital straight back.
+          Until you accept one you can cancel and take the capital straight back.{" "}
+          <a className="m-link" href="/desk#jobs">
+            Accept a bid on your desk
+          </a>
+          .
         </p>
 
         {keeper.at === "asking" ? (
@@ -562,7 +577,7 @@ export default function HireFlow({ tokenId, name, category, what }: Props) {
                 The agent never touches your capital. It stays in the market
                 contract and comes back to you when the term ends. Money only
                 leaves it as the agent&rsquo;s share, and that is charged only on
-                gains.
+                gains. MANDATE takes no cut of the job.
               </p>
               <p className="m-small" style={{ marginTop: "0.7rem" }}>
                 Your real cost is that <strong>{bnb(capitalNum)}</strong> is locked

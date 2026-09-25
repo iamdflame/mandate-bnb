@@ -31,6 +31,7 @@ import { marketClient, walletFor } from "@/lib/chain/market";
 import { MARKET_V2 } from "@/lib/chain/deployments";
 import { MANDATE_MARKET_V2_ABI } from "@/lib/chain/abiV2";
 import { bid as sendBid, requiredBond, marketParameters } from "@/lib/chain/marketV2";
+import { REFERENCE } from "@/lib/house";
 
 /** The most a single keeper bid may ever post. */
 export const MAX_BOND_WEI = 200_000_000_000_000n; // 0.0002 BNB
@@ -38,8 +39,8 @@ export const MAX_BOND_WEI = 200_000_000_000_000n; // 0.0002 BNB
 /** The most the keeper may post across all bids in a rolling day. */
 export const DAILY_BOND_CAP_WEI = 1_000_000_000_000_000n; // 0.001 BNB
 
-/** Left unspent so the wallet can still pay for the transactions it signs. */
-export const GAS_RESERVE_WEI = 300_000_000_000_000n; // 0.0003 BNB
+/** Left unspent so the wallet can still pay for the transactions it signs: a bid, a withdraw, and room. */
+export const GAS_RESERVE_WEI = 60_000_000_000_000n; // 0.00006 BNB, about six transactions at today's gas
 
 /** The return the keeper undertakes to beat the benchmark by, per epoch. */
 const TARGET_ALPHA_BPS = 100;
@@ -64,8 +65,15 @@ function spentToday(): bigint {
   return spent.reduce((t, s) => t + s.wei, 0n);
 }
 
-function keeperWallet() {
-  const key = process.env.AGENT_A_KEY ?? process.env.AGENT_B_KEY;
+/*
+  Who bids. A job opened for one of our agents is bid on from that agent's own
+  wallet, the one that owns its ERC-8004 registration, so the award names the
+  agent the buyer chose and every tracker can map it back to its id. A job
+  opened from /jobs with no agent in mind falls back to the keeper.
+*/
+function keeperWallet(slug?: string | null) {
+  const ref = slug ? REFERENCE.find((r) => r.slug === slug) : undefined;
+  const key = (ref ? process.env[ref.keyEnv] : undefined) ?? process.env.AGENT_A_KEY ?? process.env.AGENT_B_KEY;
   if (!key) return null;
   return walletFor((key.startsWith("0x") ? key : `0x${key}`) as `0x${string}`);
 }
@@ -73,8 +81,8 @@ function keeperWallet() {
 /** Whether the keeper is configured at all. Used to decide what the UI promises. */
 export const keeperConfigured = () => Boolean(process.env.AGENT_A_KEY ?? process.env.AGENT_B_KEY);
 
-export async function keeperBid(mandateId: number): Promise<BidOutcome> {
-  const wallet = keeperWallet();
+export async function keeperBid(mandateId: number, slug?: string | null): Promise<BidOutcome> {
+  const wallet = keeperWallet(slug);
   if (!wallet) return { ok: false, why: "No keeper key is configured.", code: "error" };
   const me = wallet.account!.address as Address;
 

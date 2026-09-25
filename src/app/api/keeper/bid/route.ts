@@ -15,6 +15,7 @@
 import { NextResponse } from "next/server";
 import { keeperBid, keeperConfigured, openMandatesNeedingBids } from "@/lib/keeper/bid";
 import { take } from "@/lib/api/ratelimit";
+import { houseSlug } from "@/lib/market/performance";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -51,9 +52,12 @@ export async function POST(request: Request) {
   }
 
   let mandateId: number | null = null;
+  let slug: string | null = null;
   try {
-    const body = (await request.json()) as { mandateId?: unknown };
+    const body = (await request.json()) as { mandateId?: unknown; tokenId?: unknown };
     mandateId = Number(body.mandateId);
+    // The agent the buyer chose bids from its own wallet, when it is one of ours.
+    slug = typeof body.tokenId === "string" ? houseSlug(body.tokenId) : null;
   } catch {
     mandateId = null;
   }
@@ -61,7 +65,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Pass a mandateId." }, { status: 400 });
   }
 
-  const result = await keeperBid(mandateId);
+  const result = await keeperBid(mandateId, slug);
   // "Already bid" and "not open" are not failures of this endpoint; they are
   // the endpoint being idempotent. A retry must not read as an error.
   const status = result.ok || result.code === "already" || result.code === "state" ? 200 : 502;

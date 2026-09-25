@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
 import Palette from "@/components/shell/Palette";
 import { SITE } from "@/lib/site";
 import "./tokens.css";
@@ -74,6 +75,8 @@ export default function RootLayout({
         {children}
         {/* ⌘K, mounted once. It renders nothing until it is opened. */}
         <Palette />
+        {/* Page views only, no cookies: how many people reach each step, for launch. */}
+        <Analytics />
       </body>
     </html>
   );

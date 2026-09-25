@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import AppShell from "@/components/v2/shell/AppShell";
 import { live } from "@/lib/data/live";
 import { hireableByCategory, judgePathChecks, THIN_BELOW } from "@/lib/ops/status";
+import { overdueEpochs } from "@/lib/market/epochs";
 import { CATEGORIES, CATEGORY_LABEL } from "@/lib/config";
 import { health } from "@/lib/chain/rpc";
 import { readHeartbeats } from "@/lib/heartbeat";
@@ -27,9 +28,10 @@ export const maxDuration = 60;
 
 export default async function StatusPage() {
   await live();
-  const [checks, depth, rpcs, beats, who, boxes, up, schedule] = await Promise.all([
+  const [checks, depth, late, rpcs, beats, who, boxes, up, schedule] = await Promise.all([
     judgePathChecks(),
     withTimeout(hireableByCategory().catch(() => null), 8_000),
+    withTimeout(overdueEpochs().catch(() => null), 8_000),
     health(),
     readHeartbeats().catch(() => null),
     withTimeout(roles().catch(() => null), 6_000),
@@ -135,6 +137,29 @@ export default async function StatusPage() {
             </div>
           ) : (
             <p className="m-small">The count did not come back in time on this request.</p>
+          )}
+        </section>
+
+        {/* Jobs with capital: any epoch the clock has not settled in time is named here. */}
+        <section className="m-section--tight" id="epochs">
+          <div className="m-head">
+            <h2 className="m-h2">Jobs with capital</h2>
+            <p className="m-head__note">Every epoch is proposed and finalised on the site&apos;s clock. One that is late is listed here.</p>
+          </div>
+          {late === null ? (
+            <p className="m-small">The market did not answer in time on this request.</p>
+          ) : late.length === 0 ? (
+            <p className="m-small">
+              <span className="m-tag m-tag--verified">on time</span> No active job has an epoch waiting past its window.
+            </p>
+          ) : (
+            <ul className="m-small">
+              {late.map((l) => (
+                <li key={l.id}>
+                  <span className="m-tag m-tag--caution">late</span> Job #{l.id}, epoch {l.epoch}: {l.minutesLate} minutes past due.
+                </li>
+              ))}
+            </ul>
           )}
         </section>
 
