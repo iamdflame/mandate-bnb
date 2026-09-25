@@ -1,0 +1,273 @@
+/**
+ * Escrowed jobs for our agents: recorded from the chain, delivered by the
+ * agent's own wallet, settled on the clock.
+ *
+ * A buyer funds a job in their browser; this file never takes their word for
+ * any of it. A job is recorded only when the kernel says it is FUNDED, names
+ * one of our agents' wallets as provider, and was funded by the wallet it is
+ * filed under. The agent then runs the same service its paid call sells,
+ * about the subject the buyer named, keeps the answer, and submits its hash
+ * from its own wallet with the answer's address in the policy's optParams, as
+ * every ERC-8183 reader expects. After the policy's dispute window, anyone may
+ * settle, and our keeper does, so the agent is paid without anyone watching.
+ */
+
+import { keccak256, stringToHex, toHex, type Address, type Hash, type Hex } from "viem";
+import { marketClient, walletFor } from "@/lib/chain/market";
+import { sql as pg } from "@/lib/db/client";
+import { ensureTables } from "@/lib/db/tables";
+import { withLease } from "@/lib/db/lease";
+import { REFERENCE, referenceRegistrations, type ReferenceAgent } from "@/lib/house";
+import { HOUSE_SERVICES } from "@/lib/house/services";
+import { SITE } from "@/lib/site";
+import { COMMERCE_ABI, ESCROW, JOB_STATUS, POLICY_ABI, ROUTER_ABI, type JobStatus } from "./contracts";
+
+export interface EscrowJob {
+  jobId: string;
+  client: string;
+  provider: string;
+  slug: string;
+  tokenId: string;
+  budget: string;
+  subject: string | null;
+  status: JobStatus;
+  fundedTx: string | null;
+  submitTx: string | null;
+  settleTx: string | null;
+  deliverableHash: string | null;
+  expiredAt: number | null;
+  submittedAt: number | null;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface OnChainJob {
+  client: Address;
+  provider: Address;
+  budget: bigint;
+  expiredAt: bigint;
+  status: JobStatus;
+  submittedAt: bigint;
+  deliverable: Hex;
+  description: string;
+}
+
+export async function readJob(jobId: bigint): Promise<OnChainJob> {
+  const j = await marketClient.readContract({ address: ESCROW.commerce, abi: COMMERCE_ABI, functionName: "getJob", args: [jobId] });
+  return {
+    client: j.client,
+    provider: j.provider,
+    budget: j.budget,
+    expiredAt: j.expiredAt,
+    status: JOB_STATUS[j.status] ?? "OPEN",
+    submittedAt: j.submittedAt,
+    deliverable: j.deliverable,
+    description: j.description,
+  };
+}
+
+/** Our agents that take escrowed jobs, by the wallet that owns each one's registration. */
+export function providers(): Map<string, { ref: ReferenceAgent; tokenId: string; owner: Address }> {
+  const regs = referenceRegistrations();
+  const out = new Map<string, { ref: ReferenceAgent; tokenId: string; owner: Address }>();
+  for (const ref of REFERENCE) {
+    const r = regs[ref.slug];
+    if (r) out.set(r.owner.toLowerCase(), { ref, tokenId: r.tokenId, owner: r.owner });
+  }
+  return out;
+}
+
+export const providerFor = (slug: string) => [...providers().values()].find((p) => p.ref.slug === slug) ?? null;
+
+function providerKey(ref: ReferenceAgent): Hex | null {
+  const raw = process.env[ref.keyEnv];
+  return raw ? ((raw.startsWith("0x") ? raw : `0x${raw}`) as Hex) : null;
+}
+
+type Row = {
+  job_id: string;
+  client: string;
+  provider: string;
+  slug: string;
+  token_id: string;
+  budget: string;
+  subject: string | null;
+  status: string;
+  funded_tx: string | null;
+  submit_tx: string | null;
+  settle_tx: string | null;
+  deliverable_hash: string | null;
+  expired_at: string | number | null;
+  submitted_at: string | number | null;
+  note: string | null;
+  created_at: Date | string;
+};
+
+const toJob = (r: Row): EscrowJob => ({
+  jobId: r.job_id,
+  client: r.client,
+  provider: r.provider,
+  slug: r.slug,
+  tokenId: r.token_id,
+  budget: r.budget,
+  subject: r.subject,
+  status: r.status as JobStatus,
+  fundedTx: r.funded_tx,
+  submitTx: r.submit_tx,
+  settleTx: r.settle_tx,
+  deliverableHash: r.deliverable_hash,
+  expiredAt: r.expired_at === null ? null : Number(r.expired_at),
+  submittedAt: r.submitted_at === null ? null : Number(r.submitted_at),
+  note: r.note,
+  createdAt: typeof r.created_at === "string" ? r.created_at : r.created_at.toISOString(),
+});
+
+/** A recorded job, with the exact text our agent delivered, when it has. */
+export async function jobRow(jobId: string): Promise<(EscrowJob & { deliverable: string | null }) | null> {
+  if (!pg) return null;
+  await ensureTables();
+  const [r] = (await pg`select * from escrow_jobs where job_id = ${jobId}`) as (Row & { deliverable: string | null })[];
+  return r ? { ...toJob(r), deliverable: r.deliverable } : null;
+}
+
+export async function jobsOfClient(client: string): Promise<EscrowJob[]> {
+  if (!pg) return [];
+  await ensureTables();
+  const rows = (await pg`select * from escrow_jobs where client = ${client.toLowerCase()} order by created_at desc limit 200`) as Row[];
+  return rows.map(toJob);
+}
+
+const addressLike = (s: string) => /^0x[0-9a-fA-F]{40}$/.test(s);
+
+/**
+ * Records a job the buyer funded, from the chain alone. Returns why it was
+ * refused, or the job. The subject is what the agent is asked about: the
+ * buyer's own wallet unless they named a position.
+ */
+export async function recordFunded(jobId: bigint, fundTx: Hash, subject: string | null): Promise<{ job: EscrowJob } | { refused: string; status: number }> {
+  if (!pg) return { refused: "This deployment keeps no database.", status: 503 };
+  const [job, receipt, tx] = await Promise.all([
+    readJob(jobId),
+    marketClient.getTransactionReceipt({ hash: fundTx }).catch(() => null),
+    marketClient.getTransaction({ hash: fundTx }).catch(() => null),
+  ]);
+  if (!receipt || !tx) return { refused: "That funding transaction is not on BNB Smart Chain yet.", status: 404 };
+  if (receipt.status !== "success") return { refused: "That funding transaction reverted.", status: 400 };
+  if (tx.to?.toLowerCase() !== ESCROW.commerce.toLowerCase()) return { refused: "That transaction is not a call to the ERC-8183 escrow.", status: 400 };
+  if (tx.from.toLowerCase() !== job.client.toLowerCase()) return { refused: "That job was funded by a different wallet from its client.", status: 400 };
+  if (job.status !== "FUNDED" && job.status !== "SUBMITTED" && job.status !== "COMPLETED") return { refused: `That job is ${job.status.toLowerCase()}, not funded.`, status: 400 };
+  const p = providers().get(job.provider.toLowerCase());
+  if (!p) return { refused: "That job's provider is not one of MANDATE's agents.", status: 400 };
+  const about = subject && (addressLike(subject) || /^\d{1,10}$/.test(subject)) ? subject : job.client;
+
+  await ensureTables();
+  await pg`
+    insert into escrow_jobs (job_id, client, provider, slug, token_id, budget, subject, status, funded_tx, expired_at, submitted_at)
+    values (${jobId.toString()}, ${job.client.toLowerCase()}, ${job.provider.toLowerCase()}, ${p.ref.slug}, ${p.tokenId}, ${job.budget.toString()},
+            ${about}, ${job.status}, ${fundTx.toLowerCase()}, ${Number(job.expiredAt)}, ${Number(job.submittedAt) || null})
+    on conflict (job_id) do update set status = excluded.status, funded_tx = coalesce(escrow_jobs.funded_tx, excluded.funded_tx), updated_at = now()
+  `;
+  const row = await jobRow(jobId.toString());
+  return { job: row! };
+}
+
+/** The answer our agent gives for a job: its service's own run, about the job's subject. Canonical JSON, so its hash can be re-derived. */
+async function answerFor(row: EscrowJob): Promise<{ body: Record<string, unknown>; text: string; hash: Hex }> {
+  const service = HOUSE_SERVICES[row.slug];
+  if (!service) throw new Error(`no service for ${row.slug}`);
+  const subject = row.subject ?? row.client;
+  const input: Record<string, string> = /^\d{1,10}$/.test(subject) ? { position: subject } : { wallet: subject };
+  const answer = await service.run(input);
+  const body = {
+    job: { kernel: ESCROW.commerce, id: row.jobId, client: row.client, budget: row.budget },
+    agent: { name: service.name, erc8004: row.tokenId, provider: row.provider },
+    subject,
+    answer,
+    deliveredAt: new Date().toISOString(),
+  };
+  const text = JSON.stringify(body);
+  return { body, text, hash: keccak256(stringToHex(text)) };
+}
+
+export const deliverableUrl = (jobId: string) => `${SITE}/api/escrow/jobs/${jobId}/deliverable`;
+
+/**
+ * Our agent does the work and submits it. Idempotent: a job already submitted
+ * on chain is only brought up to date here, and a delivery in flight holds a
+ * lease so two ticks never submit twice.
+ */
+export async function deliver(jobId: string): Promise<string> {
+  const out = await withLease(`escrow:${jobId}`, 90, async () => {
+    const row = await jobRow(jobId);
+    if (!row) return "not recorded";
+    const job = await readJob(BigInt(jobId));
+    if (job.status !== "FUNDED") {
+      await pg!`update escrow_jobs set status = ${job.status}, submitted_at = ${Number(job.submittedAt) || null}, updated_at = now() where job_id = ${jobId}`;
+      return `already ${job.status.toLowerCase()}`;
+    }
+    if (BigInt(Math.floor(Date.now() / 1000)) >= job.expiredAt) {
+      await pg!`update escrow_jobs set note = ${"Expired before delivery; the buyer can claim the refund."}, updated_at = now() where job_id = ${jobId}`;
+      return "expired before delivery";
+    }
+    const p = providers().get(job.provider.toLowerCase());
+    const key = p ? providerKey(p.ref) : null;
+    if (!p || !key) return "no key for this provider on this deployment";
+
+    // The answer is kept before it is committed to, so the hash on chain always has a body behind it.
+    const a = row.deliverableHash && row.deliverable ? { text: row.deliverable, hash: row.deliverableHash as Hex } : await answerFor(row);
+    if (!row.deliverableHash) {
+      await pg!`update escrow_jobs set deliverable = ${a.text}, deliverable_hash = ${a.hash}, updated_at = now() where job_id = ${jobId}`;
+    }
+    const wallet = walletFor(key);
+    const account = wallet.account;
+    const optParams = toHex(JSON.stringify({ deliverable_url: deliverableUrl(jobId) }));
+    const { request } = await marketClient.simulateContract({ account, address: ESCROW.commerce, abi: COMMERCE_ABI, functionName: "submit", args: [BigInt(jobId), a.hash, optParams] });
+    const hash = await wallet.writeContract(request);
+    const receipt = await marketClient.waitForTransactionReceipt({ hash, timeout: 60_000 });
+    if (receipt.status !== "success") {
+      await pg!`update escrow_jobs set note = ${`Submit reverted: ${hash}`}, updated_at = now() where job_id = ${jobId}`;
+      return `submit reverted ${hash}`;
+    }
+    const after = await readJob(BigInt(jobId));
+    await pg!`update escrow_jobs set status = ${after.status}, submit_tx = ${hash.toLowerCase()}, submitted_at = ${Number(after.submittedAt) || null}, note = null, updated_at = now() where job_id = ${jobId}`;
+    return `submitted ${hash}`;
+  });
+  return out ?? "another slice is delivering it";
+}
+
+/** Settles a submitted job once the dispute window has passed, from our keeper's wallet. */
+async function settle(jobId: string, windowSeconds: bigint): Promise<string> {
+  const job = await readJob(BigInt(jobId));
+  if (job.status !== "SUBMITTED") {
+    await pg!`update escrow_jobs set status = ${job.status}, updated_at = now() where job_id = ${jobId}`;
+    return `${jobId}: ${job.status.toLowerCase()}`;
+  }
+  if (BigInt(Math.floor(Date.now() / 1000)) < job.submittedAt + windowSeconds) return `${jobId}: in its dispute window`;
+  const raw = process.env.AGENT_A_KEY;
+  if (!raw) return `${jobId}: no keeper key`;
+  const wallet = walletFor((raw.startsWith("0x") ? raw : `0x${raw}`) as Hex);
+  const account = wallet.account;
+  const { request } = await marketClient.simulateContract({ account, address: ESCROW.router, abi: ROUTER_ABI, functionName: "settle", args: [BigInt(jobId), "0x"] });
+  const hash = await wallet.writeContract(request);
+  const receipt = await marketClient.waitForTransactionReceipt({ hash, timeout: 60_000 });
+  const after = await readJob(BigInt(jobId));
+  await pg!`update escrow_jobs set status = ${after.status}, settle_tx = ${receipt.status === "success" ? hash.toLowerCase() : null}, updated_at = now() where job_id = ${jobId}`;
+  return `${jobId}: settle ${receipt.status}, now ${after.status.toLowerCase()}`;
+}
+
+/** The scheduled pass: deliver anything funded and undelivered, settle anything past its window. */
+export async function sweepEscrow(opts: { budgetMs: number }): Promise<string> {
+  if (!pg) return "no database";
+  await ensureTables();
+  const started = Date.now();
+  const open = (await pg`select job_id, status from escrow_jobs where status in ('FUNDED', 'SUBMITTED') order by created_at asc limit 20`) as { job_id: string; status: string }[];
+  if (!open.length) return "no open jobs";
+  const windowSeconds = await marketClient.readContract({ address: ESCROW.policy, abi: POLICY_ABI, functionName: "disputeWindow" });
+  const done: string[] = [];
+  for (const j of open) {
+    if (Date.now() - started > opts.budgetMs) break;
+    const r = j.status === "FUNDED" ? await deliver(j.job_id).catch((e) => `failed: ${(e as Error).message.split("\n")[0]}`) : await settle(j.job_id, windowSeconds).catch((e) => `failed: ${(e as Error).message.split("\n")[0]}`);
+    done.push(`${j.job_id} ${r}`);
+  }
+  return done.join("; ");
+}

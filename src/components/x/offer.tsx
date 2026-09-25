@@ -21,6 +21,9 @@ import { inputsFor } from "@/lib/market/inputs";
 import { HOUSE_LEASHES } from "@/lib/chain/house";
 import { allowedCalls, CANNOT } from "@/lib/chain/leash-words";
 import { USDT, WBNB } from "@/lib/chain/leash";
+import { HOUSE_BUDGET } from "@/lib/escrow/contracts";
+import { providerFor } from "@/lib/escrow/jobs";
+import { ESCROW_OPEN } from "@/lib/escrow/open";
 
 const TOKEN: Record<string, string> = { [USDT.toLowerCase()]: "USDT", [WBNB.toLowerCase()]: "WBNB" };
 
@@ -66,6 +69,11 @@ export function offerFor(l: Listing): HireOffer {
           cannot: CANNOT,
         }
       : null,
+    // Our own agents take escrowed jobs, from their own wallets, once escrow is open.
+    escrow: (() => {
+      const p = ESCROW_OPEN && slug && verdict.ok ? providerFor(slug) : null;
+      return p ? { provider: p.owner, budget: HOUSE_BUDGET.toString(), tokenId: l.tokenId, name: l.name } : null;
+    })(),
     sponsored: sponsor ? { asks: sponsor.asks, checkWith: sponsor.checkWith, takesSubject: sponsor.takesSubject, price: l.priceLabel } : null,
     refuse: verdict.ok ? null : verdict.reason,
     alternatives: l.category ? `/agents?category=${l.category}&hireable=1` : "/agents?hireable=1",

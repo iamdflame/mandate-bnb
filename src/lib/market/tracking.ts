@@ -20,6 +20,8 @@ import { getAgentIndex } from "@/lib/data/agents";
 import { isTeam } from "@/lib/team";
 import { SITE } from "@/lib/site";
 import { placeAgent, readMarketSets } from "@/lib/rung";
+import { jobsOfClient, type EscrowJob } from "@/lib/escrow/jobs";
+import { ESCROW } from "@/lib/escrow/contracts";
 import type { PaidCallRecord } from "@/lib/market/paid-calls";
 
 export type HireKind = "paid-call" | "market-job" | "escrow-job";
@@ -123,6 +125,26 @@ async function marketJobsOf(wallet: string): Promise<HireRow[]> {
     });
 }
 
+/** Escrowed jobs this wallet funded for our agents, each checked against the kernel when it was recorded. Pure, for tests. */
+export function escrowHires(jobs: EscrowJob[]): HireRow[] {
+  return jobs.map((j) => ({
+    kind: "escrow-job" as const,
+    agentId: j.tokenId,
+    agentName: null,
+    category: categoryOf(j.tokenId),
+    tx: j.fundedTx,
+    block: null,
+    contract: ESCROW.commerce,
+    jobId: j.jobId,
+    amount: j.budget,
+    asset: ESCROW.paymentToken,
+    completed: j.status === "SUBMITTED" || j.status === "COMPLETED",
+    onChain: true,
+    at: j.createdAt,
+    sponsored: false,
+  }));
+}
+
 export async function ratingsOf(wallet: string): Promise<RatingRow[]> {
   if (!pg) return [];
   await ensureTables();
@@ -164,8 +186,13 @@ export interface WalletHires {
 }
 
 export async function hiresOf(wallet: string): Promise<WalletHires> {
-  const [calls, jobs, ratings] = await Promise.all([paidCallsOf(wallet).catch(() => []), marketJobsOf(wallet).catch(() => []), ratingsOf(wallet).catch(() => [])]);
-  const hires = [...paidCallHires(calls, wallet), ...jobs];
+  const [calls, jobs, escrow, ratings] = await Promise.all([
+    paidCallsOf(wallet).catch(() => []),
+    marketJobsOf(wallet).catch(() => []),
+    jobsOfClient(wallet).catch(() => []),
+    ratingsOf(wallet).catch(() => []),
+  ]);
+  const hires = [...paidCallHires(calls, wallet), ...escrowHires(escrow), ...jobs];
   return { wallet: wallet.toLowerCase(), team: isTeam(wallet), hires, byCategory: jobsCovered(hires), ratings };
 }
 

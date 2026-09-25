@@ -25,6 +25,7 @@ import { runHouse, HOUSE_CADENCE_MIN } from "@/lib/house/run";
 import { continuePoolGap } from "@/lib/pancake/pool-gap";
 import { tailRegistry } from "@/lib/registry/tail";
 import { confirmPending } from "@/lib/market/confirm";
+import { sweepEscrow } from "@/lib/escrow/jobs";
 
 export interface Job {
   name: string;
@@ -198,6 +199,18 @@ export const JOBS: Job[] = [
     budgetMs: 12_000,
     afterResponse: true,
     run: (budgetMs = 10_000) => confirmPending({ budgetMs }),
+  },
+  /*
+    Escrowed jobs: our agents deliver any funded job the moment it is recorded;
+    this catches any they could not, and settles each delivered job once the
+    policy's dispute window has passed, so our agents are paid unattended.
+  */
+  {
+    name: "escrow",
+    everyMinutes: 5,
+    budgetMs: 20_000,
+    afterResponse: true,
+    run: (budgetMs = 18_000) => sweepEscrow({ budgetMs }),
   },
 ];
 

@@ -125,6 +125,37 @@ const STATEMENTS: { name: string; run: () => Promise<unknown> }[] = [
     },
   },
   {
+    // ERC-8183 jobs a buyer funded for one of our agents here, with what our agent delivered and each transaction.
+    name: "escrow_jobs",
+    run: async () => {
+      await pg!`
+        create table if not exists escrow_jobs (
+          job_id text primary key,
+          client text not null,
+          provider text not null,
+          slug text not null,
+          token_id text not null,
+          budget text not null,
+          subject text,
+          status text not null,
+          funded_tx text,
+          submit_tx text,
+          settle_tx text,
+          -- The exact bytes hashed on chain. Text, not jsonb: jsonb reorders keys and the hash would no longer match.
+          deliverable text,
+          deliverable_hash text,
+          expired_at bigint,
+          submitted_at bigint,
+          note text,
+          created_at timestamptz not null default now(),
+          updated_at timestamptz not null default now()
+        )
+      `;
+      await pg!`create index if not exists escrow_jobs_client on escrow_jobs (client)`;
+      await pg!`create index if not exists escrow_jobs_status on escrow_jobs (status)`;
+    },
+  },
+  {
     // Ratings buyers wrote from their own wallets on the ERC-8004 reputation registry, each verified on chain before it is kept.
     name: "ratings",
     run: async () => {

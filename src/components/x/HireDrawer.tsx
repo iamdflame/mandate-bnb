@@ -8,6 +8,7 @@ import TxStatus, { txStepOf, type TxStep } from "./TxStatus";
 import BuyOneCall, { type PhaseReport } from "@/components/v2/agent/BuyOneCall";
 import SponsoredHire from "@/components/v2/agent/SponsoredHire";
 import RateAgent from "./RateAgent";
+import EscrowHire, { type EscrowOffer } from "./EscrowHire";
 import { useWallet } from "@/lib/chain/wallet";
 import type { CallInput } from "@/lib/market/inputs";
 
@@ -56,6 +57,8 @@ export interface HireOffer {
   inputs: CallInput[];
   /** A job in the escrow market, when it bids in it. */
   job: null | { href: string; can: string[]; caps: string[]; cannot: string[] };
+  /** An ERC-8183 escrowed job, for our own agents, while escrow is open. */
+  escrow: EscrowOffer | null;
   /** Mandate pays for a call to this agent, a few a day. */
   sponsored: null | { asks: string; checkWith: string; takesSubject: boolean; price: string | null };
   /** Why there is nothing to hire, when there is not. */
@@ -283,6 +286,13 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
               Try free
             </button>
           </div>
+        ) : null}
+
+        {offer.escrow ? (
+          <details className="x-hire__escrow">
+            <summary>Or pay into escrow instead (ERC-8183)</summary>
+            <EscrowHire offer={offer.escrow} subject={sent.position ?? sent.wallet ?? null} />
+          </details>
         ) : null}
 
         {offer.job && offer.x402 ? (
