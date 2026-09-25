@@ -141,6 +141,16 @@ async function main() {
     { name: "the lock transaction is shown", test: (h) => h.includes("0x00b0e484c69fc3f149") || "no lock transaction on the page" },
     { name: "the losses are counted", test: (h) => /x-score__item--loss/.test(h) || "no loss count on the page" },
   ]);
+  // Help answers the first questions, and names who to ask.
+  await page("/help", [
+    { name: "every token can be bought from the page", test: (h) => (h.match(/pancakeswap\.finance\/swap/g) ?? []).length >= 3 || "fewer than three swap links" },
+    { name: "support is named", test: (h) => (h.includes("support@mandatemarkets.com") && h.includes("t.me/mandatebnb")) || "no support contact" },
+  ]);
+  // Build takes a builder from nothing to registered.
+  await page("/build", [
+    { name: "the starter deploys in one click", test: (h) => h.includes("vercel.com/new/clone") || "no deploy button" },
+    { name: "the ladder is shown", test: (h) => h.includes("x-build__ladder") || "no ladder" },
+  ]);
   // The quest offers a hire in each of the four jobs, and the builder step.
   await page("/quest", [
     { name: "all four jobs are offered", test: (h) => (h.match(/x-quest__job"/g) ?? []).length + (h.match(/x-quest__job x-quest__job--done"/g) ?? []).length >= 4 || "fewer than four job cards" },

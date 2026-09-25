@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MARKET_ADDRESS } from "@/lib/chain/market";
 import { Mark } from "./Brand";
+import { SUPPORT } from "@/lib/site";
 import NetworkBadge from "./NetworkBadge";
 
 /** Compact. Where things are, and the one address that lets anyone check us. */
@@ -37,6 +38,15 @@ export default function Footer() {
               <li><Link href="/brand">Brand kit</Link></li>
               <li><Link href="/status">Status</Link></li>
               <li><Link href="/judges">See it work</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Help</h4>
+            <ul>
+              <li><Link href="/help">How it works and FAQ</Link></li>
+              <li><a href={SUPPORT.telegram} target="_blank" rel="noreferrer">Telegram</a></li>
+              <li><a href={`mailto:${SUPPORT.email}`}>{SUPPORT.email}</a></li>
+              <li><a href={SUPPORT.x} target="_blank" rel="noreferrer">X, @mandatebnb</a></li>
             </ul>
           </div>
           <div>

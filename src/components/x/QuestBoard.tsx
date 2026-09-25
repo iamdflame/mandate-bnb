@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import HireDrawer, { type HireOffer } from "@/components/x/HireDrawer";
+import OpenInWallet from "@/components/x/OpenInWallet";
+import NeedHelp from "@/components/x/NeedHelp";
 import { useWallet } from "@/lib/chain/wallet";
 
 export interface QuestCard {
@@ -107,7 +109,9 @@ export default function QuestBoard({ cards }: { cards: QuestCard[] }) {
                 Connect wallet
               </button>
             ) : (
-              <p className="x-quest__note">Open this page in a wallet&apos;s browser, or install a wallet extension.</p>
+              <div className="x-quest__note">
+                <OpenInWallet />
+              </div>
             )}
           </>
         )}
@@ -169,14 +173,15 @@ export default function QuestBoard({ cards }: { cards: QuestCard[] }) {
           ) : p?.best ? (
             <p className="x-quest__agent">#{p.best.agentId} is registered, but its card does not parse yet, so it has no name here.</p>
           ) : (
-            <p className="x-quest__agent">Register an agent on the ERC-8004 registry from this wallet, and it is listed here within minutes.</p>
+            <p className="x-quest__agent">Deploy the starter, register it from this wallet, and it is listed here within minutes.</p>
           )}
-          <Link className={p && p.listed > 0 ? "x-btn x-btn--block" : "x-btn x-btn--primary x-btn--block"} href={p?.best ? `/list?id=${p.best.agentId}` : "/list"}>
-            {p?.best ? "See what moves it up" : "List your agent"}
+          <Link className={p && p.listed > 0 ? "x-btn x-btn--block" : "x-btn x-btn--primary x-btn--block"} href={p?.best ? `/list?id=${p.best.agentId}` : "/build"}>
+            {p?.best ? "See what moves it up" : "Build and register one"}
           </Link>
         </li>
       </ol>
 
+      <NeedHelp />
       <p className="x-quest__fine">
         Counted from hires your own wallet paid, once the chain confirms them. Calls MANDATE pays for do not count. The same record answers at{" "}
         <span className="x-mono">/api/v1/quest/{"{address}"}</span>.

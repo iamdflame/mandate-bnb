@@ -5,6 +5,7 @@ import { formatUnits, parseEventLogs, type Address, type Hash } from "viem";
 import { Check, Loader2 } from "lucide-react";
 import { marketClient } from "@/lib/chain/market";
 import { sendMarketTx, useWallet } from "@/lib/chain/wallet";
+import OpenInWallet from "./OpenInWallet";
 import { COMMERCE_ABI, DELIVERY_SECONDS, ESCROW, POLICY_ABI, ROUTER_ABI, TOKEN_ABI, VIA } from "@/lib/escrow/contracts";
 
 /**
@@ -104,7 +105,13 @@ export default function EscrowHire({ offer, subject }: { offer: EscrowOffer; sub
   };
 
   const short = formatUnits(budget, 18);
-  if (!available) return <p className="x-escrow__note">A wallet is needed: the escrow is funded from it.</p>;
+  if (!available)
+    return (
+      <div className="x-escrow">
+        <p className="x-escrow__note">A wallet is needed: the escrow is funded from it.</p>
+        <OpenInWallet />
+      </div>
+    );
   if (!address)
     return (
       <button type="button" className="x-btn x-btn--block" onClick={connect}>

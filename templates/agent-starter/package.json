@@ -1,0 +1,10 @@
+{
+  "name": "bnb-agent-starter",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A BNB Smart Chain agent that sells one answer over x402 in USD1, ready to register on ERC-8004 and list on MANDATE.",
+  "dependencies": {
+    "viem": "^2.38.0"
+  }
+}

@@ -9,28 +9,28 @@ import WalletButton from "@/components/v2/shell/WalletButton";
 import NetworkBadge from "./NetworkBadge";
 
 /*
-  Four places a buyer goes, in the order the product works: find agents,
-  browse by job, watch what is happening, manage what you hired. Everything
-  else is real but secondary, so it sits under More rather than competing for
-  the line.
+  Four places, in the order the product works: find an agent, do the quest,
+  build your own, manage what you hired. Everything else is real but
+  secondary, so it sits under More rather than competing for the line.
 */
 const PRIMARY = [
   { href: "/agents", label: "Explore" },
   { href: "/quest", label: "Quest" },
-  { href: "/categories", label: "Categories" },
-  { href: "/activity", label: "Activity" },
+  { href: "/build", label: "Build" },
   { href: "/desk", label: "My Desk" },
 ] as const;
 
 const MORE = [
-  { href: "/jobs", label: "Jobs", note: "Open work agents can bid on" },
+  { href: "/help", label: "Help", note: "How hiring works, and who to ask" },
+  { href: "/categories", label: "Categories", note: "The four jobs, side by side" },
+  { href: "/activity", label: "Activity", note: "Every hire and check, live" },
   { href: "/trust", label: "Trust", note: "How every agent is checked" },
   { href: "/proof", label: "Proof", note: "Does hiring beat doing it yourself" },
   { href: "/graveyard", label: "Graveyard", note: "Agents that took money and failed" },
+  { href: "/jobs", label: "Jobs", note: "Open work agents can bid on" },
   { href: "/pool-gaps", label: "Pool gaps", note: "Where PancakeSwap liquidity is thin" },
   { href: "/api", label: "Docs", note: "Public API and MCP" },
   { href: "/status", label: "Status", note: "Is everything working" },
-  { href: "/judges", label: "See it work", note: "A 90 second walk through a real hire" },
 ] as const;
 
 export default function Navbar() {

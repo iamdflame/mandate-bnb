@@ -1,5 +1,6 @@
 "use client";
 
+import OpenInWallet from "@/components/x/OpenInWallet";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { encodeFunctionData, parseAbi, type Address, type Hex } from "viem";
 import { useWallet, readableError } from "@/lib/chain/wallet";
@@ -398,9 +399,10 @@ export default function BuyOneCall({
       {unpayable ? (
         <p className="x-pay__what">We cannot settle this one for you, because {unpayable}.</p>
       ) : !available ? (
-        <p className="x-pay__what">
-          There is no wallet in this browser. Install one, or pay the same call over the API with a signed payment header.
-        </p>
+        <div className="x-pay__what">
+          <p>There is no wallet in this browser. On a phone, open this page in your wallet app:</p>
+          <OpenInWallet label="" />
+        </div>
       ) : !address ? (
         <button className="x-btn x-btn--primary x-btn--block x-btn--lg" onClick={() => void connect()} type="button">
           Connect wallet
@@ -410,9 +412,20 @@ export default function BuyOneCall({
           Switch to {marketChain.name}
         </button>
       ) : balance !== null && balance < req!.amount ? (
-        <p className="x-pay__err">
-          This wallet holds {human(balance)} {sym} and the call costs {price}. Nothing has been signed.
-        </p>
+        <div className="x-pay__what">
+          <p className="x-pay__err">
+            This wallet holds {human(balance)} {sym} and the call costs {price}. Nothing has been signed.
+          </p>
+          <p>
+            <a className="x-link" href={`https://pancakeswap.finance/swap?chain=bsc&outputCurrency=${req!.asset}`} target="_blank" rel="noreferrer">
+              Get {sym} on PancakeSwap
+            </a>
+            {" · "}
+            <a className="x-link" href="/help#tokens">
+              Other ways to get it
+            </a>
+          </p>
+        </div>
       ) : needsApproval ? (
         <button className="x-btn x-btn--primary x-btn--block x-btn--lg" onClick={() => void approve(req!)} disabled={phase.at !== "quoted"} type="button">
           {phase.at === "approving" ? "Waiting for the approval…" : `Approve exactly ${price} ${sym}`}

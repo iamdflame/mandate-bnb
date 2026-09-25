@@ -19,3 +19,10 @@ export const SITE_HOST = SITE.replace(/^https?:\/\//, "");
  * records name even after pages move to our own domain.
  */
 export const LEGACY_HOST = "mandate-coral.vercel.app";
+
+/** Where people get help, in one place: every "Need help?" and the footer read this. */
+export const SUPPORT = {
+  email: "support@mandatemarkets.com",
+  telegram: "https://t.me/mandatebnb",
+  x: "https://x.com/mandatebnb",
+} as const;

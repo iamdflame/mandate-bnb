@@ -9,6 +9,7 @@ import BuyOneCall, { type PhaseReport } from "@/components/v2/agent/BuyOneCall";
 import SponsoredHire from "@/components/v2/agent/SponsoredHire";
 import RateAgent from "./RateAgent";
 import EscrowHire, { type EscrowOffer } from "./EscrowHire";
+import NeedHelp from "./NeedHelp";
 import { useWallet } from "@/lib/chain/wallet";
 import type { CallInput } from "@/lib/market/inputs";
 
@@ -495,7 +496,17 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
   }
 
   return (
-    <Drawer open={open} onClose={close} title={title} footer={foot}>
+    <Drawer
+      open={open}
+      onClose={close}
+      title={title}
+      footer={
+        <>
+          {foot}
+          <NeedHelp compact />
+        </>
+      }
+    >
       {!offer.refuse && offer.x402 && step !== "free" ? (
         <ol className="x-steps" aria-label="Steps">
           {FLOW.map((f, i) => (
