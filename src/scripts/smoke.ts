@@ -69,7 +69,8 @@ async function main() {
     { name: "the demo address is published", test: (h) => h.includes(DEMO) },
   ]);
   await page(`/diagnose?q=${DEMO}`, [
-    { name: "an out-of-range position is found", test: (h) => h.includes("out of range and earning nothing") },
+    // Range-1 recenters the demo account's positions on its own, so either verdict is a working read.
+    { name: "its PancakeSwap positions are read", test: (h) => /out of range and earning nothing|in range/i.test(h) || "no position verdict on the page" },
     { name: "a Venus health factor is read", test: (h) => /Health factor \d/.test(h) },
   ]);
   await page("/agents?live=1&category=grid-trading", [

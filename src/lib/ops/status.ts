@@ -59,13 +59,19 @@ async function timed(beat: number, name: string, fn: () => Promise<{ ok: boolean
 
 export async function judgePathChecks(): Promise<Check[]> {
   return Promise.all([
-    timed(1, "The demo address has something to fix", async () => {
+    timed(1, "A wallet can be diagnosed from the chain", async () => {
+      /*
+        This used to require the demo address to have a position out of range.
+        Range-1 recenters that account's positions on its own, so a working
+        agent turned the check red. What must hold is that the diagnosis reads
+        the positions and the Venus account at a block, whatever it finds.
+      */
       const d = await diagnose(DEMO_ADDRESS);
       if (!d) return { ok: false, detail: "diagnose returned nothing" };
       const out = d.findings.filter((f) => f.kind === "out-of-range").length;
       const venus = d.findings.some((f) => f.kind === "thin-headroom" || f.kind === "liquidatable" || f.kind === "healthy");
       const idle = d.findings.some((f) => f.kind === "idle-cash");
-      return { ok: out > 0 && venus, detail: `${out} out of range, Venus ${venus ? "read" : "not read"}, idle cash ${idle ? "found" : "none"}, block ${d.blockNumber}` };
+      return { ok: venus && Boolean(d.blockNumber), detail: `${out} out of range, Venus ${venus ? "read" : "not read"}, idle cash ${idle ? "found" : "none"}, block ${d.blockNumber}` };
     }),
     timed(2, "Every category has an agent that answered", async () => {
       const picks = judgePicks();
