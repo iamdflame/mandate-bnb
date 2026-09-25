@@ -25,6 +25,8 @@ import { SPONSORED } from "@/lib/market/sponsored-targets";
 import { STATE_WORD, trustOf, type ProofState } from "@/lib/market/trust";
 import { houseSlug, performanceOf } from "@/lib/market/performance";
 import { houseActivity } from "@/lib/house/runs";
+import { indexToken } from "@/lib/registry/tail";
+import { inputsFor } from "@/lib/market/inputs";
 import { listPaidCalls } from "@/lib/market/paid-calls";
 import { buriedFor, graveAnchor, graveyard } from "@/lib/market/graveyard";
 import { HOUSE_LEASHES } from "@/lib/chain/house";
@@ -79,7 +81,12 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
   const { tokenId } = await params;
   const paidJobs = (await strangerHiresLive().catch(() => [])).filter((h) => h.tokenId === tokenId);
   await live();
-  const agent = findAgent(tokenId);
+  /*
+    Every agent on the registry has a page, including one minted a minute ago
+    that the tail has not reached yet: it is read from the chain now, indexed,
+    and shown. Only a token the registry does not hold is a 404.
+  */
+  const agent = findAgent(tokenId) ?? (/^\d{1,20}$/.test(tokenId) ? await indexToken(tokenId, "view").catch(() => null) : null);
   if (!agent) notFound();
 
   const hc = await hireCounts();
@@ -120,6 +127,7 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
     name: l.name,
     art: <AgentArtwork category={l.category} seed={`${l.tokenId}:${l.name}`} shape="square" />,
     categoryLabel: cat,
+    category: l.category,
     price: pp,
     latencyMs: l.probe?.answered ? (l.probe.latencyMs ?? null) : null,
     task: preview?.summary ?? l.quote?.description ?? (l.what ? l.what : `One call to ${l.name}`),
@@ -139,6 +147,7 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
             transferMethod: l.quote.transferMethod,
           }
         : null,
+    inputs: inputsFor(l.tokenId, preview),
     job: jobRail
       ? {
           href: `/hire/${l.tokenId}`,
@@ -176,7 +185,7 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
 
           <div className="x-ad-hero__main">
             <div className="x-ad-meta">
-              <Status liveness={l.liveness} />
+              <Status liveness={l.liveness} at={l.probe?.at} />
               {l.category ? (
                 <span className="x-catchip">
                   <span className={`x-dotcat x-dotcat--${l.category}`} aria-hidden="true" />
@@ -497,6 +506,21 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
                   <dd className="x-mono">#{l.tokenId}</dd>
                 </div>
                 <div>
+                  <dt>Minted in</dt>
+                  <dd className="x-mono">
+                    {l.registration ? (
+                      <a className="x-link" href={`https://bscscan.com/tx/${l.registration.tx}`} target="_blank" rel="noreferrer">
+                        {l.registration.tx.slice(0, 12)}…{l.registration.tx.slice(-6)}
+                        {l.registration.block ? `, block ${l.registration.block.toLocaleString("en-GB")}` : ""}
+                      </a>
+                    ) : (
+                      <a className="x-link" href={`https://bscscan.com/nft/${IDENTITY_REGISTRY}/${l.tokenId}`} target="_blank" rel="noreferrer">
+                        See its mint on BscScan
+                      </a>
+                    )}
+                  </dd>
+                </div>
+                <div>
                   <dt>Owner</dt>
                   <dd className="x-mono">
                     {l.owner ? (
@@ -540,6 +564,12 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
                   Filed under {l.categoryLabel} because its description says {l.matched.map((m) => `“${m}”`).join(", ")}, not because of a label it gave itself.
                 </p>
               ) : null}
+              <p className="x-ad-src">
+                <Link className="x-link" href="/contracts">
+                  Every contract this page reads
+                </Link>
+                , on BNB Smart Chain mainnet.
+              </p>
             </details>
           </section>
         </div>
@@ -549,7 +579,7 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
           <div className="x-ad-panel" id="use">
             <Price l={l} size="lg" rail={rail} />
             <p className="x-ad-live">
-              <Status liveness={l.liveness} />
+              <Status liveness={l.liveness} at={l.probe?.at} />
               {l.probe?.answered && l.probe.latencyMs != null ? <span className="x-mono">~{l.probe.latencyMs} ms</span> : null}
             </p>
             {verdict.ok ? (
@@ -580,7 +610,7 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
         <div className="x-ad-bar">
           <span className="x-ad-bar__p">
             <strong>{l.name}</strong>
-            <Status liveness={l.liveness} />
+            <Status liveness={l.liveness} at={l.probe?.at} />
           </span>
           <a href="#call" className="x-btn x-btn--primary">
             Use now{pp.value ? ` · ${pp.value}` : ""}

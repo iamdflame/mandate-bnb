@@ -14,11 +14,12 @@
 
 import { NextResponse } from "next/server";
 import { CHAIN_ID } from "@/lib/config";
+import { SITE } from "@/lib/site";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const HOST = process.env.NEXT_PUBLIC_HOST ?? "https://mandate-coral.vercel.app";
+const HOST = SITE;
 
 export function GET() {
   return NextResponse.json(

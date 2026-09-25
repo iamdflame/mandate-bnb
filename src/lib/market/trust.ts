@@ -24,7 +24,7 @@
 import type { AssayReport, AssayResult } from "@/lib/assay/types";
 import type { Listing } from "@/lib/market/listing";
 import { nameSome, toolsFit } from "@/lib/assay/tools";
-import { pauseFor } from "@/lib/market/paused";
+import { hirePauseFor } from "@/lib/market/paused";
 
 export type ProofState = "proven" | "unproven" | "failed" | "nodata";
 
@@ -96,7 +96,7 @@ export function trustOf(l: Listing, report: AssayReport | null, extra: { created
         }
       : null;
     if (l.liveness === "paused") {
-      return { key: "reachable", label: "Endpoint", state: "nodata", headline: "Paused on purpose", meaning: pauseFor(l.tokenId)?.reason, at: when, evidence: ev };
+      return { key: "reachable", label: "Endpoint", state: "nodata", headline: "Paused on purpose", meaning: hirePauseFor(l.tokenId)?.reason, at: when, evidence: ev };
     }
     if (l.liveness === "live") {
       const how = l.probe?.protocol === "mcp" ? " over MCP" : l.probe?.protocol === "a2a" ? " over A2A" : l.probe?.protocol === "x402" ? " with a price, over x402" : "";

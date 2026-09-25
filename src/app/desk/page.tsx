@@ -8,6 +8,7 @@ import AppShell from "@/components/v2/shell/AppShell";
 import AgentArtwork from "@/components/x/AgentArtwork";
 import RevokeDialog from "@/components/x/RevokeDialog";
 import YourAgents from "@/components/x/YourAgents";
+import YourApprovals from "@/components/x/YourApprovals";
 import { live } from "@/lib/data/live";
 import { snapshot } from "@/lib/data/snapshots";
 import { listSessions, type SessionRecord } from "@/lib/chain/session-store";
@@ -28,7 +29,7 @@ import { DEMO_ADDRESS, bscscanAddress, bscscanTx, passkeyRecord, recenterRecord,
 
 export const metadata: Metadata = {
   title: "My Desk | MANDATE",
-  description: "Your agents, what each one may do, and the control that ends it. The demo account's agents and every key that can act on it, read from the Altana KeyStore.",
+  description: "Your agents, what each one may do, and the control that ends it. MANDATE's own account, its agents and every key that can act on it, read from the Altana KeyStore.",
 };
 
 export const dynamic = "force-dynamic";
@@ -216,6 +217,17 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
         ) : null}
       </section>
 
+      {/* ----------------------------------------------------- your approvals */}
+      <section className="x-wrap x-section--tight" aria-labelledby="h-approvals" id="approvals">
+        <div className="x-head">
+          <div>
+            <h2 id="h-approvals">Your approvals</h2>
+            <p>Anything a hire here left approved on your wallet, and the button that takes it back.</p>
+          </div>
+        </div>
+        <YourApprovals />
+      </section>
+
       {/* -------------------------------------------------------- your agents */}
       <section className="x-wrap x-section--tight" aria-labelledby="h-yours" id="yours">
         <div className="x-head">
@@ -228,7 +240,7 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
 
         {/* The demo account, right under it: the agents a visitor can actually see at work. */}
         <h3 className="x-desk-sub" id="demo">
-          The demo account{" "}
+          MANDATE&apos;s own account{" "}
           <a className="x-link x-mono" href={bscscanAddress(DEMO_ADDRESS)} target="_blank" rel="noreferrer">
             {short(DEMO_ADDRESS)}
           </a>
@@ -380,7 +392,7 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
           </summary>
           <p className="x-ad-src">The policy is what this site granted. The KeyStore column is the registry, read live. They should agree.</p>
           {liveRows.length === 0 ? (
-            <p className="x-muted">No live session on the demo account.</p>
+            <p className="x-muted">No live session on MANDATE's own account.</p>
           ) : (
             <div className="m-scroll">
               <table className="m-table">

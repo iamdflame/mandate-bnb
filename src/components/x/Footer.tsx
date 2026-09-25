@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MARKET_ADDRESS } from "@/lib/chain/market";
 import { Mark } from "./Brand";
+import NetworkBadge from "./NetworkBadge";
 
 /** Compact. Where things are, and the one address that lets anyone check us. */
 export default function Footer() {
@@ -41,6 +42,7 @@ export default function Footer() {
             <h4>Trust</h4>
             <ul>
               <li><Link href="/trust">How verification works</Link></li>
+              <li><Link href="/contracts">Contracts</Link></li>
               <li><Link href="/proof">Proof</Link></li>
               <li><Link href="/graveyard">Graveyard</Link></li>
               <li><Link href="/evidence">Evidence</Link></li>
@@ -54,8 +56,10 @@ export default function Footer() {
           </div>
         </div>
         <div className="x-footer__base">
-          <span className="x-bnb">Built on BNB Smart Chain</span>
-          <span className="x-mono">{MARKET_ADDRESS.slice(0, 10)}…{MARKET_ADDRESS.slice(-6)}</span>
+          <NetworkBadge />
+          <Link href="/contracts" className="x-mono">
+            Contracts we read · market {MARKET_ADDRESS.slice(0, 10)}…{MARKET_ADDRESS.slice(-6)}
+          </Link>
         </div>
       </div>
     </footer>

@@ -17,7 +17,7 @@ import { challenge, priceOf, settle, verifyPayment } from "@/lib/x402";
 import { HOUSE_SERVICES } from "@/lib/house/services";
 import { marketClient } from "@/lib/chain/market";
 import { live } from "@/lib/data/live";
-import { pauseForSlug } from "@/lib/market/paused";
+import { hirePauseForSlug } from "@/lib/market/paused";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,7 +33,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
     return NextResponse.json({ error: `no reference agent called ${slug}`, agents: Object.keys(HOUSE_SERVICES) }, { status: 404 });
   }
   // Paused: no price is quoted and no payment is read, so nobody can pay for it by any route.
-  const pause = pauseForSlug(slug);
+  const pause = hirePauseForSlug(slug);
   if (pause) {
     return NextResponse.json({ error: pause.reason, paused: true, since: pause.since, agent: service.name, settled: false }, { status: 410 });
   }

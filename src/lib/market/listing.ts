@@ -28,7 +28,7 @@ import { assayFor } from "@/lib/market/assays";
 import { humanAmount, type Quote } from "@/lib/x402/quote";
 import { paidCallsFromFile } from "@/lib/market/paid-calls";
 import { strangerHires } from "@/lib/market/stranger-hires";
-import { pauseFor } from "@/lib/market/paused";
+import { hirePauseFor } from "@/lib/market/paused";
 import { collapse } from "@/lib/dedup";
 
 export type Grade = "measured" | "declared" | "absent" | "untested";
@@ -47,6 +47,8 @@ export interface Listing {
   name: string;
   /** The agent's own words, cleaned up, never rewritten. */
   what: string | null;
+  /** The transaction that minted its ERC-8004 identity, when the registry tail has read it. */
+  registration?: { tx: string; block: number | null } | null;
   category: Category | null;
   categoryLabel: string | null;
   confidence: number;
@@ -379,6 +381,7 @@ export function toListing(a: IndexedAgent, hires = 0, settled?: number): Listing
     name: a.name?.trim() || `Agent ${a.tokenId}`,
     liveness,
     what: firstSentences(a.description),
+    registration: a.registeredTx ? { tx: a.registeredTx, block: a.registeredBlock ?? null } : null,
     category,
     categoryLabel: category ? CATEGORY_LABEL[category] : null,
     confidence: a.confidence,
@@ -408,7 +411,8 @@ export function toListing(a: IndexedAgent, hires = 0, settled?: number): Listing
 
 /** The one-line liveness verdict for a probe reading. Shared with /list, which probes fresh. */
 export function livenessOf(tokenId: string, probe: Listing["probe"]): Listing["liveness"] {
-  return pauseFor(tokenId)
+  // Only a full pause changes what the chip says; a trading pause leaves its answer on sale.
+  return hirePauseFor(tokenId)
     ? "paused"
     : !probe
       ? "untested"

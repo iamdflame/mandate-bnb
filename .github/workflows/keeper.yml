@@ -9,9 +9,10 @@ name: keeper
 # and Vercel's hobby crons run once a day, so neither of them is the mechanism —
 # they are the backstop.
 
+# The site's own clock (/api/cron/tick) now runs this every few minutes, so the
+# GitHub schedule is off: it only ran when Actions minutes were available, and
+# a locked account turned every run red. Run it by hand when needed.
 on:
-  schedule:
-    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 concurrency:
@@ -24,7 +25,7 @@ jobs:
     steps:
       - name: Sweep open mandates for missing bids
         run: |
-          BASE="${KEEPER_BASE:-https://mandate-coral.vercel.app}"
+          BASE="${KEEPER_BASE:-https://mandatemarkets.com}"
           echo "sweeping $BASE"
           code=$(curl -sS -o /tmp/keeper.json -w '%{http_code}' --max-time 60 "$BASE/api/keeper/bid")
           cat /tmp/keeper.json

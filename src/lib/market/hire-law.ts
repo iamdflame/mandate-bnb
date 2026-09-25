@@ -22,21 +22,30 @@
 
 import type { Listing } from "@/lib/market/listing";
 import { isOurs } from "@/lib/market/judge";
-import { outcomes, paidCallsFromFile, type Outcome } from "@/lib/market/paid-calls";
+import { listPaidCalls, outcomes, paidCallsFromFile, type Outcome } from "@/lib/market/paid-calls";
 import { pauseFor } from "@/lib/market/paused";
+import { JOBS_OPEN } from "@/lib/market/jobs-open";
 import { nameSome, toolsFit } from "@/lib/assay/tools";
 
 /** A hire is only offered on an answer from the last day. */
 export const FRESH_HOURS = 24;
 /** "Answering now" means an answer inside this window. */
 export const LIVE_MINUTES = 15;
-/** How long a failed payment keeps an agent off the shelf. */
-export const FAILURE_DAYS = 7;
-
 let cached: { at: number; map: Map<string, Outcome> } | null = null;
+let fromDb: { at: number; map: Map<string, Outcome> } | null = null;
 
-/** What happened when we last paid each agent, from the committed record. */
+/**
+ * Loads every recorded call, the database's and the committed file's, so the
+ * law remembers a failure a visitor's own payment met, not only ours.
+ */
+export async function warmOutcomes(): Promise<void> {
+  const calls = await listPaidCalls().catch(() => null);
+  if (calls) fromDb = { at: Date.now(), map: outcomes(calls) };
+}
+
+/** What happened when we last paid each agent: the database's record when warm, the committed file otherwise. */
 function history(): Map<string, Outcome> {
+  if (fromDb && Date.now() - fromDb.at < 5 * 60_000) return fromDb.map;
   if (!cached || Date.now() - cached.at > 60_000) {
     cached = { at: Date.now(), map: outcomes(paidCallsFromFile()) };
   }
@@ -81,7 +90,7 @@ function ago(minutes: number): string {
 
 export function hirePath(
   l: Pick<Listing, "tokenId" | "owner" | "probe" | "liveness" | "quote" | "priceLabel"> & { category?: Listing["category"] },
-  opts: { now?: number; bidders?: ReadonlySet<string>; outcomes?: Map<string, Outcome> } = {},
+  opts: { now?: number; bidders?: ReadonlySet<string>; outcomes?: Map<string, Outcome>; jobsOpen?: boolean } = {},
 ): HireVerdict {
   const now = opts.now ?? Date.now();
   const ours = isOurs(l);
@@ -99,7 +108,7 @@ export function hirePath(
 
   // A decision we took about our own agent outranks anything it answers.
   const pause = pauseFor(l.tokenId);
-  if (pause) return refuse(pause.reason, pause.short);
+  if (pause && pause.scope === "all") return refuse(pause.reason, pause.short);
 
   if (l.liveness === "no-endpoint") {
     return l.probe?.refused
@@ -123,27 +132,29 @@ export function hirePath(
   }
 
   /*
-    What happened the last time we paid it outranks what it says it charges.
-    An agent that settled our payment and answered with an error, or refused a
-    correct payment, is not hireable however good its quote looks, until it
-    delivers once again.
+    What happened the last time it was paid outranks what it says it charges.
+    An agent whose most recent paid call took the money and answered with an
+    error, or refused a correct payment, is not offered to anyone until it
+    delivers a paid call again. It used to come back after seven days on its
+    own, which would have put real users' money in front of a seller that had
+    not fixed anything.
   */
   const seen = (opts.outcomes ?? history()).get(l.tokenId);
-  if (seen && !seen.delivered && (seen.paidNotDelivered || seen.refused) && seen.lastAt) {
-    const days = (now - Date.parse(seen.lastAt)) / 86_400_000;
-    if (days < FAILURE_DAYS) {
-      const what = seen.paidNotDelivered
-        ? `We paid it on ${shortDate(seen.lastAt)} and it answered with an error instead of the work`
-        : `We offered it a correctly signed payment on ${shortDate(seen.lastAt)} and it refused`;
-      return refuse(`${what}: ${(seen.lastWhy ?? "no reason given").slice(0, 220)}`, seen.paidNotDelivered ? "Took payment, returned an error" : "Refused a correct payment");
-    }
+  if (seen?.lastFailed && seen.lastAt) {
+    const took = seen.paidNotDelivered > 0 && seen.lastTx;
+    const what = took
+      ? `We paid it on ${shortDate(seen.lastAt)} and it answered with an error instead of the work`
+      : `It was offered a correctly signed payment on ${shortDate(seen.lastAt)} and refused it`;
+    return refuse(`${what}: ${(seen.lastWhy ?? "no reason given").slice(0, 220)}. It comes back once it delivers a paid call.`, took ? "Took payment, returned an error" : "Refused a correct payment");
   }
 
   const rails: Rail[] = [];
   if (l.quote?.payable) {
     rails.push({ kind: "x402", price: l.priceLabel ?? l.quote.amount, method: l.quote.transferMethod ?? null, endpoint: l.quote.endpoint });
   }
-  if (bidder) rails.push({ kind: "mandate" });
+  // A job hands it capital to act with, which a trading pause forbids; its paid answer does not.
+  // Jobs are offered only while the market settles them on its own (lib/market/jobs-open).
+  if (bidder && !pause && (opts.jobsOpen ?? JOBS_OPEN)) rails.push({ kind: "mandate" });
 
   if (!rails.length) {
     return refuse(

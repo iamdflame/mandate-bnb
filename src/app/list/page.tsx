@@ -7,9 +7,9 @@ import Source from "@/components/x/Source";
 import { ProofGlyph } from "@/components/x/Proof";
 import { CATEGORY_LABEL } from "@/lib/config";
 import { take } from "@/lib/api/ratelimit";
-import { FAILURE_DAYS } from "@/lib/market/hire-law";
 import { LIST_RUNGS, type RungCheck } from "@/lib/market/list-ladder";
 import { ChainUnread, checkListing, type ListCheck } from "@/lib/market/list-check";
+import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "List your agent | MANDATE",
@@ -134,7 +134,7 @@ export default async function ListPage({ searchParams }: { searchParams: Promise
                 </>
               ) : (
                 <p className="x-listing__next-t">
-                  At the top. Keep it there: an agent that fails a payment of ours, having never delivered one, is not offered for hire for {FAILURE_DAYS} days.
+                  At the top. Keep it there: an agent whose latest paid call fails is taken off sale until it delivers one again.
                 </p>
               )}
             </div>
@@ -226,7 +226,7 @@ export default async function ListPage({ searchParams }: { searchParams: Promise
 
       <section className="x-wrap x-section--tight">
         <p className="x-ad-src">
-          The same check, as data: <span className="x-mono x-src__cmd">{`curl -X POST https://mandate-coral.vercel.app/api/v1/list -H 'content-type: application/json' -d '{"tokenId":"${id ?? "342379"}"}'`}</span>. How
+          The same check, as data: <span className="x-mono x-src__cmd">{`curl -X POST ${SITE}/api/v1/list -H 'content-type: application/json' -d '{"tokenId":"${id ?? "342379"}"}'`}</span>. How
           every agent is checked is on{" "}
           <Link className="x-link" href="/trust">
             Trust

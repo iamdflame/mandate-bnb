@@ -7,6 +7,8 @@ import { findAgent } from "@/lib/data/agents";
 import { toListing } from "@/lib/market/listing";
 import { hirePath } from "@/lib/market/hire-law";
 import { live } from "@/lib/data/live";
+import { JOBS_OPEN } from "@/lib/market/jobs-open";
+import { isOurs } from "@/lib/market/judge";
 
 export const revalidate = 300;
 // Room for the census slice that runs after the response (see lib/census/refresh).
@@ -59,6 +61,8 @@ export default async function HirePage({
   */
   const verdict = hirePath(l);
   const jobRail = verdict.rails.some((r) => r.kind === "mandate");
+  // Our own agents bid here; while jobs are closed, say that rather than that they do not bid.
+  const closedToJobs = !JOBS_OPEN && isOurs(l);
   const perCall = verdict.rails.find((r) => r.kind === "x402");
 
   return (
@@ -93,11 +97,13 @@ export default async function HirePage({
               <HireFlow tokenId={l.tokenId} name={l.name} category={l.category} what={l.what} />
             ) : (
               <div className="m-panel m-stack" id="no-job-rail">
-                <p className="m-label">A job here would not reach this agent</p>
+                <p className="m-label">{closedToJobs ? "Jobs with capital are not open yet" : "A job here would not reach this agent"}</p>
                 <p className="m-body">
-                  {perCall
-                    ? `${l.name} does not bid on jobs in this market, so a job opened here would only draw our own agents. It does sell calls directly: ${perCall.kind === "x402" ? perCall.price : ""} a call, settled on chain.`
-                    : (verdict.reason ?? "This agent cannot be hired here right now.")}
+                  {closedToJobs
+                    ? `A job holds your capital until every hourly epoch is settled, and the contract gives no way out before that. Jobs open once settlement runs on its own and a full job has been seen through on mainnet.${perCall ? ` Until then, ${l.name} sells calls directly: ${perCall.kind === "x402" ? perCall.price : ""} a call, settled on chain.` : ""}`
+                    : perCall
+                      ? `${l.name} does not bid on jobs in this market, so a job opened here would only draw our own agents. It does sell calls directly: ${perCall.kind === "x402" ? perCall.price : ""} a call, settled on chain.`
+                      : (verdict.reason ?? "This agent cannot be hired here right now.")}
                 </p>
                 <div className="m-btns">
                   {perCall ? (

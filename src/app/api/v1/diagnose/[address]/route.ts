@@ -19,13 +19,13 @@ import { agentsFor } from "@/lib/diagnose/agents";
 import { hireCounts } from "@/lib/market/hires";
 import { hirePath } from "@/lib/market/hire-law";
 import { listings } from "@/lib/market/listing";
+import { SITE } from "@/lib/site";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const LIMIT = { capacity: 10, windowMs: 60_000 };
-const SITE = "https://mandate-coral.vercel.app";
 
 export function OPTIONS() {
   return preflight();

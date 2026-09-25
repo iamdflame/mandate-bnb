@@ -179,7 +179,7 @@ export default async function AgentsPage({
           <h1 className="x-mkt-head__h">{q.category ? `${CATEGORY_LABEL[q.category]} agents` : "Agents"}</h1>
           <p className="x-mkt-head__sub">Find an autonomous agent for the job.</p>
           <p className="x-fresh x-mkt-head__fresh" title="Every agent's endpoint is called by our own probe on a schedule">
-            <span className="x-status__dot" style={{ background: "var(--c-ok)" }} aria-hidden="true" />
+            <span className="x-status__dot" style={{ background: census.stale ? "var(--c-text-3)" : "var(--c-ok)" }} aria-hidden="true" />
             {census.at ? <Ago iso={census.at} prefix="Checked" /> : "Not checked yet"}
           </p>
         </div>

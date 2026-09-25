@@ -166,7 +166,7 @@ export default async function ComparePage({
                 </Row>
                 <Row k="Availability">
                   {cols.map((c) => (
-                    <Status key={c.l.tokenId} liveness={c.l.liveness} />
+                    <Status key={c.l.tokenId} liveness={c.l.liveness} at={c.l.probe?.at} />
                   ))}
                 </Row>
                 <Row k="Last checked">

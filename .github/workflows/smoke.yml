@@ -5,9 +5,10 @@ name: smoke
 # whether the site is up on day twelve, so this asks the deployment itself,
 # every fifteen minutes.
 
+# The site samples itself every five minutes on its own clock and publishes the
+# history at /status, so the fifteen-minute GitHub schedule is off. It still runs
+# on every push to main and by hand.
 on:
-  schedule:
-    - cron: "*/15 * * * *"
   push:
     branches: [main]
   workflow_dispatch:
@@ -28,5 +29,5 @@ jobs:
 
       - name: Every route, the funnel, the sessions, the market
         env:
-          SMOKE_BASE: ${{ vars.SMOKE_BASE || 'https://mandate-coral.vercel.app' }}
+          SMOKE_BASE: ${{ vars.SMOKE_BASE || 'https://mandatemarkets.com' }}
         run: npm run smoke

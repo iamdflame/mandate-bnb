@@ -12,12 +12,13 @@ import { referenceBySlug, referenceRegistrations } from "@/lib/house";
 import { IDENTITY_REGISTRY } from "@/lib/config";
 import { RECIPIENT_BOUND, SWAP_BOUND } from "@/lib/chain/leash";
 import { DEMO_ADDRESS } from "@/lib/demo";
-import { pauseForSlug } from "@/lib/market/paused";
+import { hirePauseForSlug, pauseForSlug } from "@/lib/market/paused";
+import { SITE } from "@/lib/site";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const HOST = process.env.NEXT_PUBLIC_HOST ?? "https://mandate-coral.vercel.app";
+const HOST = SITE;
 
 export async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -25,7 +26,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   if (!agent) return NextResponse.json({ error: "No reference agent by that name." }, { status: 404 });
   const reg = referenceRegistrations()[slug];
   // A paused agent says so to anyone reading its registration, and stops advertising a price it will not take.
-  const pause = pauseForSlug(slug);
+  const pause = hirePauseForSlug(slug);
+  // A trading pause is said too: it still sells its answer, but it is not acting on anyone's account.
+  const trading = pauseForSlug(slug);
   const leash =
     slug === "range-1"
       ? { contract: RECIPIENT_BOUND, what: "RecipientBound: mint and collect write the principal as recipient" }
@@ -48,6 +51,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
       x402Support: !pause,
       active: !pause,
       ...(pause ? { paused: { since: pause.since, reason: pause.reason } } : {}),
+      ...(!pause && trading ? { tradingPaused: { since: trading.since, reason: trading.reason } } : {}),
       registrations: reg ? [{ agentId: Number(reg.tokenId), agentRegistry: `eip155:56:${IDENTITY_REGISTRY}` }] : [],
       supportedTrust: ["crypto-economic"],
       operates: { account: DEMO_ADDRESS, through: "Altana session keys the account's owner granted", leash },

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { CORS, limitHeaders, take, callerOf, type Limit } from "./ratelimit";
+import { SITE } from "@/lib/site";
 
 /**
  * One shape for every public response.
@@ -21,7 +22,7 @@ export interface Envelope<T> {
   docs: string;
 }
 
-const DOCS = "https://mandate-coral.vercel.app/api";
+const DOCS = `${SITE}/api`;
 
 export function ok<T>(
   data: T,

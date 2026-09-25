@@ -216,14 +216,31 @@ Reproduce a settlement: `npx mandate-verify --mandate 1 --chain 56`.
 
 ## Run it
 
+You need Node 24 (20 or later works), npm, and for the contracts
+[Foundry](https://book.getfoundry.sh/getting-started/installation).
+
 ```bash
-npm i
-cp .env.example .env.local     # RPC, optional database, optional keys
-npm run dev
-npm test                        # 150 unit tests
-npm run smoke                   # the judge path against production
-cd contracts && forge test      # 132 tests in 7 suites
+git clone https://github.com/iamdflame/mandate-bnb && cd mandate-bnb
+git submodule update --init --recursive   # OpenZeppelin, for the contracts
+npm ci
+cp .env.example .env                       # scripts read .env
+cp .env.example .env.local                 # the site reads .env.local
+npm run dev                                # http://localhost:3000
 ```
+
+The site runs read-only with no keys: the agent index, the probe readings and
+the assays fall back to the committed snapshots in `src/data`. Add
+`DATABASE_URL` for live readings, and the keys in `.env.example` to act.
+
+```bash
+npm test                        # unit tests (vitest)
+npm run build && npm start      # the production build, on port 3000
+npm run smoke                   # the judge path against production
+cd contracts && forge test      # the contract suites
+```
+
+Production runs on Vercel with `NEXT_PUBLIC_HOST=https://mandatemarkets.com`;
+an external pinger calls `/api/cron/tick` every five minutes with `CRON_SECRET`.
 
 [`docs/verify/2026-09-11.md`](docs/verify/2026-09-11.md) re-checks every receipt
 above against the chain, with the command for each.

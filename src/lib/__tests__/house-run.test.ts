@@ -198,7 +198,8 @@ describe("the house agents' harness", () => {
     const { deps, rows } = fakeDeps({ turns: { "grid-1": turn } });
     const r = await runHouse("grid-1", { now: NOW, deps: deps as never });
     expect(r.outcome).toBe("skipped");
-    expect(r.reason).toMatch(/^Paused:/);
+    // Grid-1's trading is paused: it never acts on the account, though its paid report is still on sale.
+    expect(r.reason).toMatch(/^Trading paused:/);
     expect(turn).not.toHaveBeenCalled();
     expect(rows).toHaveLength(0);
   });

@@ -15,9 +15,10 @@ import { hexToBigInt } from "viem";
 import { bscClient } from "@/lib/chain/rpc";
 import { COUNTER_SLOT } from "@/lib/registry/count";
 import { IDENTITY_REGISTRY } from "@/lib/config";
+import { SITE } from "@/lib/site";
 
 const baseIdx = process.argv.indexOf("--base");
-const BASE = (baseIdx > -1 ? process.argv[baseIdx + 1]! : process.env.SMOKE_BASE ?? "https://mandate-coral.vercel.app").replace(/\/$/, "");
+const BASE = (baseIdx > -1 ? process.argv[baseIdx + 1]! : process.env.SMOKE_BASE ?? SITE).replace(/\/$/, "");
 const TIMEOUT = Number(process.env.SMOKE_TIMEOUT_MS ?? 45_000);
 const DEMO = "0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90";
 
@@ -127,8 +128,10 @@ async function main() {
   }
 
   // Range-1 takes jobs; Grid-1 is paused, and a paused agent must not offer one.
+  // Jobs with capital open only once settlement runs on its own; until then the page says so and takes nothing.
   const hire = await get("/hire/344119");
-  record("/hire/344119: our own agent keeps its job form", hire.text.includes("Set the limits"), hire.text.includes("Set the limits") ? "the form renders" : "no job form on the page");
+  const formOrClosed = hire.text.includes("Set the limits") || hire.text.includes("Jobs with capital are not open yet");
+  record("/hire/344119: our own agent's job form, or why it is closed", formOrClosed, hire.text.includes("Set the limits") ? "the form renders" : formOrClosed ? "closed, with the reason" : "neither a form nor a reason");
   const paused = await get("/hire/344121");
   const refuses = !paused.text.includes("Set the limits") && paused.text.includes("Paused:");
   record("/hire/344121: paused Grid-1 offers no job", refuses, refuses ? "refused, with the reason" : paused.text.includes("Set the limits") ? "the job form is still offered" : "no pause reason on the page");

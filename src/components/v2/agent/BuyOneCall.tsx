@@ -122,6 +122,7 @@ export default function BuyOneCall({
   body,
   tokenId,
   subject,
+  inputs,
   onPhase,
   autoQuote = false,
   quiet = false,
@@ -138,6 +139,8 @@ export default function BuyOneCall({
    */
   tokenId?: string;
   subject?: string;
+  /** The inputs the agent declares, filled in by the buyer; the relay passes only those. */
+  inputs?: Record<string, string>;
   /** Called on every state change, so a surrounding flow can show where the payment is. */
   onPhase?: (p: PhaseReport) => void;
   /** Ask for the price as soon as it mounts, for a flow where the buyer already chose to pay. */
@@ -156,7 +159,7 @@ export default function BuyOneCall({
       const res = await fetch("/api/x402/relay", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ tokenId, subject, paid }),
+        body: JSON.stringify({ tokenId, subject, inputs, paid }),
       });
       const r = (await res.json()) as { error?: string; status?: number; headers?: Record<string, string>; body?: string };
       if (!res.ok || typeof r.status !== "number") throw new Error(r.error ?? `The relay answered ${res.status}.`);
@@ -188,8 +191,17 @@ export default function BuyOneCall({
       } catch {
         parsed = null;
       }
+      /*
+        Only a 402 is a price. A seller that answers 200 to an unpaid call gave
+        its answer away, which is a success; anything else (a 404 page, a 500)
+        is a failure, and used to be reported as "hired".
+      */
       if (res.status !== 402) {
-        setPhase({ at: "done", body: parsed ?? text, tx: null });
+        if (res.status >= 200 && res.status < 300) {
+          setPhase({ at: "done", body: parsed ?? text, tx: null });
+        } else {
+          setPhase({ at: "failed", why: `The agent answered ${res.status} instead of a price, so nothing was paid.${text ? ` It said: ${text.slice(0, 160)}` : ""}` });
+        }
         return;
       }
       const offers = readRequirements(parsed, res.header("payment-required"));
@@ -212,7 +224,7 @@ export default function BuyOneCall({
       setPhase({ at: "failed", why: whyFailed(e, "other") });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path, method, body, address, tokenId, subject]);
+  }, [path, method, body, address, tokenId, subject, inputs]);
 
   /** Permit2 needs one approval for exactly this amount; the wallet pays that gas. */
   const approve = useCallback(
@@ -284,7 +296,7 @@ export default function BuyOneCall({
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [address, path, method, body, tokenId, subject],
+    [address, path, method, body, tokenId, subject, inputs],
   );
 
   const req = "req" in phase ? phase.req : null;

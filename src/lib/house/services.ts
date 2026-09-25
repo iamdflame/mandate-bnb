@@ -13,7 +13,7 @@
 import { isAddress, type Address } from "viem";
 import { snapshot } from "@/lib/data/snapshots";
 import { readGridWindow, type GridWindow } from "@/lib/grid/window";
-import { readIdle, readPositions, readVenus } from "@/lib/diagnose/positions";
+import { positionIdsOf, readIdle, readPositions, readVenus } from "@/lib/diagnose/positions";
 import { usdtRates } from "@/lib/venus/rates";
 import { SWAP_BOUND, RECIPIENT_BOUND, WBNB_USDT_POOL } from "@/lib/chain/leash";
 import { bscClient } from "@/lib/chain/rpc";
@@ -95,34 +95,53 @@ const GRID: HouseService = {
   },
 };
 
+/** Where Range-1 would re-mint a position the price has left: 150 ticks below the price to 50 above. */
+function planFor(tick: number | null, inRange: boolean | null) {
+  return tick === null || inRange
+    ? null
+    : { lower: Math.floor((tick - 150) / 10) * 10, upper: Math.floor((tick + 50) / 10) * 10 + 10, tick, note: "150 ticks below the price to 50 above, so most of the re-mint is the token the stale range already holds" };
+}
+
 const RANGE: HouseService = {
   slug: "range-1",
   name: "Range-1",
-  description: "Whether a PancakeSwap V3 position is out of range at this block, by how many ticks, and the range Range-1 would re-mint it into.",
-  inputs: [{ name: "position", required: true, description: "a PancakeSwap V3 position id" }],
-  validate: (i) => (/^\d{1,10}$/.test(i.position ?? "") ? null : "position must be a PancakeSwap V3 position id, digits only"),
+  description: "Whether your PancakeSwap V3 positions are out of range at this block, by how many ticks, and the range Range-1 would re-mint each into. Give a wallet or one position id.",
+  inputs: [
+    { name: "wallet", required: false, description: "a BNB Smart Chain address: every PancakeSwap V3 position it holds" },
+    { name: "position", required: false, description: "or one PancakeSwap V3 position id" },
+  ],
+  validate: (i) =>
+    i.position
+      ? /^\d{1,10}$/.test(i.position)
+        ? null
+        : "position must be a PancakeSwap V3 position id, digits only"
+      : isAddress(i.wallet ?? "")
+        ? null
+        : "give a wallet address or a PancakeSwap V3 position id",
   async preview(i) {
-    return { position: i.position ?? null, price: "0.05 USD1" };
+    return { wallet: i.wallet ?? null, position: i.position ?? null, price: "0.05 USD1" };
   },
   async run(i) {
-    const [pos] = await readPositions([BigInt(i.position)]);
-    if (!pos) return { position: i.position, found: false, detail: "the position manager does not recognise this id" };
-    const tick = pos.tick;
-    const plan =
-      tick === null || pos.inRange
-        ? null
-        : { lower: Math.floor((tick - 150) / 10) * 10, upper: Math.floor((tick + 50) / 10) * 10 + 10, tick, note: "150 ticks below the price to 50 above, so most of the re-mint is the token the stale range already holds" };
-    return {
+    const ids = i.position ? [BigInt(i.position)] : await positionIdsOf(i.wallet as Address).catch(() => [] as bigint[]);
+    const positions = ids.length ? await readPositions(ids) : [];
+    const read = positions.map((pos) => ({
       position: pos.tokenId,
       pair: `${pos.symbol0 ?? pos.token0}/${pos.symbol1 ?? pos.token1} ${pos.fee / 10_000}%`,
       range: [pos.tickLower, pos.tickUpper],
-      tick,
+      tick: pos.tick,
       inRange: pos.inRange,
       ticksOut: pos.ticksOut,
       closed: pos.closed,
+      plan: planFor(pos.tick, pos.inRange),
+    }));
+    return {
+      ...(i.position ? { position: i.position } : { wallet: i.wallet }),
+      found: read.length,
+      outOfRange: read.filter((r) => r.inRange === false && !r.closed).length,
+      positions: read,
+      detail: read.length ? null : i.position ? "the position manager does not recognise this id" : "this wallet holds no PancakeSwap V3 position",
       convention: "half open: at the upper tick a position is out",
-      plan,
-      howRange1Acts: `Through RecipientBound (${RECIPIENT_BOUND}): withdraw, collect and re-mint with the principal written as the recipient on chain. Proof on the demo address: /desk#range-1.`,
+      howRange1Acts: `Through RecipientBound (${RECIPIENT_BOUND}): withdraw, collect and re-mint with the principal written as the recipient on chain. Its own record: /desk#range-1.`,
       executed: NO_ACTION,
     };
   },

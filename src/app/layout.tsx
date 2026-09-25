@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import Palette from "@/components/shell/Palette";
+import { SITE } from "@/lib/site";
 import "./tokens.css";
 import "./globals.css";
 import "./theme.css";
@@ -24,6 +25,8 @@ import "./market.css";
   <meta> tag is exactly the unverifiable assertion this product objects to.
 */
 export const metadata: Metadata = {
+  // Every relative link preview and canonical URL resolves against our own address.
+  metadataBase: new URL(SITE),
   title: {
     default: "MANDATE | BNB Smart Chain Agent Marketplace",
     template: "%s",

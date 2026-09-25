@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import AppShell from "@/components/v2/shell/AppShell";
 import Command from "@/components/ui/Command";
 import { MARKET_ADDRESS } from "@/lib/chain/market";
+import { SITE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "The assay as public infrastructure | Mandate",
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
     "A free, unauthenticated, rate-limited API over the assay engine. Assay any ERC-8004 agent on BNB Smart Chain, read the trust ladder, browse the register. Open to everyone, including the projects competing with us.",
 };
 
-const HOST = "https://mandate-coral.vercel.app";
+const HOST = SITE;
 
 const ENDPOINTS = [
   {

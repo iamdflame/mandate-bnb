@@ -14,11 +14,12 @@ import { toHex, type Address, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { randomBytes } from "node:crypto";
 import { TRANSFER_TYPES, USD1, USD1_DOMAIN } from "@/lib/x402";
+import { SITE } from "@/lib/site";
 
 const args = process.argv.slice(2);
 const slug = args[0] ?? "grid-1";
 const opt = (n: string) => (args.includes(`--${n}`) ? args[args.indexOf(`--${n}`) + 1] : undefined);
-const BASE = (opt("base") ?? "https://mandate-coral.vercel.app").replace(/\/$/, "");
+const BASE = (opt("base") ?? SITE).replace(/\/$/, "");
 const QUERY = opt("query");
 const url = `${BASE}/api/x402/house/${slug}${QUERY ? `?${QUERY}` : ""}`;
 

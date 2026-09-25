@@ -42,7 +42,28 @@ const config: NextConfig = {
    * still a live link to the thing it used to be.
    */
   async redirects() {
+    /*
+      Our own domain is the address; the platform one only keeps what chain
+      records point at. Once NEXT_PUBLIC_HOST names our domain, every page on
+      mandate-coral.vercel.app moves to it, except the paths written into our
+      agents' ERC-8004 registrations and paid with x402, which keep answering
+      where the chain says they are.
+    */
+    const site = (process.env.NEXT_PUBLIC_HOST ?? "").replace(/\/$/, "");
+    const legacy = "mandate-coral.vercel.app";
+    const moved = site && !site.includes(legacy)
+      ? [
+          { source: "/", has: [{ type: "host" as const, value: legacy }], destination: `${site}/`, permanent: true },
+          {
+            source: "/:path((?!house/|\\.well-known/|api/x402/).*)",
+            has: [{ type: "host" as const, value: legacy }],
+            destination: `${site}/:path`,
+            permanent: true,
+          },
+        ]
+      : [];
     return [
+      ...moved,
       { source: "/method", destination: "/assay", permanent: false },
       { source: "/agent/:tokenId", destination: "/agents/:tokenId", permanent: false },
       { source: "/market", destination: "/agents", permanent: false },

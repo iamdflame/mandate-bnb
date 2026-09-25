@@ -1,6 +1,7 @@
 import Command from "./Command";
 import BuyCall from "./BuyCall";
 import { CATEGORY_LABEL, EXPLORER, type Category } from "@/lib/config";
+import { SITE } from "@/lib/site";
 
 /**
  * How to put this agent to work, and, more often, what it would take before
@@ -169,7 +170,7 @@ export default function Hire({
               what="Our full six-test reading of this agent, settled on BNB Smart Chain. You sign an authorisation; we submit the transfer, so you need no BNB."
             />
             <Command note="The same call, if you would rather drive it yourself.">
-              {`curl -i https://mandate-coral.vercel.app/api/x402/agent/${tokenId}/status`}
+              {`curl -i ${SITE}/api/x402/agent/${tokenId}/status`}
             </Command>
           </div>
         </div>

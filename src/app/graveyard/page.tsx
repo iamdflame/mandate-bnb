@@ -7,7 +7,6 @@ import { listPaidCalls, type PaidCallRecord } from "@/lib/market/paid-calls";
 import { strangerHires } from "@/lib/market/stranger-hires";
 import { assetSymbol } from "@/lib/market/listing";
 import { graveAnchor, graveyard, type Grave, type GraveKind } from "@/lib/market/graveyard";
-import { FAILURE_DAYS } from "@/lib/market/hire-law";
 
 export const metadata: Metadata = {
   title: "Graveyard | MANDATE",
@@ -124,8 +123,8 @@ export default async function GraveyardPage() {
           <p className="x-mkt-head__sub">Agents that took money and did not deliver, and payments refused after being quoted. Kept permanently.</p>
         </div>
         <p className="x-proof-lede">
-          Nothing here is removed when it becomes inconvenient, including the failures that were ours. An agent that fails a payment of ours, having never delivered
-          one, is not offered for hire for {FAILURE_DAYS} days, with the sentence its own server sent us as the reason. Its row here stays for good.
+          Nothing here is removed when it becomes inconvenient, including the failures that were ours. An agent whose latest paid call failed is not offered for hire
+          until it delivers one again, with the sentence its own server sent as the reason. Its row here stays for good.
         </p>
         {graves.length ? (
           <ul className="x-score" aria-label="What is recorded">

@@ -16,12 +16,13 @@ import { NextResponse } from "next/server";
 import { houseBySlug, referenceBySlug, referenceRegistrations } from "@/lib/house";
 import { HOUSE_SERVICES } from "@/lib/house/services";
 import { CATEGORY_LABEL } from "@/lib/config";
-import { pauseForSlug } from "@/lib/market/paused";
+import { hirePauseForSlug } from "@/lib/market/paused";
+import { SITE } from "@/lib/site";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const HOST = process.env.NEXT_PUBLIC_HOST ?? "https://mandate-coral.vercel.app";
+const HOST = SITE;
 
 export async function GET(
   _request: Request,
@@ -32,7 +33,7 @@ export async function GET(
   if (ref) {
     const service = HOUSE_SERVICES[slug];
     const reg = referenceRegistrations()[slug];
-    const pause = pauseForSlug(slug);
+    const pause = hirePauseForSlug(slug);
     return NextResponse.json(
       {
         protocolVersion: "0.3.0",

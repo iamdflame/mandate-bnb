@@ -51,7 +51,7 @@ export default function AgentTile({ l, forPosition }: { l: Listing; forPosition?
       <div className="x-agent__art">
         <AgentArtwork category={l.category} seed={`${l.tokenId}:${l.name}`} />
         <div className="x-agent__over">
-          <Status liveness={l.liveness} />
+          <Status liveness={l.liveness} at={l.probe?.at} />
         </div>
         <div className="x-agent__under">
           {l.category ? (

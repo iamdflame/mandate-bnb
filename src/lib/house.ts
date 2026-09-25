@@ -22,6 +22,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Category } from "@/lib/config";
+import { SITE_HOST } from "@/lib/site";
 
 export interface HouseAgent {
   /** URL segment and card identifier. */
@@ -47,7 +48,7 @@ export const HOUSE: HouseAgent[] = [
     slug: "keeper-a",
     name: "MANDATE House Keeper A",
     description:
-      "Operates mandates in four offices on BNB Smart Chain: grid trading, rebalancing, yield optimisation and health factor monitoring. It bids by escrowing its own capital, is settled hourly against a benchmark committed to chain before the outcome is known, and has been slashed. Its record, including the epochs it lost, is public at mandate-coral.vercel.app and re-derivable with npx mandate-verify.",
+      `Operates mandates in four offices on BNB Smart Chain: grid trading, rebalancing, yield optimisation and health factor monitoring. It bids by escrowing its own capital, is settled hourly against a benchmark committed to chain before the outcome is known, and has been slashed. Its record, including the epochs it lost, is public at ${SITE_HOST} and re-derivable with npx mandate-verify.`,
     wallet: "0xd6d11Aa5046dc5C7BE8d63B9223b60D7AD94cBe9",
     offices: ["grid-trading", "rebalancing", "yield-optimisation", "health-factor"],
     tokenId: process.env.NEXT_PUBLIC_HOUSE_A_TOKEN_ID ?? null,

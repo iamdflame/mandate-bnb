@@ -23,12 +23,14 @@ import { sweepOurJobs, sweeperOn } from "@/lib/market/sweeper";
 import { renewHouseSessions } from "@/lib/chain/house";
 import { runHouse, HOUSE_CADENCE_MIN } from "@/lib/house/run";
 import { continuePoolGap } from "@/lib/pancake/pool-gap";
+import { tailRegistry } from "@/lib/registry/tail";
 
 export interface Job {
   name: string;
   everyMinutes: number;
   budgetMs: number;
-  run: () => Promise<unknown>;
+  /** After-response jobs are told how much of the shared window is theirs. */
+  run: (budgetMs?: number) => Promise<unknown>;
   /**
    * Runs after the tick has answered, on its own budget. For long reads that
    * would otherwise eat the pinger's thirty seconds and starve every job
@@ -166,10 +168,23 @@ export const JOBS: Job[] = [
   {
     name: "pool-gap",
     everyMinutes: 5,
-    // The tick takes at most 22 of the function's 60 seconds; this takes at most 36 of the rest.
+    // The tick takes at most 22 of the function's 60 seconds; the jobs after it share at most 36 of the rest.
     budgetMs: 36_000,
     afterResponse: true,
-    run: () => continuePoolGap({ budgetMs: 34_000 }),
+    run: (budgetMs = 34_000) => continuePoolGap({ budgetMs }),
+  },
+  /*
+    The ERC-8004 registry, read as it grows: every agent minted since the
+    committed crawl is stored with its mint transaction, its card read and its
+    job filed, so the catalogue is the registry's own answer and a builder's
+    new agent appears here within minutes.
+  */
+  {
+    name: "registry",
+    everyMinutes: 5,
+    budgetMs: 36_000,
+    afterResponse: true,
+    run: (budgetMs = 30_000) => tailRegistry({ budgetMs }),
   },
 ];
 
@@ -250,17 +265,22 @@ export async function tick(opts: { only?: string[]; force?: boolean; maxMs?: num
  * The jobs that run after the tick has answered, each if due, one after another.
  * Called from the tick route inside `after()`, so the pinger never waits on them.
  */
-export async function tickAfter(): Promise<Ran[]> {
+export async function tickAfter(windowMs = 34_000): Promise<Ran[]> {
+  const began = Date.now();
   const last = await lastRuns();
   const out: Ran[] = [];
   for (const job of JOBS.filter((j) => j.afterResponse)) {
     const at = last.get(job.name)?.at;
     if (at && Date.now() - new Date(at).getTime() < job.everyMinutes * 60_000) continue;
+    // One window for all of them: each gets what is left, and none starts with too little to do anything.
+    const left = windowMs - (Date.now() - began);
+    if (left < 8_000) break;
+    const budget = Math.min(job.budgetMs, left) - 2_000;
     const started = Date.now();
     try {
       const detail = await Promise.race([
-        job.run(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error(`over budget after ${job.budgetMs} ms`)), job.budgetMs)),
+        job.run(budget),
+        new Promise((_, reject) => setTimeout(() => reject(new Error(`over budget after ${budget + 2_000} ms`)), budget + 2_000)),
       ]);
       await note(job.name, true, detail);
       out.push({ job: job.name, ok: true, ms: Date.now() - started, detail });

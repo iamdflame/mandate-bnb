@@ -14,6 +14,7 @@ import { db, hasDb, schema } from "@/lib/db/client";
 import { count, max } from "drizzle-orm";
 import { readRegistryTotals } from "@/lib/sources/totals";
 import { registeredCount } from "@/lib/registry/count";
+import { registryExtras } from "@/lib/registry/extras";
 import { memo, withTimeout } from "@/lib/cache";
 
 export interface IndexedAgent {
@@ -35,6 +36,12 @@ export interface IndexedAgent {
   matched: string[];
   /** When this row was last refreshed from the registry. */
   lastSeen?: string;
+  /** The transaction that minted its ERC-8004 identity, when we have read it. */
+  registeredTx?: string | null;
+  /** The block that transaction landed in. */
+  registeredBlock?: number | null;
+  /** Where this row came from: the committed crawl, or read from the chain since. */
+  source?: "crawl" | "tail" | "list" | "view";
   /** Ladder rung, attached at render time. Not part of the stored index. */
   rung?: number;
   /** Why it sits there rather than higher. */
@@ -86,7 +93,7 @@ const EMPTY: AgentIndex = {
 
 let cached: AgentIndex | null = null;
 
-export function getAgentIndex(): AgentIndex {
+function fileIndex(): AgentIndex {
   if (cached) return cached;
   try {
     const raw = readFileSync(join(process.cwd(), "src/data/agents.json"), "utf8");
@@ -95,6 +102,35 @@ export function getAgentIndex(): AgentIndex {
     cached = EMPTY;
   }
   return cached;
+}
+
+/*
+  The committed crawl, with every agent read from the registry since merged in.
+
+  The crawl alone is a snapshot, and a snapshot of a registry that grows by
+  hundreds a day is a hardcoded list by another name: an agent registered this
+  morning would 404 here. The registry tail stores each new agent as it is
+  minted; they are merged over the crawl by token id, newest reading first, and
+  the merge is only redone when the tail has moved.
+*/
+let merged: { version: number; index: AgentIndex } | null = null;
+
+export function getAgentIndex(): AgentIndex {
+  const base = fileIndex();
+  const extra = registryExtras();
+  if (!extra.rows.size) return base;
+  if (merged && merged.version === extra.version) return merged.index;
+  const byId = new Map(base.agents.map((a) => [a.tokenId, a]));
+  for (const a of extra.rows.values()) byId.set(a.tokenId, { ...byId.get(a.tokenId), ...a });
+  const agents = [...byId.values()];
+  const index: AgentIndex = {
+    ...base,
+    // The newest reading in the merge, so caches keyed on the index move when the tail does.
+    capturedAt: extra.at && extra.at > base.capturedAt ? extra.at : base.capturedAt,
+    agents,
+  };
+  merged = { version: extra.version, index };
+  return index;
 }
 
 /**
@@ -205,7 +241,7 @@ async function readAgentIndexUncached(): Promise<AgentIndex & { source: "postgre
     if (rows.length === 0)
       return { ...snapshot, registry, registrySource, registryAt, registryBlock, registryVerify, source: "snapshot" };
 
-    const agents: IndexedAgent[] = rows.map((r) => ({
+    const crawled: IndexedAgent[] = rows.map((r) => ({
       tokenId: String(r.tokenId),
       name: r.name ?? null,
       description: r.description ?? null,
@@ -225,6 +261,10 @@ async function readAgentIndexUncached(): Promise<AgentIndex & { source: "postgre
       matched: [],
       lastSeen: r.updatedAt ? new Date(r.updatedAt).toISOString() : undefined,
     }));
+    // Agents read from the registry since the crawl, merged over it by token id.
+    const byId = new Map(crawled.map((a) => [a.tokenId, a]));
+    for (const a of registryExtras().rows.values()) byId.set(a.tokenId, { ...byId.get(a.tokenId), ...a });
+    const agents = [...byId.values()];
 
     const byCategory = Object.fromEntries(
       CATEGORIES.map((c) => [c, agents.filter((a) => a.category === c).length]),

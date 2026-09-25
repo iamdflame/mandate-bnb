@@ -104,6 +104,45 @@ const STATEMENTS: { name: string; run: () => Promise<unknown> }[] = [
       await pg!`create index if not exists house_runs_slug_at on house_runs (slug, at desc)`;
     },
   },
+  {
+    // Every agent read straight from the ERC-8004 registry: its card, its owner, and the transaction that minted it.
+    name: "registry_agents",
+    run: async () => {
+      await pg!`
+        create table if not exists registry_agents (
+          token_id text primary key,
+          owner text,
+          category text,
+          record jsonb not null,
+          block bigint,
+          tx text,
+          source text not null,
+          indexed_at timestamptz not null default now()
+        )
+      `;
+      await pg!`create index if not exists registry_agents_owner on registry_agents (owner)`;
+      await pg!`create index if not exists registry_agents_indexed on registry_agents (indexed_at desc)`;
+    },
+  },
+  {
+    // Ratings buyers wrote from their own wallets on the ERC-8004 reputation registry, each verified on chain before it is kept.
+    name: "ratings",
+    run: async () => {
+      await pg!`
+        create table if not exists ratings (
+          tx text primary key,
+          wallet text not null,
+          token_id text not null,
+          score integer not null,
+          tag1 text,
+          tag2 text,
+          block bigint,
+          at timestamptz not null default now()
+        )
+      `;
+      await pg!`create index if not exists ratings_wallet on ratings (wallet)`;
+    },
+  },
 ];
 
 let once: Promise<boolean> | null = null;

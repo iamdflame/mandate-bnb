@@ -214,6 +214,8 @@ export interface Outcome {
   lastAt: string | null;
   lastWhy: string | null;
   lastTx: string | null;
+  /** The most recent call we made was a failure the seller caused, and nothing has been delivered since. */
+  lastFailed: boolean;
 }
 
 /**
@@ -228,13 +230,16 @@ export interface Outcome {
 export function outcomes(calls: PaidCallRecord[]): Map<string, Outcome> {
   const out = new Map<string, Outcome>();
   for (const c of [...calls].sort((a, b) => a.at.localeCompare(b.at))) {
-    const o = out.get(c.tokenId) ?? { tokenId: c.tokenId, delivered: 0, paidNotDelivered: 0, refused: 0, lastAt: null, lastWhy: null, lastTx: null };
+    const o = out.get(c.tokenId) ?? { tokenId: c.tokenId, delivered: 0, paidNotDelivered: 0, refused: 0, lastAt: null, lastWhy: null, lastTx: null, lastFailed: false };
     // A failure we caused says nothing about the seller, so it is published
     // on the tape and left out of the count that gates hiring.
     const ours = c.fault === "ours";
     if (c.paid && c.delivered) o.delivered += 1;
     else if (c.paid) o.paidNotDelivered += 1;
     else if (!ours) o.refused += 1;
+    // A delivery clears the memory; a failure the seller caused sets it until the next delivery.
+    if (c.paid && c.delivered) o.lastFailed = false;
+    else if (!ours) o.lastFailed = true;
     if (ours && !c.paid) {
       out.set(c.tokenId, o);
       continue;

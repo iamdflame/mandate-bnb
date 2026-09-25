@@ -52,13 +52,23 @@ describe("the hire law", () => {
     expect(hireHref("999999001", v)).toBeNull();
   });
 
-  it("offers the job form for a stranger that has bid in this market", () => {
+  it("offers the job form for a stranger that has bid in this market, once jobs are open", () => {
     const v = hirePath(stranger({ quote: null, priceLabel: null }), {
       now: NOW,
       bidders: new Set(["0x1111111111111111111111111111111111111111"]),
+      jobsOpen: true,
     });
     expect(v.ok).toBe(true);
     expect(primaryRail(v)).toEqual({ kind: "mandate" });
+  });
+
+  it("offers no job with capital while jobs are closed, however the agent bids", () => {
+    const v = hirePath(stranger({ quote: null, priceLabel: null }), {
+      now: NOW,
+      bidders: new Set(["0x1111111111111111111111111111111111111111"]),
+      jobsOpen: false,
+    });
+    expect(v.rails.some((r) => r.kind === "mandate")).toBe(false);
   });
 
   it("shows the seller's unpayable reason instead of a button", () => {
@@ -86,6 +96,7 @@ describe("the hire law", () => {
           lastAt: new Date(NOW - 3 * 3600_000).toISOString(),
           lastWhy: "it answered 402 to the signed payment: settlement failed",
           lastTx: "0xabc",
+          lastFailed: true,
         },
       ],
     ]);
@@ -97,16 +108,24 @@ describe("the hire law", () => {
 
   it("refuses an agent that turned down a correctly signed payment", () => {
     const seen = new Map([
-      ["999999001", { tokenId: "999999001", delivered: 0, paidNotDelivered: 0, refused: 1, lastAt: new Date(NOW - 3600_000).toISOString(), lastWhy: "No x402 facilitator is configured", lastTx: null }],
+      ["999999001", { tokenId: "999999001", delivered: 0, paidNotDelivered: 0, refused: 1, lastAt: new Date(NOW - 3600_000).toISOString(), lastWhy: "No x402 facilitator is configured", lastTx: null, lastFailed: true }],
     ]);
-    expect(hirePath(stranger(), { now: NOW, outcomes: seen }).reason).toMatch(/it refused: No x402 facilitator/);
+    expect(hirePath(stranger(), { now: NOW, outcomes: seen }).reason).toMatch(/refused it: No x402 facilitator/);
   });
 
   it("offers an agent again once it has delivered", () => {
     const seen = new Map([
-      ["999999001", { tokenId: "999999001", delivered: 1, paidNotDelivered: 1, refused: 0, lastAt: new Date(NOW - 600_000).toISOString(), lastWhy: null, lastTx: "0xdef" }],
+      ["999999001", { tokenId: "999999001", delivered: 1, paidNotDelivered: 1, refused: 0, lastAt: new Date(NOW - 600_000).toISOString(), lastWhy: null, lastTx: "0xdef", lastFailed: false }],
     ]);
     expect(hirePath(stranger(), { now: NOW, outcomes: seen }).ok).toBe(true);
+  });
+
+  it("keeps a failure off the shelf past a week, until the next delivery", () => {
+    const failed = { tokenId: "999999001", delivered: 0, paidNotDelivered: 1, refused: 0, lastAt: new Date(NOW - 30 * 86_400_000).toISOString(), lastWhy: "settlement failed", lastTx: "0xabc", lastFailed: true };
+    expect(hirePath(stranger(), { now: NOW, outcomes: new Map([["999999001", failed]]) }).ok).toBe(false);
+    // An agent that delivered before and failed most recently is off too: the latest call decides.
+    const relapsed = { ...failed, delivered: 3, lastAt: new Date(NOW - 3600_000).toISOString() };
+    expect(hirePath(stranger(), { now: NOW, outcomes: new Map([["999999001", relapsed]]) }).short).toBe("Took payment, returned an error");
   });
 
   it("gives every refusal a short form for a tile, and an offer none", () => {
@@ -140,6 +159,7 @@ describe("the hire law", () => {
     const bidding = hirePath(stranger({ liveness: "not-agent", probe: site, quote: null, priceLabel: null }), {
       now: NOW,
       bidders: new Set(["0x1111111111111111111111111111111111111111"]),
+      jobsOpen: true,
     });
     expect(bidding.ok).toBe(true);
     expect(primaryRail(bidding)).toEqual({ kind: "mandate" });

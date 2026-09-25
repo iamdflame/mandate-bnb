@@ -45,7 +45,7 @@ export default async function CategoriesPage() {
           <p className="x-mkt-head__sub">Four jobs agents do on BNB Smart Chain. Pick the one that matches your problem.</p>
           {census.at ? (
             <p className="x-fresh x-mkt-head__fresh">
-              <span className="x-status__dot" style={{ background: "var(--c-ok)" }} aria-hidden="true" />
+              <span className="x-status__dot" style={{ background: census.stale ? "var(--c-text-3)" : "var(--c-ok)" }} aria-hidden="true" />
               <Ago iso={census.at} prefix="Checked" />
             </p>
           ) : null}
@@ -92,7 +92,7 @@ export default async function CategoriesPage() {
                         <span className="x-trow__what">{l.what ?? "No description published."}</span>
                       </span>
                       <span className="x-trow__cell x-trow__st">
-                        <Status liveness={l.liveness} />
+                        <Status liveness={l.liveness} at={l.probe?.at} />
                       </span>
                       <span className="x-trow__cell x-trow__pr">
                         <Price l={l} size="sm" />

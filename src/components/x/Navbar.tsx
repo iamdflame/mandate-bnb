@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, Search } from "lucide-react";
 import Brand from "./Brand";
 import WalletButton from "@/components/v2/shell/WalletButton";
+import NetworkBadge from "./NetworkBadge";
 
 /*
   Four places a buyer goes, in the order the product works: find agents,
@@ -101,6 +102,9 @@ export default function Navbar() {
         </nav>
 
         <div className="x-nav__right">
+          <span className="x-nav__net">
+            <NetworkBadge compact />
+          </span>
           <button type="button" className="x-search-trigger" onClick={search} aria-label="Search agents">
             <Search size={16} aria-hidden="true" />
             <span className="x-search-trigger__t">Search agents</span>
@@ -117,6 +121,7 @@ export default function Navbar() {
               <Menu size={18} aria-hidden="true" />
             </summary>
             <div className="x-drop__panel">
+              <NetworkBadge />
               {PRIMARY.map((n) => (
                 <Link key={n.href} href={n.href} aria-current={current(n.href)}>
                   {n.label}

@@ -21,7 +21,7 @@ jobs:
               fail=1
             fi
           done
-          # The README must name the live site and the walk.
-          grep -qF "mandate-coral.vercel.app" README.md || { echo "README does not link the live site"; fail=1; }
+          # The README must name the live site, on our own domain, and the walk.
+          grep -qF "mandatemarkets.com" README.md || { echo "README does not link the live site"; fail=1; }
           grep -qF "marketplace that hires an agent it does not operate" README.md || { echo "README headline changed"; fail=1; }
           exit $fail

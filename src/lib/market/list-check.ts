@@ -19,6 +19,7 @@ import { assayAgent } from "@/lib/assay";
 import { classify } from "@/lib/assay/classify";
 import { assayFor } from "@/lib/market/assays";
 import { findAgent } from "@/lib/data/agents";
+import { indexToken } from "@/lib/registry/tail";
 import { hireCounts } from "@/lib/market/hires";
 import { hirePath } from "@/lib/market/hire-law";
 import { livenessOf, priceLabelOf, settledFromRecord } from "@/lib/market/listing";
@@ -97,7 +98,8 @@ export async function checkListing(tokenId: string, opts: { liveAssay?: boolean 
   }
 
   const endpoint = endpointFor(entry);
-  const indexed = findAgent(tokenId);
+  // Checking a token lists it: it is indexed now and has a page here from this moment.
+  const indexed = findAgent(tokenId) ?? (await indexToken(tokenId, "list").catch(() => null));
 
   const [reading, live, counts] = await Promise.all([
     probe(tokenId, endpoint),

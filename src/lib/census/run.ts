@@ -24,6 +24,7 @@ import { probeAll, type ProbeResult } from "@/lib/probe";
 import { readQuote, readPreview, type Quote } from "@/lib/x402/quote";
 import { getAgentIndex } from "@/lib/data/agents";
 import type { ProbeIndex } from "@/lib/data/probes";
+import { warmRegistry } from "@/lib/registry/tail";
 
 export interface CensusOptions {
   previous: ProbeIndex | null;
@@ -56,6 +57,8 @@ export function endpointFor(e: Awaited<ReturnType<typeof readRegistryEntry>>): s
 
 export async function runCensus(opts: CensusOptions): Promise<CensusRun> {
   const started = Date.now();
+  // New agents from the registry tail are probed too, not only the committed crawl.
+  await warmRegistry().catch(() => undefined);
   const log = opts.log ?? (() => undefined);
   const budget = opts.budgetMs ?? Number.POSITIVE_INFINITY;
   const overBudget = () => Date.now() - started > budget;

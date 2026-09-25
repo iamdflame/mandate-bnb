@@ -21,9 +21,10 @@ import { marketChain, marketClient, walletFor } from "@/lib/chain/market";
 import { gasPrice } from "@/lib/chain/marketV2";
 import { IDENTITY_REGISTRY } from "@/lib/config";
 import { REFERENCE, type ReferenceRegistration } from "@/lib/house";
+import { SITE } from "@/lib/site";
 
 const MODE = process.argv[2] === "run" ? "run" : "plan";
-const HOST = process.env.NEXT_PUBLIC_HOST ?? "https://mandate-coral.vercel.app";
+const HOST = SITE;
 const OUT = join(process.cwd(), "src/data/reference-agents.json");
 const FUND = parseEther("0.00006");
 const TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";

@@ -17,16 +17,14 @@
  * `giveFeedback(uint256,int128,uint8,string,string,string,string,bytes32)`.
  */
 
-import { keccak256, parseAbi, toHex, type Address, type Hex } from "viem";
+import { keccak256, toHex, type Address, type Hex } from "viem";
 import { marketChain, marketClient, walletFor } from "./market";
 import { gasPrice } from "./marketV2";
+import { SITE } from "@/lib/site";
 
-/** Recovered from a real feedback transaction, not from documentation. */
-export const REPUTATION_REGISTRY = "0x8004baa17c55a88189ae136b182e5fda19de9b63" as const;
-
-export const REPUTATION_ABI = parseAbi([
-  "function giveFeedback(uint256 agentId, int128 score, uint8 scoreType, string tag1, string tag2, string fileuri, string comment, bytes32 filehash)",
-]);
+/** Recovered from a real feedback transaction, not from documentation. Shared with the browser. */
+export { REPUTATION_ABI, REPUTATION_REGISTRY } from "./reputation-abi";
+import { REPUTATION_ABI, REPUTATION_REGISTRY } from "./reputation-abi";
 
 /** The tag every record from this market carries, so ours can be filtered out. */
 export const MANDATE_TAG = "mandate-assay";
@@ -77,7 +75,7 @@ export function buildWriteBack(opts: {
   blockNumber?: bigint | string | null;
   siteBase?: string;
 }): WriteBack {
-  const base = opts.siteBase ?? "https://mandate-coral.vercel.app";
+  const base = opts.siteBase ?? SITE;
   const fileuri = `${base}/agent/${opts.agentId}`;
   const block = opts.blockNumber?.toString() ?? null;
 

@@ -72,7 +72,8 @@ describe("the registry funnel", () => {
     expect(s.reachable).toBe(shelf.filter(PRED.live).length);
     expect(s.priced).toBe(shelf.filter((l) => PRED.priced(l) || PRED.job(l)).length);
     expect(s.hireable).toBe(shelf.filter(PRED.hireable).length);
-    expect([s.listed, s.reachable, s.priced, s.hireable]).toEqual([5, 4, 3, 2]);
+    // Jobs with capital are closed until settlement runs on its own, so the agent that only takes jobs is neither payable nor hireable here.
+    expect([s.listed, s.reachable, s.priced, s.hireable]).toEqual([5, 4, 2, 1]);
   });
 
   it("only narrows from one stage to the next", async () => {

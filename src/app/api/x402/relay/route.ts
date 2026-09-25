@@ -25,6 +25,8 @@ import { listingFor } from "@/lib/market/listing";
 import { take, callerOf, limitHeaders } from "@/lib/api/ratelimit";
 import { live } from "@/lib/data/live";
 import { whyUnsafe, whyUnsafeHost } from "@/lib/net/safe-fetch";
+import { cleanInputs, inputsFor, withInputs } from "@/lib/market/inputs";
+import { previewFor } from "@/lib/market/quotes";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,11 +40,13 @@ export async function POST(request: Request) {
 
   let tokenId = "";
   let subject: string | undefined;
+  let given: unknown;
   let paid: { header: string; value: string } | undefined;
   try {
-    const b = (await request.json()) as { tokenId?: unknown; subject?: unknown; paid?: { header?: unknown; value?: unknown } };
+    const b = (await request.json()) as { tokenId?: unknown; subject?: unknown; inputs?: unknown; paid?: { header?: unknown; value?: unknown } };
     tokenId = String(b.tokenId ?? "");
     subject = typeof b.subject === "string" ? b.subject.trim().slice(0, 64) : undefined;
+    given = b.inputs;
     if (b.paid && typeof b.paid.header === "string" && typeof b.paid.value === "string" && /^(X-PAYMENT|PAYMENT-SIGNATURE)$/i.test(b.paid.header)) {
       paid = { header: b.paid.header.toUpperCase(), value: b.paid.value.slice(0, 16_384) };
     }
@@ -53,8 +57,18 @@ export async function POST(request: Request) {
   await live();
   const sponsored = SPONSORED[tokenId];
   const listing = listingFor(tokenId);
-  const url = sponsored ? sponsored.url(subject) : listing?.quote?.endpoint;
+  let url = sponsored ? sponsored.url(subject) : listing?.quote?.endpoint;
   if (!url) return NextResponse.json({ error: "That agent has no endpoint we have a quote from." }, { status: 404 });
+  /*
+    The inputs the agent itself declares, and only those, with plain values.
+    A paid call missing one is refused here, before any payment is read.
+  */
+  if (!sponsored) {
+    const clean = cleanInputs(inputsFor(tokenId, previewFor(tokenId)), given);
+    if (!clean.ok) return NextResponse.json({ error: clean.error }, { status: 400 });
+    url = withInputs(url, clean.values);
+    subject = subject ?? clean.values.wallet ?? clean.values.position ?? clean.values.address ?? undefined;
+  }
   // The same rule as every other call to a stranger; exchange() also checks each redirect.
   const unsafe = whyUnsafe(url) ?? (await whyUnsafeHost(new URL(url).hostname));
   if (unsafe) return NextResponse.json({ error: `That endpoint is not one this relay will call: ${unsafe}.` }, { status: 400 });

@@ -8,6 +8,8 @@
 
 import { DEFAULT_WARM, warm, type SnapshotName } from "@/lib/data/snapshots";
 import { scheduleRefresh } from "@/lib/census/refresh";
+import { warmRegistry } from "@/lib/registry/tail";
+import { warmOutcomes } from "@/lib/market/hire-law";
 
 /**
  * `names` adds to the defaults; it never replaces them. It used to replace
@@ -15,6 +17,12 @@ import { scheduleRefresh } from "@/lib/census/refresh";
  * fifteen hours old while a fresher one sat in the database.
  */
 export async function live(names: SnapshotName[] = []): Promise<void> {
-  await warm([...new Set([...DEFAULT_WARM, ...names])]).catch(() => undefined);
+  // Agents minted since the committed crawl, read from the registry by the tail.
+  // and every recorded paid call, so the hire law remembers a failure a visitor's own payment met.
+  await Promise.all([
+    warm([...new Set([...DEFAULT_WARM, ...names])]).catch(() => undefined),
+    warmRegistry().catch(() => undefined),
+    warmOutcomes().catch(() => undefined),
+  ]);
   scheduleRefresh();
 }

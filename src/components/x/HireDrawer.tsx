@@ -1,12 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check, Gift, X } from "lucide-react";
 import Drawer from "./Drawer";
 import TxStatus, { txStepOf, type TxStep } from "./TxStatus";
 import BuyOneCall, { type PhaseReport } from "@/components/v2/agent/BuyOneCall";
 import SponsoredHire from "@/components/v2/agent/SponsoredHire";
+import RateAgent from "./RateAgent";
+import { useWallet } from "@/lib/chain/wallet";
+import type { CallInput } from "@/lib/market/inputs";
 
 /**
  * Putting an agent to work, in five steps: review, permissions, confirm,
@@ -29,6 +32,8 @@ export interface HireOffer {
   name: string;
   art: ReactNode;
   categoryLabel: string | null;
+  /** The job's slug, carried into a rating as its first tag. */
+  category: string | null;
   price: { value: string | null; unit: string | null; exact: string | null; none: string | null };
   latencyMs: number | null;
   /** What one call returns, or the job it does, in its own words where it gave any. */
@@ -47,6 +52,8 @@ export interface HireOffer {
     version: number;
     transferMethod: string | null;
   };
+  /** What the paid call needs from the buyer, as the agent declares it. */
+  inputs: CallInput[];
   /** A job in the escrow market, when it bids in it. */
   job: null | { href: string; can: string[]; caps: string[]; cannot: string[] };
   /** Mandate pays for a call to this agent, a few a day. */
@@ -87,6 +94,28 @@ export default function HireDrawer({ offer }: { offer: HireOffer }) {
   const [tx, setTx] = useState<{ step: TxStep; failed: boolean } | null>(null);
   const [result, setResult] = useState<{ tx: string | null; body: unknown; price?: string } | null>(null);
   const [lastPrice, setLastPrice] = useState<string | undefined>(undefined);
+  const { address } = useWallet();
+  const [values, setValues] = useState<Record<string, string>>({});
+
+  // A wallet input starts as the connected wallet: the question is usually about your own account.
+  useEffect(() => {
+    if (!address) return;
+    setValues((v) => {
+      const next = { ...v };
+      for (const i of offer.inputs) if (i.kind === "wallet" && !next[i.name]) next[i.name] = address;
+      return next;
+    });
+  }, [address, offer.inputs]);
+
+  // Required inputs, or for an agent that takes one of several (a wallet or a position), at least one.
+  const needed = offer.inputs.filter((i) => i.required);
+  const filled = (i: CallInput) => Boolean(values[i.name]?.trim());
+  const inputsReady = offer.inputs.length === 0 || (needed.length ? needed.every(filled) : offer.inputs.some(filled));
+  // Stable between renders, so the payment engine does not re-ask the seller for a price each time.
+  const sent = useMemo(
+    () => Object.fromEntries(Object.entries(values).filter(([k, v]) => v.trim() && offer.inputs.some((i) => i.name === k))),
+    [values, offer.inputs],
+  );
 
   // The address decides: #call opens the flow, #sponsored opens the free option.
   useEffect(() => {
@@ -212,6 +241,31 @@ export default function HireDrawer({ offer }: { offer: HireOffer }) {
           </div>
         </dl>
 
+        {offer.inputs.length ? (
+          <fieldset className="x-hire__inputs">
+            <legend className="x-hire__h">What it needs from you</legend>
+            {offer.inputs.map((i) => (
+              <label key={i.name} className="x-field">
+                <span className="x-field__l">
+                  {i.name}
+                  {i.required ? "" : " (optional)"}
+                  {i.description ? <span className="x-hire__sub"> {i.description}</span> : null}
+                </span>
+                <input
+                  className="x-input x-mono"
+                  value={values[i.name] ?? ""}
+                  onChange={(e) => setValues((v) => ({ ...v, [i.name]: e.target.value }))}
+                  placeholder={i.kind === "wallet" ? "0x…" : i.kind === "position" ? "e.g. 7546488" : ""}
+                  inputMode={i.kind === "position" ? "numeric" : undefined}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </label>
+            ))}
+            {needed.length === 0 && offer.inputs.length > 1 ? <p className="x-hire__sub">Fill in one of these.</p> : null}
+          </fieldset>
+        ) : null}
+
         {offer.sponsored ? (
           <div className="x-hire__free">
             <Gift size={18} aria-hidden="true" />
@@ -236,8 +290,8 @@ export default function HireDrawer({ offer }: { offer: HireOffer }) {
       </div>
     );
     foot = (
-      <button type="button" className="x-btn x-btn--primary x-btn--block x-btn--lg" onClick={() => setStep("permissions")}>
-        Continue
+      <button type="button" className="x-btn x-btn--primary x-btn--block x-btn--lg" onClick={() => setStep("permissions")} disabled={!inputsReady}>
+        {inputsReady ? "Continue" : "Fill in what it needs"}
       </button>
     );
   } else if (step === "permissions") {
@@ -361,6 +415,7 @@ export default function HireDrawer({ offer }: { offer: HireOffer }) {
             method={offer.x402!.method}
             body={offer.x402!.body}
             tokenId={offer.tokenId}
+            inputs={sent}
             what={offer.task}
             onPhase={onPhase}
             autoQuote
@@ -401,6 +456,7 @@ export default function HireDrawer({ offer }: { offer: HireOffer }) {
               <summary>The answer</summary>
               <pre className="x-pre">{typeof result.body === "string" ? result.body.slice(0, 6000) : JSON.stringify(result.body, null, 2).slice(0, 6000)}</pre>
             </details>
+            {result.tx ? <RateAgent tokenId={offer.tokenId} name={offer.name} category={offer.category} hireTx={result.tx} /> : null}
           </div>
         ) : null}
       </div>

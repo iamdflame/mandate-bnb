@@ -18,6 +18,12 @@ import { referenceRegistrations } from "@/lib/house";
 
 export interface Pause {
   slug: "range-1" | "grid-1" | "yield-1" | "guard-1";
+  /**
+   * What stops. "all": nothing about it can be hired. "trading": it stops
+   * acting on the account (no runs, no renewed leash, no escrowed jobs) while
+   * its paid answer, which moves nobody's money, can still be bought.
+   */
+  scope: "all" | "trading";
   /** The day the decision was taken, UTC. */
   since: string;
   /** The whole reason, for the agent page and the API. */
@@ -29,10 +35,11 @@ export interface Pause {
 export const PAUSED: Pause[] = [
   {
     slug: "grid-1",
+    scope: "trading",
     since: "2026-09-23",
     reason:
-      "Paused: over its first trading window it lost to simply holding, mostly to gas on very small trades. It is not offered for hire until a new window beats holding, and the losing record stays public.",
-    short: "Paused",
+      "Trading paused: over its first trading window it lost to simply holding, mostly to gas on very small trades. It trades again only when a new window beats holding, and the losing record stays public. Its grid report, which moves nobody's money, can still be hired.",
+    short: "Trading paused",
   },
 ];
 
@@ -49,3 +56,15 @@ export function pauseFor(tokenId: string): Pause | null {
   }
   return PAUSED.find((p) => tokens!.bySlug[p.slug] === tokenId) ?? null;
 }
+
+/** The pause that stops a hire: only one that stops everything. A trading pause leaves the paid answer on sale. */
+export function hirePauseFor(tokenId: string): Pause | null {
+  const p = pauseFor(tokenId);
+  return p && p.scope === "all" ? p : null;
+}
+
+/** The same, by slug, for our own routes. */
+export const hirePauseForSlug = (slug: string): Pause | null => {
+  const p = pauseForSlug(slug);
+  return p && p.scope === "all" ? p : null;
+};

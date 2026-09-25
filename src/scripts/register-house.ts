@@ -30,9 +30,10 @@ import { privateKeyToAccount } from "viem/accounts";
 import { bsc } from "viem/chains";
 import { IDENTITY_REGISTRY } from "@/lib/config";
 import { HOUSE, type HouseAgent } from "@/lib/house";
+import { SITE } from "@/lib/site";
 
 const broadcast = process.argv.includes("--broadcast");
-const HOST = process.env.NEXT_PUBLIC_HOST ?? "https://mandate-coral.vercel.app";
+const HOST = SITE;
 const RPC = process.env.BSC_RPC_URL ?? "https://bsc-dataseed.bnbchain.org";
 
 const REGISTRY_ABI = [

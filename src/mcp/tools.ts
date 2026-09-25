@@ -49,8 +49,9 @@ import { getProbes } from "@/lib/data/probes";
 import { TRANSFER_TYPES, USD1, USD1_DOMAIN } from "@/lib/x402";
 import { IDENTITY_REGISTRY } from "@/lib/config";
 import { toJson } from "@/lib/chain/session-store";
+import { SITE } from "@/lib/site";
 
-const HOST = process.env.NEXT_PUBLIC_HOST ?? "https://mandate-coral.vercel.app";
+const HOST = SITE;
 
 /** A tool as the MCP `tools/list` response wants it. */
 export interface ToolSpec {

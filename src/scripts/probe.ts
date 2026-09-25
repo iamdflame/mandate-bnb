@@ -17,10 +17,11 @@ import { join } from "node:path";
 import { getField } from "@/lib/data/field";
 import { probeAll, type ProbeResult } from "@/lib/probe";
 import { beat } from "@/lib/heartbeat";
+import { SITE } from "@/lib/site";
 
 const LOOP = process.argv.includes("--loop");
 const INTERVAL_MS = Number(process.env.PROBE_INTERVAL_MS ?? 30 * 60_000);
-const HOST = process.env.NEXT_PUBLIC_HOST ?? "https://mandate-coral.vercel.app";
+const HOST = SITE;
 
 const log = (...a: unknown[]) => console.log(new Date().toISOString().slice(11, 19), ...a);
 

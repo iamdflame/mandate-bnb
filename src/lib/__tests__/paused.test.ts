@@ -1,5 +1,5 @@
 /**
- * A pause is enforced, not described.
+ * A pause is enforced, not described, and says exactly what stops.
  *
  * The agent page once said Grid-1 "is paused" while its session was live and
  * every surface still offered it for hire. These hold the three places a
@@ -10,7 +10,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { hirePath } from "../market/hire-law";
-import { PAUSED, pauseFor, pauseForSlug } from "../market/paused";
+import { PAUSED, hirePauseFor, pauseFor, pauseForSlug } from "../market/paused";
 import { referenceRegistrations } from "../house";
 
 const session = vi.hoisted(() => ({ grantScopedSession: vi.fn(), listSessions: vi.fn() }));
@@ -35,7 +35,9 @@ describe("a paused agent", () => {
     }
   });
 
-  it("is refused by the hire law on every rail, however well it answers", () => {
+  it("with trading paused, keeps its paid answer on sale but offers no job with capital", () => {
+    expect(pauseFor(grid1)?.scope).toBe("trading");
+    expect(hirePauseFor(grid1)).toBeNull();
     const v = hirePath(
       {
         tokenId: grid1,
@@ -47,10 +49,9 @@ describe("a paused agent", () => {
       },
       { now: NOW, bidders: new Set([referenceRegistrations()["grid-1"]!.owner.toLowerCase()]) },
     );
-    expect(v.ok).toBe(false);
-    expect(v.rails).toEqual([]);
-    expect(v.short).toBe("Paused");
-    expect(v.reason).toMatch(/^Paused:/);
+    expect(v.ok).toBe(true);
+    // The report moves nobody's money; a job would hand it capital to trade, which the pause forbids.
+    expect(v.rails.map((r) => r.kind)).toEqual(["x402"]);
   });
 
   it("does not affect an agent that is not paused", () => {
@@ -66,35 +67,29 @@ describe("a paused agent", () => {
     expect(session.grantScopedSession).not.toHaveBeenCalled();
   });
 
-  it("says so in its public registration: inactive, no x402 service, no price, and why", async () => {
+  it("says so in its public registration: still selling its answer, trading paused, and why", async () => {
     const { GET } = await import("../../app/house/[slug]/registration.json/route");
     const read = async (slug: string) => (await (await GET(new Request(`https://mandate.test/house/${slug}/registration.json`), { params: Promise.resolve({ slug }) })).json()) as {
       active: boolean;
       services: { name: string }[];
       price?: unknown;
       paused?: { reason: string };
+      tradingPaused?: { reason: string };
     };
     const grid = await read("grid-1");
-    expect(grid.active).toBe(false);
-    expect(grid.services.map((x) => x.name)).not.toContain("x402");
-    expect(grid.price).toBeUndefined();
-    expect(grid.paused?.reason).toMatch(/^Paused:/);
+    expect(grid.active).toBe(true);
+    expect(grid.services.map((x) => x.name)).toContain("x402");
+    expect(grid.paused).toBeUndefined();
+    expect(grid.tradingPaused?.reason).toMatch(/^Trading paused:/);
     const range = await read("range-1");
     expect(range.active).toBe(true);
-    expect(range.services.map((x) => x.name)).toContain("x402");
-    expect(range.paused).toBeUndefined();
+    expect(range.tradingPaused).toBeUndefined();
   });
 
-  it("stops its x402 endpoint taking money, even when a payment is attached", async () => {
+  it("still quotes a price at its x402 endpoint, since its answer is on sale", async () => {
     const { GET } = await import("../../app/api/x402/house/[slug]/route");
-    const res = await GET(new Request("https://mandate.test/api/x402/house/grid-1", { headers: { "x-payment": "e30=" } }), {
-      params: Promise.resolve({ slug: "grid-1" }),
-    });
-    expect(res.status).toBe(410);
-    const body = (await res.json()) as { paused?: boolean; settled?: boolean; error?: string };
-    expect(body.paused).toBe(true);
-    expect(body.settled).toBe(false);
-    expect(body.error).toMatch(/^Paused:/);
+    const res = await GET(new Request("https://mandate.test/api/x402/house/grid-1"), { params: Promise.resolve({ slug: "grid-1" }) });
+    expect(res.status).toBe(402);
   });
 
   it("is a paused reference on the judge walk, even while its session is still live", async () => {

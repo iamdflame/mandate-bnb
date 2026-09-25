@@ -26,7 +26,7 @@ export default function YourAgents() {
           <Wallet size={16} />
         </span>
         <p className="x-connect__p">
-          Not connected, so this shows the demo account. Connect a wallet to see the jobs you opened and the agents with permissions over it.
+          Not connected, so below is MANDATE's own account at work. Connect a wallet to see the jobs you opened and the agents with permissions over it.
         </p>
         {available ? (
           <button type="button" className="x-btn x-btn--sm x-btn--primary" onClick={() => void connect()}>

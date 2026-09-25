@@ -1,0 +1,218 @@
+/**
+ * What a wallet did on MANDATE, in the shape BNB's quest counts.
+ *
+ * Phase 2 counts hires, deposits, completions and ratings per wallet across
+ * the four jobs, and only what can be verified on chain or through our API.
+ * So every row here names the transaction that proves it: the payment's
+ * settlement for a paid call, the market contract and job id for a job with
+ * capital, the reputation-registry transaction for a rating. Rows from our own
+ * wallets are flagged as team, and calls we paid for a visitor as sponsored;
+ * neither counts toward anybody's quest.
+ */
+
+import { sql as pg } from "@/lib/db/client";
+import { ensureTables } from "@/lib/db/tables";
+import { readBook } from "@/lib/chain/book";
+import { CATEGORIES, type Category } from "@/lib/config";
+import { findAgent } from "@/lib/data/agents";
+import { agentsOfOwner } from "@/lib/registry/tail";
+import { getAgentIndex } from "@/lib/data/agents";
+import { isTeam } from "@/lib/team";
+import { SITE } from "@/lib/site";
+import type { PaidCallRecord } from "@/lib/market/paid-calls";
+
+export type HireKind = "paid-call" | "market-job" | "escrow-job";
+
+export interface HireRow {
+  kind: HireKind;
+  /** The agent's ERC-8004 id. */
+  agentId: string;
+  agentName: string | null;
+  category: Category | null;
+  /** The transaction that proves the hire: the payment's settlement, or the job's opening. */
+  tx: string | null;
+  block: number | null;
+  /** For a job with capital, the contract and job number to read it back from. */
+  contract: string | null;
+  jobId: string | null;
+  /** What moved: the call's price, or the job's deposit. */
+  amount: string | null;
+  asset: string | null;
+  /** The agent answered, or the job ran its full term. */
+  completed: boolean;
+  at: string | null;
+  /** Paid by MANDATE for a visitor, so not the wallet's own hire. */
+  sponsored: boolean;
+}
+
+export interface RatingRow {
+  agentId: string;
+  score: number;
+  tag1: string | null;
+  tag2: string | null;
+  tx: string;
+  block: number | null;
+  at: string;
+}
+
+const categoryOf = (tokenId: string, recorded?: string | null): Category | null => {
+  if (recorded && (CATEGORIES as readonly string[]).includes(recorded)) return recorded as Category;
+  return findAgent(tokenId)?.category ?? null;
+};
+
+/** A wallet's paid calls, from the calls it signed through this site. Pure over the records, for tests. */
+export function paidCallHires(calls: PaidCallRecord[], wallet: string): HireRow[] {
+  const w = wallet.toLowerCase();
+  return calls
+    .filter((c) => c.payer?.toLowerCase() === w && c.paid)
+    .map((c) => ({
+      kind: "paid-call" as const,
+      agentId: c.tokenId,
+      agentName: c.name,
+      category: categoryOf(c.tokenId, c.category),
+      tx: c.tx,
+      block: c.block,
+      contract: null,
+      jobId: null,
+      amount: c.amount,
+      asset: c.asset,
+      completed: c.delivered,
+      at: c.at,
+      sponsored: c.sponsored,
+    }));
+}
+
+async function paidCallsOf(wallet: string): Promise<PaidCallRecord[]> {
+  if (!pg) return [];
+  await ensureTables();
+  const rows = (await pg`select record from paid_calls where lower(record->>'payer') = ${wallet.toLowerCase()} order by at desc limit 500`) as { record: PaidCallRecord }[];
+  return rows.map((r) => r.record);
+}
+
+/** Jobs with capital this wallet opened on the market, with the agent that won each. */
+async function marketJobsOf(wallet: string): Promise<HireRow[]> {
+  const book = await readBook().catch(() => null);
+  if (!book) return [];
+  const w = wallet.toLowerCase();
+  return book.rows
+    .filter((r) => r.principal.toLowerCase() === w)
+    .map((r) => {
+      const agent = r.agent && !/^0x0+$/.test(r.agent) ? getAgentIndex().agents.find((a) => a.owner?.toLowerCase() === r.agent.toLowerCase()) : undefined;
+      return {
+        kind: "market-job" as const,
+        agentId: agent?.tokenId ?? "",
+        agentName: agent?.name ?? null,
+        category: (CATEGORIES[r.category] as Category | undefined) ?? null,
+        tx: null,
+        block: null,
+        contract: r.deployment.address,
+        jobId: String(r.id),
+        amount: r.capitalWei.toString(),
+        asset: "BNB",
+        completed: r.epochsTotal > 0 && r.epochsSettled >= r.epochsTotal,
+        at: null,
+        sponsored: false,
+      };
+    });
+}
+
+export async function ratingsOf(wallet: string): Promise<RatingRow[]> {
+  if (!pg) return [];
+  await ensureTables();
+  const rows = (await pg`select tx, token_id, score, tag1, tag2, block, at from ratings where wallet = ${wallet.toLowerCase()} order by at desc`) as {
+    tx: string;
+    token_id: string;
+    score: number;
+    tag1: string | null;
+    tag2: string | null;
+    block: string | number | null;
+    at: Date | string;
+  }[];
+  return rows.map((r) => ({
+    agentId: r.token_id,
+    score: r.score,
+    tag1: r.tag1,
+    tag2: r.tag2,
+    tx: r.tx,
+    block: r.block === null ? null : Number(r.block),
+    at: typeof r.at === "string" ? r.at : r.at.toISOString(),
+  }));
+}
+
+/** Which of the four jobs a wallet has hired an agent for, counting only its own paid hires. Pure, for tests. */
+export function jobsCovered(hires: HireRow[]): Record<Category, number> {
+  const out = Object.fromEntries(CATEGORIES.map((c) => [c, 0])) as Record<Category, number>;
+  for (const h of hires) if (h.category && !h.sponsored) out[h.category] += 1;
+  return out;
+}
+
+export interface WalletHires {
+  wallet: string;
+  team: boolean;
+  hires: HireRow[];
+  byCategory: Record<Category, number>;
+  ratings: RatingRow[];
+}
+
+export async function hiresOf(wallet: string): Promise<WalletHires> {
+  const [calls, jobs, ratings] = await Promise.all([paidCallsOf(wallet).catch(() => []), marketJobsOf(wallet).catch(() => []), ratingsOf(wallet).catch(() => [])]);
+  const hires = [...paidCallHires(calls, wallet), ...jobs];
+  return { wallet: wallet.toLowerCase(), team: isTeam(wallet), hires, byCategory: jobsCovered(hires), ratings };
+}
+
+export interface OwnedAgent {
+  agentId: string;
+  name: string | null;
+  category: Category | null;
+  registeredTx: string | null;
+  registeredBlock: number | null;
+  /** Listed on MANDATE: it has a page here and appears under its job when classified. */
+  listed: boolean;
+  page: string;
+}
+
+/** Agents an owner holds on the ERC-8004 registry that MANDATE has read. */
+export async function agentsOf(owner: string): Promise<OwnedAgent[]> {
+  const o = owner.toLowerCase();
+  const fromTail = await agentsOfOwner(o).catch(() => []);
+  const fromCrawl = getAgentIndex().agents.filter((a) => a.owner?.toLowerCase() === o);
+  const byId = new Map<string, OwnedAgent>();
+  for (const a of [...fromCrawl, ...fromTail]) {
+    byId.set(a.tokenId, {
+      agentId: a.tokenId,
+      name: a.name,
+      category: a.category,
+      registeredTx: a.registeredTx ?? byId.get(a.tokenId)?.registeredTx ?? null,
+      registeredBlock: a.registeredBlock ?? byId.get(a.tokenId)?.registeredBlock ?? null,
+      listed: true,
+      page: `${SITE}/agents/${a.tokenId}`,
+    });
+  }
+  return [...byId.values()].sort((a, b) => Number(a.agentId) - Number(b.agentId));
+}
+
+export interface QuestProgress {
+  wallet: string;
+  team: boolean;
+  /** Hires of an agent in each job, from the wallet's own paid hires. */
+  hired: Record<Category, boolean>;
+  allFourHired: boolean;
+  agentsListed: number;
+  ratingsGiven: number;
+  complete: boolean;
+}
+
+export async function questOf(wallet: string): Promise<QuestProgress> {
+  const [h, owned] = await Promise.all([hiresOf(wallet), agentsOf(wallet)]);
+  const hired = Object.fromEntries(CATEGORIES.map((c) => [c, h.byCategory[c] > 0])) as Record<Category, boolean>;
+  const allFourHired = CATEGORIES.every((c) => hired[c]);
+  return {
+    wallet: h.wallet,
+    team: h.team,
+    hired,
+    allFourHired,
+    agentsListed: owned.length,
+    ratingsGiven: h.ratings.length,
+    complete: allFourHired && owned.length > 0 && !h.team,
+  };
+}

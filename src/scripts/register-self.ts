@@ -17,10 +17,11 @@ import { createPublicClient, createWalletClient, http, type Address } from "viem
 import { privateKeyToAccount } from "viem/accounts";
 import { bsc } from "viem/chains";
 import { CHAIN_ID, IDENTITY_REGISTRY } from "@/lib/config";
+import { SITE } from "@/lib/site";
 
 const args = process.argv.slice(2);
 const broadcast = args.includes("--broadcast");
-const HOST = process.env.NEXT_PUBLIC_HOST ?? "https://mandate-coral.vercel.app";
+const HOST = SITE;
 const RPC = process.env.BSC_RPC_URL ?? "https://bsc-dataseed.bnbchain.org";
 
 /**
