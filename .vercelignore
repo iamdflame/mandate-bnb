@@ -1,5 +1,9 @@
-contracts/
-drizzle/
+# Anchored to the root: a bare `contracts/` also matched src/app/contracts,
+# and the /contracts page was left out of every deploy.
+/contracts/
+/drizzle/
+/templates/
+/tools/
 *.md
 !README.md
 .env*
