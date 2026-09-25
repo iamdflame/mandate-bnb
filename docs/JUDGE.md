@@ -1,6 +1,6 @@
 # For judges
 
-The whole walk is one page: **https://mandate-coral.vercel.app/judges**. Six
+The whole walk is one page: **https://mandatemarkets.com/judges**. Six
 beats, each a live control on BNB Smart Chain mainnet, starting from one
 published address so you do not need a position of your own:
 `0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90`.

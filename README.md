@@ -8,19 +8,21 @@ and the unmarked ones stay visible.
 
 Built for *The Smart Money Era*, BNB Agent Studio marketplace track.
 
+**Live:** https://mandatemarkets.com · BNB Smart Chain mainnet (chain 56) · every contract it reads: https://mandatemarkets.com/contracts
+
 | | |
 |---|---|
-| **Judge walk, six beats** | https://mandate-coral.vercel.app/judges |
-| **Desk: keys vs the KeyStore** | https://mandate-coral.vercel.app/desk |
-| **Is it working right now** | https://mandate-coral.vercel.app/status (JSON: `/api/status`, 200 or 503) |
-| Diagnose a position | https://mandate-coral.vercel.app/diagnose |
-| Catalog | https://mandate-coral.vercel.app/agents |
-| Receipts | https://mandate-coral.vercel.app/activity |
-| Does hiring beat doing it yourself | https://mandate-coral.vercel.app/proof (six tasks locked on chain first, the loss included, three re-runnable live) |
-| Agents that failed, kept | https://mandate-coral.vercel.app/graveyard |
-| List your agent | https://mandate-coral.vercel.app/list (any ERC-8004 token id, placed on the seller ladder with its next step) |
-| PancakeSwap pool gaps | https://mandate-coral.vercel.app/pool-gaps |
-| API | https://mandate-coral.vercel.app/api |
+| **Judge walk, six beats** | https://mandatemarkets.com/judges |
+| **Desk: keys vs the KeyStore** | https://mandatemarkets.com/desk |
+| **Is it working right now** | https://mandatemarkets.com/status (JSON: `/api/status`, 200 or 503) |
+| Diagnose a position | https://mandatemarkets.com/diagnose |
+| Catalog | https://mandatemarkets.com/agents |
+| Receipts | https://mandatemarkets.com/activity |
+| Does hiring beat doing it yourself | https://mandatemarkets.com/proof (six tasks locked on chain first, the loss included, three re-runnable live) |
+| Agents that failed, kept | https://mandatemarkets.com/graveyard |
+| List your agent | https://mandatemarkets.com/list (any ERC-8004 token id, placed on the seller ladder with its next step) |
+| PancakeSwap pool gaps | https://mandatemarkets.com/pool-gaps |
+| API | https://mandatemarkets.com/api |
 | Video | https://youtu.be/7l_Ppu_V44o (an earlier version of the walk; where it and the site disagree, the site is right) |
 
 Nothing here needs Agent Studio or an account. Mandate never takes custody.
@@ -32,7 +34,7 @@ Nothing here needs Agent Studio or an account. Mandate never takes custody.
 The demo address is published so you do not have to find a position of your own:
 `0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90`.
 
-1. **Paste it into [`/diagnose`](https://mandate-coral.vercel.app/diagnose?q=0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90).**
+1. **Paste it into [`/diagnose`](https://mandatemarkets.com/diagnose?q=0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90).**
    Two PancakeSwap V3 positions out of range (one far below the price, one far
    above, so at least one stays out whichever way BNB moves), a Venus loan with
    its health factor priced by Venus's own oracle, and idle cash. Read from the
@@ -162,7 +164,7 @@ approve-shaped selector; the Forge suites fuzz the recipient on both contracts.
 ## MCP
 
 ```
-claude mcp add --transport http mandate https://mandate-coral.vercel.app/api/mcp
+claude mcp add --transport http mandate https://mandatemarkets.com/api/mcp
 ```
 
 Reads: `list_offices`, `assay_agent`, `read_ladder`, `search_register`,
@@ -254,7 +256,7 @@ draw it.
 ## What is not true yet
 
 Read the live version of this list, computed rather than typed, at
-[mandate-coral.vercel.app/status](https://mandate-coral.vercel.app/status): it
+[mandatemarkets.com/status](https://mandatemarkets.com/status): it
 prints the plan's boxes with what was read to decide each one.
 
 - **No third party has bought from us.** Our own x402 endpoints are open to
@@ -304,14 +306,14 @@ prints the plan's boxes with what was read to decide each one.
   times (its facilitator cannot read its own receipts); Hallmark refused
   because it has no facilitator configured. Every exchange is in
   [`docs/evidence/`](docs/evidence) and on
-  [the activity page](https://mandate-coral.vercel.app/activity#paid), and none
+  [the activity page](https://mandatemarkets.com/activity#paid), and none
   of the three is offered as hireable until it delivers again.
 - **We refused to pay for a deliverable we could not reproduce.** AgentCensus's
   job 56777 committed a hash that is not the hash of any reading of the bytes
   it serves, so the job was disputed inside its window rather than settled
   (`0x1101029efe7911152b6674be8b9a5df33239a7477a3885cbc1e70cad3b3e117c`).
 
-Everything present-tense: https://mandate-coral.vercel.app/evidence
+Everything present-tense: https://mandatemarkets.com/evidence
 
 ---
 

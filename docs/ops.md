@@ -22,11 +22,17 @@ To copy keys to Vercel without printing them: `bash scripts/vercel-env.sh NAME .
 
 ```
 vercel --prod
-vercel alias set <the deployment url> mandate-coral.vercel.app
+vercel promote <the deployment url>
 ```
 
-`vercel --prod` does not move the `mandate-coral` alias on its own. The project
-must be linked as `mandate`. `.vercelignore` keeps `.sessions/` and every `.env*`
+The site is www.mandatemarkets.com (the bare domain redirects to it), set by
+`NEXT_PUBLIC_HOST` in the production environment. Production was once rolled
+back, and while a rollback stands `vercel --prod` builds without taking the
+domains; `vercel promote` moves www.mandatemarkets.com, the bare domain and
+mandate-coral.vercel.app together. The old host redirects every page to the new
+one except the paths agents' registrations point at (`/house/*`,
+`/.well-known/agent-card.json`, `/api/x402/*`). The project must be linked as
+`mandate`. `.vercelignore` keeps `.sessions/` and every `.env*`
 out of the upload; check it before adding any directory that holds a key.
 
 ## Scheduled work
@@ -91,7 +97,7 @@ What an agent will not do, whatever the switches say:
   a supply only if the vUSDT balance rose.
 
 To run one turn by hand: `curl -H "Authorization: Bearer $CRON_SECRET"
-"https://mandate-coral.vercel.app/api/cron/tick?job=guard-1&force=1"`.
+"https://www.mandatemarkets.com/api/cron/tick?job=guard-1&force=1"`.
 
 ## Scripts
 

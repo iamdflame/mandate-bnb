@@ -19,6 +19,7 @@ import { agentsOfOwner } from "@/lib/registry/tail";
 import { getAgentIndex } from "@/lib/data/agents";
 import { isTeam } from "@/lib/team";
 import { SITE } from "@/lib/site";
+import { placeAgent, readMarketSets } from "@/lib/rung";
 import type { PaidCallRecord } from "@/lib/market/paid-calls";
 
 export type HireKind = "paid-call" | "market-job" | "escrow-job";
@@ -176,16 +177,24 @@ export interface OwnedAgent {
   registeredBlock: number | null;
   /** Listed on MANDATE: it has a page here and appears under its job when classified. */
   listed: boolean;
+  /**
+   * Where it stands on the listing ladder, as a measure of quality: 0
+   * Registered, 1 Resolvable (its card parses), 2 Live (its endpoint answers in
+   * an agent protocol), 3 Priced, 4 Hallmarked, 5 Settled.
+   */
+  rung: number;
+  rungName: string;
   page: string;
 }
 
 /** Agents an owner holds on the ERC-8004 registry that MANDATE has read. */
 export async function agentsOf(owner: string): Promise<OwnedAgent[]> {
   const o = owner.toLowerCase();
-  const fromTail = await agentsOfOwner(o).catch(() => []);
+  const [fromTail, sets] = await Promise.all([agentsOfOwner(o).catch(() => []), readMarketSets().catch(() => null)]);
   const fromCrawl = getAgentIndex().agents.filter((a) => a.owner?.toLowerCase() === o);
   const byId = new Map<string, OwnedAgent>();
   for (const a of [...fromCrawl, ...fromTail]) {
+    const place = sets ? placeAgent(a, sets) : null;
     byId.set(a.tokenId, {
       agentId: a.tokenId,
       name: a.name,
@@ -193,6 +202,8 @@ export async function agentsOf(owner: string): Promise<OwnedAgent[]> {
       registeredTx: a.registeredTx ?? byId.get(a.tokenId)?.registeredTx ?? null,
       registeredBlock: a.registeredBlock ?? byId.get(a.tokenId)?.registeredBlock ?? null,
       listed: true,
+      rung: place?.rung ?? (a.name ? 1 : 0),
+      rungName: place?.name ?? (a.name ? "Resolvable" : "Registered"),
       page: `${SITE}/agents/${a.tokenId}`,
     });
   }
@@ -205,7 +216,10 @@ export interface QuestProgress {
   /** Hires of an agent in each job, from the wallet's own paid hires. */
   hired: Record<Category, boolean>;
   allFourHired: boolean;
+  /** Agents this wallet owns whose card parses, so they are listed here by name. */
   agentsListed: number;
+  /** The wallet's agent highest on the listing ladder. */
+  bestAgent: { agentId: string; name: string | null; rung: number; rungName: string } | null;
   ratingsGiven: number;
   complete: boolean;
 }
@@ -214,13 +228,16 @@ export async function questOf(wallet: string): Promise<QuestProgress> {
   const [h, owned] = await Promise.all([hiresOf(wallet), agentsOf(wallet)]);
   const hired = Object.fromEntries(CATEGORIES.map((c) => [c, h.byCategory[c] > 0])) as Record<Category, boolean>;
   const allFourHired = CATEGORIES.every((c) => hired[c]);
+  const listed = owned.filter((a) => a.rung >= 1);
+  const best = [...owned].sort((a, b) => b.rung - a.rung)[0] ?? null;
   return {
     wallet: h.wallet,
     team: h.team,
     hired,
     allFourHired,
-    agentsListed: owned.length,
+    agentsListed: listed.length,
+    bestAgent: best ? { agentId: best.agentId, name: best.name, rung: best.rung, rungName: best.rungName } : null,
     ratingsGiven: h.ratings.length,
-    complete: allFourHired && owned.length > 0 && !h.team,
+    complete: allFourHired && listed.length > 0 && !h.team,
   };
 }

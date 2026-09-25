@@ -16,6 +16,7 @@ import NetworkBadge from "./NetworkBadge";
 */
 const PRIMARY = [
   { href: "/agents", label: "Explore" },
+  { href: "/quest", label: "Quest" },
   { href: "/categories", label: "Categories" },
   { href: "/activity", label: "Activity" },
   { href: "/desk", label: "My Desk" },

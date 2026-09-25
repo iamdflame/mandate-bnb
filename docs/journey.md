@@ -5,7 +5,7 @@
 ```mermaid
 sequenceDiagram
   actor Judge
-  participant Site as mandate-coral.vercel.app
+  participant Site as mandatemarkets.com
   participant Chain as BNB Smart Chain
   Judge->>Site: /judges
   Judge->>Site: /diagnose?q=demo address

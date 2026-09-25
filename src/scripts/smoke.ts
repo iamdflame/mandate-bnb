@@ -141,6 +141,11 @@ async function main() {
     { name: "the lock transaction is shown", test: (h) => h.includes("0x00b0e484c69fc3f149") || "no lock transaction on the page" },
     { name: "the losses are counted", test: (h) => /x-score__item--loss/.test(h) || "no loss count on the page" },
   ]);
+  // The quest offers a hire in each of the four jobs, and the builder step.
+  await page("/quest", [
+    { name: "all four jobs are offered", test: (h) => (h.match(/x-quest__job"/g) ?? []).length + (h.match(/x-quest__job x-quest__job--done"/g) ?? []).length >= 4 || "fewer than four job cards" },
+    { name: "every job has an agent to hire", test: (h) => !h.includes("Nobody can be hired for this job right now") || "a job with nobody to hire" },
+  ]);
   await page("/graveyard", [
     { name: "failures are listed", test: (h) => h.includes("x-grave__who") || "no rows" },
     { name: "our own mistake is labelled", test: (h) => h.includes("Our mistake, not theirs") || "no row labelled as ours" },

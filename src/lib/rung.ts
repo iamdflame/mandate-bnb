@@ -23,6 +23,7 @@ import { HALLMARK_BAR } from "@/lib/ladder";
 import type { Address } from "viem";
 import { CATEGORIES, RUNG_NAMES, type Category } from "@/lib/config";
 import { memo } from "@/lib/cache";
+import { answered } from "@/lib/data/probes";
 
 export interface MarketSets {
   /** Lower-cased wallets with a fineness at or above the bar. */
@@ -172,11 +173,17 @@ export function placeAgent(agent: IndexedAgent, sets: MarketSets): RungPlacement
   if (assayed) {
     return { rung: 4, name: RUNG_NAMES[4], reason: "assayed at or above the bar, but has never posted a bond", unknown };
   }
-  if (agent.endpointVerified) {
+  /*
+    Live is our census's answer: it called the agent and got an agent
+    protocol back. This used to read 8004scan's endpoint flag, which our
+    census never set, so agents it reaches every day, ours included, were
+    told that no endpoint of ours had ever reached them.
+  */
+  if (answered(agent.tokenId) || agent.endpointVerified) {
     return {
       rung: 2,
       name: RUNG_NAMES[2],
-      reason: "its endpoint answered, but it has never been assayed on chain",
+      reason: "its endpoint answered our census, but it has never been assayed on chain",
       unknown,
     };
   }

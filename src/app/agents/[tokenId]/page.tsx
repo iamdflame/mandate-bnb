@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { ArrowUpRight, Check, ChevronRight, Gift, HelpCircle, Zap } from "lucide-react";
-import { formatUnits } from "viem";
 import AppShell from "@/components/v2/shell/AppShell";
 import AgentArtwork from "@/components/x/AgentArtwork";
 import Status from "@/components/x/Status";
@@ -10,7 +9,8 @@ import Price, { priceParts } from "@/components/x/Price";
 import Proof, { ProofGlyph } from "@/components/x/Proof";
 import Ago from "@/components/x/Ago";
 import CompareToggle from "@/components/x/CompareToggle";
-import HireDrawer, { type HireOffer } from "@/components/x/HireDrawer";
+import HireDrawer from "@/components/x/HireDrawer";
+import { offerFor } from "@/components/x/offer";
 import TrustPanel from "@/components/v2/agent/TrustPanel";
 import { CATEGORY_LABEL, CHAIN_ID, IDENTITY_REGISTRY } from "@/lib/config";
 import { findAgent } from "@/lib/data/agents";
@@ -26,12 +26,9 @@ import { STATE_WORD, trustOf, type ProofState } from "@/lib/market/trust";
 import { houseSlug, performanceOf } from "@/lib/market/performance";
 import { houseActivity } from "@/lib/house/runs";
 import { indexToken } from "@/lib/registry/tail";
-import { inputsFor } from "@/lib/market/inputs";
 import { listPaidCalls } from "@/lib/market/paid-calls";
 import { buriedFor, graveAnchor, graveyard } from "@/lib/market/graveyard";
 import { HOUSE_LEASHES } from "@/lib/chain/house";
-import { allowedCalls, CANNOT } from "@/lib/chain/leash-words";
-import { USDT, WBNB } from "@/lib/chain/leash";
 
 export const revalidate = 300;
 // Room for the census slice that runs after the response (see lib/census/refresh).
@@ -49,7 +46,6 @@ export async function generateMetadata({ params }: { params: Promise<{ tokenId: 
 }
 
 const RAIL: Record<string, string> = { x402: "x402", mandate: "ERC-8183" };
-const TOKEN: Record<string, string> = { [USDT.toLowerCase()]: "USDT", [WBNB.toLowerCase()]: "WBNB" };
 
 /** Its own words as separate sentences, untouched, for the "What it can do" list. */
 function sentences(text: string | null): string[] {
@@ -122,44 +118,7 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
   const shownSaid = said.slice(0, 5);
   const alternatives = l.category ? `/agents?category=${l.category}&hireable=1` : "/agents?hireable=1";
 
-  const offer: HireOffer = {
-    tokenId: l.tokenId,
-    name: l.name,
-    art: <AgentArtwork category={l.category} seed={`${l.tokenId}:${l.name}`} shape="square" />,
-    categoryLabel: cat,
-    category: l.category,
-    price: pp,
-    latencyMs: l.probe?.answered ? (l.probe.latencyMs ?? null) : null,
-    task: preview?.summary ?? l.quote?.description ?? (l.what ? l.what : `One call to ${l.name}`),
-    x402:
-      perCall && l.quote
-        ? {
-            path: SPONSORED[l.tokenId]?.url() ?? l.quote.endpoint,
-            method: SPONSORED[l.tokenId]?.method ?? "GET",
-            body: SPONSORED[l.tokenId]?.body,
-            payTo: l.quote.payTo,
-            network: l.quote.network,
-            scheme: l.quote.scheme,
-            asset: l.quote.asset,
-            assetName: l.quote.assetName,
-            header: l.quote.header,
-            version: l.quote.x402Version,
-            transferMethod: l.quote.transferMethod,
-          }
-        : null,
-    inputs: inputsFor(l.tokenId, preview),
-    job: jobRail
-      ? {
-          href: `/hire/${l.tokenId}`,
-          can: leash ? allowedCalls(leash.calls).map((a) => a.words) : [],
-          caps: leash ? leash.tokenSpend.map((t) => `${formatUnits(t.limit, 18)} ${TOKEN[t.token.toLowerCase()] ?? "tokens"} a day`) : [],
-          cannot: CANNOT,
-        }
-      : null,
-    sponsored: sponsor ? { asks: sponsor.asks, checkWith: sponsor.checkWith, takesSubject: sponsor.takesSubject, price: l.priceLabel } : null,
-    refuse: verdict.ok ? null : verdict.reason,
-    alternatives,
-  };
+  const offer = offerFor(l);
 
   const useLabel = perCall ? "Use this agent" : "Hire this agent";
   const checkedAt = l.probe?.at ?? null;

@@ -88,7 +88,12 @@ function Can({ items, no = false }: { items: string[]; no?: boolean }) {
   );
 }
 
-export default function HireDrawer({ offer }: { offer: HireOffer }) {
+/**
+ * `openOn` is the address hash that opens this drawer. An agent's own page
+ * leaves it unset and opens on #call; a page offering several agents gives
+ * each drawer its own, so one link opens one drawer.
+ */
+export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer; openOn?: string; onDone?: () => void }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("review");
   const [tx, setTx] = useState<{ step: TxStep; failed: boolean } | null>(null);
@@ -121,10 +126,10 @@ export default function HireDrawer({ offer }: { offer: HireOffer }) {
   useEffect(() => {
     const read = () => {
       const h = window.location.hash;
-      if (h === "#call" || h === "#hire") {
+      if (openOn ? h === openOn : h === "#call" || h === "#hire") {
         setOpen(true);
         setStep((s) => (s === "free" ? "review" : s));
-      } else if (h === "#sponsored" && offer.sponsored) {
+      } else if (!openOn && h === "#sponsored" && offer.sponsored) {
         setOpen(true);
         setStep("free");
       }
@@ -132,11 +137,12 @@ export default function HireDrawer({ offer }: { offer: HireOffer }) {
     read();
     window.addEventListener("hashchange", read);
     return () => window.removeEventListener("hashchange", read);
-  }, [offer.sponsored]);
+  }, [offer.sponsored, openOn]);
 
   const close = useCallback(() => {
     setOpen(false);
-    if (/^#(call|hire|sponsored)$/.test(window.location.hash)) {
+    onDone?.();
+    if (/^#(call|hire|sponsored)$/.test(window.location.hash) || (openOn && window.location.hash === openOn)) {
       history.replaceState(null, "", window.location.pathname + window.location.search);
     }
     // A finished or failed payment starts fresh next time; one in flight keeps its place.
@@ -145,7 +151,7 @@ export default function HireDrawer({ offer }: { offer: HireOffer }) {
       setResult(null);
       setTx(null);
     }
-  }, [step]);
+  }, [step, onDone, openOn]);
 
   const onPhase = useCallback((p: PhaseReport) => {
     if (p.price) setLastPrice(p.price);
