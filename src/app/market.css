@@ -5752,8 +5752,8 @@ a.x-house__name:hover {
   gap: var(--s-2);
   margin-top: var(--s-4);
   color: var(--c-text-2);
-  font-family: var(--f-mono);
-  font-size: var(--ts-xs);
+  font-size: var(--ts-sm);
+  font-variant-numeric: tabular-nums;
 }
 .x-home__h2 {
   font-size: var(--ts-h2);

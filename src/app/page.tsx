@@ -83,7 +83,7 @@ export default async function Home() {
                   <dd className="x-home__fig">{all.length.toLocaleString("en-US")}</dd>
                 </div>
                 <div>
-                  <dt>read from the ERC-8004 registry</dt>
+                  <dt>on the ERC-8004 registry</dt>
                   <dd className="x-home__fig">{registered === null ? "…" : registered.toLocaleString("en-US")}</dd>
                 </div>
               </dl>
