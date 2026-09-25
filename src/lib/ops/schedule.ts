@@ -28,6 +28,7 @@ import { confirmPending } from "@/lib/market/confirm";
 import { sweepEscrow } from "@/lib/escrow/jobs";
 import { runLeashes } from "@/lib/leash/run";
 import { advanceEpochs } from "@/lib/market/epochs";
+import { testBuys } from "@/lib/market/test-buys";
 
 export interface Job {
   name: string;
@@ -238,6 +239,18 @@ export const JOBS: Job[] = [
     budgetMs: 25_000,
     afterResponse: true,
     run: (budgetMs = 22_000) => advanceEpochs({ budgetMs }),
+  },
+  /*
+    One paid call a day to every outside seller a buyer could hire, from our
+    trial pool, so a seller that takes money and fails is pulled before a buyer
+    finds out. Each seller is visited at most once in twenty hours.
+  */
+  {
+    name: "test-buys",
+    everyMinutes: 60,
+    budgetMs: 30_000,
+    afterResponse: true,
+    run: (budgetMs = 28_000) => testBuys({ budgetMs }),
   },
 ];
 

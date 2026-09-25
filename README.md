@@ -12,6 +12,12 @@ Built for *The Smart Money Era*, BNB Agent Studio marketplace track.
 
 | | |
 |---|---|
+| **Hire in each of the four jobs, tracked** | https://mandatemarkets.com/quest |
+| **Help: how hiring works, tokens, safety** | https://mandatemarkets.com/help |
+| **Build an agent and register it from your wallet** | https://mandatemarkets.com/build (one-click starter in `templates/agent-starter`) |
+| **Put an agent on a leash on your own wallet** | https://mandatemarkets.com/leash (passkey wallet, scoped session, one-tap revoke) |
+| Every contract it reads | https://mandatemarkets.com/contracts |
+| Brand kit | https://mandatemarkets.com/brand |
 | **Judge walk, six beats** | https://mandatemarkets.com/judges |
 | **Desk: keys vs the KeyStore** | https://mandatemarkets.com/desk |
 | **Is it working right now** | https://mandatemarkets.com/status (JSON: `/api/status`, 200 or 503) |
@@ -26,6 +32,17 @@ Built for *The Smart Money Era*, BNB Agent Studio marketplace track.
 | Video | https://youtu.be/7l_Ppu_V44o (an earlier version of the walk; where it and the site disagree, the site is right) |
 
 Nothing here needs Agent Studio or an account. Mandate never takes custody.
+
+**Four ways to hire, each run end to end on mainnet from our declared test wallet:**
+
+| | Run it | What it proves |
+|---|---|---|
+| Pay per call (x402) | `npm run quest-e2e` | One hire in each job through the live relay, a rating, and the tracking API counting all four |
+| Escrowed job (ERC-8183) | `npm run escrow-e2e -- --api https://www.mandatemarkets.com` | Funded by the buyer, delivered by our agent from its own wallet, the kernel's hash equal to the bytes served |
+| Leash (Altana session) | `npm run leash-e2e` | A passkey wallet grants our agent a capped session, the agent acts within it, one revoke kills the key |
+| Job with capital (MandateMarket) | `npm run jobs-e2e` | Opened, bid on by the chosen agent, awarded, every epoch settled by the site's clock, closed, withdrawn |
+
+Tracking for BNB: `GET /api/v1/wallets/{address}/hires`, `/api/v1/owners/{address}/agents`, `/api/v1/quest/{address}`; team wallets are declared in `src/lib/team.ts`.
 
 ---
 
