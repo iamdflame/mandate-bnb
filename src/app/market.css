@@ -5303,6 +5303,20 @@ a.x-house__name:hover {
     gap: 5px;
   }
 }
+/* The narrowest phones: the label tightens so the search and menu buttons keep their full tap size. */
+@media (max-width: 380px) {
+  .x-nav__net .x-net {
+    padding: 0 6px;
+    font-size: 11px;
+  }
+  .x-nav__net .x-net__dot {
+    display: none;
+  }
+  .x-nav__right > .x-search-trigger,
+  .x-nav__right > .x-nav__mobile {
+    flex-shrink: 0;
+  }
+}
 
 /* ========================================================== contracts === */
 
