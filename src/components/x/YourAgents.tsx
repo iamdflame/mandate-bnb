@@ -43,7 +43,7 @@ export default function YourAgents() {
   return (
     // Its jobs with capital have their own section above; this is only what agents may do.
     <div className="x-yours">
-      <Permissions />
+      <Permissions embedded />
     </div>
   );
 }

@@ -41,7 +41,8 @@ interface Session {
 const bnb = (wei: string) => `${(Number(BigInt(wei)) / 1e18).toFixed(5)} BNB`;
 const short = (a: string) => `${a.slice(0, 8)}…${a.slice(-6)}`;
 
-export default function Permissions() {
+/** `embedded`: the page around it already has the heading, so it shows only the list. */
+export default function Permissions({ embedded = false }: { embedded?: boolean }) {
   const { address } = useWallet();
   const [all, setAll] = useState<Session[] | null>(null);
   const [revocable, setRevocable] = useState(false);
@@ -56,7 +57,8 @@ export default function Permissions() {
       .catch(() => setAll([]));
   }, []);
 
-  if (!all) return null;
+  // Never blank while it reads: a section with nothing under it reads as broken.
+  if (!all) return <p className="x-muted">Reading what agents may do on this wallet…</p>;
 
   const mine = address
     ? all.filter((s) => s.walletAddress.toLowerCase() === address.toLowerCase())
@@ -65,13 +67,15 @@ export default function Permissions() {
 
   return (
     <section>
-      <div className="m-head">
-        <h2 className="m-h2">What your agents are allowed to do</h2>
-        <p className="m-head__note">
-          A session key lets an agent act without holding your keys. It can only
-          call what is listed, only up to a cap, and only until it expires.
-        </p>
-      </div>
+      {embedded ? null : (
+        <div className="m-head">
+          <h2 className="m-h2">What your agents are allowed to do</h2>
+          <p className="m-head__note">
+            A session key lets an agent act without holding your keys. It can only
+            call what is listed, only up to a cap, and only until it expires.
+          </p>
+        </div>
+      )}
 
       {mine.length === 0 ? (
         <div className="m-absent">

@@ -1301,6 +1301,16 @@ html:has(.x-app) body {
   min-height: 44px;
   justify-content: center;
 }
+/* The wallet's own buttons keep their button look, not the menu's link rows. */
+.x-drop__panel .x-drop__wallet a.m-btn {
+  display: inline-flex;
+  justify-content: center;
+  min-height: 0;
+  padding: 0.5em 0.85em;
+  border-radius: 2px;
+  color: var(--ink);
+  font-size: var(--m-tiny);
+}
 /* Inside the menu the wallet's details open in place, not as a second floating panel. */
 .x-drop__wallet .m-wallet__panel {
   position: static;
