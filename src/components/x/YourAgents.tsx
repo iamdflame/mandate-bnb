@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Wallet } from "lucide-react";
 import { useWallet } from "@/lib/chain/wallet";
-import Dashboard from "@/components/v2/portfolio/Dashboard";
 import Permissions from "@/components/v2/portfolio/Permissions";
 
 /**
@@ -26,7 +25,7 @@ export default function YourAgents() {
           <Wallet size={16} />
         </span>
         <p className="x-connect__p">
-          Not connected, so below is MANDATE's own account at work. Connect a wallet to see the jobs you opened and the agents with permissions over it.
+          Connect a wallet to see which agents hold a permission over it. Our own agents at work are further down this page.
         </p>
         {available ? (
           <button type="button" className="x-btn x-btn--sm x-btn--primary" onClick={() => void connect()}>
@@ -42,8 +41,8 @@ export default function YourAgents() {
   }
 
   return (
+    // Its jobs with capital have their own section above; this is only what agents may do.
     <div className="x-yours">
-      <Dashboard />
       <Permissions />
     </div>
   );

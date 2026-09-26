@@ -462,5 +462,10 @@ export function readableError(error: unknown): string {
   return short.length > 160 ? `${short.slice(0, 157)}…` : short;
 }
 
-export const fmtBnb = (wei: bigint | null, dp = 3) =>
-  wei === null ? "" : Number(formatEther(wei)).toFixed(dp);
+/** A balance to `dp` places; a balance too small to show is "<0.001", never a misleading "0.000". */
+export const fmtBnb = (wei: bigint | null, dp = 3) => {
+  if (wei === null) return "";
+  const v = Number(formatEther(wei));
+  const floor = 10 ** -dp;
+  return v > 0 && v < floor ? `<${floor.toFixed(dp)}` : v.toFixed(dp);
+};

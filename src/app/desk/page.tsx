@@ -10,6 +10,7 @@ import RevokeDialog from "@/components/x/RevokeDialog";
 import YourAgents from "@/components/x/YourAgents";
 import YourApprovals from "@/components/x/YourApprovals";
 import YourHires from "@/components/x/YourHires";
+import YourLeashes from "@/components/x/YourLeashes";
 import Dashboard from "@/components/v2/portfolio/Dashboard";
 import { live } from "@/lib/data/live";
 import { snapshot } from "@/lib/data/snapshots";
@@ -255,6 +256,7 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
             Leash an agent
           </Link>
         </div>
+        <YourLeashes />
       </section>
 
       {/* ----------------------------------------------------- your approvals */}
@@ -277,15 +279,22 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
           </div>
         </div>
         <YourAgents />
+      </section>
 
-        {/* The demo account, right under it: the agents a visitor can actually see at work. */}
-        <h3 className="x-desk-sub" id="demo">
-          MANDATE&apos;s own account{" "}
-          <a className="x-link x-mono" href={bscscanAddress(DEMO_ADDRESS)} target="_blank" rel="noreferrer">
-            {short(DEMO_ADDRESS)}
-          </a>
-          <span className="x-desk-sub__n">Our four reference agents, each acting through a scoped session</span>
-        </h3>
+      {/* ------------------------------------------------ our agents at work */}
+      <section className="x-wrap x-section--tight" aria-labelledby="h-ours" id="demo">
+        <div className="x-head">
+          <div>
+            <h2 id="h-ours">Our agents at work</h2>
+            <p>
+              Our four agents act on MANDATE&apos;s own account,{" "}
+              <a className="x-link x-mono" href={bscscanAddress(DEMO_ADDRESS)} target="_blank" rel="noreferrer">
+                {short(DEMO_ADDRESS)}
+              </a>
+              , through scoped sessions, the way one acts on a wallet you leash. These are ours; nothing here touches your wallet.
+            </p>
+          </div>
+        </div>
         <ol className="x-house-list">
           {house.map((h) => (
             <li key={h.leash.slug} className="x-house" id={h.leash.slug}>
@@ -324,7 +333,7 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
                   {h.s ? until(h.s.expiry) : "Not granted"}
                 </span>
                 <details className="x-house__manage">
-                  <summary className="x-btn x-btn--sm">Manage</summary>
+                  <summary className="x-btn x-btn--sm">Details</summary>
                   <div className="x-house__panel">
                     <div>
                       <h3 className="x-hire__h">It can</h3>

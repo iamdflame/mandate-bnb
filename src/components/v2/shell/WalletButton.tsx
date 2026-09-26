@@ -17,6 +17,10 @@ import { marketChain } from "@/lib/chain/market";
  * The panel is a native disclosure, so it opens with scripting off; with
  * scripting on it also closes on an outside click and on Escape.
  */
+/** The network a wallet is on, in words a person recognises. */
+const CHAINS: Record<number, string> = { 1: "Ethereum", 10: "OP Mainnet", 97: "BNB testnet", 137: "Polygon", 204: "opBNB", 8453: "Base", 42161: "Arbitrum" };
+const chainName = (id: number | null) => (id === null ? "Unknown network" : `${CHAINS[id] ?? "Another network"}, chain ${id}`);
+
 export default function WalletButton() {
   const { address, ready, available, chainId, balanceWei, connect, switchChain, disconnect } = useWallet();
   const ref = useRef<HTMLDetailsElement>(null);
@@ -115,11 +119,11 @@ export default function WalletButton() {
         <dl className="m-wallet__facts">
           <div>
             <dt>Network</dt>
-            <dd>{ready ? marketChain.name : `chain ${chainId ?? "unknown"}`}</dd>
+            <dd>{ready ? marketChain.name : chainName(chainId)}</dd>
           </div>
           <div>
             <dt>Balance</dt>
-            <dd>{ready ? `${fmtBnb(balanceWei)} BNB` : "switch network to read it"}</dd>
+            <dd>{ready ? `${fmtBnb(balanceWei)} BNB` : `Read once you switch to ${marketChain.name}`}</dd>
           </div>
         </dl>
 

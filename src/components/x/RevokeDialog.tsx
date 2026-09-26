@@ -20,7 +20,7 @@ export default function RevokeDialog({ sessionId, agent, calls }: { sessionId: s
   return (
     <>
       <button type="button" className="x-btn x-btn--sm x-btn--danger-ghost" onClick={() => dialog.current?.showModal()}>
-        <ShieldOff size={15} aria-hidden="true" /> Revoke access
+        <ShieldOff size={15} aria-hidden="true" /> Revoke (operator)
       </button>
       <dialog ref={dialog} className="x-dialog" aria-labelledby={`rv-${sessionId}`}>
         <form method="post" action="/api/desk/revoke" className="x-dialog__body">
