@@ -15,6 +15,7 @@ const FIXED: Record<string, string> = {
   "0xd6d11aa5046dc5c7be8d63b9223b60d7ad94cbe9": "House keeper A, and the sponsor of free trial calls",
   "0x090d19610cdb4d6bb011d9eb579910ac3296bb0a": "House keeper B",
   "0x003911a1dd39d21de18a4a54a8af8692cb62a301": "End-to-end test wallet",
+  "0xa489017f4d8fb528c404041e6cb8497805a1310a": "Passkey wallet the leash test created from the test wallet",
 };
 
 /** Every team wallet, lowercase, with what it is for. */

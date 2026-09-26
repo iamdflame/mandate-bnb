@@ -192,6 +192,16 @@ describe("GET /api/v1/agents?hireable=1", () => {
     expect(body.data.agents.map((a) => a.tokenId).sort()).toEqual(["990000001", "990000003"]);
   });
 
+  it("lists only agents filed under a job unless every registration is asked for", async () => {
+    const full = await m.readAgentIndex();
+    m.readAgentIndex.mockResolvedValue({ ...full, agents: [...full.agents, indexed("990000004", null as unknown as string)] });
+    const filed = (await (await agentsRoute.GET(req("https://t.test/api/v1/agents", "10.0.2.4"))).json()) as { data: { agents: { tokenId: string }[]; coverage: { classified: number } } };
+    expect(filed.data.agents.map((a) => a.tokenId)).not.toContain("990000004");
+    expect(filed.data.coverage.classified).toBe(3);
+    const all = (await (await agentsRoute.GET(req("https://t.test/api/v1/agents?all=1", "10.0.2.5"))).json()) as { data: { agents: { tokenId: string }[] } };
+    expect(all.data.agents.map((a) => a.tokenId)).toContain("990000004");
+  });
+
   it("refuses a hireable value it does not understand instead of ignoring it", async () => {
     const res = await agentsRoute.GET(req("https://t.test/api/v1/agents?hireable=yes", "10.0.2.2"));
     expect(res.status).toBe(400);

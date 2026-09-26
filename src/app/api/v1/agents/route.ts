@@ -1,6 +1,7 @@
 /**
- * The register, as data. Filterable by rung, category and whether it can be
- * hired right now (`hireable=1`).
+ * The register, as data: the agents filed under the four jobs, filterable by
+ * rung, category and whether they can be hired right now (`hireable=1`).
+ * `all=1` adds every other registration we have read, unfiled.
  *
  * Returns what has actually been read, and says how much of the registry that
  * is. A caller must be able to tell a small answer from a small registry.
@@ -34,6 +35,7 @@ export async function GET(request: Request) {
   const rungParam = url.searchParams.get("rung");
   const categoryParam = url.searchParams.get("category");
   const hireableParam = url.searchParams.get("hireable");
+  const allParam = url.searchParams.get("all");
   const limit = Math.min(MAX_LIMIT, Math.max(1, Number(url.searchParams.get("limit") ?? 50)));
   const offset = Math.max(0, Number(url.searchParams.get("offset") ?? 0));
 
@@ -63,6 +65,11 @@ export async function GET(request: Request) {
     return fail(400, `hireable is 1 or 0, not "${hireableParam}".`, CHAIN_ID);
   }
   const onlyHireable = hireableParam === "1";
+  if (allParam !== null && allParam !== "1" && allParam !== "0") {
+    return fail(400, `all is 1 or 0, not "${allParam}".`, CHAIN_ID);
+  }
+  // The market is the four jobs; every registration we have read, filed or not, only when asked for.
+  const everything = allParam === "1";
   const category = (categoryParam as Category | null) ?? null;
 
   const [index, sets, counts] = await Promise.all([readAgentIndex(), readMarketSets(), hireCounts().catch(() => null)]);
@@ -111,7 +118,11 @@ export async function GET(request: Request) {
   }
 
   const filtered = placed.filter(
-    (a) => (rung === null || a.rung === rung) && (category === null || a.category === category) && (!onlyHireable || a.hireable),
+    (a) =>
+      (everything || a.category !== null) &&
+      (rung === null || a.rung === rung) &&
+      (category === null || a.category === category) &&
+      (!onlyHireable || a.hireable),
   );
 
   return ok(
@@ -119,13 +130,15 @@ export async function GET(request: Request) {
       coverage: {
         registered: index.registry.registered,
         read: placed.length,
+        // Filed under one of the four jobs, from the agent's own words.
+        classified: placed.filter((a) => a.category !== null).length,
         // A caller must be able to tell "few agents match" from "few agents
         // have been read". Both numbers, always.
         unread: Math.max(0, index.registry.registered - placed.length),
       },
       // How old the liveness behind "hireable" is. A stale census is said, not hidden.
       census: { at: census.at, minutes: census.minutes, stale: census.stale },
-      filter: { rung, category, hireable: onlyHireable, limit, offset },
+      filter: { rung, category, hireable: onlyHireable, all: everything, limit, offset },
       total: filtered.length,
       agents: filtered.slice(offset, offset + limit),
     },

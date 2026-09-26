@@ -141,7 +141,7 @@ const toJob = (r: Row): EscrowJob => ({
   expiredAt: r.expired_at === null ? null : Number(r.expired_at),
   submittedAt: r.submitted_at === null ? null : Number(r.submitted_at),
   note: r.note,
-  createdAt: typeof r.created_at === "string" ? r.created_at : r.created_at.toISOString(),
+  createdAt: new Date(r.created_at).toISOString(),
   outside: r.slug === "",
   inputs: r.inputs ? (JSON.parse(r.inputs) as Record<string, string>) : null,
   sellerUrl: r.seller_url ?? null,
@@ -166,6 +166,22 @@ export async function jobRow(jobId: string): Promise<(EscrowJob & { deliverable:
   await outsideColumns();
   const [r] = (await pg`select * from escrow_jobs where job_id = ${jobId}`) as (Row & { deliverable: string | null; seller_answer?: string | null })[];
   return r ? { ...toJob(r), deliverable: r.deliverable, sellerAnswer: r.seller_answer ?? null } : null;
+}
+
+/** Every job funded here for one agent, newest first: its track record on this marketplace. */
+export async function jobsOfAgent(tokenId: string): Promise<EscrowJob[]> {
+  if (!pg) return [];
+  await outsideColumns();
+  const rows = (await pg`select * from escrow_jobs where token_id = ${tokenId} order by created_at desc limit 50`) as Row[];
+  return rows.map(toJob);
+}
+
+/** Jobs funded here that the agent delivered on chain (submitted, or submitted and paid), one entry per job. */
+export async function deliveredJobs(): Promise<{ tokenId: string; jobId: string }[]> {
+  if (!pg) return [];
+  await outsideColumns();
+  const rows = (await pg`select token_id, job_id from escrow_jobs where status in ('SUBMITTED', 'COMPLETED')`) as { token_id: string; job_id: string }[];
+  return rows.map((r) => ({ tokenId: r.token_id, jobId: r.job_id }));
 }
 
 export async function jobsOfClient(client: string): Promise<EscrowJob[]> {

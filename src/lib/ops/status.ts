@@ -9,7 +9,9 @@
  * does. It checks data, not HTML; the smoke script checks the HTML.
  */
 
-import type { Hex } from "viem";
+import type { Address, Hex } from "viem";
+import { marketClient } from "@/lib/chain/market";
+import { providers } from "@/lib/escrow/jobs";
 import { diagnose } from "@/lib/diagnose";
 import { judgePicks } from "@/lib/market/judge";
 import { listingFor } from "@/lib/market/listing";
@@ -151,5 +153,28 @@ export async function judgePathChecks(): Promise<Check[]> {
       const c = await registeredCount();
       return { ok: c.count > 0, detail: `${c.count.toLocaleString("en-GB")} registered at block ${c.block.toLocaleString("en-GB")}` };
     }),
+    timed(7, "Our agents can pay for the work they deliver", async () => {
+      /*
+        An escrowed job to one of our agents is delivered by a transaction from
+        that agent's own wallet, and settled later by keeper A. A wallet out of
+        BNB leaves a buyer's job undelivered until its deadline. Counted in
+        deliveries at today's gas price, from the gas a submission used.
+      */
+      const price = await marketClient.getGasPrice();
+      const per = DELIVERY_GAS * price;
+      const raw = process.env.AGENT_A_KEY;
+      const keeper = raw ? privateKeyToAccount((raw.startsWith("0x") ? raw : `0x${raw}`) as Hex).address : null;
+      const wallets = [...[...providers().values()].map((p) => ({ name: p.ref.name, address: p.owner as Address })), ...(keeper ? [{ name: "keeper A", address: keeper }] : [])];
+      const read = await Promise.all(wallets.map(async (w) => ({ ...w, left: Number((await marketClient.getBalance({ address: w.address })) / per) })));
+      const low = read.filter((w) => w.left < MIN_DELIVERIES);
+      return {
+        ok: read.length > 0 && low.length === 0,
+        detail: read.map((w) => `${w.name} ${w.left.toLocaleString("en-GB")}`).join(", ") + ` deliveries of gas left${low.length ? `; below ${MIN_DELIVERIES}: ${low.map((w) => w.name).join(", ")}` : ""}`,
+      };
+    }),
   ]);
 }
+
+/** Gas one escrow submission used on mainnet (job 56803), and the fewest deliveries a wallet should have in hand. */
+const DELIVERY_GAS = 158_017n;
+const MIN_DELIVERIES = 50;

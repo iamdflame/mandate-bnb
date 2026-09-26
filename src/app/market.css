@@ -5287,9 +5287,20 @@ a.x-house__name:hover {
 .x-drop__panel > .x-net {
   margin-bottom: var(--s-2);
 }
+.x-net__abbr {
+  display: none;
+}
+/* A narrow header keeps the network, in its short name: BNB counts an unstated network against us on every screen. */
 @media (max-width: 1180px) {
-  .x-nav__net {
+  .x-nav__net .x-net__full {
     display: none;
+  }
+  .x-nav__net .x-net__abbr {
+    display: inline;
+  }
+  .x-nav__net .x-net {
+    padding: 0 8px;
+    gap: 5px;
   }
 }
 

@@ -29,9 +29,9 @@ const ENDPOINTS = [
   },
   {
     method: "GET",
-    path: "/api/v1/agents?rung=&category=&limit=&offset=",
+    path: "/api/v1/agents?rung=&category=&hireable=&all=&limit=&offset=",
     limit: "30 / minute",
-    what: "The register, filterable. Carries coverage, so a small answer can always be told apart from a small registry.",
+    what: "The agents filed under the four jobs, filterable; all=1 adds every other registration read. Carries coverage, so a small answer can always be told apart from a small registry.",
     example: `curl "${HOST}/api/v1/agents?rung=2&limit=5"`,
   },
   {

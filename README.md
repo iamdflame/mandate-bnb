@@ -284,20 +284,23 @@ prints the plan's boxes with what was read to decide each one.
   ([`docs/MULTISIG.md`](docs/MULTISIG.md)); it needs a second signer.
 - **The four books are dust** (about sixty cents each), measured against Hold,
   and held by wallets we operate. Label: reference against reference.
-- **Grid-1 lost to doing nothing and is paused.** Almost all of the loss was
-  gas on very small fills. It is refused for hire on every rail, its leash is
-  left to lapse, and the losing window stays published on `/proof`.
+- **Grid-1 lost to doing nothing and its trading is paused.** Almost all of
+  the loss was gas on very small fills. It no longer trades or takes a job
+  with capital; it sells only its report, per call or as an escrowed job, and
+  the losing window stays published on `/proof`.
 - **The probe speaks MCP, A2A and x402, but most of the registry answers in
   none of them.** An agent counts as live only when it completes one of those
   handshakes; a website that answers 200 is "no agent protocol", and copies of
-  one product are badged. The strangers we can pay are few.
+  one product are badged. The strangers we can pay are few: ten on 26
+  September, three per call and seven through ERC-8183 escrow.
 - **GitHub Actions is still billing-locked.** The site's own clock replaced it:
   an external pinger calls `/api/cron/tick` every five minutes, and `/status`
   shows fourteen days of samples and when each job last ran.
-- **Our agents act on the site's clock, but only on our own demo account.**
-  Range-1, Guard-1 and Yield-1 take their turns from `/api/cron/tick` through
-  their leashes, with small caps. Nothing on the site acts through a session
-  with authority over a buyer's funds.
+- **Leashes on buyers' wallets are new.** Yield-1 and Guard-1 act on a
+  buyer's Altana passkey wallet through a session the buyer grants, capped
+  per day and revocable in one tap; it passed end to end on mainnet on 25
+  September (`npm run leash-e2e`), and no buyer but our test wallet has used
+  it yet. Range-1 acts only on our own demo account.
 - **Assay preimages are not on Greenfield.** Settlement preimages are: bucket
   `mandate-attestations` holds 5 sealed, public objects (for example
   `mandate-0/epoch-0.json`), written 04 Sep 2026 to 05 Sep 2026

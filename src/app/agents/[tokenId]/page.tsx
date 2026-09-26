@@ -19,6 +19,7 @@ import { assayFor, assaySnapshot } from "@/lib/market/assays";
 import { previewFor } from "@/lib/market/quotes";
 import { live } from "@/lib/data/live";
 import { describeStatus, strangerHiresLive } from "@/lib/market/stranger-hires";
+import { jobsOfAgent, type EscrowJob } from "@/lib/escrow/jobs";
 import { hirePath } from "@/lib/market/hire-law";
 import { hireCounts } from "@/lib/market/hires";
 import { SPONSORED } from "@/lib/market/sponsored-targets";
@@ -59,6 +60,22 @@ function sentences(text: string | null): string[] {
 
 const COUNT_ORDER: ProofState[] = ["proven", "unproven", "failed", "nodata"];
 
+/** What became of an escrowed job bought here, from the kernel's status as last recorded. */
+function jobWords(j: EscrowJob): string {
+  switch (j.status) {
+    case "SUBMITTED":
+      return "delivered on chain; paid to the agent once the seven-day dispute window passes";
+    case "COMPLETED":
+      return "delivered on chain and paid";
+    case "EXPIRED":
+      return "not delivered; the budget went back to the buyer";
+    case "REJECTED":
+      return "disputed; the budget went back to the buyer";
+    default:
+      return j.expiredAt && Date.now() / 1000 > j.expiredAt ? "not delivered by its deadline; the buyer can take the budget back" : "funded, waiting for the agent to deliver";
+  }
+}
+
 /**
  * One agent, as a product page.
  *
@@ -76,6 +93,8 @@ const COUNT_ORDER: ProofState[] = ["proven", "unproven", "failed", "nodata"];
 export default async function AgentPage({ params }: { params: Promise<{ tokenId: string }> }) {
   const { tokenId } = await params;
   const paidJobs = (await strangerHiresLive().catch(() => [])).filter((h) => h.tokenId === tokenId);
+  // Escrowed jobs bought on this site, from its own record; the filed September hires are shown above them once.
+  const siteJobs = (await jobsOfAgent(tokenId).catch(() => [])).filter((j) => !paidJobs.some((h) => h.jobId === j.jobId));
   await live();
   /*
     Every agent on the registry has a page, including one minted a minute ago
@@ -405,7 +424,7 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
           {/* --------------------------------------------------------- activity */}
           <section className="x-ad-sec" aria-labelledby="h-act">
             <h2 id="h-act">Activity</h2>
-            {calls.length || paidJobs.length ? (
+            {calls.length || paidJobs.length || siteJobs.length ? (
               <ol className="x-tl">
                 {calls.map((c) => (
                   <li key={c.id} className="x-tl__row">
@@ -449,6 +468,24 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
                       </span>
                     )}
                     <span className="x-tl__at" />
+                  </li>
+                ))}
+                {siteJobs.map((j) => (
+                  <li key={`site-${j.jobId}`} className="x-tl__row">
+                    <span className="x-tl__dot x-tl__dot--job" aria-hidden="true" />
+                    <span className="x-tl__main">
+                      <span className="x-tl__actor">Escrow job {j.jobId}</span> <span className="x-tl__what">{jobWords(j)}</span>
+                    </span>
+                    {j.fundedTx ? (
+                      <a className="x-tl__fig x-mono x-link" href={`https://bscscan.com/tx/${j.fundedTx}`} target="_blank" rel="noreferrer">
+                        {Number(j.budget) / 1e18} $U
+                      </a>
+                    ) : (
+                      <span className="x-tl__fig x-mono">{Number(j.budget) / 1e18} $U</span>
+                    )}
+                    <span className="x-tl__at">
+                      <Ago iso={j.createdAt} />
+                    </span>
                   </li>
                 ))}
               </ol>

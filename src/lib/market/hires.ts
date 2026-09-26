@@ -21,6 +21,7 @@
 import { readBook } from "@/lib/chain/book";
 import { listPaidCalls } from "@/lib/market/paid-calls";
 import { strangerHires } from "@/lib/market/stranger-hires";
+import { deliveredJobs } from "@/lib/escrow/jobs";
 import { assaySnapshot } from "@/lib/market/assays";
 
 /**
@@ -73,7 +74,11 @@ export async function hireCounts(): Promise<HireCounts> {
   const settled = new Map<string, number>();
   const calls = await listPaidCalls().catch(() => []);
   for (const c of calls) if (c.paid && c.delivered) settled.set(c.tokenId, (settled.get(c.tokenId) ?? 0) + 1);
-  for (const h of strangerHires()) if (h.deliverable?.hashMatches) settled.set(h.tokenId, (settled.get(h.tokenId) ?? 0) + 1);
+  const filed = strangerHires();
+  for (const h of filed) if (h.deliverable?.hashMatches) settled.set(h.tokenId, (settled.get(h.tokenId) ?? 0) + 1);
+  // Escrowed jobs bought here and delivered on chain, ours and outside sellers', once each.
+  const seen = new Set(filed.map((h) => h.jobId));
+  for (const j of await deliveredJobs().catch(() => [])) if (!seen.has(j.jobId)) settled.set(j.tokenId, (settled.get(j.tokenId) ?? 0) + 1);
 
   const book = await readBook().catch(() => null);
   if (!book) return { byTokenId, thirdParty, operated, settled };
