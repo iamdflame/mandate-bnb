@@ -217,8 +217,10 @@ async function tryMcp(url: string, transcript: Step[]): Promise<{ tools: ProbeTo
  * only silence or HTML does not.
  */
 async function tryA2a(url: string, transcript: Step[]): Promise<{ tools: ProbeTool[]; status: number; ms: number } | null> {
-  const base = url.replace(/\/+$/, "");
-  const cardUrls = [`${base}/.well-known/agent-card.json`, `${base}/.well-known/agent.json`];
+  // Some cards list the agent card itself as the A2A service; it names the endpoint to call.
+  const isCard = /\/\.well-known\/agent(-card)?\.json$/i.test(url);
+  let base = url.replace(/\/+$/, "");
+  const cardUrls = isCard ? [url] : [`${base}/.well-known/agent-card.json`, `${base}/.well-known/agent.json`];
 
   let skills: ProbeTool[] = [];
   let cardStatus: number | null = null;
@@ -232,8 +234,12 @@ async function tryA2a(url: string, transcript: Step[]): Promise<{ tools: ProbeTo
     transcript.push(step(`GET ${c.replace(base, "")}`, res.status, res.text, res.truncated));
     cardStatus = res.status;
     if (res.status !== 200) continue;
-    const card = parseMaybeSse(res.text) as { skills?: { id?: string; name?: string; description?: string }[] } | null;
+    const card = parseMaybeSse(res.text) as { url?: unknown; skills?: { id?: string; name?: string; description?: string }[] } | null;
     if (!card || typeof card !== "object") continue;
+    if (isCard) {
+      if (typeof card.url !== "string" || !/^https:/i.test(card.url) || whyUnsafe(card.url)) return null;
+      base = card.url.replace(/\/+$/, "");
+    }
     skills = (card.skills ?? [])
       .filter((s) => s && (s.name || s.id))
       .map((s) => ({ name: String(s.name ?? s.id), description: s.description?.slice(0, 300) }));

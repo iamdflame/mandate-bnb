@@ -78,7 +78,9 @@ export async function escrowSeller(services: { name?: string; endpoint?: string 
   if (!a2a) return null;
   const listed = services.find((s) => /agent.?card/i.test(s.name ?? "") && /^https:/i.test(s.endpoint ?? ""))?.endpoint;
   const origin = new URL(a2a).origin;
-  const tries = [listed, `${origin}/.well-known/agent-card.json`, `${a2a.replace(/\/$/, "")}/.well-known/agent-card.json`].filter(Boolean) as string[];
+  // Some cards list the agent card itself as the A2A service.
+  const isCard = /\/\.well-known\/agent(-card)?\.json$/i.test(a2a);
+  const tries = [listed, isCard ? a2a : null, `${origin}/.well-known/agent-card.json`, `${a2a.replace(/\/$/, "")}/.well-known/agent-card.json`].filter(Boolean) as string[];
   for (const url of tries) {
     const res = await safeFetch(url, { timeoutMs: TIMEOUT, headers: { accept: "application/json" } }).catch(() => null);
     if (!res || res.status !== 200) continue;
@@ -92,7 +94,7 @@ export async function escrowSeller(services: { name?: string; endpoint?: string 
     if (!skills.has("negotiate") || !skills.has("notify_funded")) return null;
     // The card names its own endpoint; it must be https, and the one the registration lists wins a tie.
     const named = [card.url, ...(card.supportedInterfaces ?? []).map((i) => i.url)].find((u) => typeof u === "string" && /^https:/i.test(u));
-    return named ?? a2a;
+    return named ?? (isCard ? null : a2a);
   }
   // No card could be read: our failure, not a finding that it does not sell.
   throw new Error("no agent card could be read");

@@ -51,13 +51,17 @@ export interface CensusRun {
   ms: number;
 }
 
-/** The endpoint a card offers: its x402 endpoint first, then the first http service it lists. */
+/**
+ * The endpoint a card offers: its x402 endpoint first, then an MCP or A2A
+ * service, then the first http service it lists. A card that lists a job
+ * endpoint or a web page before its agent protocol is still called where the
+ * agent speaks.
+ */
 export function endpointFor(e: Awaited<ReturnType<typeof readRegistryEntry>>): string | null {
   if (!e) return null;
   if (e.x402Endpoint) return e.x402Endpoint;
-  const svc = e.services?.find((s) => typeof s.endpoint === "string" && /^https?:/i.test(s.endpoint));
-  if (svc?.endpoint) return svc.endpoint;
-  return null;
+  const http = (e.services ?? []).filter((s) => typeof s.endpoint === "string" && /^https?:/i.test(s.endpoint));
+  return (http.find((s) => /^(mcp|a2a)$/i.test(s.name ?? "")) ?? http[0])?.endpoint ?? null;
 }
 
 export async function runCensus(opts: CensusOptions): Promise<CensusRun> {
