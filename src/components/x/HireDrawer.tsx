@@ -233,7 +233,17 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
               {offer.price.exact && offer.price.exact !== offer.price.value ? <span className="x-hire__sub x-mono">{offer.price.exact}</span> : null}
             </dd>
           </div>
-          {offer.latencyMs !== null ? (
+          {escrowOnly ? (
+            // A job is worked after it is funded; the handshake's speed says nothing about that.
+            <div>
+              <dt>Delivery</dt>
+              <dd>
+                {offer.escrow!.outside!.etaSeconds
+                  ? `About ${Math.max(1, Math.round(offer.escrow!.outside!.etaSeconds / 60))} min after you fund it, as its seller quotes`
+                  : "Within minutes of funding, or you take the money back"}
+              </dd>
+            </div>
+          ) : offer.latencyMs !== null ? (
             <div>
               <dt>Expected response</dt>
               <dd className="x-mono">~{offer.latencyMs} ms</dd>
