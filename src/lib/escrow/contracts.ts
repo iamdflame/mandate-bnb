@@ -61,3 +61,18 @@ export const DELIVERY_SECONDS = 1_800;
 
 /** The words every job opened here starts with, so any indexer can tell our jobs apart on chain. */
 export const VIA = "via mandatemarkets.com";
+/** The host every job opened here names, in the words above or in an outside seller's JSON description. */
+export const VIA_HOST = "mandatemarkets.com";
+
+/**
+ * The on-chain description of a job for an outside seller: the JSON such
+ * sellers read their task from, with our line in the task so any indexer can
+ * still tell a job opened here.
+ */
+export function outsideDescription(name: string, service: string | null, inputs: Record<string, string>): string {
+  return JSON.stringify({
+    task: [name, ...Object.entries(inputs).map(([k, v]) => `${k} ${v}`), VIA].join(", "),
+    ...(service ? { service } : {}),
+    via: VIA_HOST,
+  });
+}

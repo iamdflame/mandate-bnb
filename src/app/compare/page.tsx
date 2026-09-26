@@ -208,7 +208,7 @@ export default async function ComparePage({
                 <Row k="Rails">
                   {cols.map((c) => (
                     <span key={c.l.tokenId} className="x-cmpt__tags">
-                      {c.verdict.rails.length ? c.verdict.rails.map((r) => <span key={r.kind} className="x-tag">{r.kind === "x402" ? "Pay per call" : "Escrowed job"}</span>) : <span className="x-dim">None we can settle</span>}
+                      {c.verdict.rails.length ? c.verdict.rails.map((r) => <span key={r.kind} className="x-tag">{r.kind === "x402" ? "Pay per call" : r.kind === "escrow" ? "Escrowed job" : "Job with capital"}</span>) : <span className="x-dim">None we can settle</span>}
                     </span>
                   ))}
                 </Row>

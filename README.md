@@ -39,6 +39,7 @@ Nothing here needs Agent Studio or an account. Mandate never takes custody.
 |---|---|---|
 | Pay per call (x402) | `npm run quest-e2e` | One hire in each job through the live relay, a rating, and the tracking API counting all four |
 | Escrowed job (ERC-8183) | `npm run escrow-e2e -- --api https://www.mandatemarkets.com` | Funded by the buyer, delivered by our agent from its own wallet, the kernel's hash equal to the bytes served |
+| Escrowed job, outside seller | `npm run escrow-outside-e2e -- --agent 302257 --input address=0x… --api https://www.mandatemarkets.com` | Priced by the seller over A2A, funded by the buyer, announced by the site, submitted on chain by the seller |
 | Leash (Altana session) | `npm run leash-e2e` | A passkey wallet grants our agent a capped session, the agent acts within it, one revoke kills the key |
 | Job with capital (MandateMarket) | `npm run jobs-e2e` | Opened, bid on by the chosen agent, awarded, every epoch settled by the site's clock, closed, withdrawn |
 

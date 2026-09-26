@@ -13,10 +13,14 @@
  * judge-facing pages) and the daily cron are what trigger them. From a
  * laptop `limit` is unbounded and it is the old full census.
  *
- * Two rules from the script survive unchanged. A card that would not resolve
- * is *our* failure and carries its previous reading forward, never
- * overwritten with "no endpoint". And an agent that publishes nothing to
+ * Two rules from the script survive. A card that would not resolve is *our*
+ * failure and is never recorded as "no endpoint"; when we already know the
+ * endpoint it named, we call that instead, so a flaky card host does not
+ * freeze an agent's reading for days. And an agent that publishes nothing to
  * call is recorded as publishing nothing, a finding rather than a gap.
+ *
+ * An agent whose card lists an A2A seller that prices work for ERC-8183
+ * escrow is also asked its price, and the quote is kept beside the x402 ones.
  */
 
 import { readRegistryEntry } from "@/lib/sources/registry";
@@ -25,6 +29,7 @@ import { readQuote, readPreview, type Quote } from "@/lib/x402/quote";
 import { getAgentIndex } from "@/lib/data/agents";
 import type { ProbeIndex } from "@/lib/data/probes";
 import { warmRegistry } from "@/lib/registry/tail";
+import { escrowSeller, negotiate, type EscrowQuote } from "@/lib/escrow/a2a";
 
 export interface CensusOptions {
   previous: ProbeIndex | null;
@@ -67,6 +72,7 @@ export async function runCensus(opts: CensusOptions): Promise<CensusRun> {
   const prevResults = new Map<string, ProbeResult>((prev?.results ?? []).map((r) => [r.tokenId, r]));
   const prevQuotes: Record<string, Quote> = { ...(prev?.quotes ?? {}) };
   const prevPreviews: Record<string, unknown> = { ...(prev?.previews ?? {}) };
+  const prevEscrow: Record<string, EscrowQuote> = { ...(prev?.escrowQuotes ?? {}) };
 
   let agents = getAgentIndex().agents.filter((a) => a.category);
   if (opts.only?.length) {
@@ -83,7 +89,7 @@ export async function runCensus(opts: CensusOptions): Promise<CensusRun> {
   if (opts.limit) agents = agents.slice(0, opts.limit);
   log(`${agents.length} agents to refresh`);
 
-  const targets: { tokenId: string; endpoint: string | null; unread: boolean }[] = [];
+  const targets: { tokenId: string; name: string; endpoint: string | null; unread: boolean; services: { name?: string; endpoint?: string }[] }[] = [];
   const queue = [...agents];
   await Promise.all(
     Array.from({ length: opts.resolveConcurrency ?? 8 }, async () => {
@@ -92,10 +98,15 @@ export async function runCensus(opts: CensusOptions): Promise<CensusRun> {
         const a = queue.shift();
         if (!a) return;
         const e = await readRegistryEntry(a.tokenId).catch(() => null);
+        const unread = e === null || e.cardSource === "unresolved";
+        // An unreadable card says nothing new, but the endpoint it named last time can still be called.
+        const known = unread ? (prevResults.get(a.tokenId)?.endpoint ?? null) : null;
         targets.push({
           tokenId: a.tokenId,
-          endpoint: endpointFor(e),
-          unread: e === null || e.cardSource === "unresolved",
+          name: a.name ?? "",
+          endpoint: known ?? endpointFor(e),
+          unread: unread && !known,
+          services: e?.services ?? [],
         });
       }
     }),
@@ -158,6 +169,19 @@ export async function runCensus(opts: CensusOptions): Promise<CensusRun> {
     if (pv) prevPreviews[r.tokenId] = pv;
   }
 
+  // A card with an A2A seller is asked whether it prices work for escrow, and what for this agent.
+  for (const t of targets) {
+    if (t.unread || overBudget() || !t.services.some((s) => /^a2a$/i.test(s.name ?? ""))) continue;
+    const seller = await escrowSeller(t.services).catch(() => undefined);
+    if (seller === undefined) continue; // Our read failed; the last quote stands.
+    if (seller === null) {
+      delete prevEscrow[t.tokenId];
+      continue;
+    }
+    const q = await negotiate(seller, t.name).catch(() => null);
+    if (q) prevEscrow[t.tokenId] = q;
+  }
+
   const all = [...prevResults.values()];
   const index: ProbeIndex = {
     at: now,
@@ -165,6 +189,7 @@ export async function runCensus(opts: CensusOptions): Promise<CensusRun> {
     answered: all.filter((r) => r.answered).length,
     quotes: prevQuotes,
     previews: prevPreviews,
+    escrowQuotes: prevEscrow,
     results: all,
   };
   return { index, refreshed: results.length, resolvedFailed, ms: Date.now() - started };

@@ -1,7 +1,8 @@
 /**
  * The agent the quest suggests for each of the four jobs.
  *
- * Only agents the hire law passes with a paid call a wallet can make now, and
+ * Only agents the hire law passes with a paid call or an escrowed job a wallet
+ * can fund now, and
  * ranked by evidence before price: the most calls settled on chain first, then
  * the cheapest, then the quickest to answer. Ours are ranked by the same rule
  * and marked as ours on the page; nothing here is placed by hand.
@@ -32,7 +33,7 @@ export async function questPicks(): Promise<QuestPick[]> {
   const counts = await hireCounts().catch(() => null);
   const payable = listings(counts?.byTokenId, counts?.settled).filter((l) => {
     const v = hirePath(l);
-    return v.ok && v.rails.some((r) => r.kind === "x402") && l.quote;
+    return v.ok && ((v.rails.some((r) => r.kind === "x402") && l.quote) || v.rails.some((r) => r.kind === "escrow"));
   });
   return CATEGORIES.map((category) => {
     const inJob = payable.filter((l) => l.category === category).sort(rankForQuest);

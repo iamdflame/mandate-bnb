@@ -62,7 +62,7 @@ async function withLock<T>(fn: () => Promise<T>): Promise<T | null> {
 }
 
 /** Runs one census slice if the reading is stale. Safe to call concurrently. */
-export async function refreshIfStale(opts: { maxAgeMs?: number; limit?: number; budgetMs?: number; force?: boolean } = {}): Promise<RefreshOutcome> {
+export async function refreshIfStale(opts: { maxAgeMs?: number; limit?: number; budgetMs?: number; force?: boolean; only?: string[] } = {}): Promise<RefreshOutcome> {
   if (inFlight) return inFlight;
   inFlight = (async () => {
     try {
@@ -76,6 +76,7 @@ export async function refreshIfStale(opts: { maxAgeMs?: number; limit?: number; 
         const run = await runCensus({
           previous: current,
           limit: opts.limit ?? 60,
+          only: opts.only,
           budgetMs: opts.budgetMs ?? 40_000,
           resolveConcurrency: 8,
           probeConcurrency: 12,

@@ -6055,7 +6055,10 @@ a.x-house__name:hover {
   gap: 2px;
 }
 .x-helppage__toc a {
-  display: block;
+  display: flex;
+  align-items: center;
+  /* A tap target a thumb can hit: 44px tall. */
+  min-height: 44px;
   padding: 6px 10px;
   border-radius: var(--r-sm);
   color: var(--c-text-2);

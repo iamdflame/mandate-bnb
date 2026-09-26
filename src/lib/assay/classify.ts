@@ -59,6 +59,10 @@ const SIGNALS: Record<Category, Signal[]> = {
     { phrase: "grid bot", weight: 6 },
     { phrase: "grid order", weight: 5 },
     { phrase: "grid strateg", weight: 5 },
+    // An agent that sizes and costs a grid is a grid agent, whether or not it places the orders.
+    { phrase: "grid plan", weight: 5 },
+    { phrase: "grid level", weight: 5 },
+    { phrase: "grid spacing", weight: 5 },
     { phrase: "dca", weight: 2, whole: true },
     { phrase: "limit order", weight: 2 },
     { phrase: "range trad", weight: 3 },

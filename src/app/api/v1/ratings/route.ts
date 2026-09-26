@@ -58,9 +58,10 @@ export async function POST(request: Request) {
 
   /*
     A rating written here names the hire it follows: its feedbackHash is that
-    hire's settlement transaction. It is linked only when that transaction is
-    a paid call to this agent from this same wallet, so a rating cannot borrow
-    somebody else's hire.
+    hire's settlement transaction, or for an escrowed job the transaction that
+    funded it. It is linked only when that transaction is a paid call to, or a
+    job funded for, this agent from this same wallet, so a rating cannot
+    borrow somebody else's hire.
   */
   let hireTx: string | null = null;
   if (pg) {
@@ -73,6 +74,14 @@ export async function POST(request: Request) {
         limit 1
       `) as { tx: string }[];
       hireTx = hire?.tx.toLowerCase() ?? null;
+      if (!hireTx) {
+        const [job] = (await pg`
+          select funded_tx from escrow_jobs
+          where funded_tx = ${feedbackHash.toLowerCase()} and token_id = ${agentId.toString()} and client = ${wallet}
+          limit 1
+        `.catch(() => [])) as { funded_tx: string }[];
+        hireTx = job?.funded_tx ?? null;
+      }
     }
     await pg`
       insert into ratings (tx, wallet, token_id, score, tag1, tag2, block, hire_tx)

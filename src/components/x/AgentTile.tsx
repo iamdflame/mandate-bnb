@@ -22,7 +22,7 @@ import CompareToggle from "./CompareToggle";
  * reason sits there.
  */
 
-const RAIL: Record<string, string> = { x402: "x402", mandate: "ERC-8183" };
+const RAIL: Record<string, string> = { x402: "x402", escrow: "ERC-8183 escrow", mandate: "job with capital" };
 // The chip sits on the art beside "Ours"; the full name is on the agent page.
 const SHORT: Record<string, string> = { "health-factor": "Health Factor" };
 

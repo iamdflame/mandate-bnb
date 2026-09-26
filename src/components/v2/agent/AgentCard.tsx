@@ -122,7 +122,7 @@ export default function AgentCard({
   const act = hireHref(listing.tokenId, verdict, forPosition);
   const rail = primaryRail(verdict);
   const label =
-    rail?.kind === "x402" ? `Call it for ${rail.price}` : forPosition ? "Hire for this position" : "Hire this agent";
+    rail?.kind === "x402" ? `Call it for ${rail.price}` : rail?.kind === "escrow" ? `Hire for ${rail.price}` : forPosition ? "Hire for this position" : "Hire this agent";
   const dim = listing.liveness !== "live";
 
   if (variant === "row") {

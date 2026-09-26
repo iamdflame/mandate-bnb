@@ -14,6 +14,9 @@
  *             pay (BNB Smart Chain, a token we pay in, a transfer method we sign)
  *   mandate   the agent bids in this market, so opening a job here reaches it:
  *             our reference agents, labelled as ours, and any agent that has bid
+ *   escrow    the agent's seller priced an ERC-8183 job over A2A, in $U, on the
+ *             kernel we use: the buyer funds the escrow, the seller delivers on
+ *             chain, and the money comes back if it does not
  *
  * and it requires a recent answer. When no rail exists the verdict carries the
  * reason, in a sentence a person can act on, and the surface shows that
@@ -34,6 +37,8 @@ function referenceTokenIds(): Set<string> {
   return refTokens.ids;
 }
 import { JOBS_OPEN } from "@/lib/market/jobs-open";
+import { escrowPriceLabel } from "@/lib/market/listing";
+import { missedEscrowJobs } from "@/lib/escrow/jobs";
 import { nameSome, toolsFit } from "@/lib/assay/tools";
 
 /** A hire is only offered on an answer from the last day. */
@@ -42,14 +47,17 @@ export const FRESH_HOURS = 24;
 export const LIVE_MINUTES = 15;
 let cached: { at: number; map: Map<string, Outcome> } | null = null;
 let fromDb: { at: number; map: Map<string, Outcome> } | null = null;
+/** Outside escrow sellers whose latest job passed its deadline undelivered, by token id: the job and when it expired. */
+let escrowMissed: Map<string, { jobId: string; at: string }> = new Map();
 
 /**
  * Loads every recorded call, the database's and the committed file's, so the
  * law remembers a failure a visitor's own payment met, not only ours.
  */
 export async function warmOutcomes(): Promise<void> {
-  const calls = await listPaidCalls().catch(() => null);
+  const [calls, missed] = await Promise.all([listPaidCalls().catch(() => null), missedEscrowJobs().catch(() => null)]);
   if (calls) fromDb = { at: Date.now(), map: outcomes(calls) };
+  if (missed) escrowMissed = missed;
 }
 
 /** What happened when we last paid each agent: the database's record when warm, the committed file otherwise. */
@@ -74,7 +82,14 @@ export type Rail =
       method: "eip3009" | "permit2" | null;
       endpoint: string;
     }
-  | { kind: "mandate" };
+  | { kind: "mandate" }
+  | {
+      kind: "escrow";
+      /** The budget as a person reads it, e.g. "0.10 $U". */
+      price: string;
+      /** The wallet the job names as provider. */
+      provider: string;
+    };
 
 export interface HireVerdict {
   /** A hire this site can honour exists for this agent right now. */
@@ -98,8 +113,8 @@ function ago(minutes: number): string {
 }
 
 export function hirePath(
-  l: Pick<Listing, "tokenId" | "owner" | "probe" | "liveness" | "quote" | "priceLabel"> & { category?: Listing["category"] },
-  opts: { now?: number; bidders?: ReadonlySet<string>; outcomes?: Map<string, Outcome>; jobsOpen?: boolean } = {},
+  l: Pick<Listing, "tokenId" | "owner" | "probe" | "liveness" | "quote" | "priceLabel"> & { category?: Listing["category"]; escrowQuote?: Listing["escrowQuote"] },
+  opts: { now?: number; bidders?: ReadonlySet<string>; outcomes?: Map<string, Outcome>; jobsOpen?: boolean; escrowMissed?: Map<string, { jobId: string; at: string }> } = {},
 ): HireVerdict {
   const now = opts.now ?? Date.now();
   const ours = isOurs(l);
@@ -171,11 +186,24 @@ export function hirePath(
   if (l.quote?.payable) {
     rails.push({ kind: "x402", price: l.priceLabel ?? l.quote.amount, method: l.quote.transferMethod ?? null, endpoint: l.quote.endpoint });
   }
+  // An escrowed job from an outside seller, unless its last one passed the deadline undelivered.
+  const missed = (opts.escrowMissed ?? escrowMissed).get(l.tokenId);
+  const eq = l.escrowQuote;
+  if (eq && !eq.unpayable && !ours && !missed) {
+    rails.push({ kind: "escrow", price: escrowPriceLabel(eq) ?? `${eq.price} $U`, provider: eq.provider });
+  }
   // A job hands it capital to act with, which a trading pause forbids; its paid answer does not.
   // Jobs are offered only while the market settles them on its own (lib/market/jobs-open).
   if (bidder && !pause && (opts.jobsOpen ?? JOBS_OPEN)) rails.push({ kind: "mandate" });
 
   if (!rails.length) {
+    if (missed) {
+      return refuse(
+        `Escrowed job #${missed.jobId} reached its deadline on ${shortDate(missed.at)} with nothing delivered, so its buyer can take the budget back. It comes back once it delivers a job again.`,
+        "Missed an escrowed job",
+      );
+    }
+    if (eq?.unpayable) return refuse(`It prices escrowed jobs, but ${eq.unpayable}.`, "Its price is in a token we cannot pay");
     return refuse(
       l.quote
         ? `It quoted a price we cannot pay: ${l.quote.unpayable}.`
@@ -188,13 +216,13 @@ export function hirePath(
 
 /** The first rail a surface should lead with: paying the agent itself beats a job it must bid on. */
 export function primaryRail(v: HireVerdict): Rail | null {
-  return v.rails.find((r) => r.kind === "x402") ?? v.rails[0] ?? null;
+  return v.rails.find((r) => r.kind === "x402") ?? v.rails.find((r) => r.kind === "escrow") ?? v.rails[0] ?? null;
 }
 
 /** Where the primary action goes, for a card or a profile. */
 export function hireHref(tokenId: string, v: HireVerdict, about?: string): string | null {
   const r = primaryRail(v);
   if (!r) return null;
-  if (r.kind === "x402") return `/agents/${tokenId}#call`;
+  if (r.kind === "x402" || r.kind === "escrow") return `/agents/${tokenId}#call`;
   return about ? `/hire/${tokenId}?about=${encodeURIComponent(about)}` : `/hire/${tokenId}`;
 }

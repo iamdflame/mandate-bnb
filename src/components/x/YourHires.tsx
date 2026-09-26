@@ -181,7 +181,7 @@ export default function YourHires() {
                     {refunding === h.jobId ? "Claiming…" : "Claim your refund"}
                   </button>
                 ) : null}
-                {h.kind === "paid-call" && h.tx && h.onChain && !rated.has(h.tx.toLowerCase()) ? (
+                {(h.kind === "paid-call" || (h.kind === "escrow-job" && h.completed)) && h.tx && h.onChain && !rated.has(h.tx.toLowerCase()) ? (
                   <details className="x-hire-row__rate">
                     <summary>Rate this hire</summary>
                     <RateAgent tokenId={h.agentId} name={h.agentName ?? `Agent #${h.agentId}`} category={h.category} hireTx={h.tx} />

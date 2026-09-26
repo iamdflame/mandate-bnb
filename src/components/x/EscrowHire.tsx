@@ -6,29 +6,47 @@ import { Check, Loader2 } from "lucide-react";
 import { marketClient } from "@/lib/chain/market";
 import { sendMarketTx, useWallet } from "@/lib/chain/wallet";
 import OpenInWallet from "./OpenInWallet";
-import { COMMERCE_ABI, DELIVERY_SECONDS, ESCROW, POLICY_ABI, ROUTER_ABI, TOKEN_ABI, VIA } from "@/lib/escrow/contracts";
+import RateAgent from "./RateAgent";
+import { COMMERCE_ABI, DELIVERY_SECONDS, ESCROW, outsideDescription, POLICY_ABI, ROUTER_ABI, TOKEN_ABI, VIA } from "@/lib/escrow/contracts";
 
 /**
- * Hiring one of our agents through ERC-8183 escrow, from the buyer's own wallet.
+ * Hiring an agent through ERC-8183 escrow, from the buyer's own wallet.
  *
- * Five transactions, each shown before it is signed: open the job naming our
+ * Five transactions, each shown before it is signed: open the job naming the
  * agent's wallet as provider, bind it to the optimistic policy, set the
  * budget, approve exactly that budget of $U to the escrow, and fund it. The
- * $U sits in the escrow, not with us. Our agent delivers within minutes; the
- * budget is released to it once the policy's dispute window passes, and comes
- * back to the buyer if it does not deliver in time.
+ * $U sits in the escrow, not with us or the seller. The agent delivers within
+ * minutes; the budget is released to it once the policy's dispute window
+ * passes, and comes back to the buyer if it does not deliver in time.
+ *
+ * For an outside seller the job's description is the JSON its seller reads
+ * ({task, service, via}), and once funded our server tells the seller, with
+ * what the buyer entered. Its answer is shown here as it gave it.
  */
 export interface EscrowOffer {
   provider: string;
   budget: string;
   tokenId: string;
   name: string;
+  /** Set for an outside seller that quoted over A2A; null for our own agents. */
+  outside: null | { service: string | null; serviceName: string | null; etaSeconds: number | null };
 }
 
 const STEPS = ["Open the job", "Bind it to the policy", "Set the budget", "Approve exactly the budget", "Fund the escrow"] as const;
 const days = (s: bigint) => `${Number(s) / 86_400} days`;
 
-export default function EscrowHire({ offer, subject }: { offer: EscrowOffer; subject: string | null }) {
+export default function EscrowHire({
+  offer,
+  subject,
+  inputs = {},
+  category = null,
+}: {
+  offer: EscrowOffer;
+  subject: string | null;
+  /** What the buyer entered, for an outside seller. */
+  inputs?: Record<string, string>;
+  category?: string | null;
+}) {
   const { address, ready, connect, switchChain, available } = useWallet();
   const budget = BigInt(offer.budget);
   const [disputeWindow, setDisputeWindow] = useState<bigint | null>(null);
@@ -37,7 +55,8 @@ export default function EscrowHire({ offer, subject }: { offer: EscrowOffer; sub
   const [jobId, setJobId] = useState<bigint | null>(null);
   const [txs, setTxs] = useState<Hash[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [job, setJob] = useState<{ status: string; deliverableUrl: string | null; submitTx?: string | null } | null>(null);
+  const [job, setJob] = useState<{ status: string; deliverableUrl: string | null; submitTx?: string | null; answer?: unknown } | null>(null);
+  const [fundTx, setFundTx] = useState<Hash | null>(null);
 
   useEffect(() => {
     marketClient
@@ -53,18 +72,20 @@ export default function EscrowHire({ offer, subject }: { offer: EscrowOffer; sub
       .catch(() => undefined);
   }, [address]);
 
-  // After funding, the job is read back until our agent's submission shows.
+  const outside = Boolean(offer.outside);
+  // After funding, the job is read back until the agent's submission shows.
   const poll = useCallback(async (id: bigint) => {
     for (let i = 0; i < 60; i++) {
       const r = await fetch(`/api/escrow/jobs/${id}`, { cache: "no-store" }).then((x) => x.json()).catch(() => null);
       const d = r?.data;
       if (d) {
-        setJob({ status: d.status, deliverableUrl: d.deliverableUrl, submitTx: d.record?.submitTx ?? null });
-        if (d.status !== "FUNDED") return;
+        setJob({ status: d.status, deliverableUrl: d.deliverableUrl, submitTx: d.record?.submitTx ?? null, answer: d.sellerAnswer ?? null });
+        // An outside seller can submit before its answer reaches us; wait for both.
+        if (d.status !== "FUNDED" && (!outside || d.sellerAnswer || i > 12)) return;
       }
       await new Promise((ok) => setTimeout(ok, 5_000));
     }
-  }, []);
+  }, [outside]);
 
   const run = async () => {
     if (!address || disputeWindow === null) return;
@@ -80,7 +101,10 @@ export default function EscrowHire({ offer, subject }: { offer: EscrowOffer; sub
     try {
       const expiredAt = BigInt(Math.floor(Date.now() / 1000)) + disputeWindow + BigInt(DELIVERY_SECONDS);
       const about = subject ?? address;
-      const description = `${VIA}: ${offer.name} (ERC-8004 #${offer.tokenId}) for ${about}`;
+      // An outside seller reads its task from the description; ours is the line any indexer can match.
+      const description = offer.outside
+        ? outsideDescription(offer.outside.serviceName ?? offer.name, offer.outside.service, inputs)
+        : `${VIA}: ${offer.name} (ERC-8004 #${offer.tokenId}) for ${about}`;
       const created = await step(0, () =>
         sendMarketTx(address, "createJob", [offer.provider as Address, ESCROW.router, expiredAt, description, ESCROW.router], undefined, undefined, { address: ESCROW.commerce, abi: COMMERCE_ABI }),
       );
@@ -97,7 +121,12 @@ export default function EscrowHire({ offer, subject }: { offer: EscrowOffer; sub
       }
       const funded = await step(4, () => sendMarketTx(address, "fund", [id, budget, "0x"], undefined, undefined, { address: ESCROW.commerce, abi: COMMERCE_ABI }));
       setAt(5);
-      await fetch("/api/escrow/jobs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jobId: id.toString(), tx: funded, subject }) });
+      setFundTx(funded);
+      await fetch("/api/escrow/jobs", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(offer.outside ? { jobId: id.toString(), tx: funded, subject, tokenId: offer.tokenId, inputs } : { jobId: id.toString(), tx: funded, subject }),
+      });
       void poll(id);
     } catch (e) {
       setError((e as Error).message.slice(0, 200));
@@ -105,6 +134,9 @@ export default function EscrowHire({ offer, subject }: { offer: EscrowOffer; sub
   };
 
   const short = formatUnits(budget, 18);
+  const who = offer.outside ? offer.name : "our agent";
+  const eta = offer.outside?.etaSeconds ? `in about ${Math.max(1, Math.round(offer.outside.etaSeconds / 60))} minutes` : "within minutes";
+  const delivered = job?.status === "SUBMITTED" || job?.status === "COMPLETED";
   if (!available)
     return (
       <div className="x-escrow">
@@ -128,7 +160,7 @@ export default function EscrowHire({ offer, subject }: { offer: EscrowOffer; sub
   return (
     <div className="x-escrow">
       <p className="x-escrow__note">
-        {short} $U goes into the ERC-8183 escrow, not to us. {offer.name} delivers within minutes; the $U is released to it{" "}
+        {short} $U goes into the ERC-8183 escrow, not to {offer.outside ? "the seller or to us" : "us"}. {offer.name} delivers {eta}; the $U is released to it{" "}
         {disputeWindow === null ? "after the dispute window" : `${days(disputeWindow)} after it delivers`} unless you dispute, and comes back to you if it does not deliver
         within {DELIVERY_SECONDS / 60} minutes.
       </p>
@@ -158,7 +190,7 @@ export default function EscrowHire({ offer, subject }: { offer: EscrowOffer; sub
         <div className="x-escrow__job" role="status">
           <p>
             Job <span className="x-mono">#{jobId.toString()}</span>:{" "}
-            {job?.status === "SUBMITTED" || job?.status === "COMPLETED" ? "delivered." : "funded. Waiting for our agent to deliver…"}
+            {delivered ? "delivered on chain." : `funded. Waiting for ${who} to deliver…`}
           </p>
           {job?.deliverableUrl ? (
             <p>
@@ -175,6 +207,13 @@ export default function EscrowHire({ offer, subject }: { offer: EscrowOffer; sub
               ) : null}
             </p>
           ) : null}
+          {job?.answer ? (
+            <details className="x-hire__adv" open={delivered}>
+              <summary>What {offer.name} sent back</summary>
+              <pre className="x-pre">{JSON.stringify(job.answer, null, 2).slice(0, 6000)}</pre>
+            </details>
+          ) : null}
+          {delivered && fundTx ? <RateAgent tokenId={offer.tokenId} name={offer.name} category={category} hireTx={fundTx} /> : null}
         </div>
       ) : null}
       {error ? <p className="x-escrow__err">{error}</p> : null}

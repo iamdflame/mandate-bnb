@@ -12,6 +12,7 @@
 
 import type { ProbeResult } from "@/lib/probe";
 import type { Quote } from "@/lib/x402/quote";
+import type { EscrowQuote } from "@/lib/escrow/a2a";
 import { onSnapshotChange, snapshot } from "@/lib/data/snapshots";
 
 export interface ProbeIndex {
@@ -20,6 +21,8 @@ export interface ProbeIndex {
   answered: number;
   quotes?: Record<string, Quote>;
   previews?: Record<string, unknown>;
+  /** Prices for ERC-8183 escrow, from sellers that negotiate over A2A. */
+  escrowQuotes?: Record<string, EscrowQuote>;
   results: ProbeResult[];
 }
 

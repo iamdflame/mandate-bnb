@@ -26,6 +26,7 @@ import { getAgentIndex, type IndexedAgent } from "@/lib/data/agents";
 import { reviewQuality, type ReviewQuality } from "@/lib/market/reviews";
 import { assayFor } from "@/lib/market/assays";
 import { humanAmount, type Quote } from "@/lib/x402/quote";
+import type { EscrowQuote } from "@/lib/escrow/a2a";
 import { paidCallsFromFile } from "@/lib/market/paid-calls";
 import { strangerHires } from "@/lib/market/stranger-hires";
 import { hirePauseFor } from "@/lib/market/paused";
@@ -105,6 +106,11 @@ export interface Listing {
    * quoted us, which is different from being free.
    */
   quote: Quote | null;
+  /**
+   * A price for an escrowed ERC-8183 job, from a seller that negotiates over
+   * A2A and delivers on chain. Null when it sells no such job.
+   */
+  escrowQuote: EscrowQuote | null;
   /** The price as a person would say it, when there is one. */
   priceLabel: string | null;
   /**
@@ -173,6 +179,14 @@ let probeIndexAt: string | null = null;
 function quotes(): Record<string, Quote> {
   return getProbes().quotes ?? {};
 }
+
+/** Prices for escrowed jobs, asked of A2A sellers during the census. */
+function escrowQuotes(): Record<string, EscrowQuote> {
+  return getProbes().escrowQuotes ?? {};
+}
+
+/** An escrow price as a tag, "0.10 $U", when a buyer here can fund it. */
+export const escrowPriceLabel = (q: EscrowQuote | null): string | null => (q && !q.unpayable ? `${humanAmount(q.price, 18)} $U` : null);
 
 function probes(): Map<string, ProbeRow> {
   const current = getProbes();
@@ -371,6 +385,7 @@ export function toListing(a: IndexedAgent, hires = 0, settled?: number): Listing
   */
   const stored = assayFor(a.tokenId);
   const quote = quotes()[a.tokenId] ?? null;
+  const escrowQuote = escrowQuotes()[a.tokenId] ?? null;
   const custodyResult = stored?.results.find((r) => r.id === "custody") ?? null;
   const custody = custodyResult ? custodyResult.verdict === "pass" : null;
 
@@ -391,8 +406,9 @@ export function toListing(a: IndexedAgent, hires = 0, settled?: number): Listing
     probe,
     declaresPayment: Boolean(a.x402),
     quote,
-    priceLabel: priceLabelOf(quote),
-    usdPrice: quote && STABLE[symbolOf(quote)] ? Number(quote.amount) / 10 ** quote.decimals : null,
+    escrowQuote,
+    priceLabel: priceLabelOf(quote) ?? escrowPriceLabel(escrowQuote),
+    usdPrice: quote && STABLE[symbolOf(quote)] ? Number(quote.amount) / 10 ** quote.decimals : escrowQuote && !escrowQuote.unpayable ? Number(escrowQuote.price) / 1e18 : null,
     createdAt: a.createdAt ?? null,
     registryVerified: Boolean(a.endpointVerified),
     reviews: a.feedbacks ?? 0,

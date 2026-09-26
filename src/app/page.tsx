@@ -89,7 +89,7 @@ export default async function Home() {
               </dl>
               <p className="x-home__fresh">
                 <span className="x-status__dot" style={{ background: census.stale ? "var(--c-text-3)" : "var(--c-ok)" }} aria-hidden="true" />
-                {census.minutes === null ? "Not checked yet" : `Every agent called ${since(census.minutes)} ago`}
+                {census.minutes === null ? "Not checked yet" : `Last census check ${since(census.minutes)} ago`}
               </p>
             </div>
           </div>

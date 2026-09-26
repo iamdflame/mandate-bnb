@@ -44,6 +44,9 @@ describe("escrow hires in the tracking API", () => {
       submittedAt: null,
       note: null,
       createdAt: "2026-09-25T00:00:00Z",
+      outside: false,
+      inputs: null,
+      sellerUrl: null,
     };
     const [funded, submitted] = escrowHires([
       { ...base, status: "FUNDED" },
@@ -61,5 +64,30 @@ describe("a deliverable", () => {
     const text = JSON.stringify({ job: { id: "1" }, answer: { b: 1, a: 2 } });
     expect(keccak256(stringToHex(text))).toBe(keccak256(stringToHex(JSON.stringify(JSON.parse(text)))));
     expect(text.indexOf('"b"')).toBeLessThan(text.indexOf('"a"'));
+  });
+});
+
+describe("an outside seller's escrow quote", () => {
+  const A2A = "https://seller.example/a2a";
+  it("is read straight from a result or from a task's artifacts", async () => {
+    const { quoteFrom } = await import("../escrow/a2a");
+    const flat = quoteFrom(
+      { accepted: true, provider: "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963", price: "100000000000000000", currency: "U", service: "health_factor", needs: { address: "the account (0x…)" }, verifying_contract: ESCROW.commerce, payment_token: ESCROW.paymentToken, chain_id: 56 },
+      A2A,
+    );
+    expect(flat).toMatchObject({ price: "100000000000000000", service: "health_factor", needs: { address: "the account (0x…)" }, unpayable: null });
+    const task = quoteFrom(
+      { kind: "task", artifacts: [{ parts: [{ kind: "data", data: { skill: "negotiate", provider: "0xa09991fc5D8637bb4245737C3ebF26E24D653962", price: "5000000000000000000", currency: "U", service: "Venus liquidation-risk report" } }] }] },
+      A2A,
+    );
+    expect(task).toMatchObject({ price: "5000000000000000000", service: null, serviceName: "Venus liquidation-risk report", unpayable: null });
+  });
+  it("cannot be funded here in another token, on another kernel, or on another chain", async () => {
+    const { quoteFrom } = await import("../escrow/a2a");
+    const base = { provider: "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963", price: "100000000000000000" };
+    expect(quoteFrom({ ...base, currency: "USD1" }, A2A).unpayable).toMatch(/USD1/);
+    expect(quoteFrom({ ...base, payment_token: "0x55d398326f99059fF775485246999027B3197955" }, A2A).unpayable).toMatch(/token other than \$U/);
+    expect(quoteFrom({ ...base, verifying_contract: "0x0000000000000000000000000000000000000001" }, A2A).unpayable).toMatch(/different contract/);
+    expect(quoteFrom({ ...base, chain_id: 8453 }, A2A).unpayable).toMatch(/8453/);
   });
 });

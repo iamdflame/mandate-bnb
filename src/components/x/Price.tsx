@@ -29,9 +29,11 @@ export interface PriceParts {
   none: string | null;
 }
 
-export function priceParts(l: Pick<Listing, "usdPrice" | "priceLabel" | "declaresPayment">): PriceParts {
-  if (l.usdPrice !== null && l.usdPrice !== undefined) return { value: usd(l.usdPrice), unit: "/ call", exact: l.priceLabel, none: null };
-  if (l.priceLabel) return { value: l.priceLabel, unit: "/ call", exact: null, none: null };
+export function priceParts(l: Pick<Listing, "usdPrice" | "priceLabel" | "declaresPayment"> & Partial<Pick<Listing, "quote" | "escrowQuote">>): PriceParts {
+  // A seller that only takes escrowed jobs is priced per job, not per call.
+  const unit = !l.quote && l.escrowQuote && !l.escrowQuote.unpayable ? "/ job" : "/ call";
+  if (l.usdPrice !== null && l.usdPrice !== undefined) return { value: usd(l.usdPrice), unit, exact: l.priceLabel, none: null };
+  if (l.priceLabel) return { value: l.priceLabel, unit, exact: null, none: null };
   if (l.declaresPayment) return { value: null, unit: null, exact: null, none: "Paid, price not read yet" };
   return { value: null, unit: null, exact: null, none: "No price published" };
 }
@@ -42,7 +44,7 @@ export default function Price({
   from = false,
   rail,
 }: {
-  l: Pick<Listing, "usdPrice" | "priceLabel" | "declaresPayment">;
+  l: Pick<Listing, "usdPrice" | "priceLabel" | "declaresPayment"> & Partial<Pick<Listing, "quote" | "escrowQuote">>;
   size?: "sm" | "md" | "lg";
   /** For summaries across several agents: "From $0.02". */
   from?: boolean;

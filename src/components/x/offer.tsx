@@ -17,7 +17,7 @@ import { previewFor } from "@/lib/market/quotes";
 import { hirePath } from "@/lib/market/hire-law";
 import { SPONSORED } from "@/lib/market/sponsored-targets";
 import { houseSlug } from "@/lib/market/performance";
-import { inputsFor } from "@/lib/market/inputs";
+import { inputsFor, kindOf, type CallInput } from "@/lib/market/inputs";
 import { HOUSE_LEASHES } from "@/lib/chain/house";
 import { allowedCalls, CANNOT } from "@/lib/chain/leash-words";
 import { USDT, WBNB } from "@/lib/chain/leash";
@@ -27,11 +27,20 @@ import { ESCROW_OPEN } from "@/lib/escrow/open";
 
 const TOKEN: Record<string, string> = { [USDT.toLowerCase()]: "USDT", [WBNB.toLowerCase()]: "WBNB" };
 
+/** What an outside escrow seller says it needs, as fields the drawer asks for. Optional where its own words say so. */
+function needsAsInputs(needs: Record<string, string> | null): CallInput[] {
+  return Object.entries(needs ?? {})
+    .filter(([name]) => /^[A-Za-z_][A-Za-z0-9_]{0,40}$/.test(name))
+    .slice(0, 8)
+    .map(([name, description]) => ({ name, required: !/optional|defaults? to/i.test(description), description, kind: kindOf(name, description) }));
+}
+
 export function offerFor(l: Listing): HireOffer {
   const preview = previewFor(l.tokenId);
   const verdict = hirePath(l);
   const perCall = verdict.rails.find((r) => r.kind === "x402");
   const jobRail = verdict.rails.some((r) => r.kind === "mandate");
+  const outsideEscrow = ESCROW_OPEN && verdict.rails.some((r) => r.kind === "escrow") && l.escrowQuote ? l.escrowQuote : null;
   const sponsor = verdict.ok ? SPONSORED[l.tokenId] : undefined;
   const slug = houseSlug(l.tokenId);
   const leash = slug ? HOUSE_LEASHES.find((h) => h.slug === slug) : undefined;
@@ -60,7 +69,8 @@ export function offerFor(l: Listing): HireOffer {
             transferMethod: l.quote.transferMethod,
           }
         : null,
-    inputs: inputsFor(l.tokenId, preview),
+    // An escrow-only seller asks in its quote; everyone else in its 402 or our code.
+    inputs: !perCall && outsideEscrow ? needsAsInputs(outsideEscrow.needs) : inputsFor(l.tokenId, preview),
     job: jobRail
       ? {
           href: `/hire/${l.tokenId}`,
@@ -69,10 +79,19 @@ export function offerFor(l: Listing): HireOffer {
           cannot: CANNOT,
         }
       : null,
-    // Our own agents take escrowed jobs, from their own wallets, once escrow is open.
+    // Our own agents take escrowed jobs from their own wallets; outside sellers, at the price they quoted.
     escrow: (() => {
       const p = ESCROW_OPEN && slug && verdict.ok ? providerFor(slug) : null;
-      return p ? { provider: p.owner, budget: HOUSE_BUDGET.toString(), tokenId: l.tokenId, name: l.name } : null;
+      if (p) return { provider: p.owner, budget: HOUSE_BUDGET.toString(), tokenId: l.tokenId, name: l.name, outside: null };
+      return outsideEscrow
+        ? {
+            provider: outsideEscrow.provider,
+            budget: outsideEscrow.price,
+            tokenId: l.tokenId,
+            name: l.name,
+            outside: { service: outsideEscrow.service, serviceName: outsideEscrow.serviceName, etaSeconds: outsideEscrow.etaSeconds },
+          }
+        : null;
     })(),
     sponsored: sponsor ? { asks: sponsor.asks, checkWith: sponsor.checkWith, takesSubject: sponsor.takesSubject, price: l.priceLabel } : null,
     refuse: verdict.ok ? null : verdict.reason,

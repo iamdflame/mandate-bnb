@@ -17,6 +17,7 @@ describe("classify", () => {
   it("files an agent under the office its own words describe", () => {
     expect(on("Rebalancing concentrated liquidity positions").category).toBe("rebalancing");
     expect(on("A grid trading bot with laddered orders").category).toBe("grid-trading");
+    expect(on("BSC Grid Planner: sizes a grid for any pool and states the break-even grid spacing").category).toBe("grid-trading");
     expect(on("Auto-compounding vault seeking the highest yield").category).toBe(
       "yield-optimisation",
     );

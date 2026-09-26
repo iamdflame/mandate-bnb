@@ -58,7 +58,7 @@ export interface HireOffer {
   inputs: CallInput[];
   /** A job in the escrow market, when it bids in it. */
   job: null | { href: string; can: string[]; caps: string[]; cannot: string[] };
-  /** An ERC-8183 escrowed job, for our own agents, while escrow is open. */
+  /** An ERC-8183 escrowed job: our own agents, and outside sellers that price one over A2A. */
   escrow: EscrowOffer | null;
   /** Mandate pays for a call to this agent, a few a day. */
   sponsored: null | { asks: string; checkWith: string; takesSubject: boolean; price: string | null };
@@ -174,6 +174,8 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
   }, []);
 
   const price = offer.price.value ? `${offer.price.value} ${offer.price.unit ?? ""}`.trim() : offer.price.none ?? "No price published";
+  // Hired only through escrow: an outside seller with no paid call.
+  const escrowOnly = !offer.x402 && Boolean(offer.escrow?.outside);
   const exact = offer.price.exact ?? offer.price.value ?? "the quoted price";
   const flowAt = FLOW.findIndex((f) => f.id === step);
 
@@ -244,6 +246,11 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
                 {short(offer.x402.payTo)}
               </dd>
             </div>
+          ) : escrowOnly ? (
+            <div>
+              <dt>Paid through</dt>
+              <dd>ERC-8183 escrow, released to {short(offer.escrow!.provider)} after it delivers</dd>
+            </div>
           ) : null}
           <div>
             <dt>Settled on</dt>
@@ -289,10 +296,10 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
           </div>
         ) : null}
 
-        {offer.escrow ? (
+        {offer.escrow && !escrowOnly ? (
           <details className="x-hire__escrow">
             <summary>Or pay into escrow instead (ERC-8183)</summary>
-            <EscrowHire offer={offer.escrow} subject={sent.position ?? sent.wallet ?? null} />
+            <EscrowHire offer={offer.escrow} subject={sent.position ?? sent.wallet ?? null} inputs={sent} category={offer.category} />
           </details>
         ) : null}
 
@@ -415,7 +422,59 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
           </Link>
         </div>
       );
+    } else if (escrowOnly) {
+      const e = offer.escrow!;
+      body = (
+        <div className="x-hire">
+          <p className="x-hire__lede">This agent is paid through escrow. Your $U waits in the ERC-8183 contract, not with the seller or with us, until the work is on chain.</p>
+          <h3 className="x-hire__h">It can</h3>
+          <Can items={[`Receive exactly ${exact} from the escrow, once it delivers and the dispute window passes`, "Send you its answer"]} />
+          <h3 className="x-hire__h">It cannot</h3>
+          <Can no items={["Move any other funds", "Keep the budget if it does not deliver in time: you claim it back", "Act for you after this job"]} />
+          <dl className="x-kv">
+            <div>
+              <dt>Budget</dt>
+              <dd>Exactly {exact}</dd>
+            </div>
+            <div>
+              <dt>Provider</dt>
+              <dd className="x-mono" title={e.provider}>
+                {short(e.provider)}
+              </dd>
+            </div>
+            <div>
+              <dt>Signatures</dt>
+              <dd>Five transactions, each shown before you sign. A little BNB for gas.</dd>
+            </div>
+          </dl>
+        </div>
+      );
+      foot = (
+        <div className="x-hire__nav">
+          <button type="button" className="x-btn x-btn--ghost" onClick={() => setStep("review")}>
+            Back
+          </button>
+          <button type="button" className="x-btn x-btn--primary x-btn--lg" onClick={() => setStep("confirm")}>
+            Continue
+          </button>
+        </div>
+      );
     }
+  }
+
+  // An escrow-only seller's five transactions run in one component, which stays mounted from here.
+  if (escrowOnly && step !== "review" && step !== "permissions" && step !== "free") {
+    body = (
+      <div className="x-hire">
+        <p className="x-hire__lede">Nothing moves until you sign each step.</p>
+        <EscrowHire offer={offer.escrow!} subject={sent.position ?? sent.wallet ?? sent.address ?? null} inputs={sent} category={offer.category} />
+      </div>
+    );
+    foot = (
+      <button type="button" className="x-btn x-btn--ghost x-btn--block" onClick={close}>
+        Close
+      </button>
+    );
   }
 
   // Confirm, processing and success share one payment engine, which must stay

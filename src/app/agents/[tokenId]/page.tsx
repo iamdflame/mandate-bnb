@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: { params: Promise<{ tokenId: 
   };
 }
 
-const RAIL: Record<string, string> = { x402: "x402", mandate: "ERC-8183" };
+const RAIL: Record<string, string> = { x402: "x402", escrow: "ERC-8183 escrow", mandate: "job with capital" };
 
 /** Its own words as separate sentences, untouched, for the "What it can do" list. */
 function sentences(text: string | null): string[] {
@@ -121,7 +121,8 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
   const offer = offerFor(l);
 
   // The button says what it does and what it costs, so nobody clicks to find out.
-  const useLabel = perCall && pp.value ? `Hire for ${pp.value}` : "Hire this agent";
+  const escrowRail = verdict.rails.some((r) => r.kind === "escrow");
+  const useLabel = (perCall || escrowRail) && pp.value ? `Hire for ${pp.value}` : "Hire this agent";
   const token = l.quote ? assetSymbol(l.quote.asset) : null;
   const checkedAt = l.probe?.at ?? null;
 

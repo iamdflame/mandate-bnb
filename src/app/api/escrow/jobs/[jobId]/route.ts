@@ -20,7 +20,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ jobI
   if (!/^\d{1,12}$/.test(jobId)) return fail(400, "jobId must be the kernel's job number.", CHAIN_ID, g.headers);
   const [row, chain] = await Promise.all([jobRow(jobId), readJob(BigInt(jobId)).catch(() => null)]);
   if (!chain) return fail(503, "The escrow could not be read just now.", CHAIN_ID, g.headers);
-  const { deliverable: _body, ...kept } = row ?? { deliverable: null };
+  const { deliverable: _body, sellerAnswer, ...kept } = row ?? { deliverable: null, sellerAnswer: null };
   return ok(
     {
       jobId,
@@ -31,7 +31,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ jobI
       expiredAt: Number(chain.expiredAt),
       submittedAt: Number(chain.submittedAt) || null,
       deliverableHash: /^0x0{64}$/.test(chain.deliverable) ? null : chain.deliverable,
-      deliverableUrl: row?.deliverableHash ? deliverableUrl(jobId) : null,
+      // Ours is served here and hashes to the commitment; an outside seller's is where it says.
+      deliverableUrl: row?.outside ? row.sellerUrl : row?.deliverableHash ? deliverableUrl(jobId) : null,
+      // What an outside seller sent back when told the job was funded, as it sent it.
+      sellerAnswer: row?.outside && sellerAnswer ? (JSON.parse(sellerAnswer) as unknown) : null,
       ours: Boolean(row),
       record: row ? kept : null,
     },
