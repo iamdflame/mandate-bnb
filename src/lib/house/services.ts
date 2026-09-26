@@ -11,7 +11,8 @@
  */
 
 import { isAddress, type Address } from "viem";
-import { snapshot } from "@/lib/data/snapshots";
+import { snapshot, warm } from "@/lib/data/snapshots";
+import { withTimeout } from "@/lib/cache";
 import { readGridWindow, type GridWindow } from "@/lib/grid/window";
 import { positionIdsOf, readIdle, readPositions, readVenus } from "@/lib/diagnose/positions";
 import { usdtRates } from "@/lib/venus/rates";
@@ -44,6 +45,23 @@ async function poolNow() {
 const NO_ACTION =
   "Nothing was executed for this payment. Our agents act only through a session the owner of the funds granted; a payment buys the answer, not authority.";
 
+/**
+ * Grid-1's window, fresh when a provider will serve its history, otherwise the
+ * last stored reading. Old log ranges are served by one public provider, and
+ * when it hangs the fresh read fails or takes its full timeout; the answer
+ * then says which block and time the reading ends at, rather than failing a
+ * buyer who has already paid. Grid-1's trading is paused, so no fill is
+ * missing from a reading taken since the pause.
+ */
+async function gridWindow(): Promise<GridWindow> {
+  const fresh = await withTimeout(readGridWindow().catch(() => null), 8_000);
+  if (fresh) return fresh;
+  await warm(["grid-window"]).catch(() => undefined);
+  const stored = snapshot<GridWindow>("grid-window")?.payload;
+  if (!stored) throw new Error("Grid-1's trading window could not be read from the chain just now, and no earlier reading is stored.");
+  return stored;
+}
+
 const GRID: HouseService = {
   slug: "grid-1",
   name: "Grid-1",
@@ -55,7 +73,7 @@ const GRID: HouseService = {
     return w ? { fills: w.fills.length, roundTrips: w.roundTrips.length, readTo: w.toBlock } : null;
   },
   async run() {
-    const [w, p] = await Promise.all([readGridWindow(), poolNow()]);
+    const [w, p] = await Promise.all([gridWindow(), poolNow()]);
     const st = snapshot<{ anchorUsd?: number; lastLevel?: number; stepBps?: number; levels?: number; clipWbnb?: string; updatedAt?: string }>("grid-state")?.payload ?? null;
     let signal: string;
     if (st?.anchorUsd && st.stepBps) {
@@ -87,6 +105,7 @@ const GRID: HouseService = {
         start: w.window.start,
         end: w.window.end,
         source: `SwapBound ${SWAP_BOUND} Swapped events, blocks ${w.fromBlock} to ${w.toBlock}`,
+        readAt: w.readAt,
         verify: w.verify,
       },
       fills: w.fills.map((f) => ({ at: f.at, side: f.side, usdt: f.usdt, wbnb: f.wbnb, price: f.price, tx: f.tx })),

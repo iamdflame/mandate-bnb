@@ -121,7 +121,9 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
   const offer = offerFor(l);
 
   // The button says what it does and what it costs, so nobody clicks to find out.
-  const escrowRail = verdict.rails.some((r) => r.kind === "escrow");
+  const escrowOn = verdict.rails.find((r) => r.kind === "escrow");
+  const escrowRail = Boolean(escrowOn);
+  const escrowPrice = escrowOn?.kind === "escrow" ? escrowOn.price : null;
   const useLabel = (perCall || escrowRail) && pp.value ? `Hire for ${pp.value}` : "Hire this agent";
   const token = l.quote ? assetSymbol(l.quote.asset) : null;
   const checkedAt = l.probe?.at ?? null;
@@ -540,7 +542,23 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
         <aside className="x-ad-side" aria-label="What happens when you hire">
           <div className="x-ad-panel" id="use">
             <p className="x-ad-panel__t">What happens when you hire</p>
-            {verdict.ok && perCall ? (
+            {verdict.ok && escrowRail ? (
+              <>
+                <ol className="x-ad-how">
+                  <li>
+                    <strong>You fund an escrowed job</strong> for exactly {escrowPrice}. Five transactions from your wallet; the $U sits in the ERC-8183 contract,
+                    not with {l.name} or with us.
+                  </li>
+                  <li>
+                    <strong>{l.name} delivers on chain</strong>, usually within minutes. If nothing arrives before the deadline, you take the money back.
+                  </li>
+                  <li>
+                    <strong>It is paid seven days after it delivers</strong> unless you dispute, and you can rate it on chain.
+                  </li>
+                </ol>
+                {perCall ? <p className="x-ad-note">Or pay per call instead: one signature for {pp.value ?? "the price"}, answered at once.</p> : null}
+              </>
+            ) : verdict.ok && perCall ? (
               <ol className="x-ad-how">
                 <li>
                   <strong>You sign one payment</strong> for exactly {pp.value ?? "the price"}

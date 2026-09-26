@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { formatUnits } from "viem";
 import { ArrowLeft, Check, Gift, X } from "lucide-react";
 import Drawer from "./Drawer";
 import TxStatus, { txStepOf, type TxStep } from "./TxStatus";
@@ -174,8 +175,15 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
   }, []);
 
   const price = offer.price.value ? `${offer.price.value} ${offer.price.unit ?? ""}`.trim() : offer.price.none ?? "No price published";
-  // Hired only through escrow: an outside seller with no paid call.
-  const escrowOnly = !offer.x402 && Boolean(offer.escrow?.outside);
+  /*
+    How this hire is paid. An escrowed job leads wherever the agent takes one:
+    the buyer's money waits in the contract until the work arrives, and the
+    chain records the hire against the agent. A buyer offered both chooses.
+  */
+  const [mode, setMode] = useState<"escrow" | "call">(offer.escrow ? "escrow" : "call");
+  const viaEscrow = Boolean(offer.escrow) && (mode === "escrow" || !offer.x402);
+  const both = Boolean(offer.escrow && offer.x402);
+  const escrowPrice = offer.escrow ? `${formatUnits(BigInt(offer.escrow.budget), 18)} $U` : null;
   const exact = offer.price.exact ?? offer.price.value ?? "the quoted price";
   const flowAt = FLOW.findIndex((f) => f.id === step);
 
@@ -229,17 +237,17 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
           <div>
             <dt>Price</dt>
             <dd>
-              <strong>{price}</strong>
-              {offer.price.exact && offer.price.exact !== offer.price.value ? <span className="x-hire__sub x-mono">{offer.price.exact}</span> : null}
+              <strong>{viaEscrow ? `${escrowPrice} a job` : price}</strong>
+              {!viaEscrow && offer.price.exact && offer.price.exact !== offer.price.value ? <span className="x-hire__sub x-mono">{offer.price.exact}</span> : null}
             </dd>
           </div>
-          {escrowOnly ? (
+          {viaEscrow ? (
             // A job is worked after it is funded; the handshake's speed says nothing about that.
             <div>
               <dt>Delivery</dt>
               <dd>
-                {offer.escrow!.outside!.etaSeconds
-                  ? `About ${Math.max(1, Math.round(offer.escrow!.outside!.etaSeconds / 60))} min after you fund it, as its seller quotes`
+                {offer.escrow!.outside?.etaSeconds
+                  ? `About ${Math.max(1, Math.round(offer.escrow!.outside.etaSeconds / 60))} min after you fund it, as its seller quotes`
                   : "Within minutes of funding, or you take the money back"}
               </dd>
             </div>
@@ -249,24 +257,53 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
               <dd className="x-mono">~{offer.latencyMs} ms</dd>
             </div>
           ) : null}
-          {offer.x402 ? (
+          {viaEscrow ? (
+            <div>
+              <dt>Paid through</dt>
+              <dd>ERC-8183 escrow, released to {short(offer.escrow!.provider)} after it delivers</dd>
+            </div>
+          ) : offer.x402 ? (
             <div>
               <dt>Pays to</dt>
               <dd className="x-mono" title={offer.x402.payTo}>
                 {short(offer.x402.payTo)}
               </dd>
             </div>
-          ) : escrowOnly ? (
-            <div>
-              <dt>Paid through</dt>
-              <dd>ERC-8183 escrow, released to {short(offer.escrow!.provider)} after it delivers</dd>
-            </div>
           ) : null}
           <div>
             <dt>Settled on</dt>
-            <dd>{offer.x402 ? network(offer.x402.network) : "BNB Smart Chain"}</dd>
+            <dd>{offer.x402 && !viaEscrow ? network(offer.x402.network) : "BNB Smart Chain"}</dd>
           </div>
         </dl>
+
+        {both ? (
+          <fieldset className="x-hire__modes">
+            <legend className="x-hire__h">How to pay</legend>
+            <label className={mode === "escrow" ? "x-hire__mode x-hire__mode--on" : "x-hire__mode"}>
+              <input type="radio" name={`pay-${offer.tokenId}`} checked={mode === "escrow"} onChange={() => setMode("escrow")} />
+              <span>
+                <span className="x-hire__mode-t">
+                  Escrowed job, {escrowPrice} <span className="x-tag">Recommended</span>
+                </span>
+                <span className="x-hire__mode-d">
+                  Your $U waits in the ERC-8183 escrow until the agent delivers, and comes back if it does not. Recorded on chain as a hire of this agent.
+                  Five transactions and a little BNB for gas.
+                </span>
+              </span>
+            </label>
+            <label className={mode === "call" ? "x-hire__mode x-hire__mode--on" : "x-hire__mode"}>
+              <input type="radio" name={`pay-${offer.tokenId}`} checked={mode === "call"} onChange={() => setMode("call")} />
+              <span>
+                <span className="x-hire__mode-t">Pay per call, {offer.price.exact ?? price}</span>
+                <span className="x-hire__mode-d">
+                  {offer.x402!.transferMethod === "permit2"
+                    ? "One approval and one signature for exactly the price. The answer comes back at once."
+                    : "One signature for exactly the price, and no gas. The answer comes back at once."}
+                </span>
+              </span>
+            </label>
+          </fieldset>
+        ) : null}
 
         {offer.inputs.length ? (
           <fieldset className="x-hire__inputs">
@@ -306,13 +343,6 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
           </div>
         ) : null}
 
-        {offer.escrow && !escrowOnly ? (
-          <details className="x-hire__escrow">
-            <summary>Or pay into escrow instead (ERC-8183)</summary>
-            <EscrowHire offer={offer.escrow} subject={sent.position ?? sent.wallet ?? null} inputs={sent} category={offer.category} />
-          </details>
-        ) : null}
-
         {offer.job && offer.x402 ? (
           <p className="x-hire__alt">
             Want it to run a strategy with your capital instead?{" "}
@@ -329,7 +359,7 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
       </button>
     );
   } else if (step === "permissions") {
-    if (offer.x402) {
+    if (offer.x402 && !viaEscrow) {
       const permit2 = offer.x402.transferMethod === "permit2";
       body = (
         <div className="x-hire">
@@ -398,7 +428,7 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
           </button>
         </div>
       );
-    } else if (offer.job) {
+    } else if (offer.job && !viaEscrow) {
       body = (
         <div className="x-hire">
           <p className="x-hire__lede">
@@ -432,19 +462,19 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
           </Link>
         </div>
       );
-    } else if (escrowOnly) {
+    } else if (viaEscrow) {
       const e = offer.escrow!;
       body = (
         <div className="x-hire">
-          <p className="x-hire__lede">This agent is paid through escrow. Your $U waits in the ERC-8183 contract, not with the seller or with us, until the work is on chain.</p>
+          <p className="x-hire__lede">Your $U waits in the ERC-8183 escrow contract, not with the agent or with us, until the work is on chain.</p>
           <h3 className="x-hire__h">It can</h3>
-          <Can items={[`Receive exactly ${exact} from the escrow, once it delivers and the dispute window passes`, "Send you its answer"]} />
+          <Can items={[`Receive exactly ${escrowPrice} from the escrow, once it delivers and the dispute window passes`, "Send you its answer"]} />
           <h3 className="x-hire__h">It cannot</h3>
           <Can no items={["Move any other funds", "Keep the budget if it does not deliver in time: you claim it back", "Act for you after this job"]} />
           <dl className="x-kv">
             <div>
               <dt>Budget</dt>
-              <dd>Exactly {exact}</dd>
+              <dd>Exactly {escrowPrice}</dd>
             </div>
             <div>
               <dt>Provider</dt>
@@ -454,7 +484,7 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
             </div>
             <div>
               <dt>Signatures</dt>
-              <dd>Five transactions, each shown before you sign. A little BNB for gas.</dd>
+              <dd>Five transactions, each shown before you sign. About 0.0001 BNB of gas covers all five.</dd>
             </div>
           </dl>
         </div>
@@ -473,7 +503,7 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
   }
 
   // An escrow-only seller's five transactions run in one component, which stays mounted from here.
-  if (escrowOnly && step !== "review" && step !== "permissions" && step !== "free") {
+  if (viaEscrow && step !== "review" && step !== "permissions" && step !== "free") {
     body = (
       <div className="x-hire">
         <p className="x-hire__lede">Nothing moves until you sign each step.</p>
@@ -489,7 +519,7 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
 
   // Confirm, processing and success share one payment engine, which must stay
   // mounted while money is moving, so it is rendered once here and hidden when done.
-  const paying = offer.x402 && (step === "confirm" || step === "processing" || step === "success");
+  const paying = offer.x402 && !viaEscrow && (step === "confirm" || step === "processing" || step === "success");
   if (paying) {
     body = (
       <div className="x-hire">
@@ -576,7 +606,7 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
         </>
       }
     >
-      {!offer.refuse && offer.x402 && step !== "free" ? (
+      {!offer.refuse && offer.x402 && !viaEscrow && step !== "free" ? (
         <ol className="x-steps" aria-label="Steps">
           {FLOW.map((f, i) => (
             <li key={f.id} className={i < flowAt ? "x-steps__done" : i === flowAt ? "x-steps__now" : undefined} aria-current={i === flowAt ? "step" : undefined}>

@@ -195,4 +195,39 @@ describe("the hire law", () => {
     expect(v.ok).toBe(true);
     expect(v.answeringNow).toBe(false);
   });
+
+  describe("an outside seller that sells escrowed jobs", () => {
+    const escrowQuote = (unpayable: string | null = null) => ({
+      a2a: "https://seller.test/a2a",
+      provider: "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963" as const,
+      price: "100000000000000000",
+      service: "health_factor",
+      serviceName: null,
+      needs: null,
+      etaSeconds: 120,
+      at: minutesAgo(5),
+      unpayable,
+    });
+    const seller = (unpayable: string | null = null) =>
+      stranger({ quote: null, priceLabel: null, escrowQuote: escrowQuote(unpayable), probe: { answered: true, status: 200, latencyMs: 80, endpoint: "https://seller.test/a2a", at: minutesAgo(5), protocol: "a2a" } });
+
+    it("is offered an escrowed job, and the job leads", () => {
+      const v = hirePath(seller(), { now: NOW, escrowMissed: new Map() });
+      expect(v.ok).toBe(true);
+      expect(v.rails[0]).toMatchObject({ kind: "escrow", price: "0.1 $U" });
+      expect(primaryRail(v)?.kind).toBe("escrow");
+      expect(hireHref("999999001", v)).toBe("/agents/999999001#call");
+    });
+
+    it("is not offered one it prices in a token the escrow does not take", () => {
+      const v = hirePath(seller("it wants USD1, and the escrow here pays in $U"), { now: NOW, escrowMissed: new Map() });
+      expect(v).toMatchObject({ ok: false, short: "Its price is in a token we cannot pay" });
+    });
+
+    it("is taken off sale after a job passes its deadline undelivered", () => {
+      const v = hirePath(seller(), { now: NOW, escrowMissed: new Map([["999999001", { jobId: "56900", at: minutesAgo(60) }]]) });
+      expect(v).toMatchObject({ ok: false, short: "Missed an escrowed job" });
+      expect(v.reason).toMatch(/#56900/);
+    });
+  });
 });

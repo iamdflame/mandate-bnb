@@ -23,7 +23,6 @@ import { allowedCalls, CANNOT } from "@/lib/chain/leash-words";
 import { USDT, WBNB } from "@/lib/chain/leash";
 import { HOUSE_BUDGET } from "@/lib/escrow/contracts";
 import { providerFor } from "@/lib/escrow/jobs";
-import { ESCROW_OPEN } from "@/lib/escrow/open";
 
 const TOKEN: Record<string, string> = { [USDT.toLowerCase()]: "USDT", [WBNB.toLowerCase()]: "WBNB" };
 
@@ -40,9 +39,10 @@ export function offerFor(l: Listing): HireOffer {
   const verdict = hirePath(l);
   const perCall = verdict.rails.find((r) => r.kind === "x402");
   const jobRail = verdict.rails.some((r) => r.kind === "mandate");
-  const outsideEscrow = ESCROW_OPEN && verdict.rails.some((r) => r.kind === "escrow") && l.escrowQuote ? l.escrowQuote : null;
   const sponsor = verdict.ok ? SPONSORED[l.tokenId] : undefined;
   const slug = houseSlug(l.tokenId);
+  const escrowRail = verdict.rails.some((r) => r.kind === "escrow");
+  const outsideEscrow = escrowRail && !slug && l.escrowQuote ? l.escrowQuote : null;
   const leash = slug ? HOUSE_LEASHES.find((h) => h.slug === slug) : undefined;
   return {
     tokenId: l.tokenId,
@@ -81,7 +81,7 @@ export function offerFor(l: Listing): HireOffer {
       : null,
     // Our own agents take escrowed jobs from their own wallets; outside sellers, at the price they quoted.
     escrow: (() => {
-      const p = ESCROW_OPEN && slug && verdict.ok ? providerFor(slug) : null;
+      const p = escrowRail && slug ? providerFor(slug) : null;
       if (p) return { provider: p.owner, budget: HOUSE_BUDGET.toString(), tokenId: l.tokenId, name: l.name, outside: null };
       return outsideEscrow
         ? {

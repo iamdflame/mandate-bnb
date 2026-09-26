@@ -32,6 +32,9 @@ export interface EscrowOffer {
   outside: null | { service: string | null; serviceName: string | null; etaSeconds: number | null };
 }
 
+/** Gas for all five steps with room to spare: they used 0.0000376 BNB at 0.05 gwei on job 56802. */
+const GAS_FOR_FIVE = 100_000_000_000_000n;
+
 const STEPS = ["Open the job", "Bind it to the policy", "Set the budget", "Approve exactly the budget", "Fund the escrow"] as const;
 const days = (s: bigint) => `${Number(s) / 86_400} days`;
 
@@ -51,6 +54,7 @@ export default function EscrowHire({
   const budget = BigInt(offer.budget);
   const [disputeWindow, setDisputeWindow] = useState<bigint | null>(null);
   const [balance, setBalance] = useState<bigint | null>(null);
+  const [bnb, setBnb] = useState<bigint | null>(null);
   const [at, setAt] = useState(-1);
   const [jobId, setJobId] = useState<bigint | null>(null);
   const [txs, setTxs] = useState<Hash[]>([]);
@@ -70,6 +74,7 @@ export default function EscrowHire({
       .readContract({ address: ESCROW.paymentToken, abi: TOKEN_ABI, functionName: "balanceOf", args: [address] })
       .then(setBalance)
       .catch(() => undefined);
+    marketClient.getBalance({ address }).then(setBnb).catch(() => undefined);
   }, [address]);
 
   const outside = Boolean(offer.outside);
@@ -179,7 +184,16 @@ export default function EscrowHire({
       </ol>
       {at < 0 ? (
         balance !== null && balance < budget ? (
-          <p className="x-escrow__err">This wallet holds {formatUnits(balance, 18)} $U; the job needs {short}.</p>
+          <p className="x-escrow__err">
+            This wallet holds {formatUnits(balance, 18)} $U; the job needs {short}.{" "}
+            <a className="x-link" href={`https://pancakeswap.finance/swap?chain=bsc&outputCurrency=${ESCROW.paymentToken}`} target="_blank" rel="noreferrer">
+              Get $U on PancakeSwap
+            </a>
+          </p>
+        ) : bnb !== null && bnb < GAS_FOR_FIVE ? (
+          <p className="x-escrow__err">
+            This wallet holds {formatUnits(bnb, 18)} BNB. About 0.0001 BNB of gas covers the five steps; add a little BNB on BNB Smart Chain first.
+          </p>
         ) : (
           <button type="button" className="x-btn x-btn--primary x-btn--block" onClick={run} disabled={disputeWindow === null}>
             Fund the job, {short} $U

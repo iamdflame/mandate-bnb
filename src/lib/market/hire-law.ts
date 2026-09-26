@@ -38,7 +38,17 @@ function referenceTokenIds(): Set<string> {
 }
 import { JOBS_OPEN } from "@/lib/market/jobs-open";
 import { escrowPriceLabel } from "@/lib/market/listing";
-import { missedEscrowJobs } from "@/lib/escrow/jobs";
+import { missedEscrowJobs, providerFor } from "@/lib/escrow/jobs";
+import { HOUSE_BUDGET } from "@/lib/escrow/contracts";
+import { ESCROW_OPEN } from "@/lib/escrow/open";
+import { houseSlug } from "@/lib/market/performance";
+import { humanAmount } from "@/lib/x402/quote";
+
+/** The wallet one of our reference agents takes escrowed jobs from, when it takes them. */
+function houseProvider(tokenId: string): string | null {
+  const slug = houseSlug(tokenId);
+  return slug ? (providerFor(slug)?.owner ?? null) : null;
+}
 import { nameSome, toolsFit } from "@/lib/assay/tools";
 
 /** A hire is only offered on an answer from the last day. */
@@ -186,11 +196,19 @@ export function hirePath(
   if (l.quote?.payable) {
     rails.push({ kind: "x402", price: l.priceLabel ?? l.quote.amount, method: l.quote.transferMethod ?? null, endpoint: l.quote.endpoint });
   }
-  // An escrowed job from an outside seller, unless its last one passed the deadline undelivered.
+  /*
+    An escrowed job: our own agents deliver one from their own wallets, and an
+    outside seller at the price it quoted, unless its last job passed the
+    deadline undelivered. It leads the rails: the chain records it against the
+    agent, and the buyer's money comes back if the work does not arrive.
+  */
   const missed = (opts.escrowMissed ?? escrowMissed).get(l.tokenId);
   const eq = l.escrowQuote;
-  if (eq && !eq.unpayable && !ours && !missed) {
-    rails.push({ kind: "escrow", price: escrowPriceLabel(eq) ?? `${eq.price} $U`, provider: eq.provider });
+  const house = ours && ESCROW_OPEN ? houseProvider(l.tokenId) : null;
+  if (house) {
+    rails.unshift({ kind: "escrow", price: `${humanAmount(HOUSE_BUDGET.toString(), 18)} $U`, provider: house });
+  } else if (eq && !eq.unpayable && !ours && !missed) {
+    rails.unshift({ kind: "escrow", price: escrowPriceLabel(eq) ?? `${eq.price} $U`, provider: eq.provider });
   }
   // A job hands it capital to act with, which a trading pause forbids; its paid answer does not.
   // Jobs are offered only while the market settles them on its own (lib/market/jobs-open).
@@ -214,9 +232,9 @@ export function hirePath(
   return { ok: true, rails, reason: null, short: null, ...base };
 }
 
-/** The first rail a surface should lead with: paying the agent itself beats a job it must bid on. */
+/** The first rail a surface should lead with: an escrowed job, then a paid call, then a job it must bid on. */
 export function primaryRail(v: HireVerdict): Rail | null {
-  return v.rails.find((r) => r.kind === "x402") ?? v.rails.find((r) => r.kind === "escrow") ?? v.rails[0] ?? null;
+  return v.rails.find((r) => r.kind === "escrow") ?? v.rails.find((r) => r.kind === "x402") ?? v.rails[0] ?? null;
 }
 
 /** Where the primary action goes, for a card or a profile. */

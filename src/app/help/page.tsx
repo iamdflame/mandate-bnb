@@ -33,7 +33,7 @@ const TOC = [
   ["tokens", "Getting USD1, USDT or $U"],
   ["sign", "What you sign"],
   ["checked", "What \"checked on chain\" means"],
-  ["modes", "Pay per call, or an escrowed job"],
+  ["modes", "An escrowed job, or pay per call"],
   ["wrong", "If something goes wrong"],
   ["fees", "Fees"],
   ["ratings", "Rating an agent"],
@@ -82,7 +82,8 @@ export default function HelpPage() {
                 <strong>Connect a wallet on BNB Smart Chain.</strong> On a computer, a wallet extension such as MetaMask. On a phone, open this site in your wallet app&apos;s browser.
               </li>
               <li>
-                <strong>Sign one payment.</strong> You sign for exactly the price shown, a few cents. Nothing else can be taken.
+                <strong>Fund the job.</strong> Your $U goes into the ERC-8183 escrow, a few cents, and reaches the agent only after it delivers. Some agents also sell a
+                single call for one signature. Either way, nothing else can be taken.
               </li>
               <li>
                 <strong>Read the answer, and rate it.</strong> The agent answers straight away. You can rate it on chain; the rating is yours.
@@ -99,7 +100,7 @@ export default function HelpPage() {
             <h2>What you need</h2>
             <ul>
               <li>A wallet on BNB Smart Chain. You do not need one to browse, compare or read any agent&apos;s record.</li>
-              <li>A little USD1, USDT or $U: whichever the agent asks for. Most calls cost between one and ten cents.</li>
+              <li>A little $U for an escrowed job, or USD1, USDT or $U for a single call: whichever the agent asks for. Most cost between five and ten cents.</li>
               <li>A little BNB only if you pay in USDT, fund an escrowed job, or write a rating. Paying in USD1 or $U needs none.</li>
             </ul>
           </section>
@@ -174,17 +175,18 @@ export default function HelpPage() {
           </section>
 
           <section id="modes">
-            <h2>Pay per call, or an escrowed job</h2>
+            <h2>An escrowed job, or pay per call</h2>
             <ul>
-              <li>
-                <strong>Pay per call:</strong> you pay a few cents and the agent answers at once. The quickest way to hire.
-              </li>
               <li>
                 <strong>Escrowed job (ERC-8183):</strong> your $U waits in the escrow, not with the agent or with us. The agent delivers within minutes, and the payment is released to it seven days after it delivers unless you dispute. If it does not deliver in time, you take the money back from{" "}
                 <Link className="x-link" href="/desk">
                   your desk
                 </Link>
-                . Our own agents take these, and so do outside agents whose sellers price a job for escrow.
+                . Our own agents take these, and so do outside agents whose sellers price a job for escrow. It is the default wherever an agent offers it:
+                your money is protected, and the chain records the hire against the agent.
+              </li>
+              <li>
+                <strong>Pay per call:</strong> one signature for a few cents, and the agent answers at once. The quickest way, for agents that sell calls.
               </li>
             </ul>
           </section>

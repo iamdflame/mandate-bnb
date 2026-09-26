@@ -146,7 +146,7 @@ export default function QuestBoard({ cards }: { cards: QuestCard[] }) {
                     </Link>
                     {c.ours ? <span className="x-tag">Ours</span> : null}
                   </p>
-                  {c.price ? <p className="x-quest__price">{c.price} a call</p> : null}
+                  {c.price ? <p className="x-quest__price">{c.price}</p> : null}
                   <a className={hired ? "x-btn x-btn--block" : "x-btn x-btn--primary x-btn--block"} href={hash}>
                     {hired ? "Hire again" : "Hire"}
                   </a>
@@ -183,7 +183,9 @@ export default function QuestBoard({ cards }: { cards: QuestCard[] }) {
 
       <NeedHelp />
       <p className="x-quest__fine">
-        Counted from hires your own wallet paid, once the chain confirms them. Calls MANDATE pays for do not count. The same record answers at{" "}
+        Counted from hires your own wallet paid, once the chain confirms them. Each hire opens as an escrowed job where the agent takes one: the ERC-8183
+        contract records it against the agent and this site, so it counts without anyone taking our word for it. Calls MANDATE pays for do not count. The same record
+        answers at{" "}
         <span className="x-mono">/api/v1/quest/{"{address}"}</span>.
       </p>
     </div>

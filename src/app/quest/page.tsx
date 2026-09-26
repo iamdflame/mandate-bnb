@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { formatUnits } from "viem";
 import AppShell from "@/components/v2/shell/AppShell";
 import QuestBoard, { type QuestCard } from "@/components/x/QuestBoard";
 import { offerFor } from "@/components/x/offer";
@@ -14,6 +15,9 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+const priceOf = (o: ReturnType<typeof offerFor>, label: string | null): string | null =>
+  o.escrow ? `${formatUnits(BigInt(o.escrow.budget), 18)} $U a job` : label ? `${label} a call` : null;
+
 /**
  * BNB's Set and Earn quest, done in one place.
  *
@@ -25,15 +29,19 @@ export const dynamic = "force-dynamic";
 export default async function QuestPage() {
   await live();
   const picks = await questPicks();
-  const cards: QuestCard[] = picks.map((p) => ({
-    category: p.category,
-    label: CATEGORY_LABEL[p.category],
-    others: p.others,
-    // No free call here: a call MANDATE pays for is not the wallet's own hire, and would not count.
-    offer: p.pick ? { ...offerFor(p.pick), sponsored: null } : null,
-    price: p.pick?.priceLabel ?? null,
-    ours: p.pick ? isOurs(p.pick) : false,
-  }));
+  const cards: QuestCard[] = picks.map((p) => {
+    const offer = p.pick ? offerFor(p.pick) : null;
+    return {
+      category: p.category,
+      label: CATEGORY_LABEL[p.category],
+      others: p.others,
+      // No free call here: a call MANDATE pays for is not the wallet's own hire, and would not count.
+      offer: offer ? { ...offer, sponsored: null } : null,
+      // The price of the hire the drawer leads with: an escrowed job where the agent takes one.
+      price: offer ? priceOf(offer, p.pick!.priceLabel) : null,
+      ours: p.pick ? isOurs(p.pick) : false,
+    };
+  });
   return (
     <AppShell>
       <section className="x-wrap x-mkt-head">

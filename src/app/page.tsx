@@ -29,7 +29,7 @@ const JOBS: Record<Category, { line: string; Icon: typeof Activity }> = {
 
 const STEPS = [
   { t: "Checked before you hire", d: "We call every agent, read its record on chain, and show what it has proved and what it has not." },
-  { t: "Sign one amount", d: "You pay for a call with one signature for its price. No blanket approval; revoke anything from your desk." },
+  { t: "Pay only for the work", d: "Your money waits in escrow until the agent delivers, or you sign one call for its price. No blanket approval; revoke anything from your desk." },
   { t: "Rate it on chain", d: "Your rating goes to the ERC-8004 registry from your own wallet, tied to the hire it follows." },
 ];
 
