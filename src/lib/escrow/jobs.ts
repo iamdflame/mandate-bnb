@@ -244,12 +244,26 @@ async function recordOutside(jobId: bigint, fundTx: Hash, job: OnChainJob, o: { 
   return { job: row! };
 }
 
-/** The transaction that submitted a job, from the kernel's own event, searched from the block it was funded in. */
-async function submitTxOf(jobId: string, fundedTx: string | null): Promise<string | null> {
-  const from = fundedTx ? await marketClient.getTransactionReceipt({ hash: fundedTx as Hash }).then((r) => r.blockNumber).catch(() => null) : null;
-  if (from === null) return null;
+/**
+ * The transaction that submitted a job, from the kernel's own event. The
+ * kernel stamps when it was submitted, so the search is a narrow window of
+ * blocks around that moment rather than a long scan most RPCs refuse.
+ */
+export async function submitTxOf(jobId: string, submittedAt: bigint): Promise<string | null> {
+  if (!submittedAt) return null;
+  const latest = await marketClient.getBlock().catch(() => null);
+  if (!latest) return null;
+  // BSC makes a block about every 0.45 s; the window allows for the estimate being off.
+  const around = latest.number - BigInt(Math.ceil(Math.max(0, Number(latest.timestamp - submittedAt)) / 0.45));
   const logs = await marketClient
-    .getContractEvents({ address: ESCROW.commerce, abi: COMMERCE_ABI, eventName: "JobSubmitted", args: { jobId: BigInt(jobId) }, fromBlock: from, toBlock: from + 40_000n })
+    .getContractEvents({
+      address: ESCROW.commerce,
+      abi: COMMERCE_ABI,
+      eventName: "JobSubmitted",
+      args: { jobId: BigInt(jobId) },
+      fromBlock: around - 1_500n,
+      toBlock: around + 1_500n > latest.number ? latest.number : around + 1_500n,
+    })
     .catch(() => []);
   return logs[0]?.transactionHash?.toLowerCase() ?? null;
 }
@@ -261,7 +275,7 @@ async function submitTxOf(jobId: string, fundedTx: string | null): Promise<strin
 async function notifyOutside(row: EscrowJob & { sellerAnswer: string | null }): Promise<string> {
   const job = await readJob(BigInt(row.jobId));
   if (job.status !== "FUNDED") {
-    const submitTx = row.submitTx ?? (Number(job.submittedAt) ? await submitTxOf(row.jobId, row.fundedTx) : null);
+    const submitTx = row.submitTx ?? (await submitTxOf(row.jobId, job.submittedAt));
     await pg!`update escrow_jobs set status = ${job.status}, submitted_at = ${Number(job.submittedAt) || null}, submit_tx = ${submitTx}, deliverable_hash = ${/^0x0{64}$/.test(job.deliverable) ? null : job.deliverable}, updated_at = now() where job_id = ${row.jobId}`;
     return `seller ${job.status.toLowerCase()}`;
   }
@@ -284,7 +298,7 @@ async function notifyOutside(row: EscrowJob & { sellerAnswer: string | null }): 
   // Some sellers submit before they answer; read the kernel once more.
   const after = await readJob(BigInt(row.jobId));
   if (after.status !== "FUNDED") {
-    const submitTx = await submitTxOf(row.jobId, row.fundedTx);
+    const submitTx = await submitTxOf(row.jobId, after.submittedAt);
     await pg!`update escrow_jobs set status = ${after.status}, submitted_at = ${Number(after.submittedAt) || null}, submit_tx = ${submitTx}, deliverable_hash = ${after.deliverable}, updated_at = now() where job_id = ${row.jobId}`;
     return `seller told; ${after.status.toLowerCase()}`;
   }
@@ -380,6 +394,12 @@ async function settle(jobId: string, windowSeconds: bigint): Promise<string> {
   if (job.status !== "SUBMITTED") {
     await pg!`update escrow_jobs set status = ${job.status}, updated_at = now() where job_id = ${jobId}`;
     return `${jobId}: ${job.status.toLowerCase()}`;
+  }
+  // An outside seller's submission is its own transaction; it is read from the kernel's event once.
+  const [known] = (await pg!`select submit_tx from escrow_jobs where job_id = ${jobId}`) as { submit_tx: string | null }[];
+  if (known && !known.submit_tx) {
+    const found = await submitTxOf(jobId, job.submittedAt);
+    if (found) await pg!`update escrow_jobs set submit_tx = ${found}, updated_at = now() where job_id = ${jobId}`;
   }
   if (BigInt(Math.floor(Date.now() / 1000)) < job.submittedAt + windowSeconds) return `${jobId}: in its dispute window`;
   const raw = process.env.AGENT_A_KEY;
