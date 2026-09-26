@@ -124,6 +124,10 @@ export default function Navbar() {
             </summary>
             <div className="x-drop__panel">
               <NetworkBadge />
+              {/* First, on a phone: connecting is the one thing the header has no room for. */}
+              <div className="x-drop__wallet">
+                <WalletButton />
+              </div>
               {PRIMARY.map((n) => (
                 <Link key={n.href} href={n.href} aria-current={current(n.href)}>
                   {n.label}
@@ -138,9 +142,6 @@ export default function Navbar() {
               <Link href="/list" aria-current={current("/list")}>
                 List your agent
               </Link>
-              <div className="x-drop__wallet">
-                <WalletButton />
-              </div>
             </div>
           </details>
         </div>

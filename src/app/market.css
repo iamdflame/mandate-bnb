@@ -466,6 +466,11 @@ html:has(.x-app) body {
   top: calc(100% + 8px);
   right: 0;
   min-width: 220px;
+  /* Never taller than the screen below the header: a list longer than that scrolls, so its last item can be reached. */
+  max-height: calc(100vh - var(--h-nav) - 16px);
+  max-height: calc(100dvh - var(--h-nav) - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--s-2);
   border-radius: var(--r-md);
   border: 1px solid var(--c-line);
@@ -1286,9 +1291,23 @@ html:has(.x-app) body {
   min-height: 52px;
 }
 .x-drop__wallet {
-  padding: var(--s-2) var(--s-1) 0;
-  border-top: 1px solid var(--c-line-faint);
+  padding: var(--s-1) var(--s-1) var(--s-2);
+  border-bottom: 1px solid var(--c-line-faint);
+  margin-bottom: var(--s-2);
+}
+.x-drop__wallet > .x-btn,
+.x-drop__wallet .m-wallet > summary {
+  width: 100%;
+  min-height: 44px;
+  justify-content: center;
+}
+/* Inside the menu the wallet's details open in place, not as a second floating panel. */
+.x-drop__wallet .m-wallet__panel {
+  position: static;
+  width: auto;
+  max-width: none;
   margin-top: var(--s-2);
+  box-shadow: none;
 }
 
 /* ======================================================== marketplace === */
