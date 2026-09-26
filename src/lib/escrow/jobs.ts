@@ -28,6 +28,7 @@ import { REFERENCE, referenceRegistrations, type ReferenceAgent } from "@/lib/ho
 import { HOUSE_SERVICES } from "@/lib/house/services";
 import { SITE } from "@/lib/site";
 import { getProbes } from "@/lib/data/probes";
+import { warm } from "@/lib/data/snapshots";
 import { COMMERCE_ABI, ESCROW, JOB_STATUS, POLICY_ABI, ROUTER_ABI, VIA_HOST, type JobStatus } from "./contracts";
 import { notifyFunded } from "./a2a";
 
@@ -220,6 +221,8 @@ export async function recordFunded(
  * dispute and reclaim), and opened here.
  */
 async function recordOutside(jobId: bigint, fundTx: Hash, job: OnChainJob, o: { tokenId: string; inputs: Record<string, string> }): Promise<{ job: EscrowJob } | { refused: string; status: number }> {
+  // The census this instance holds may predate the quote; read the newest.
+  await warm(["probe"]);
   const q = getProbes().escrowQuotes?.[o.tokenId];
   if (!q || q.unpayable) return { refused: "That agent has no escrow price on record here.", status: 400 };
   if (q.provider.toLowerCase() !== job.provider.toLowerCase()) return { refused: "That job names a different provider from the one this agent's seller quoted.", status: 400 };
@@ -268,6 +271,7 @@ async function notifyOutside(row: EscrowJob & { sellerAnswer: string | null }): 
   }
   const [r] = (await pg!`select notified_at from escrow_jobs where job_id = ${row.jobId}`) as { notified_at: Date | null }[];
   if (r?.notified_at && Date.now() - new Date(r.notified_at).getTime() < 3 * 60_000) return "seller told recently";
+  await warm(["probe"]);
   const q = getProbes().escrowQuotes?.[row.tokenId];
   if (!q) return "no seller endpoint on record";
   await pg!`update escrow_jobs set notified_at = now() where job_id = ${row.jobId}`;
