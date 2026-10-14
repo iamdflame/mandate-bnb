@@ -256,8 +256,9 @@ function HireHere({ id }: { id: string }) {
       ) : v?.ok ? (
         <>
           <p>
-            Yes{lead && "price" in lead ? `, for ${lead.price}` : ""}. Anyone can hire it here, paying into BNB Chain&apos;s escrow, and every hire is read from
-            the chain. This is its page to share with the people who use it:
+            Yes{lead && "price" in lead ? `, for ${lead.price}` : ""}. Anyone can hire it here,{" "}
+            {lead?.kind === "escrow" ? "paying into BNB Chain's escrow until it delivers" : lead?.kind === "x402" ? "paying per call with one signature" : "through BNB Chain's escrow"}, and every hire
+            is read from the chain. This is its page to share with the people who use it:
           </p>
           <ShareLink url={`${SITE}/agents/${id}`} />
           <p className="x-ad-src">
