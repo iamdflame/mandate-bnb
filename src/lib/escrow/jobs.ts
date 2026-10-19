@@ -29,7 +29,7 @@ import { REFERENCE, referenceRegistrations, type ReferenceAgent } from "@/lib/ho
 import { HOUSE_SERVICES } from "@/lib/house/services";
 import { SITE } from "@/lib/site";
 import { escrowQuoteMap, getProbes } from "@/lib/data/probes";
-import { snapshot, store, warm } from "@/lib/data/snapshots";
+import { loadedLive, snapshot, store, warm } from "@/lib/data/snapshots";
 import { scanLogs } from "@/lib/chain/logs";
 import { COMMERCE_ABI, ESCROW, HOUSE_BUDGET, JOB_FUNDED, JOB_STATUS, POLICY_ABI, ROUTER_ABI, VIA_HOST, type JobStatus } from "./contracts";
 import { notifyFunded } from "./a2a";
@@ -698,6 +698,8 @@ export async function watchFunded(opts: { budgetMs: number }): Promise<string> {
   const started = Date.now();
   await warm(["escrow-watch"]);
   const head = await marketClient.getBlockNumber();
+  // A cursor that did not load would restart near the head and skip every block between: a buyer's funded job missed, never delivered.
+  if (!(await loadedLive("escrow-watch"))) return "the cursor is not loaded on this instance; read again next pass";
   const kept = snapshot<{ block: number }>("escrow-watch")?.payload?.block;
   const from = kept ? BigInt(kept) + 1n : head - 2_000n;
   if (from > head) return "up to date";

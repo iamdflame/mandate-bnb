@@ -71,6 +71,24 @@ export const DEFAULT_WARM: SnapshotName[] = ["probe", "assays", "census", "demo"
 
 const warming = new Map<SnapshotName, Promise<void>>();
 
+/**
+ * Whether a job may merge into this snapshot and save it: the stored reading
+ * is loaded on this instance, or there is none stored to lose. A job that
+ * merged into the committed copy, or into nothing, and saved would wipe the
+ * live one (the probe on 19 Oct: a month of readings for 103 agents). A
+ * database that cannot be asked counts as not loaded.
+ */
+export async function loadedLive(name: SnapshotName): Promise<boolean> {
+  if (!(await ensure())) return true;
+  if (snapshot(name)?.source === "db") return true;
+  try {
+    const rows = (await pg!`select 1 from snapshots where name = ${name} limit 1`) as unknown as unknown[];
+    return rows.length === 0;
+  } catch {
+    return false;
+  }
+}
+
 export async function warm(names: SnapshotName[] = DEFAULT_WARM): Promise<void> {
   if (!(await ensure())) return;
   // A name already being read is waited for, not skipped. It used to be marked

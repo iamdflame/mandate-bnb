@@ -23,7 +23,7 @@ import { IDENTITY_REGISTRY, type Category } from "@/lib/config";
 import { LOG_RPCS, marketClient } from "@/lib/chain/market";
 import { sql as pg } from "@/lib/db/client";
 import { ensureTables } from "@/lib/db/tables";
-import { snapshot, store, warm } from "@/lib/data/snapshots";
+import { snapshot, store, warm, loadedLive } from "@/lib/data/snapshots";
 import { withLease } from "@/lib/db/lease";
 import { readRegistryEntry, type RegistryEntry } from "@/lib/sources/registry";
 import { classify, CLASSIFIER_VERSION, fileable } from "@/lib/assay/classify";
@@ -206,6 +206,7 @@ export function mintIn(logs: readonly { address: string; topics: readonly (strin
 export async function scanMints(opts: { budgetMs: number; maxChunks?: number }): Promise<{ cursor: number; head: number; minted: number }> {
   await ensureTables();
   await warm(["registry-tail"]).catch(() => undefined);
+  if (!(await loadedLive("registry-tail"))) return { cursor: -1, head: -1, minted: 0 };
   const state = snapshot<TailState>("registry-tail")?.payload ?? { cursor: TAIL_START, head: 0, minted: 0, at: new Date(0).toISOString() };
   const head = Number(await marketClient.getBlockNumber());
   const started = Date.now();

@@ -14,7 +14,7 @@
 
 import { getAgentIndex } from "@/lib/data/agents";
 import { escrowQuoteMap } from "@/lib/data/probes";
-import { snapshot, store, warm } from "@/lib/data/snapshots";
+import { loadedLive, snapshot, store, warm } from "@/lib/data/snapshots";
 import { readRegistryEntry } from "@/lib/sources/registry";
 import { escrowSeller, quoteWith, type EscrowQuote } from "@/lib/escrow/a2a";
 import { attributed, taskFor } from "@/lib/escrow/task";
@@ -28,6 +28,8 @@ const CONCURRENCY = 8;
 export async function refreshEscrowQuotes(opts: { budgetMs: number }): Promise<string> {
   const started = Date.now();
   await Promise.all([warm(["probe", "escrow-quotes", "escrow-asked"]), warmRegistry().catch(() => undefined)]);
+  // This run merges into the stored prices and saves them whole: only on top of the live ones.
+  if (!(await loadedLive("escrow-quotes")) || !(await loadedLive("escrow-asked"))) return "the stored prices are not loaded on this instance; not saving over them";
   // When each seller was last asked, answered or not, so one that never answers does not keep its place at the front.
   const lastAsked: Record<string, string> = { ...((snapshot<Record<string, string>>("escrow-asked")?.payload as Record<string, string> | undefined) ?? {}) };
   const quotes: Record<string, EscrowQuote> = { ...((snapshot<Record<string, EscrowQuote>>("escrow-quotes")?.payload as Record<string, EscrowQuote> | undefined) ?? {}) };

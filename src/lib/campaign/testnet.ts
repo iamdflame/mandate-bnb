@@ -21,7 +21,7 @@ import { getAddress as deployment } from "@bnbagent/sdk/networks";
 import { JOB_FUNDED } from "@/lib/escrow/contracts";
 import { sql as pg } from "@/lib/db/client";
 import { ensureTables } from "@/lib/db/tables";
-import { snapshot, store, warm } from "@/lib/data/snapshots";
+import { loadedLive, snapshot, store, warm } from "@/lib/data/snapshots";
 
 export const TESTNET_COMMERCE = deployment(97).commerceProxy as Address;
 export const TESTNET_EXPLORER = "https://testnet.bscscan.com";
@@ -115,6 +115,8 @@ export async function watchTestnet(opts: { budgetMs: number }): Promise<string> 
   if (!c) return "no archive key for testnet logs";
   await warm(["testnet-watch"]);
   const head = await patient(() => c.getBlockNumber());
+  // A cursor that did not load would restart near the head and skip every block between.
+  if (!(await loadedLive("testnet-watch"))) return "the cursor is not loaded on this instance; read again next pass";
   const kept = snapshot<{ block: number }>("testnet-watch")?.payload?.block;
   // With no cursor yet, start near the head; `npm run backfill-testnet-jobs` fills the campaign from its first day.
   const from = kept ? BigInt(kept) + 1n : head - 20_000n;

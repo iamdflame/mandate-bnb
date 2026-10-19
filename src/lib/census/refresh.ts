@@ -17,7 +17,7 @@ import { after } from "next/server";
 import { sql as pg } from "@/lib/db/client";
 import { ensureTables } from "@/lib/db/tables";
 import { getProbes } from "@/lib/data/probes";
-import { store, warm } from "@/lib/data/snapshots";
+import { loadedLive, store, warm } from "@/lib/data/snapshots";
 import { beat } from "@/lib/heartbeat";
 import { runCensus } from "./run";
 
@@ -67,6 +67,18 @@ export async function refreshIfStale(opts: { maxAgeMs?: number; limit?: number; 
   inFlight = (async () => {
     try {
       await warm(["probe"]);
+      /*
+        Only ever build on the live reading. On 19 Oct a slice ran on an
+        instance whose database read had not finished, took the copy
+        committed with the code (18 Sep) as its starting point, and saved it:
+        a month of readings for 103 agents, our own four among them, were
+        wiped in one write, and they fell out of the marketplace. With a
+        database configured, a run that holds only the committed copy does
+        not run.
+      */
+      if (!(await loadedLive("probe"))) {
+        return { ran: false, why: "the live reading is not loaded on this instance; not building on the committed copy" };
+      }
       const current = getProbes();
       const age = Date.now() - new Date(current.at).getTime();
       if (!opts.force && age < (opts.maxAgeMs ?? STALE_AFTER_MS)) {
