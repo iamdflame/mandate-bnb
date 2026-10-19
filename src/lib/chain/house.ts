@@ -117,7 +117,16 @@ export async function renewHouseSessions(opts: { days?: number; withinDays?: num
   const days = Math.max(1, Math.min(60, opts.days ?? 21));
   const withinDays = opts.withinDays ?? 3;
   const principal = DEMO_ADDRESS as Address;
-  const sessions = await listSessions().catch(() => []);
+  /*
+    A failed read is not an empty list. It was read as one: on 19 Oct, while
+    the database was slow, two runs found Yield-1's session "missing" and
+    granted it twice, a registration each, paid from the demo account, which
+    then could not afford its agents' actions. No sessions read, nothing
+    renewed; and a store that answers with none at all is treated the same,
+    since our agents always hold some.
+  */
+  const sessions = await listSessions();
+  if (!sessions.length) throw new Error("no sessions could be read, so none are renewed");
   const out: RenewalOutcome[] = [];
   // Each grant is a registration transaction and real gas. A bug that thought
   // every session was expired should cost a bounded amount, not the balance.
