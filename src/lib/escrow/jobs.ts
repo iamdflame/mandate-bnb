@@ -92,6 +92,28 @@ export async function readJob(jobId: bigint): Promise<OnChainJob> {
   };
 }
 
+/*
+  When a job can still be delivered. The kernel refuses a provider's submit
+  once fewer than the dispute window's seconds remain before the job's expiry
+  (SubmissionTooLate, 0x15e5dd74): a job opened with seven days and thirty
+  minutes can be delivered for thirty minutes, then only refunded once it
+  expires. The window is the policy's, read once per instance.
+*/
+let windowRead: Promise<bigint> | null = null;
+export function disputeWindow(): Promise<bigint> {
+  windowRead ??= (marketClient.readContract({ address: ESCROW.policy, abi: POLICY_ABI, functionName: "disputeWindow" }) as Promise<bigint>).catch((e) => {
+    windowRead = null;
+    throw e;
+  });
+  return windowRead;
+}
+
+/** The last second a provider can submit: the job's expiry less the dispute window. Pure. */
+export const submitBy = (expiredAt: bigint | number, window: bigint | number) => BigInt(expiredAt) - BigInt(window);
+
+/** A notice that never reached the seller, or a job we opened too short to deliver, is our failure, never the seller's. */
+export const oursToBlame = (note: string | null | undefined) => Boolean(note && /^Telling the seller failed/.test(note));
+
 /** Our agents that take escrowed jobs, by the wallet that owns each one's registration. */
 export function providers(): Map<string, { ref: ReferenceAgent; tokenId: string; owner: Address }> {
   const regs = referenceRegistrations();
@@ -404,9 +426,12 @@ async function notifyOutside(row: EscrowJob & { sellerAnswer: string | null; sel
     if (!row.sellerVerified) await readDelivery(row.jobId, job.submittedAt, job.deliverable).catch(() => undefined);
     return `seller ${job.status.toLowerCase()}`;
   }
-  if (BigInt(Math.floor(Date.now() / 1000)) >= job.expiredAt) {
-    await pg!`update escrow_jobs set note = ${"The seller did not deliver before the deadline; the buyer can claim the refund."}, updated_at = now() where job_id = ${row.jobId}`;
-    return "expired undelivered";
+  if (BigInt(Math.floor(Date.now() / 1000)) > submitBy(job.expiredAt, await disputeWindow())) {
+    // Past the last second it could submit: telling it again only spams it. The budget is refunded at expiry.
+    if (!oursToBlame(row.note)) {
+      await pg!`update escrow_jobs set note = ${"The seller did not deliver in time; the budget is refunded to the buyer when the job expires."}, updated_at = now() where job_id = ${row.jobId}`;
+    }
+    return "missed its delivery window";
   }
   const [r] = (await pg!`select notified_at from escrow_jobs where job_id = ${row.jobId}`) as { notified_at: Date | null }[];
   if (r?.notified_at && Date.now() - new Date(r.notified_at).getTime() < 3 * 60_000) return "seller told recently";
@@ -438,16 +463,32 @@ async function notifyOutside(row: EscrowJob & { sellerAnswer: string | null; sel
 export async function missedEscrowJobs(): Promise<Map<string, { jobId: string; at: string }>> {
   if (!pg) return new Map();
   await outsideColumns();
+  /*
+    An outside seller's latest job here that passed its delivery deadline with
+    nothing submitted. Counted from the deadline (thirty minutes after the job
+    opened), not from the expiry seven days later: until 19 Oct a seller that
+    never delivered stayed hireable for a week after each miss, and our own
+    test hires paid one operator five times. A miss our notice caused is not
+    counted, and every candidate is read back from the kernel first, so a
+    record behind the chain never costs a seller its listing.
+  */
   const rows = (await pg`
-    select distinct on (token_id) token_id, job_id, status, submitted_at, expired_at
+    select distinct on (token_id) token_id, job_id, status, submitted_at, expired_at, note
     from escrow_jobs where slug = '' order by token_id, created_at desc
-  `) as { token_id: string; job_id: string; status: string; submitted_at: string | number | null; expired_at: string | number | null }[];
-  const now = Math.floor(Date.now() / 1000);
+  `) as { token_id: string; job_id: string; status: string; submitted_at: string | number | null; expired_at: string | number | null; note: string | null }[];
+  const window = await disputeWindow().catch(() => null);
+  if (window === null) return new Map();
+  const now = BigInt(Math.floor(Date.now() / 1000));
   const out = new Map<string, { jobId: string; at: string }>();
   for (const r of rows) {
-    if (r.submitted_at || r.expired_at === null || Number(r.expired_at) > now) continue;
+    if (r.submitted_at || r.expired_at === null || oursToBlame(r.note)) continue;
     if (r.status !== "FUNDED" && r.status !== "EXPIRED") continue;
-    out.set(r.token_id, { jobId: r.job_id, at: new Date(Number(r.expired_at) * 1000).toISOString() });
+    const deadline = submitBy(Number(r.expired_at), window);
+    // Two minutes' grace for a submission still being mined.
+    if (now <= deadline + 120n) continue;
+    const job = await readJob(BigInt(r.job_id)).catch(() => null);
+    if (!job || (job.status !== "FUNDED" && job.status !== "EXPIRED")) continue;
+    out.set(r.token_id, { jobId: r.job_id, at: new Date(Number(deadline) * 1000).toISOString() });
   }
   return out;
 }
@@ -496,9 +537,9 @@ export async function deliver(jobId: string): Promise<string> {
       await pg!`update escrow_jobs set status = ${job.status}, submitted_at = ${Number(job.submittedAt) || null}, updated_at = now() where job_id = ${jobId}`;
       return `already ${job.status.toLowerCase()}`;
     }
-    if (BigInt(Math.floor(Date.now() / 1000)) >= job.expiredAt) {
-      await pg!`update escrow_jobs set note = ${"Expired before delivery; the buyer can claim the refund."}, updated_at = now() where job_id = ${jobId}`;
-      return "expired before delivery";
+    if (BigInt(Math.floor(Date.now() / 1000)) > submitBy(job.expiredAt, await disputeWindow())) {
+      await pg!`update escrow_jobs set note = ${"Not delivered in time; the budget is refunded to the buyer when the job expires."}, updated_at = now() where job_id = ${jobId}`;
+      return "past its delivery window";
     }
     const p = providers().get(job.provider.toLowerCase());
     const key = p ? providerKey(p.ref) : null;
@@ -690,21 +731,61 @@ export async function sweepEscrow(opts: { budgetMs: number }): Promise<string> {
     sellers' jobs (each told and read again, some timing out) and twenty
     settlements. Ours now go first, then outside sellers' newest first.
   */
+  const windowSeconds = await disputeWindow();
+  // Only jobs that can still be delivered: past its deadline a job waits for its expiry and its refund (below).
   const funded = (await pg`
     select job_id, status from escrow_jobs
-    where status = 'FUNDED' and (expired_at is null or expired_at > extract(epoch from now())::bigint)
+    where status = 'FUNDED' and (expired_at is null or expired_at - ${Number(windowSeconds)} > extract(epoch from now())::bigint)
     order by (slug <> '') desc, created_at desc limit 20
   `) as { job_id: string; status: string }[];
   const submitted = (await pg`select job_id, status from escrow_jobs where status = 'SUBMITTED' order by created_at asc limit 20`) as { job_id: string; status: string }[];
   // Our own deliveries, then outside sellers' newest first, then settlements.
   const open = [...funded, ...submitted];
-  if (!open.length) return `watch: ${watched}; no open jobs`;
-  const windowSeconds = await marketClient.readContract({ address: ESCROW.policy, abi: POLICY_ABI, functionName: "disputeWindow" });
   const done: string[] = [];
   for (const j of open) {
     if (Date.now() - started > opts.budgetMs) break;
     const r = j.status === "FUNDED" ? await deliver(j.job_id).catch((e) => `failed: ${(e as Error).message.split("\n")[0]}`) : await settle(j.job_id, windowSeconds).catch((e) => `failed: ${(e as Error).message.split("\n")[0]}`);
     done.push(`${j.job_id} ${r}`);
   }
-  return `watch: ${watched}; ${done.join("; ")}`;
+  if (Date.now() - started < opts.budgetMs - 10_000) done.push(...(await refundExpired({ max: 4 }).catch((e: Error) => [`refunds failed: ${e.message.split("\n")[0].slice(0, 80)}`])));
+  return `watch: ${watched}; ${done.join("; ") || "no open jobs"}`;
+}
+
+/**
+ * Gives the buyer their money back, without their asking, when a job opened
+ * here expired undelivered. The kernel lets anyone trigger a refund once a
+ * job has expired and always pays it to the job's client, so keeper A sends
+ * it and pays the gas; the buyer never has to come back and claim it. Before
+ * 19 Oct none were sent, and sixteen jobs (1.06 $U of our own test hires
+ * among them) sat expired and funded. A few per pass, oldest first.
+ */
+export async function refundExpired(opts: { max: number }): Promise<string[]> {
+  const raw = process.env.AGENT_A_KEY;
+  if (!pg || !raw) return [];
+  const rows = (await pg`
+    select job_id from escrow_jobs
+    where status = 'FUNDED' and expired_at is not null and expired_at < extract(epoch from now())::bigint
+    order by expired_at asc limit ${opts.max}
+  `) as { job_id: string }[];
+  const out: string[] = [];
+  const wallet = walletFor((raw.startsWith("0x") ? raw : `0x${raw}`) as Hex);
+  for (const r of rows) {
+    const job = await readJob(BigInt(r.job_id)).catch(() => null);
+    if (!job) continue;
+    if (job.status !== "FUNDED" || BigInt(Math.floor(Date.now() / 1000)) < job.expiredAt) {
+      if (job.status !== "FUNDED") await pg`update escrow_jobs set status = ${job.status}, updated_at = now() where job_id = ${r.job_id}`;
+      continue;
+    }
+    try {
+      const { request } = await marketClient.simulateContract({ account: wallet.account, address: ESCROW.commerce, abi: COMMERCE_ABI, functionName: "claimRefund", args: [BigInt(r.job_id)] });
+      const hash = await wallet.writeContract(request);
+      const receipt = await marketClient.waitForTransactionReceipt({ hash, timeout: 60_000 });
+      const after = await readJob(BigInt(r.job_id));
+      await pg`update escrow_jobs set status = ${after.status}, note = ${receipt.status === "success" ? `Refunded to the buyer on expiry: ${hash}` : `Refund reverted: ${hash}`}, updated_at = now() where job_id = ${r.job_id}`;
+      out.push(`${r.job_id} refunded ${receipt.status}`);
+    } catch (e) {
+      out.push(`${r.job_id} refund failed: ${(e as Error).message.split("\n")[0].slice(0, 80)}`);
+    }
+  }
+  return out;
 }

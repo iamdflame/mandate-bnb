@@ -103,3 +103,19 @@ describe("an outside seller's escrow quote", () => {
     expect(quoteFrom({ ...base, chain_id: 8453 }, A2A).unpayable).toMatch(/8453/);
   });
 });
+
+describe("when an escrowed job can still be delivered", () => {
+  it("ends the dispute window's length before the job's expiry: thirty minutes for a job opened with seven days and thirty minutes", async () => {
+    const { submitBy } = await import("../escrow/jobs");
+    const opened = 1_800_000_000n;
+    const expiry = opened + 604_800n + 1_800n;
+    expect(submitBy(expiry, 604_800n)).toBe(opened + 1_800n);
+  });
+
+  it("blames us, never the seller, for a notice that did not reach it", async () => {
+    const { oursToBlame } = await import("../escrow/jobs");
+    expect(oursToBlame("Telling the seller failed: it answered 404. Tried again in a few minutes.")).toBe(true);
+    expect(oursToBlame("The seller did not deliver in time; the budget is refunded to the buyer when the job expires.")).toBe(false);
+    expect(oursToBlame(null)).toBe(false);
+  });
+});
