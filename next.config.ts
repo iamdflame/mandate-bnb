@@ -47,6 +47,18 @@ const config: NextConfig = {
     /.well-known/agent-card.json for the card, or /negotiate for the SDK
     agent-server's plain form.
   */
+  /*
+    The marketplace is rendered for every visit because it reads its query
+    string, and crawlers ask for the same few addresses again and again: most
+    of the hosting bill on 19 Oct. Vercel's CDN keeps each address, query
+    included, for five minutes and serves it stale while it renders a fresh
+    one. Nothing on it is per visitor (the wallet is read in the browser), and
+    every figure says when it was read.
+  */
+  async headers() {
+    return [{ source: "/agents", headers: [{ key: "Vercel-CDN-Cache-Control", value: "s-maxage=300, stale-while-revalidate=3600" }] }];
+  },
+
   async rewrites() {
     return [
       { source: "/a2a/:slug/.well-known/agent-card.json", destination: "/api/a2a/:slug" },
