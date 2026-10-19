@@ -21,6 +21,7 @@ import { attributed, taskFor } from "@/lib/escrow/task";
 import { DEMO_ADDRESS } from "@/lib/demo";
 import { warmRegistry } from "@/lib/registry/tail";
 import { withTimeout } from "@/lib/cache";
+import { quoteSigners } from "@/lib/escrow/signers";
 
 const CONCURRENCY = 8;
 
@@ -56,7 +57,7 @@ export async function refreshEscrowQuotes(opts: { budgetMs: number }): Promise<s
           delete quotes[a.tokenId];
           continue;
         }
-        const signers = [e.owner, typeof e.card?.agentWallet === "string" ? e.card.agentWallet : null].filter((w): w is string => Boolean(w));
+        const signers = await quoteSigners(a.tokenId, e);
         const structured = taskFor(a.category ?? null, a.name ?? `Agent ${a.tokenId}`, { wallet: DEMO_ADDRESS });
         asked += 1;
         const q = await withTimeout(

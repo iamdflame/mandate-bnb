@@ -31,6 +31,7 @@ import { errorOnly } from "@/lib/conformance/run";
 import { warm } from "@/lib/data/snapshots";
 import { warmRegistry } from "@/lib/registry/tail";
 import { warmOutcomes } from "@/lib/market/hire-law";
+import { quoteSigners } from "@/lib/escrow/signers";
 
 const U = 1_000_000_000_000_000_000n;
 /** $2 a day, the daily test purchases included. */
@@ -160,7 +161,7 @@ export async function testHires(opts: { budgetMs: number; dry?: boolean }): Prom
     }
     const task = taskFor(c.category, c.name, inputs, { bnbUsd: pool?.usdtPerBnb ?? null });
     const entry = await readRegistryEntry(c.tokenId).catch(() => null);
-    const signers = [entry?.owner, typeof entry?.card?.agentWallet === "string" ? entry.card.agentWallet : null].filter((w): w is string => Boolean(w));
+    const signers = await quoteSigners(c.tokenId, entry);
     const live = await negotiateFull(c.quote.a2a, task, { signers, notify: c.quote.notify, skill: c.quote.skill }).catch((e: Error) => ({ error: e.message }));
     if ("error" in live) {
       out.push(`#${c.tokenId}: no quote just now (${live.error.slice(0, 60)})`);

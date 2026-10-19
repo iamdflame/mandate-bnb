@@ -24,6 +24,7 @@ import { planSwap } from "@/lib/escrow/pay-with-bnb";
 import { readRegistryEntry } from "@/lib/sources/registry";
 import { findAgent } from "@/lib/data/agents";
 import { poolNow } from "@/lib/house/services";
+import { quoteSigners } from "@/lib/escrow/signers";
 
 const arg = (name: string) => {
   const i = process.argv.indexOf(`--${name}`);
@@ -43,7 +44,7 @@ async function main() {
   if (!entry) throw new Error(`#${tokenId} could not be read from the registry`);
   const seller = await escrowSeller(entry.services);
   if (!seller) throw new Error(`#${tokenId} does not sell escrowed jobs over A2A`);
-  const signers = [entry.owner, typeof entry.card?.agentWallet === "string" ? entry.card.agentWallet : null].filter((w): w is string => Boolean(w));
+  const signers = await quoteSigners(tokenId, entry);
   const agent = findAgent(tokenId);
   const bnbUsd = agent?.category === "grid-trading" ? await poolNow().then((p) => p.usdtPerBnb, () => null) : null;
   // A seller whose card gives an example task reads only that form, as the drawer now sends it.

@@ -25,6 +25,7 @@ import { jobDescription } from "@/lib/escrow/sdk";
 import { outsideDescription } from "@/lib/escrow/contracts";
 import { attributed, taskFor } from "@/lib/escrow/task";
 import { poolNow } from "@/lib/house/services";
+import { quoteSigners } from "@/lib/escrow/signers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
   if (!known) return fail(404, "That agent has no escrow seller on record here.", CHAIN_ID, g.headers);
   const agent = findAgent(tokenId);
   const entry = await readRegistryEntry(tokenId).catch(() => null);
-  const signers = [entry?.owner, typeof entry?.card?.agentWallet === "string" ? entry.card.agentWallet : null].filter((w): w is string => Boolean(w));
+  const signers = await quoteSigners(tokenId, entry);
   // A grid's blank bounds are set around the price now, so the agent gets a band it can plan inside.
   const bnbUsd = agent?.category === "grid-trading" ? await poolNow().then((p) => p.usdtPerBnb, () => null) : null;
   // A seller priced on its card's own example reads only that form: the buyer's edit of it, or the example itself.

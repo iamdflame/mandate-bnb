@@ -36,6 +36,7 @@ import { notifyFunded } from "./a2a";
 import { isManifest, manifestFor, manifestHash, pyJson, readSignedDescription } from "./sdk";
 import { subjectOfTask } from "./seller";
 import { safeFetch } from "@/lib/net/safe-fetch";
+import { quoteSigners } from "./signers";
 import { readRegistryEntry } from "@/lib/sources/registry";
 
 export interface EscrowJob {
@@ -318,7 +319,7 @@ async function recordOutside(jobId: bigint, fundTx: Hash, job: OnChainJob, o: { 
   if (signed && "refused" in signed) return { refused: `That job's description fails its own check: ${signed.refused}.`, status: 400 };
   if (signed) {
     const entry = await readRegistryEntry(o.tokenId).catch(() => null);
-    const names = [entry?.owner, typeof entry?.card?.agentWallet === "string" ? entry.card.agentWallet : null].filter(Boolean).map((w) => String(w).toLowerCase());
+    const names = (await quoteSigners(o.tokenId, entry)).map((w) => w.toLowerCase());
     if (!names.includes(signed.signer.toLowerCase())) return { refused: "That job's quote is signed by a wallet this agent's registration does not name.", status: 400 };
     if (signed.signer.toLowerCase() !== job.provider.toLowerCase()) return { refused: "That job names a different provider from the wallet that signed its quote.", status: 400 };
     if (job.budget < signed.price) return { refused: "That job holds less than the signed price.", status: 400 };

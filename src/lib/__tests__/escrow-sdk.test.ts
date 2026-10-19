@@ -72,3 +72,14 @@ describe("a seller's own task form, marked as opened here", () => {
     expect(attributed(once)).toBe(once);
   });
 });
+
+describe("who may sign an agent's quote", () => {
+  it("is every wallet the registration names, on chain too, without blanks or repeats", async () => {
+    const { namedWallets } = await import("../escrow/signers");
+    const owner = "0xbFAA69233741924eD5b9d5DAA9B4Bf7B84567F0A";
+    const onChain = "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963";
+    expect(namedWallets(owner, null, onChain)).toEqual([owner, onChain]);
+    expect(namedWallets(owner, owner.toLowerCase(), "0x0000000000000000000000000000000000000000")).toEqual([owner.toLowerCase()]);
+    expect(namedWallets(undefined, "not an address")).toEqual([]);
+  });
+});

@@ -30,6 +30,7 @@ import { getAgentIndex } from "@/lib/data/agents";
 import type { ProbeIndex } from "@/lib/data/probes";
 import { warmRegistry } from "@/lib/registry/tail";
 import { escrowSeller, negotiate, type EscrowQuote } from "@/lib/escrow/a2a";
+import { quoteSigners } from "@/lib/escrow/signers";
 
 export interface CensusOptions {
   previous: ProbeIndex | null;
@@ -111,8 +112,8 @@ export async function runCensus(opts: CensusOptions): Promise<CensusRun> {
           endpoint: known ?? endpointFor(e),
           unread: unread && !known,
           services: e?.services ?? [],
-          // The wallets this agent's registration names: a signed quote must come from one of them.
-          signers: [e?.owner, typeof e?.card?.agentWallet === "string" ? e.card.agentWallet : null].filter((w): w is string => Boolean(w)),
+          // The wallets this agent's registration names, on chain too: a signed quote must come from one of them.
+          signers: await quoteSigners(a.tokenId, e),
         });
       }
     }),
