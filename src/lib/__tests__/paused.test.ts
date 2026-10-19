@@ -25,6 +25,17 @@ beforeEach(() => {
   session.listSessions.mockReset().mockResolvedValue([]);
 });
 
+describe("the leash renewer", () => {
+  it("renews nothing when the session list cannot be read, or reads as empty", async () => {
+    const { renewHouseSessions } = await import("../chain/house");
+    session.listSessions.mockRejectedValueOnce(new Error("database timed out"));
+    await expect(renewHouseSessions({ withinDays: 3 })).rejects.toThrow("database timed out");
+    session.listSessions.mockResolvedValueOnce([]);
+    await expect(renewHouseSessions({ withinDays: 3 })).rejects.toThrow("no sessions could be read");
+    expect(session.grantScopedSession).not.toHaveBeenCalled();
+  });
+});
+
 describe("a paused agent", () => {
   it("is recorded with a reason and a short form", () => {
     expect(pauseForSlug("grid-1")).not.toBeNull();
@@ -60,6 +71,8 @@ describe("a paused agent", () => {
   });
 
   it("has its leash left to run out: the renewer skips it and never grants", async () => {
+    // Another agent's session on record: a store that answers with none at all is treated as unread.
+    session.listSessions.mockResolvedValue([{ id: "house:range-1:0x54c06cc2623aaa2dcc38b17fa07ad2e99b363c90", expiry: Math.floor(NOW / 1000) + 30 * 86_400 }]);
     const { renewHouseSessions } = await import("../chain/house");
     const out = await renewHouseSessions({ only: ["grid-1"], withinDays: 3 });
     expect(out).toEqual([expect.objectContaining({ slug: "grid-1", renewed: false, skipped: "paused" })]);
