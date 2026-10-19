@@ -168,9 +168,22 @@ export async function judgePathChecks(): Promise<Check[]> {
       const wallets = [...[...providers().values()].map((p) => ({ name: p.ref.name, address: p.owner as Address })), ...(keeper ? [{ name: "keeper A", address: keeper }] : [])];
       const read = await Promise.all(wallets.map(async (w) => ({ ...w, left: Number((await marketClient.getBalance({ address: w.address })) / per) })));
       const low = read.filter((w) => w.left < MIN_DELIVERIES);
+      /*
+        The demo account pays the relay for every action our agents take on it
+        through their leashes. It ran dry on 15 Oct, and Yield-1 failed every
+        run for four days ("asset deficit" from the relay) while this beat,
+        which read only the delivery wallets, stayed green. Counted here in
+        actions, from the relay's own quote for one (about 0.00003 BNB).
+      */
+      const demoLeft = Number((await marketClient.getBalance({ address: DEMO_ADDRESS as Address })) / RELAY_ACTION_WEI);
+      const demoLow = demoLeft < MIN_DEMO_ACTIONS;
       return {
-        ok: read.length > 0 && low.length === 0,
-        detail: read.map((w) => `${w.name} ${w.left.toLocaleString("en-GB")}`).join(", ") + ` deliveries of gas left${low.length ? `; below ${MIN_DELIVERIES}: ${low.map((w) => w.name).join(", ")}` : ""}`,
+        ok: read.length > 0 && low.length === 0 && !demoLow,
+        detail:
+          read.map((w) => `${w.name} ${w.left.toLocaleString("en-GB")}`).join(", ") +
+          ` deliveries of gas left; the demo account ${demoLeft.toLocaleString("en-GB")} leashed actions` +
+          (low.length ? `; below ${MIN_DELIVERIES}: ${low.map((w) => w.name).join(", ")}` : "") +
+          (demoLow ? `; the demo account is below ${MIN_DEMO_ACTIONS} actions` : ""),
       };
     }),
   ]);
@@ -179,3 +192,7 @@ export async function judgePathChecks(): Promise<Check[]> {
 /** Gas one escrow submission used on mainnet (job 56803), and the fewest deliveries a wallet should have in hand. */
 const DELIVERY_GAS = 158_017n;
 const MIN_DELIVERIES = 50;
+/** What the relay charged the demo account for one leashed action (Yield-1's supply, 19 Oct: 0.0000306 BNB), rounded up. */
+const RELAY_ACTION_WEI = 40_000_000_000_000n;
+/** Our agents take one or two leashed actions a day, so twenty is over a week's warning. */
+const MIN_DEMO_ACTIONS = 20;
