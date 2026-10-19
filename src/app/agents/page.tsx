@@ -32,11 +32,22 @@ export async function generateMetadata({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
-  const q = parseQuery(await searchParams);
+  const sp = await searchParams;
+  const q = parseQuery(sp);
   const cat = q.category ? `${CATEGORY_LABEL[q.category]} Agents` : "Agents";
+  /*
+    Every filter here is a link, so the combinations are endless, and crawlers
+    walked them: on 19 Oct 475 of 500 sampled requests were /agents with a
+    different mix of a dozen filters, each a full render, most of the site's
+    Vercel bill. Only the marketplace and its four job pages are indexed; every
+    other view says noindex and points at the job page it narrows.
+  */
+  const plain = Object.keys(sp).every((k) => k === "category");
   return {
     title: `${cat} | MANDATE`,
     description: "Find an autonomous agent on BNB Smart Chain that can do the job, with live checks, prices and response times.",
+    alternates: { canonical: q.category ? `/agents?category=${q.category}` : "/agents" },
+    ...(plain ? {} : { robots: { index: false, follow: false } }),
   };
 }
 
@@ -55,7 +66,8 @@ export default async function AgentsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await live();
-  const q = parseQuery(await searchParams);
+  const sp = await searchParams;
+  const q = parseQuery(sp);
   const hc = await hireCounts();
   const all = listings(hc.byTokenId, hc.settled, hc.delivery);
   const census = censusAge();
@@ -89,7 +101,7 @@ export default async function AgentsPage({
   const Toggle = ({ k, label, n }: { k: keyof Query; label: string; n: number }) => {
     const on = Boolean(q[k]);
     return (
-      <Link href={hrefFor(q, { [k]: !on, n: EMPTY.n })} className={`x-opt${on ? " x-opt--on" : ""}`} aria-pressed={on} scroll={false}>
+      <Link rel="nofollow" href={hrefFor(q, { [k]: !on, n: EMPTY.n })} className={`x-opt${on ? " x-opt--on" : ""}`} aria-pressed={on} scroll={false}>
         <span className="x-opt__box" aria-hidden="true">
           {on ? <Check size={12} strokeWidth={3} /> : null}
         </span>
@@ -122,7 +134,7 @@ export default async function AgentsPage({
           const on = q.max === m;
           const n = scope.filter((l) => l.usdPrice !== null && l.usdPrice <= m).length;
           return (
-            <Link key={m} href={hrefFor(q, { max: on ? null : m, n: EMPTY.n })} className={`x-opt${on ? " x-opt--on" : ""}`} aria-pressed={on} scroll={false}>
+            <Link rel="nofollow" key={m} href={hrefFor(q, { max: on ? null : m, n: EMPTY.n })} className={`x-opt${on ? " x-opt--on" : ""}`} aria-pressed={on} scroll={false}>
               <span className="x-opt__box x-opt__box--round" aria-hidden="true">
                 {on ? <Check size={12} strokeWidth={3} /> : null}
               </span>
@@ -142,7 +154,7 @@ export default async function AgentsPage({
         ).map(([id, label, n]) => {
           const on = q.rail === id;
           return (
-            <Link key={id} href={hrefFor(q, { rail: on ? null : id, n: EMPTY.n })} className={`x-opt${on ? " x-opt--on" : ""}`} aria-pressed={on} scroll={false}>
+            <Link rel="nofollow" key={id} href={hrefFor(q, { rail: on ? null : id, n: EMPTY.n })} className={`x-opt${on ? " x-opt--on" : ""}`} aria-pressed={on} scroll={false}>
               <span className="x-opt__box x-opt__box--round" aria-hidden="true">
                 {on ? <Check size={12} strokeWidth={3} /> : null}
               </span>
@@ -158,7 +170,7 @@ export default async function AgentsPage({
           {protocols.map((p) => {
             const on = q.proto?.toLowerCase() === p.name.toLowerCase();
             return (
-              <Link key={p.name} href={hrefFor(q, { proto: on ? null : p.name, n: EMPTY.n })} className={`x-opt${on ? " x-opt--on" : ""}`} aria-pressed={on} scroll={false}>
+              <Link rel="nofollow" key={p.name} href={hrefFor(q, { proto: on ? null : p.name, n: EMPTY.n })} className={`x-opt${on ? " x-opt--on" : ""}`} aria-pressed={on} scroll={false}>
                 <span className="x-opt__box x-opt__box--round" aria-hidden="true">
                   {on ? <Check size={12} strokeWidth={3} /> : null}
                 </span>
@@ -201,6 +213,7 @@ export default async function AgentsPage({
           {VIEWS.map((v) => (
             <Link
               key={v.id}
+              rel="nofollow"
               href={hrefFor(q, { view: v.id, n: EMPTY.n })}
               className={`x-tab${q.view === v.id ? " x-tab--on" : ""}`}
               aria-current={q.view === v.id ? "page" : undefined}
@@ -277,7 +290,7 @@ export default async function AgentsPage({
                 </summary>
                 <div className="x-drop__panel x-sortpanel">
                   {SORTS.map((s) => (
-                    <Link key={s.id} href={hrefFor(q, { sort: s.id })} aria-current={q.sort === s.id ? "page" : undefined} scroll={false}>
+                    <Link rel="nofollow" key={s.id} href={hrefFor(q, { sort: s.id })} aria-current={q.sort === s.id ? "page" : undefined} scroll={false}>
                       <span>
                         {s.label}
                         <span className="x-drop__note">{s.how}</span>
@@ -301,14 +314,14 @@ export default async function AgentsPage({
             <ul className="x-pills" aria-label="Active filters">
               {pills.map((p) => (
                 <li key={p.label}>
-                  <Link href={p.href} className="x-pill" scroll={false} aria-label={`Remove ${p.label}`}>
+                  <Link rel="nofollow" href={p.href} className="x-pill" scroll={false} aria-label={`Remove ${p.label}`}>
                     {p.label}
                     <X size={13} aria-hidden="true" />
                   </Link>
                 </li>
               ))}
               <li>
-                <Link href={hrefFor(EMPTY, { category: q.category, sort: q.sort, view: q.view })} className="x-pills__clear" scroll={false}>
+                <Link rel="nofollow" href={hrefFor(EMPTY, { category: q.category, sort: q.sort, view: q.view })} className="x-pills__clear" scroll={false}>
                   Clear all
                 </Link>
               </li>
@@ -338,7 +351,7 @@ export default async function AgentsPage({
               </div>
               {shown.length > page.length ? (
                 <div className="x-more">
-                  <Link href={hrefFor(q, { n: q.n + 24 })} className="x-btn" scroll={false}>
+                  <Link rel="nofollow" href={hrefFor(q, { n: q.n + 24 })} className="x-btn" scroll={false}>
                     Show {Math.min(24, shown.length - page.length)} more
                   </Link>
                   <span className="x-dim">
@@ -360,7 +373,7 @@ export default async function AgentsPage({
               <ul>
                 {q.view !== "all" ? (
                   <li>
-                    <Link className="x-link" href={hrefFor(q, { view: "all", n: EMPTY.n })} scroll={false}>
+                    <Link rel="nofollow" className="x-link" href={hrefFor(q, { view: "all", n: EMPTY.n })} scroll={false}>
                       look at all agents
                     </Link>
                     , including those that cannot be hired right now
