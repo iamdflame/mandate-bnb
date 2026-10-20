@@ -19,16 +19,16 @@ export default function RevokeDialog({ sessionId, agent, calls }: { sessionId: s
   const dialog = useRef<HTMLDialogElement>(null);
   return (
     <>
-      <button type="button" className="x-btn x-btn--sm x-btn--danger-ghost" onClick={() => dialog.current?.showModal()}>
+      <button type="button" className="k-btn k-btn--sm ac-rv__open" onClick={() => dialog.current?.showModal()}>
         <ShieldOff size={15} aria-hidden="true" /> Revoke (operator)
       </button>
-      <dialog ref={dialog} className="x-dialog" aria-labelledby={`rv-${sessionId}`}>
-        <form method="post" action="/api/desk/revoke" className="x-dialog__body">
-          <h2 id={`rv-${sessionId}`} className="x-dialog__t">
+      <dialog ref={dialog} className="ac-dialog" aria-labelledby={`rv-${sessionId}`}>
+        <form method="post" action="/api/desk/revoke" className="ac-dialog__body">
+          <h2 id={`rv-${sessionId}`} className="k-h3">
             Revoke {agent}&rsquo;s access?
           </h2>
-          <p className="x-hire__lede">This will revoke:</p>
-          <ul className="x-can">
+          <p className="k-label">This will revoke:</p>
+          <ul className="ac-can">
             {[...calls, "Its session on the account", "Its spend allowance"].map((c) => (
               <li key={c}>
                 <Check size={14} strokeWidth={2.5} aria-hidden="true" />
@@ -36,18 +36,18 @@ export default function RevokeDialog({ sessionId, agent, calls }: { sessionId: s
               </li>
             ))}
           </ul>
-          <p className="x-hire__lede">The agent will no longer be able to act. Revoking is one transaction on BNB Smart Chain and cannot be undone.</p>
+          <p className="k-small">The agent will no longer be able to act. Revoking is one transaction on BNB Smart Chain and cannot be undone.</p>
           <input type="hidden" name="id" value={sessionId} />
-          <label className="x-field">
-            <span className="x-field__l">Operator token</span>
-            <input className="x-input" type="password" name="token" autoComplete="off" required />
-            <span className="x-pay__note">Keys on the demo account are revoked by its operator, who pays the gas, so this asks for the operator&rsquo;s token.</span>
+          <label className="ac-dialog__field">
+            <span className="k-label">Operator token</span>
+            <input className="ac-dialog__input" type="password" name="token" autoComplete="off" required />
+            <span className="k-small">Keys on the demo account are revoked by its operator, who pays the gas, so this asks for the operator&rsquo;s token.</span>
           </label>
-          <div className="x-hire__nav">
-            <button type="button" className="x-btn x-btn--ghost" onClick={() => dialog.current?.close()}>
+          <div className="k-row ac-dialog__nav">
+            <button type="button" className="k-btn k-btn--ghost" onClick={() => dialog.current?.close()}>
               Cancel
             </button>
-            <button type="submit" className="x-btn x-btn--danger">
+            <button type="submit" className="k-btn k-btn--danger">
               Revoke access
             </button>
           </div>

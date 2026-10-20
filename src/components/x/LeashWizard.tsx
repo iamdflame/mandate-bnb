@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createWalletClient, custom, encodeFunctionData, formatEther, formatUnits, parseAbi, parseEther, parseUnits, type Address, type Hex } from "viem";
 import { Check, Fingerprint, Loader2, ShieldOff } from "lucide-react";
+import Agent from "@/components/characters/Agent";
+import { anchors } from "@/components/characters/engine";
 import { marketChain, marketClient } from "@/lib/chain/market";
 import { useWallet } from "@/lib/chain/wallet";
 import OpenInWallet from "./OpenInWallet";
@@ -18,6 +20,11 @@ const BNB_NEEDED = parseEther("0.002");
 const STORE = "mandate:leash-wallet";
 
 type Slug = "yield-1" | "guard-1";
+/** Our two agents that can go on a buyer's wallet, as drawn: their job family and their token id. */
+const HOUSE: Record<Slug, { job: "yield-optimisation" | "health-factor"; seed: string }> = {
+  "yield-1": { job: "yield-optimisation", seed: "344122" },
+  "guard-1": { job: "health-factor", seed: "344123" },
+};
 const AGENTS: Record<Slug, { name: string; line: string }> = {
   "yield-1": { name: "Yield-1", line: "Puts idle USDT in this wallet to work on Venus when Venus pays a rate. What it supplies stays credited to this wallet." },
   "guard-1": { name: "Guard-1", line: "Repays this wallet's own Venus USDT debt when its health factor falls near liquidation." },
@@ -67,7 +74,7 @@ const sdkClient = () =>
 
 const tx = (h?: string | null) =>
   h ? (
-    <a className="x-link x-mono" href={`https://bscscan.com/tx/${h}`} target="_blank" rel="noreferrer">
+    <a className="k-link k-mono ac-tx" href={`https://bscscan.com/tx/${h}`} target="_blank" rel="noreferrer">
       {h.slice(0, 8)}…
     </a>
   ) : null;
@@ -78,7 +85,14 @@ const tx = (h?: string | null) =>
  * limits, and the one signature that grants them. Then what the agent does,
  * and the button that ends it.
  */
-export default function LeashWizard({ initial = "yield-1" }: { initial?: Slug }) {
+export default function LeashWizard({
+  initial = "yield-1",
+  policy,
+}: {
+  initial?: Slug;
+  /** The words of each agent's call list and its daily relay allowance, from the server's leash policy, for the label. */
+  policy?: Record<Slug, { touch: string[]; relay: string }>;
+}) {
   const { address: owner, available, connect, ready, switchChain } = useWallet();
   const [slug, setSlug] = useState<Slug>(initial);
   const [pk, setPk] = useState<{ address: Address; signer: unknown } | null>(null);
@@ -240,168 +254,328 @@ export default function LeashWizard({ initial = "yield-1" }: { initial?: Slug })
     return null;
   }, [budget, daily, days, bal, slug]);
 
+  const latest = leashes.find((l) => l.slug === slug) ?? null;
+  const held = live.find((l) => l.slug === slug) ?? null;
+  const stage: "held" | "cut" | "open" = held ? "held" : latest && (latest.revokedAt || done[`revoke:${latest.id}`] !== undefined) ? "cut" : "open";
+  const touch = policy?.[slug]?.touch ?? [AGENTS[slug].line];
+  const relay = policy?.[slug]?.relay ?? null;
+  const step1 = Boolean(wallet);
+  const step2 = Boolean(wallet && bal && bal.bnb >= parseEther("0.0012"));
+  const step3 = live.some((l) => l.slug === slug);
+  const current = !step1 ? 1 : !step2 ? 2 : !step3 ? 3 : 0;
+  const stepState = (n: number, ok: boolean) => (ok ? "done" : current === n ? "now" : "next");
+
+  /* The picture of the leash: your passkey wallet, the agent, and the line between them, drawn from this wallet's real state. */
+  const who = HOUSE[slug];
+  const SIZE = 176;
+  const ring = anchors({ job: who.job, seed: who.seed, state: "leashed", house: true, size: SIZE }).ring as [number, number];
+  const ax = 330;
+  const ay = 70;
+  const collar = { x: ax + ((ring[0] - 8) / 104) * SIZE, y: ay + ((ring[1] - 10) / 104) * SIZE };
+  const from = { x: 180, y: 150 };
+  const line = `M ${from.x} ${from.y} C ${from.x + 70} ${from.y + 60}, ${collar.x - 90} ${collar.y + 70}, ${collar.x} ${collar.y}`;
+
+  const scene = (
+    <div className="ac-stage" data-state={stage} data-job={who.job}>
+      <div className="ac-stage__box">
+        <div className="ac-stage__floor" aria-hidden="true" />
+        <div className="ac-stage__wallet">
+          <span className="ac-stage__fp" aria-hidden="true">
+            <Fingerprint size={22} />
+          </span>
+          <span className="ac-stage__wt">Your passkey wallet</span>
+          <span className="ac-stage__wa k-mono">{wallet ? `${wallet.slice(0, 6)}…${wallet.slice(-4)}` : "not made yet"}</span>
+          {bal ? (
+            <span className="ac-stage__wb k-num">
+              {Number(formatEther(bal.bnb)).toFixed(4)} BNB · {Number(formatUnits(bal.usdt, 18)).toFixed(2)} USDT
+            </span>
+          ) : null}
+        </div>
+        <svg className="ac-stage__leash" viewBox="0 0 560 300" aria-hidden="true" focusable="false">
+          <path className="ac-stage__case" d={line} pathLength={1} />
+          <path className="ac-stage__line" d={line} pathLength={1} key={stage} />
+          <circle cx={collar.x} cy={collar.y} r="4.5" />
+        </svg>
+        <div className="ac-stage__agent" style={{ left: `${(ax / 560) * 100}%`, top: `${(ay / 300) * 100}%`, width: `${(SIZE / 560) * 100}%` }}>
+          <Agent job={who.job} seed={who.seed} house size={SIZE} state={stage === "held" ? "leashed" : "ready"} omit={["leash"]} slot={`stage${slug}`} label={`${AGENTS[slug].name}, ${stage === "held" ? "on a leash on this wallet" : "not on a leash on this wallet"}`} />
+        </div>
+      </div>
+      <p className="ac-stage__cap" role="status">
+        <span className={`k-dot ${stage === "held" ? "k-dot--live" : stage === "cut" ? "k-dot--err" : ""}`} aria-hidden="true" />
+        {stage === "held" && held
+          ? `${AGENTS[slug].name} is on a leash on this wallet until ${new Date(held.expiry * 1000).toLocaleDateString("en-GB")}`
+          : stage === "cut"
+            ? `${AGENTS[slug].name}'s leash on this wallet has ended`
+            : `${AGENTS[slug].name} is not on a leash yet`}
+      </p>
+    </div>
+  );
+
+  /* The leash label: everything the agent may and may not do, shown before any signature. */
+  const label = (
+    <dl className="ac-label" aria-label={`What ${AGENTS[slug].name} may do on your wallet`}>
+      <div className="ac-label__row">
+        <dt>Can touch</dt>
+        <dd>
+          {touch.map((t) => (
+            <span key={t}>{t}</span>
+          ))}
+        </dd>
+      </div>
+      <div className="ac-label__row">
+        <dt>Cap</dt>
+        <dd>
+          <span className="k-num">
+            At most <strong>{daily || "?"} USDT a day</strong>, never more than the <strong>{budget || "?"} USDT</strong> you approve
+          </span>
+          {relay ? <span className="k-small">plus {relay} BNB a day for its relay</span> : null}
+        </dd>
+      </div>
+      <div className="ac-label__row">
+        <dt>Ends</dt>
+        <dd>
+          <span className="k-num">
+            In <strong>{days || "?"} days</strong>, or the moment you revoke it
+          </span>
+        </dd>
+      </div>
+      <div className="ac-label__row ac-label__row--no">
+        <dt>Cannot</dt>
+        <dd>Transfer, withdraw to anyone, or approve anything. Everything it moves stays in this wallet.</dd>
+      </div>
+      <div className="ac-label__row ac-label__row--revoke">
+        <dt>Take it back</dt>
+        <dd>One tap, on chain, any time. The key is registered in the public KeyStore.</dd>
+      </div>
+    </dl>
+  );
+
+  const picker = (
+    <div className="ac-pick" role="radiogroup" aria-label="Which agent">
+      {(Object.keys(AGENTS) as Slug[]).map((s) => (
+        <button key={s} type="button" role="radio" aria-checked={slug === s} className="ac-pick__a" data-job={HOUSE[s].job} onClick={() => setSlug(s)}>
+          <span className="ac-pick__art" aria-hidden="true">
+            <Agent job={HOUSE[s].job} seed={HOUSE[s].seed} house size={56} state="ready" slot={`pick${s}`} />
+          </span>
+          <span className="ac-pick__copy">
+            <strong>{AGENTS[s].name}</strong>
+            <span>{AGENTS[s].line}</span>
+          </span>
+          <span className="ac-pick__tick" aria-hidden="true">
+            <Check size={14} strokeWidth={3} />
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+
   if (!available) {
     return (
-      <div className="x-leash">
-        <OpenInWallet />
+      <div className="ac-wiz">
+        <div className="ac-wiz__show">
+          {scene}
+          {label}
+        </div>
+        <div className="ac-wiz__do">
+          {picker}
+          <div className="ac-wiz__gate">
+            <OpenInWallet />
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="x-leash">
-      <div className="x-leash__agents" role="radiogroup" aria-label="Which agent">
-        {(Object.keys(AGENTS) as Slug[]).map((s) => (
-          <button key={s} type="button" role="radio" aria-checked={slug === s} className={`x-leash__agent${slug === s ? " x-leash__agent--on" : ""}`} onClick={() => setSlug(s)}>
-            <strong>{AGENTS[s].name}</strong>
-            <span>{AGENTS[s].line}</span>
-          </button>
-        ))}
+    <div className="ac-wiz">
+      <div className="ac-wiz__show">
+        {scene}
+        {label}
       </div>
 
-      <ol className="x-leash__steps">
-        <li className={wallet ? "x-leash__step x-leash__step--done" : "x-leash__step"}>
-          <p className="x-leash__t">1. A wallet only you control</p>
-          <p className="x-leash__d">A passkey wallet: your fingerprint or face unlocks it, with no seed phrase. The agent will act on this wallet and nothing else.</p>
-          {pk ? (
-            <p className="x-leash__ok">
-              <Check size={14} aria-hidden="true" /> Unlocked <span className="x-mono">{pk.address}</span>
-            </p>
-          ) : passkeys === "none" ? (
-            <p className="x-leash__warn">
-              This browser cannot make a passkey, which is how the wallet is unlocked. Wallet apps&apos; built-in browsers often cannot. Open{" "}
-              <span className="x-mono">mandatemarkets.com/leash</span> in Chrome, Safari or Edge; your main wallet can still connect there.
-            </p>
-          ) : (
-            <div className="x-leash__row">
-              {passkeys === "roaming" ? (
-                <p className="x-leash__note">This device has no fingerprint or face unlock of its own, so the passkey will live on your phone or a security key when you are asked.</p>
-              ) : null}
-              {known ? (
-                <button type="button" className="x-btn x-btn--primary" onClick={unlock} disabled={busy !== null}>
-                  <Fingerprint size={16} aria-hidden="true" /> {busy === "unlock" ? "Waiting for your passkey…" : `Unlock ${known.slice(0, 6)}…${known.slice(-4)}`}
-                </button>
-              ) : null}
-              <button type="button" className={known ? "x-btn" : "x-btn x-btn--primary"} onClick={create} disabled={busy !== null}>
-                <Fingerprint size={16} aria-hidden="true" /> {busy === "create" ? "Waiting for your passkey…" : "Create a passkey wallet"}
-              </button>
-              {!known ? (
-                <button type="button" className="x-btn x-btn--ghost" onClick={unlock} disabled={busy !== null}>
-                  I already have one
-                </button>
-              ) : null}
-            </div>
-          )}
-        </li>
+      <div className="ac-wiz__do">
+        {picker}
 
-        <li className={wallet && bal && bal.bnb >= parseEther("0.0012") ? "x-leash__step x-leash__step--done" : "x-leash__step"}>
-          <p className="x-leash__t">2. Put in what the agent may use</p>
-          <p className="x-leash__d">About 0.002 BNB pays the relay and the key registry's fee. {slug === "yield-1" ? "Then the USDT you want put to work." : "Guard-1 repays from USDT held in this wallet, against this wallet's own Venus loan."}</p>
-          {wallet ? (
-            <>
-              <p className="x-leash__bal">
-                Holds {bal ? `${Number(formatEther(bal.bnb)).toFixed(5)} BNB, ${Number(formatUnits(bal.usdt, 18)).toFixed(2)} USDT` : "…"}
-                {bal && bal.vusdt > 0n ? " and a Venus supply" : ""}
-              </p>
-              {!owner ? (
-                <button type="button" className="x-btn" onClick={connect}>
-                  Connect the wallet to fund it from
-                </button>
-              ) : !ready ? (
-                <button type="button" className="x-btn" onClick={switchChain}>
-                  Switch to BNB Smart Chain
-                </button>
+        <ol className="ac-steps2">
+          <li className="ac-step" data-state={stepState(1, step1)}>
+            <span className="ac-step__n k-num" aria-hidden="true">
+              {step1 ? <Check size={15} strokeWidth={3} /> : 1}
+            </span>
+            <div className="ac-step__body">
+              <p className="ac-step__t">A wallet only you control</p>
+              <p className="ac-step__d">A passkey wallet: your fingerprint or face unlocks it, with no seed phrase. The agent will act on this wallet and nothing else.</p>
+              {pk ? (
+                <p className="ac-step__ok">
+                  <Check size={14} aria-hidden="true" /> Unlocked <span className="k-mono">{pk.address}</span>
+                </p>
+              ) : passkeys === "none" ? (
+                <p className="k-note k-note--warn">
+                  <span>
+                    This browser cannot make a passkey, which is how the wallet is unlocked. Wallet apps&apos; built-in browsers often cannot. Open{" "}
+                    <span className="k-mono">mandatemarkets.com/leash</span> in Chrome, Safari or Edge; your main wallet can still connect there.
+                  </span>
+                </p>
               ) : (
-                <div className="x-leash__row">
-                  <button type="button" className="x-btn" onClick={fundBnb} disabled={busy !== null}>
-                    {busy === "bnb" ? "Sending…" : "Send 0.002 BNB"}
-                  </button>
-                  <label className="x-leash__in">
-                    <input value={budget} onChange={(e) => setBudget(e.target.value)} inputMode="decimal" aria-label="Budget in USDT" /> USDT
-                  </label>
-                  <button type="button" className="x-btn" onClick={fundUsdt} disabled={busy !== null || !(Number(budget) > 0)}>
-                    {busy === "usdt" ? "Sending…" : `Send ${budget} USDT`}
-                  </button>
-                  {tx(done.bnb)} {tx(done.usdt)}
-                </div>
-              )}
-              <p className="x-leash__n">
-                Or send to <span className="x-mono">{wallet}</span> from anywhere, on BNB Smart Chain only.
-              </p>
-            </>
-          ) : null}
-        </li>
-
-        <li className={live.some((l) => l.slug === slug) ? "x-leash__step x-leash__step--done" : "x-leash__step"}>
-          <p className="x-leash__t">3. Set its limits, and grant</p>
-          <div className="x-leash__row">
-            <label className="x-leash__in">
-              Budget <input value={budget} onChange={(e) => setBudget(e.target.value)} inputMode="decimal" /> USDT
-            </label>
-            <label className="x-leash__in">
-              At most <input value={daily} onChange={(e) => setDaily(e.target.value)} inputMode="decimal" /> USDT a day
-            </label>
-            <label className="x-leash__in">
-              For <input value={days} onChange={(e) => setDays(e.target.value)} inputMode="numeric" /> days
-            </label>
-          </div>
-          <ul className="x-leash__may">
-            <li>It may call Venus&apos;s USDT market for this wallet only. Everything it moves stays in this wallet.</li>
-            <li>It may never move more than {daily} USDT a day, and never more than the {budget} USDT you approve.</li>
-            <li>It cannot transfer, withdraw to anyone, or approve anything. The leash ends in {days} days, or the moment you revoke it.</li>
-          </ul>
-          {ready2 ? <p className="x-leash__n">{ready2}</p> : null}
-          <button type="button" className="x-btn x-btn--primary" onClick={grant} disabled={!pk || busy !== null || ready2 !== null}>
-            <Fingerprint size={16} aria-hidden="true" /> {busy === "grant" ? "Two passkey prompts: approve, then grant…" : `Grant ${AGENTS[slug].name} this leash`}
-          </button>
-          {!pk && wallet ? <p className="x-leash__n">Unlock the wallet with its passkey first.</p> : null}
-          <p className="x-leash__n">
-            {tx(done.approve)} {tx(done.grant)}
-          </p>
-        </li>
-      </ol>
-
-      {leashes.length ? (
-        <div className="x-leash__live">
-          <p className="x-leash__t">On this wallet</p>
-          {leashes.map((l) => {
-            const active = !l.revokedAt && l.expiry * 1000 > Date.now();
-            return (
-              <div key={l.id} className="x-leash__card">
-                <div className="x-leash__row">
-                  <strong>{AGENTS[l.slug].name}</strong>
-                  <span className={active ? "x-hire-row__ok" : "x-hire-row__job"}>{active ? `on a leash until ${new Date(l.expiry * 1000).toLocaleDateString("en-GB")}` : l.revokedAt ? "revoked" : "expired"}</span>
-                  <span className="x-leash__n">at most {l.dailyUsdt} USDT a day</span>
-                  {active ? (
-                    <button type="button" className="x-btn x-btn--sm x-btn--danger" onClick={() => revoke(l)} disabled={busy !== null || !pk}>
-                      {busy === `revoke:${l.id}` ? <Loader2 size={14} className="x-spin" aria-hidden="true" /> : <ShieldOff size={14} aria-hidden="true" />} Revoke now
+                <div className="ac-step__row">
+                  {passkeys === "roaming" ? <p className="k-small ac-step__full">This device has no fingerprint or face unlock of its own, so the passkey will live on your phone or a security key when you are asked.</p> : null}
+                  {known ? (
+                    <button type="button" className={`k-btn k-btn--primary${busy === "unlock" ? " ac-btn--wait" : ""}`} onClick={unlock} disabled={busy !== null}>
+                      <Fingerprint size={16} aria-hidden="true" /> {busy === "unlock" ? "Waiting for your passkey…" : `Unlock ${known.slice(0, 6)}…${known.slice(-4)}`}
                     </button>
                   ) : null}
-                  {tx(done[`revoke:${l.id}`])}
+                  <button type="button" className={`k-btn${known ? "" : " k-btn--primary"}${busy === "create" ? " ac-btn--wait" : ""}`} onClick={create} disabled={busy !== null}>
+                    <Fingerprint size={16} aria-hidden="true" /> {busy === "create" ? "Waiting for your passkey…" : "Create a passkey wallet"}
+                  </button>
+                  {!known ? (
+                    <button type="button" className="k-btn k-btn--ghost" onClick={unlock} disabled={busy !== null}>
+                      I already have one
+                    </button>
+                  ) : null}
                 </div>
-                <ul className="x-leash__runs">
-                  {l.runs.length ? (
-                    l.runs.slice(0, 6).map((r) => (
-                      <li key={r.at}>
-                        <span className="x-leash__n">{new Date(r.at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span> {r.reason} {tx(r.txs[0]?.tx)}
-                      </li>
-                    ))
-                  ) : (
-                    <li className="x-leash__n">It takes its first look within minutes.</li>
-                  )}
-                </ul>
-              </div>
-            );
-          })}
-          <button type="button" className="x-btn" onClick={withdraw} disabled={!pk || !owner || busy !== null}>
-            {busy === "withdraw" ? "Withdrawing…" : "Withdraw everything to my connected wallet"}
-          </button>
-          {tx(done.withdraw)}
-        </div>
-      ) : null}
+              )}
+            </div>
+          </li>
 
-      {error ? <p className="x-escrow__err">{error}</p> : null}
-      <NeedHelp />
+          <li className="ac-step" data-state={stepState(2, step2)}>
+            <span className="ac-step__n k-num" aria-hidden="true">
+              {step2 ? <Check size={15} strokeWidth={3} /> : 2}
+            </span>
+            <div className="ac-step__body">
+              <p className="ac-step__t">Put in what the agent may use</p>
+              <p className="ac-step__d">About 0.002 BNB pays the relay and the key registry&apos;s fee. {slug === "yield-1" ? "Then the USDT you want put to work." : "Guard-1 repays from USDT held in this wallet, against this wallet's own Venus loan."}</p>
+              {wallet ? (
+                <>
+                  <p className="ac-step__bal k-num">
+                    Holds {bal ? `${Number(formatEther(bal.bnb)).toFixed(5)} BNB, ${Number(formatUnits(bal.usdt, 18)).toFixed(2)} USDT` : "…"}
+                    {bal && bal.vusdt > 0n ? " and a Venus supply" : ""}
+                  </p>
+                  {!owner ? (
+                    <button type="button" className="k-btn" onClick={connect}>
+                      Connect the wallet to fund it from
+                    </button>
+                  ) : !ready ? (
+                    <button type="button" className="k-btn" onClick={switchChain}>
+                      Switch to BNB Smart Chain
+                    </button>
+                  ) : (
+                    <div className="ac-step__row">
+                      <button type="button" className="k-btn" onClick={fundBnb} disabled={busy !== null}>
+                        {busy === "bnb" ? "Sending…" : "Send 0.002 BNB"}
+                      </button>
+                      <label className="ac-in">
+                        <input value={budget} onChange={(e) => setBudget(e.target.value)} inputMode="decimal" aria-label="Budget in USDT" />
+                        <span>USDT</span>
+                      </label>
+                      <button type="button" className="k-btn" onClick={fundUsdt} disabled={busy !== null || !(Number(budget) > 0)}>
+                        {busy === "usdt" ? "Sending…" : `Send ${budget} USDT`}
+                      </button>
+                      {tx(done.bnb)} {tx(done.usdt)}
+                    </div>
+                  )}
+                  <p className="k-small">
+                    Or send to <span className="k-mono ac-break">{wallet}</span> from anywhere, on BNB Smart Chain only.
+                  </p>
+                </>
+              ) : null}
+            </div>
+          </li>
+
+          <li className="ac-step" data-state={stepState(3, step3)}>
+            <span className="ac-step__n k-num" aria-hidden="true">
+              {step3 ? <Check size={15} strokeWidth={3} /> : 3}
+            </span>
+            <div className="ac-step__body">
+              <p className="ac-step__t">Set its limits, and grant</p>
+              <p className="ac-step__d">The label beside this is exactly what you sign. Change a limit and it changes there.</p>
+              <div className="ac-limits">
+                <label className="ac-in ac-in--l">
+                  <span className="ac-in__k">Budget</span>
+                  <input value={budget} onChange={(e) => setBudget(e.target.value)} inputMode="decimal" />
+                  <span>USDT</span>
+                </label>
+                <label className="ac-in ac-in--l">
+                  <span className="ac-in__k">At most</span>
+                  <input value={daily} onChange={(e) => setDaily(e.target.value)} inputMode="decimal" />
+                  <span>USDT a day</span>
+                </label>
+                <label className="ac-in ac-in--l">
+                  <span className="ac-in__k">For</span>
+                  <input value={days} onChange={(e) => setDays(e.target.value)} inputMode="numeric" />
+                  <span>days</span>
+                </label>
+              </div>
+              {ready2 ? <p className="k-small ac-step__wait">{ready2}</p> : null}
+              <button type="button" className={`k-btn k-btn--primary k-btn--lg ac-grant${busy === "grant" ? " ac-btn--wait" : ""}`} onClick={grant} disabled={!pk || busy !== null || ready2 !== null}>
+                <Fingerprint size={18} aria-hidden="true" /> {busy === "grant" ? "Two passkey prompts: approve, then grant…" : `Grant ${AGENTS[slug].name} this leash`}
+              </button>
+              {!pk && wallet ? <p className="k-small">Unlock the wallet with its passkey first.</p> : null}
+              {done.approve !== undefined || done.grant !== undefined ? (
+                <p className="k-small ac-step__txs">
+                  {tx(done.approve)} {tx(done.grant)}
+                </p>
+              ) : null}
+            </div>
+          </li>
+        </ol>
+
+        {leashes.length ? (
+          <section className="ac-onwallet" aria-labelledby="ac-onwallet-h">
+            <h2 className="k-h3" id="ac-onwallet-h">
+              On this wallet
+            </h2>
+            {leashes.map((l) => {
+              const active = !l.revokedAt && l.expiry * 1000 > Date.now();
+              return (
+                <div key={l.id} className="ac-held" data-active={active ? "1" : undefined} data-job={HOUSE[l.slug].job}>
+                  <div className="ac-held__top">
+                    <Agent job={HOUSE[l.slug].job} seed={HOUSE[l.slug].seed} house size={48} state={active ? "leashed" : "ready"} omit={["leash"]} slot={`held${l.id}`} />
+                    <div className="ac-held__who">
+                      <strong>{AGENTS[l.slug].name}</strong>
+                      <span className="k-state">
+                        <span className={`k-dot ${active ? "k-dot--live" : ""}`} aria-hidden="true" />
+                        {active ? `on a leash until ${new Date(l.expiry * 1000).toLocaleDateString("en-GB")}` : l.revokedAt ? "revoked" : "expired"}
+                      </span>
+                      <span className="k-small k-num">at most {l.dailyUsdt} USDT a day</span>
+                    </div>
+                    {active ? (
+                      <button type="button" className="k-btn k-btn--sm k-btn--danger" onClick={() => revoke(l)} disabled={busy !== null || !pk}>
+                        {busy === `revoke:${l.id}` ? <Loader2 size={14} className="ac-spin" aria-hidden="true" /> : <ShieldOff size={14} aria-hidden="true" />} Revoke now
+                      </button>
+                    ) : null}
+                    {tx(done[`revoke:${l.id}`])}
+                  </div>
+                  <ul className="ac-runs">
+                    {l.runs.length ? (
+                      l.runs.slice(0, 6).map((r) => (
+                        <li key={r.at}>
+                          <span className="ac-runs__at k-num">{new Date(r.at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                          <span className="ac-runs__r">{r.reason}</span>
+                          {tx(r.txs[0]?.tx)}
+                        </li>
+                      ))
+                    ) : (
+                      <li className="ac-runs__none">It takes its first look within minutes.</li>
+                    )}
+                  </ul>
+                </div>
+              );
+            })}
+            <button type="button" className="k-btn" onClick={withdraw} disabled={!pk || !owner || busy !== null}>
+              {busy === "withdraw" ? "Withdrawing…" : "Withdraw everything to my connected wallet"}
+            </button>
+            {tx(done.withdraw)}
+          </section>
+        ) : null}
+
+        {error ? (
+          <p className="k-note k-note--err" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <div className="ac-help ac-help--in">
+          <NeedHelp />
+        </div>
+      </div>
     </div>
   );
 }

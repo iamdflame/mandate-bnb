@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 
 /** A link with a copy button, for a builder to hand to the people who use their agent. */
 export default function ShareLink({ url }: { url: string }) {
@@ -16,12 +16,12 @@ export default function ShareLink({ url }: { url: string }) {
     }
   };
   return (
-    <div className="x-share">
-      <a className="x-share__url x-mono" href={url}>
+    <div className="k-well bd-share">
+      <a className="bd-share__url k-mono" href={url}>
         {url.replace(/^https?:\/\//, "")}
       </a>
-      <button type="button" className="x-btn x-btn--sm" onClick={() => void copy()}>
-        <Copy size={14} aria-hidden="true" /> {copied ? "Copied" : "Copy link"}
+      <button type="button" className="k-btn k-btn--sm" onClick={() => void copy()}>
+        {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />} {copied ? "Copied" : "Copy link"}
       </button>
     </div>
   );

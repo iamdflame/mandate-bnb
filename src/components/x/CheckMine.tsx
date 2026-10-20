@@ -41,13 +41,13 @@ export default function CheckMine() {
   };
 
   return (
-    <div className="x-check__mine">
-      <button type="button" className="x-btn" onClick={() => void go()} disabled={busy}>
+    <div className="bd-mine">
+      <button type="button" className="k-btn k-btn--sm" onClick={() => void go()} disabled={busy}>
         <Wallet size={16} aria-hidden="true" />
         {busy ? "Connecting…" : address ? "Check the agents my wallet owns" : "Use my wallet"}
       </button>
       {error ? (
-        <p className="x-check__err" role="alert">
+        <p className="k-small bd-mine__err" role="alert">
           {error}
         </p>
       ) : null}

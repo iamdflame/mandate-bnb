@@ -243,96 +243,96 @@ export default function TestnetPack({ agents }: { agents: TestnetPackAgent[] }) 
   const busy = phase === "planning" || phase === "signing" || phase === "confirming" || phase === "recording";
 
   return (
-    <section className="x-pack x-pack--testnet" aria-labelledby="h-pack-testnet">
-      <p className="x-eyebrow">Free · BNB Smart Chain testnet</p>
-      <h2 id="h-pack-testnet" className="x-pack__h">
+    <section className="bd-pack bd-pack--testnet" aria-labelledby="h-pack-testnet">
+      <p className="bd-pack__k">Free, on BNB Smart Chain testnet</p>
+      <h2 id="h-pack-testnet" className="bd-pack__h">
         The same two hires, free on testnet
       </h2>
-      <p className="x-pack__lede">
+      <p className="bd-pack__lede">
         Set and Earn counts testnet hires. Hire the same two agents on BNB Smart Chain testnet with test $U from BNB Chain&apos;s faucet: real escrowed jobs,
         delivered on chain, and no real money.
       </p>
-      <ul className="x-pack__agents">
+      <ul className="bd-pack__agents">
         {agents.map((a) => {
           const j = jobs.find((x) => x.slug === a.slug);
           const delivered = j && (j.status === "SUBMITTED" || j.status === "COMPLETED");
           return (
             <li key={a.slug}>
-              <span className="x-pack__mark" aria-hidden="true">
-                {delivered ? <Check size={14} strokeWidth={3} /> : j ? <Loader2 size={14} className="x-spin" /> : null}
+              <span className="bd-pack__mark" aria-hidden="true">
+                {delivered ? <Check size={14} strokeWidth={3} /> : j ? <Loader2 size={14} className="bd-spin" /> : null}
               </span>
               <span>
-                <Link className="x-pack__name" href={`/agents/${a.mainnetTokenId}`}>
+                <Link className="bd-pack__name" href={`/agents/${a.mainnetTokenId}`}>
                   {a.name}
                 </Link>{" "}
-                <span className="x-tag">testnet #{a.tokenId}</span>
-                <span className="x-pack__does">{a.does}</span>
+                <span className="k-tag">testnet #{a.tokenId}</span>
+                <span className="bd-pack__does">{a.does}</span>
                 {j ? (
-                  <span className="x-pack__job">
-                    Testnet job <span className="x-mono">#{j.jobId}</span>: {j.status === "COMPLETED" ? "delivered and settled. " : delivered ? "delivered on chain. " : "funded, delivering… "}
+                  <span className="bd-pack__job">
+                    Testnet job <span className="k-mono">#{j.jobId}</span>: {j.status === "COMPLETED" ? "delivered and settled. " : delivered ? "delivered on chain. " : "funded, delivering… "}
                     {delivered && j.url ? (
-                      <a className="x-link" href={j.url} target="_blank" rel="noreferrer">
+                      <a className="k-link" href={j.url} target="_blank" rel="noreferrer">
                         Read its answer
                       </a>
                     ) : null}
                   </span>
                 ) : null}
               </span>
-              <span className="x-pack__price x-mono">{formatUnits(BigInt(a.budget), 18)} test $U</span>
+              <span className="bd-pack__price k-mono">{formatUnits(BigInt(a.budget), 18)} test $U</span>
             </li>
           );
         })}
       </ul>
 
       {!available ? (
-        <div className="x-pack__wallet">
-          <p className="x-pack__note">Hiring needs a wallet. On a phone, open this page in your wallet app, or make one here with a passkey:</p>
+        <div className="bd-pack__wallet">
+          <p className="bd-pack__note">Hiring needs a wallet. On a phone, open this page in your wallet app, or make one here with a passkey:</p>
           <OpenInWallet label="Open this page in your wallet app" />
           <PasskeyStart quiet />
         </div>
       ) : !address ? (
         <>
-          <button type="button" className="x-btn x-btn--lg x-btn--block" onClick={() => void connect().catch(() => undefined)}>
+          <button type="button" className="k-btn k-btn--lg k-btn--block" onClick={() => void connect().catch(() => undefined)}>
             Connect your campaign wallet
           </button>
           {connectError ? (
-            <p className="x-escrow__err" role="alert">
+            <p className="bd-pack__err" role="alert">
               {connectError}
             </p>
           ) : null}
         </>
       ) : !onTestnet ? (
-        <button type="button" className="x-btn x-btn--lg x-btn--block" onClick={() => void toTestnet().catch((e) => setError(readableError(e)))}>
+        <button type="button" className="k-btn k-btn--lg k-btn--block" onClick={() => void toTestnet().catch((e) => setError(readableError(e)))}>
           Switch to BNB Smart Chain testnet
         </button>
       ) : phase === "done" ? (
-        <p className="x-pack__ok" role="status">
+        <p className="bd-pack__ok" role="status">
           Both testnet jobs are funded. Each agent delivers on chain within minutes, and is settled 15 minutes after; your progress above counts each hire once the
           chain confirms it.
         </p>
       ) : shortGas || shortU ? (
-        <div className="x-pack__wallet">
-          <p className="x-pack__note">
+        <div className="bd-pack__wallet">
+          <p className="bd-pack__note">
             This wallet holds {tbnb === null ? "…" : formatUnits(tbnb, 18).slice(0, 7)} tBNB and {u === null ? "…" : formatUnits(u, 18)} test $U; the two hires need a
             little tBNB for gas and {formatUnits(total, 18)} test $U. BNB Chain&apos;s Telegram bot sends both. Open{" "}
-            <a className="x-link" href={FAUCET.bot} target="_blank" rel="noreferrer">
+            <a className="k-link" href={FAUCET.bot} target="_blank" rel="noreferrer">
               {FAUCET.botHandle}
             </a>{" "}
             and send:
           </p>
-          <div className="x-share">
-            <span className="x-share__url x-mono">{ask}</span>
-            <button type="button" className="x-btn x-btn--sm" onClick={() => void copy()}>
+          <div className="bd-share k-well">
+            <span className="bd-share__url k-mono">{ask}</span>
+            <button type="button" className="k-btn k-btn--sm" onClick={() => void copy()}>
               <Copy size={14} aria-hidden="true" /> {copied ? "Copied" : "Copy"}
             </button>
           </div>
-          <p className="x-pack__fine">
+          <p className="bd-pack__fine">
             Or the web faucets:{" "}
-            <a className="x-link" href={FAUCET.u} target="_blank" rel="noreferrer">
+            <a className="k-link" href={FAUCET.u} target="_blank" rel="noreferrer">
               test $U
             </a>{" "}
             and{" "}
-            <a className="x-link" href={FAUCET.tbnb} target="_blank" rel="noreferrer">
+            <a className="k-link" href={FAUCET.tbnb} target="_blank" rel="noreferrer">
               tBNB
             </a>{" "}
             (it asks for some mainnet history). This box updates when they arrive.
@@ -340,7 +340,7 @@ export default function TestnetPack({ agents }: { agents: TestnetPackAgent[] }) 
         </div>
       ) : (
         <>
-          <button type="button" className="x-btn x-btn--lg x-btn--block" onClick={() => void run()} disabled={batch === null || busy}>
+          <button type="button" className="k-btn k-btn--lg k-btn--block" onClick={() => void run()} disabled={batch === null || busy}>
             {phase === "planning"
               ? "Preparing…"
               : phase === "signing"
@@ -352,16 +352,16 @@ export default function TestnetPack({ agents }: { agents: TestnetPackAgent[] }) 
                     : `Hire both free, for ${formatUnits(total, 18)} test $U (your wallet signs each step)`}
           </button>
           {error ? (
-            <p className="x-escrow__err" role="alert">
+            <p className="bd-pack__err" role="alert">
               {error}
             </p>
           ) : null}
         </>
       )}
-      <p className="x-pack__fine">
+      <p className="bd-pack__fine">
         Testnet only: nothing here uses real money. Each budget sits in BNB Chain&apos;s ERC-8183 escrow on testnet and comes back if the work does not. Every
         transaction is on{" "}
-        <a className="x-link" href={EXPLORER} target="_blank" rel="noreferrer">
+        <a className="k-link" href={EXPLORER} target="_blank" rel="noreferrer">
           testnet BscScan
         </a>
         .

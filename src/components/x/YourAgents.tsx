@@ -20,19 +20,17 @@ export default function YourAgents() {
   // Not connected: one line, so the agents below are the first thing on the page.
   if (!address) {
     return (
-      <div className="x-connect x-connect--slim">
-        <span className="x-connect__i" aria-hidden="true">
+      <div className="ac-gate">
+        <span className="ac-gate__i" aria-hidden="true">
           <Wallet size={16} />
         </span>
-        <p className="x-connect__p">
-          Connect a wallet to see which agents hold a permission over it. Our own agents at work are further down this page.
-        </p>
+        <p className="k-small">Connect a wallet to see which agents hold a permission over it. Our own agents at work are further down this page.</p>
         {available ? (
-          <button type="button" className="x-btn x-btn--sm x-btn--primary" onClick={() => void connect()}>
+          <button type="button" className="k-btn k-btn--sm" onClick={() => void connect()}>
             Connect wallet
           </button>
         ) : (
-          <Link href="/agents" className="x-btn x-btn--sm">
+          <Link href="/agents" className="k-btn k-btn--sm">
             Browse agents
           </Link>
         )}
@@ -42,7 +40,7 @@ export default function YourAgents() {
 
   return (
     // Its jobs with capital have their own section above; this is only what agents may do.
-    <div className="x-yours">
+    <div className="ac-yours">
       <Permissions embedded />
     </div>
   );

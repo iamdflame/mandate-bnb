@@ -2,7 +2,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import AppShell from "@/components/v2/shell/AppShell";
-import AgentArtwork from "@/components/x/AgentArtwork";
+import Agent from "@/components/characters/Agent";
+import PageHead from "@/components/k/PageHead";
+import { poseOf } from "@/lib/view/state";
 import Status from "@/components/x/Status";
 import Ago from "@/components/x/Ago";
 import Empty from "@/components/x/Empty";
@@ -91,28 +93,29 @@ export default async function ComparePage({
 
   return (
     <AppShell>
-      <section className="x-wrap x-mkt-head">
-        <h1 className="x-mkt-head__h">Compare agents</h1>
-        <p className="x-muted" style={{ marginTop: "var(--s-2)" }}>
-          Side by side, on what we checked. No overall score: the right agent depends on your job.
-        </p>
+      <PageHead
+        crumbs={[{ href: "/agents", label: "Agents" }]}
+        title="Compare agents"
+        lede="Side by side, on what we checked. No overall score: the right agent depends on your job."
+        agent={{ job: cols[0]?.l.category ?? "rebalancing", seed: cols[0]?.l.tokenId ?? "344119", state: "awake" }}
+      >
         {usingDefault ? (
-          <p className="x-rule" style={{ marginTop: "var(--s-3)" }}>
+          <p className="k-small">
             Showing an example pair. Pick agents with Compare on any agent in{" "}
-            <Link className="x-link" href="/agents">
+            <Link className="k-link" href="/agents">
               the marketplace
             </Link>
             .
           </p>
         ) : null}
-      </section>
+      </PageHead>
 
-      <section className="x-wrap x-section--tight">
+      <section className="k-wrap cmp-body">
         {cols.length < 2 ? (
           <Empty
             title="Pick at least two agents to compare."
             action={
-              <Link href="/agents" className="x-btn x-btn--primary">
+              <Link href="/agents" className="k-btn k-btn--primary">
                 Browse agents
               </Link>
             }
@@ -137,14 +140,14 @@ export default async function ComparePage({
                     <th key={l.tokenId} scope="col">
                       <div className="x-cmpt__head">
                         <span className="x-cmpt__art" aria-hidden="true">
-                          <AgentArtwork category={l.category} seed={`${l.tokenId}:${l.name}`} />
+                          <Agent job={l.category} seed={l.tokenId} size={88} state={poseOf({ hireable: verdict.ok, answeredMinutesAgo: l.probe?.answered && l.probe.at ? (Date.now() - Date.parse(l.probe.at)) / 60000 : null })} slot="cmp" />
                         </span>
                         <Link href={`/agents/${l.tokenId}`} className="x-cmpt__name">
                           {l.name}
                         </Link>
                         <span className="x-cmpt__cat">{l.category ? CATEGORY_LABEL[l.category] : "Unfiled"}</span>
                         {verdict.ok && hireHref(l.tokenId, verdict) ? (
-                          <Link href={hireHref(l.tokenId, verdict)!} className="x-btn x-btn--primary x-btn--sm">
+                          <Link href={hireHref(l.tokenId, verdict)!} className="k-btn k-btn--primary k-btn--sm">
                             Use now
                           </Link>
                         ) : (

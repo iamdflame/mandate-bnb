@@ -8,7 +8,7 @@
  */
 
 import { formatUnits } from "viem";
-import AgentArtwork from "@/components/x/AgentArtwork";
+import Agent from "@/components/characters/Agent";
 import { priceParts } from "@/components/x/Price";
 import type { HireOffer } from "@/components/x/HireDrawer";
 import { CATEGORY_LABEL } from "@/lib/config";
@@ -65,7 +65,8 @@ export function offerFor(l: Listing): HireOffer {
   return {
     tokenId: l.tokenId,
     name: l.name,
-    art: <AgentArtwork category={l.category} seed={`${l.tokenId}:${l.name}`} shape="square" />,
+    art: <Agent job={l.category} seed={l.tokenId} house={verdict.ours} size={64} state="ready" slot="drawer" />,
+    artDone: <Agent job={l.category} seed={l.tokenId} house={verdict.ours} size={96} state="delivered" slot="drawerdone" />,
     categoryLabel: l.category ? CATEGORY_LABEL[l.category] : null,
     category: l.category,
     price: priceParts(l),

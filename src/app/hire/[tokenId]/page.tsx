@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import AppShell from "@/components/v2/shell/AppShell";
 import HireFlow from "@/components/v2/hire/HireFlow";
+import Agent from "@/components/characters/Agent";
 import { findAgent } from "@/lib/data/agents";
 import { toListing } from "@/lib/market/listing";
 import { hirePath } from "@/lib/market/hire-law";
@@ -70,17 +71,20 @@ export default async function HirePage({
 
   return (
     <AppShell>
-      <div className="m-wrap m-section--tight" style={{ paddingTop: "clamp(1.5rem,4vw,2.5rem)" }}>
-        <p className="m-small">
-          <Link className="m-link" href={`/agents/${l.tokenId}`}>
-            ← Back to {l.name}
-          </Link>
-        </p>
+      <div className="k-wrap mk-hire">
+        <nav className="k-crumbs" aria-label="Breadcrumb">
+          <Link href="/agents">Agents</Link>
+          <Link href={`/agents/${l.tokenId}`}>{l.name}</Link>
+        </nav>
         <div className="m-hire-page x-hireflow">
           <div>
-            <h1 className="m-h1" style={{ margin: "1.25rem 0 1rem" }}>
-              Hire {l.name}
-            </h1>
+            <div className="mk-hire__head">
+              <Agent job={l.category} seed={l.tokenId} size={88} state="awake" slot="hirehead" />
+              <div>
+                <h1 className="k-display mk-hire__h">A job with capital for {l.name}</h1>
+                <p className="k-lede">Your capital stays in the market contract. The agent posts its own bond and is marked against a benchmark every hour.</p>
+              </div>
+            </div>
             {about ? (
               <p className="m-callout m-small" style={{ margin: "0 0 2rem" }}>
                 For{" "}
@@ -113,7 +117,7 @@ export default async function HirePage({
                 <div className="m-btns">
                   {perCall ? (
                     <Link className="m-btn m-btn--primary m-btn--lg" href={`/agents/${l.tokenId}#call`}>
-                      Pay it per call →
+                      Pay it per call
                     </Link>
                   ) : null}
                   <Link className="m-btn m-btn--lg" href={l.category ? `/agents?category=${l.category}&hireable=1` : "/agents?hireable=1"}>

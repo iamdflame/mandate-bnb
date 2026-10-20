@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { formatEther } from "viem";
-import CategoryMark from "@/components/v2/marks/CategoryMark";
+import Agent from "@/components/characters/Agent";
+import None, { Reading } from "@/components/account/None";
 import { CATEGORIES, CATEGORY_LABEL } from "@/lib/config";
 import { marketChain } from "@/lib/chain/market";
 import { useWallet, sendMarketTx, CANONICAL_TARGET, type TxState } from "@/lib/chain/wallet";
@@ -140,14 +141,10 @@ export default function Dashboard() {
 
   if (!available) {
     return (
-      <div className="m-gate">
-        <p className="m-gate__why">
-          This page reads the market for your address, and there is no wallet in
-          this browser to read it for. Nothing is stored on our side, your jobs
-          live on chain against your address.
-        </p>
-        <a className="m-btn" href="https://www.bnbchain.org/en/wallets" target="_blank" rel="noreferrer">
-          Get a wallet for BNB Chain →
+      <div className="ac-gate">
+        <p className="k-small">This reads the market for your address, and there is no wallet in this browser to read it for. Nothing is stored on our side: your jobs live on chain against your address.</p>
+        <a className="k-btn k-btn--sm" href="https://www.bnbchain.org/en/wallets" target="_blank" rel="noreferrer">
+          Get a wallet for BNB Chain
         </a>
       </div>
     );
@@ -155,13 +152,10 @@ export default function Dashboard() {
 
   if (!address) {
     return (
-      <div className="m-gate">
-        <p className="m-gate__why">
-          Connect a wallet to see the jobs you have opened. Connecting reveals your
-          address and nothing else.
-        </p>
-        <button className="m-btn m-btn--primary" type="button" onClick={() => void connect()}>
-          Connect wallet →
+      <div className="ac-gate">
+        <p className="k-small">Connect a wallet to see the jobs you have opened. Connecting reveals your address and nothing else.</p>
+        <button className="k-btn k-btn--sm" type="button" onClick={() => void connect()}>
+          Connect wallet
         </button>
       </div>
     );
@@ -169,12 +163,10 @@ export default function Dashboard() {
 
   if (!ready) {
     return (
-      <div className="m-gate">
-        <p className="m-gate__why">
-          Your wallet is on another network, so the market cannot be read for it.
-        </p>
-        <button className="m-btn m-btn--primary" type="button" onClick={() => void switchChain()}>
-          Switch to {marketChain.name} →
+      <div className="ac-gate">
+        <p className="k-small">Your wallet is on another network, so the market cannot be read for it.</p>
+        <button className="k-btn k-btn--sm k-btn--primary" type="button" onClick={() => void switchChain()}>
+          Switch to {marketChain.name}
         </button>
       </div>
     );
@@ -182,50 +174,54 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="m-absent">
-        <p className="m-absent__t">The market could not be read just now.</p>
-        <p className="m-small">{error}</p>
-        <button className="m-btn m-btn--sm" type="button" onClick={() => void load()} style={{ marginTop: "0.8rem" }}>
-          Try again
-        </button>
-      </div>
+      <None
+        job="grid-trading"
+        seed="desk-market"
+        action={
+          <button className="k-btn k-btn--sm" type="button" onClick={() => void load()}>
+            Try again
+          </button>
+        }
+      >
+        <p className="ac-none__claim">The market could not be read just now.</p>
+        <p className="k-small">{error}</p>
+      </None>
     );
   }
 
-  if (!mine) return <p className="m-small">Reading the market…</p>;
+  if (!mine) return <Reading label="Reading the market…" rows={1} />;
 
   if (mine.length === 0) {
     return (
-      <div className="m-absent">
-        <p className="m-absent__t">You have not hired anything yet.</p>
-        <p className="m-small">
-          Nothing is stored against your account here because there is no account 
-          this page just asks the chain what jobs exist for {short(address)}.
-        </p>
-        <Link className="m-btn m-btn--primary" href="/agents" style={{ marginTop: "1rem" }}>
-          Browse agents →
-        </Link>
-      </div>
+      <None
+        job="yield-optimisation"
+        seed="desk-jobs"
+        action={
+          <Link className="k-btn k-btn--sm" href="/agents">
+            Browse agents
+          </Link>
+        }
+      >
+        <p className="ac-none__claim">You have not hired anything yet.</p>
+        <p className="k-small">Nothing is stored against your account here because there is no account: this asks the chain what jobs exist for {short(address)}.</p>
+      </None>
     );
   }
 
   return (
-    <div className="m-stack m-stack--lg">
-      {tx.phase === "failed" ? <p className="m-error">{tx.error}</p> : null}
+    <div className="ac-jobs2">
+      {tx.phase === "failed" ? <p className="k-note k-note--err">{tx.error}</p> : null}
       {tx.phase === "confirmed" ? (
-        <p className="m-ok">
-          Done.{" "}
-          <a
-            className="m-link"
-            href={`${marketChain.blockExplorers?.default.url}/tx/${tx.hash}`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            View the transaction
-          </a>
+        <p className="k-note k-note--ok">
+          <span>
+            Done.{" "}
+            <a className="k-link" href={`${marketChain.blockExplorers?.default.url}/tx/${tx.hash}`} target="_blank" rel="noreferrer">
+              View the transaction
+            </a>
+          </span>
         </p>
       ) : null}
-      {note ? <p className="m-small">{note}</p> : null}
+      {note ? <p className="k-small">{note}</p> : null}
 
       {mine.map((m) => {
         const asPrincipal = m.principal.toLowerCase() === address.toLowerCase();
@@ -234,58 +230,50 @@ export default function Dashboard() {
         const busy = busyId === m.id || tx.phase === "signing" || tx.phase === "pending";
 
         return (
-          <article className="m-job" key={`${m.deployment}-${m.id}`}>
-            <header className="m-job__head">
-              <div className="m-cluster">
-                {category ? <CategoryMark category={category} size={32} /> : null}
+          <article className="ac-perm ac-cap" key={`${m.deployment}-${m.id}`} data-job={category ?? undefined}>
+            <header className="ac-perm__head">
+              <div className="ac-cap__who">
+                {category ? <Agent job={category} seed={`job-${m.deployment}-${m.id}`} size={48} state={m.state === 1 ? "working" : m.state === 0 ? "ready" : "dozing"} slot={`cap${m.deployment}${m.id}`} /> : null}
                 <div>
-                  <h3 className="m-h3">
-                    {category ? CATEGORY_LABEL[category] : "Mandate"} · #{m.id}
+                  <h3 className="k-h3">
+                    {category ? CATEGORY_LABEL[category] : "Mandate"}, job #{m.id}
                   </h3>
-                  <p className="m-note">
-                    {asPrincipal ? "You opened this" : "You are the agent on this"} ·{" "}
-                    {m.deployment}
+                  <p className="k-small">
+                    {asPrincipal ? "You opened this" : "You are the agent on this"}, on {m.deployment}
                     {m.canonical ? "" : " (an earlier deployment, read only)"}
                   </p>
                 </div>
               </div>
-              <span className={`m-tag${m.state === 1 ? " m-tag--verified" : ""}`}>
-                {STATE_NAME[m.state] ?? `State ${m.state}`}
-              </span>
+              <span className={`k-tag${m.state === 1 ? " k-tag--ours" : ""}`}>{STATE_NAME[m.state] ?? `State ${m.state}`}</span>
             </header>
 
-            <dl className="m-kv m-job__kv">
+            <dl className="ac-perm__facts">
               <div>
                 <dt>Capital committed</dt>
-                <dd className="m-fig">{bnb(m.capitalWei)}</dd>
+                <dd className="k-num">{bnb(m.capitalWei)}</dd>
               </div>
               <div>
                 <dt>Agent&rsquo;s bond at risk</dt>
-                <dd className="m-fig">{m.bondWei === "0" ? "none yet" : bnb(m.bondWei)}</dd>
+                <dd className="k-num">{m.bondWei === "0" ? "none yet" : bnb(m.bondWei)}</dd>
               </div>
               <div>
                 <dt>Progress</dt>
-                <dd className="m-fig">
+                <dd className="k-num">
                   {m.epochsSettled} of {m.epochsTotal} hours settled
                 </dd>
               </div>
               <div>
                 <dt>Ahead of the benchmark by</dt>
-                <dd className="m-fig">
-                  {m.epochsSettled === 0
-                    ? "nothing settled yet"
-                    : `${(m.cumulativeAlphaBps / 100).toFixed(2)}%`}
-                </dd>
+                <dd className="k-num">{m.epochsSettled === 0 ? "nothing settled yet" : `${(m.cumulativeAlphaBps / 100).toFixed(2)}%`}</dd>
               </div>
               {m.strikes > 0 ? (
                 <div>
                   <dt>Strikes against the agent</dt>
-                  <dd className="m-fig">{m.strikes}</dd>
+                  <dd className="k-num">{m.strikes}</dd>
                 </div>
               ) : null}
             </dl>
 
-            {/* ------------------------------------------- what happens next */}
             {/*
               Rows from a superseded contract are read-only, and the button is
               absent rather than disabled.
@@ -297,72 +285,41 @@ export default function Dashboard() {
               correct control here is a sentence.
             */}
             {!m.canonical ? (
-              <div className="m-job__act">
-                <p className="m-small">
-                  This job lives on {m.deployment}, a contract we have since
-                  replaced. It is still readable and still counted, and it is left
-                  alone: nothing here writes to a superseded market.
-                </p>
+              <div className="ac-perm__act">
+                <p className="k-small">This job lives on {m.deployment}, a contract we have since replaced. It is still readable and still counted, and it is left alone: nothing here writes to a superseded market.</p>
               </div>
             ) : m.state === 0 && asPrincipal ? (
               live.length ? (
-                <div className="m-job__act">
-                  <p className="m-label">
+                <div className="ac-perm__act">
+                  <p className="k-label">
                     {live.length} {live.length === 1 ? "agent wants" : "agents want"} this job
                   </p>
-                  <p className="m-small" style={{ margin: "0.5rem 0 1rem" }}>
-                    Accepting one starts the term and locks your capital for it. The
-                    agent&rsquo;s wallet is valued at that moment so there is a fixed
-                    starting point to measure against.
-                  </p>
-                  <ul className="m-bids">
+                  <p className="k-small">Accepting one starts the term and locks your capital for it. The agent&rsquo;s wallet is valued at that moment so there is a fixed starting point to measure against.</p>
+                  <ul className="ac-bids">
                     {live.map((b) => (
-                      <li className="m-bid" key={b.index}>
+                      <li className="ac-bid" key={b.index}>
                         <div>
-                          <p className="m-small">
-                            <span className="m-mono">{short(b.agent)}</span> will beat the
-                            benchmark by{" "}
-                            <strong>{(b.targetAlphaBps / 100).toFixed(2)}% an hour</strong>
+                          <p className="ac-bid__t">
+                            <span className="k-mono">{short(b.agent)}</span> will beat the benchmark by <strong className="k-num">{(b.targetAlphaBps / 100).toFixed(2)}% an hour</strong>
                           </p>
-                          <p className="m-note">
-                            Backing it with {bnb(b.bondWei)} of its own money
-                          </p>
+                          <p className="k-small k-num">Backing it with {bnb(b.bondWei)} of its own money</p>
                         </div>
-                        <button
-                          className="m-btn m-btn--primary m-btn--sm"
-                          type="button"
-                          disabled={busy}
-                          onClick={() => void award(m, b)}
-                        >
-                          {busy ? "Working…" : "Accept this bid →"}
+                        <button className="k-btn k-btn--primary k-btn--sm" type="button" disabled={busy} onClick={() => void award(m, b)}>
+                          {busy ? "Working…" : "Accept this bid"}
                         </button>
                       </li>
                     ))}
                   </ul>
-                  <button
-                    className="m-btn m-btn--sm m-btn--quiet"
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void cancel(m)}
-                    style={{ marginTop: "1rem" }}
-                  >
+                  <button className="k-btn k-btn--sm k-btn--ghost ac-self-start" type="button" disabled={busy} onClick={() => void cancel(m)}>
                     Cancel and take my capital back
                   </button>
                 </div>
               ) : (
-                <div className="m-job__act">
-                  <p className="m-small">
-                    No agent has bid yet. An agent has to post at least{" "}
-                    {bnb((BigInt(m.capitalWei) / 5n).toString())} of its own money to bid,
-                    which is why this is not instant.
+                <div className="ac-perm__act">
+                  <p className="k-small">
+                    No agent has bid yet. An agent has to post at least {bnb((BigInt(m.capitalWei) / 5n).toString())} of its own money to bid, which is why this is not instant.
                   </p>
-                  <button
-                    className="m-btn m-btn--sm"
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void cancel(m)}
-                    style={{ marginTop: "0.9rem" }}
-                  >
+                  <button className="k-btn k-btn--sm ac-self-start" type="button" disabled={busy} onClick={() => void cancel(m)}>
                     Cancel and take my capital back
                   </button>
                 </div>
@@ -370,28 +327,17 @@ export default function Dashboard() {
             ) : null}
 
             {m.canonical && m.state === 1 ? (
-              <div className="m-job__act">
-                <p className="m-small">
-                  Running. <span className="m-mono">{short(m.agent)}</span> holds this job
-                  and is marked against the benchmark every hour. It ends after{" "}
-                  {m.epochsTotal} hours, or earlier if it takes too many strikes.
+              <div className="ac-perm__act">
+                <p className="k-small">
+                  Running. <span className="k-mono">{short(m.agent)}</span> holds this job and is marked against the benchmark every hour. It ends after {m.epochsTotal} hours, or earlier if it takes too many strikes.
                 </p>
               </div>
             ) : null}
 
             {m.canonical && m.state >= 2 && owed !== 0n ? (
-              <div className="m-job__act">
-                <p className="m-small">
-                  This job is over. Anything owed to you is held in the contract until
-                  you withdraw it.
-                </p>
-                <button
-                  className="m-btn m-btn--sm m-btn--primary"
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void withdraw()}
-                  style={{ marginTop: "0.9rem" }}
-                >
+              <div className="ac-perm__act">
+                <p className="k-small">This job is over. Anything owed to you is held in the contract until you withdraw it.</p>
+                <button className="k-btn k-btn--sm k-btn--primary ac-self-start" type="button" disabled={busy} onClick={() => void withdraw()}>
                   Withdraw what I am owed
                 </button>
               </div>
@@ -400,18 +346,14 @@ export default function Dashboard() {
         );
       })}
 
-      <div className="m-panel m-panel--sunken">
-        <p className="m-label">Anything the contract still owes you</p>
-        <p className="m-small" style={{ margin: "0.6rem 0 1rem" }}>
-          Capital from cancelled or finished jobs is credited to your address inside
-          the contract rather than pushed to your wallet, so a failing transfer can
-          never strand it. This claims all of it in BNB.
-        </p>
+      <div className="ac-owed k-well">
+        <p className="k-label">Anything the contract still owes you</p>
+        <p className="k-small">Capital from cancelled or finished jobs is credited to your address inside the contract rather than pushed to your wallet, so a failing transfer can never strand it. This claims all of it in BNB.</p>
         {owed === 0n ? (
-          <p className="m-small">Nothing is owed to this wallet right now.</p>
+          <p className="k-small">Nothing is owed to this wallet right now.</p>
         ) : (
-          <button className="m-btn" type="button" onClick={() => void withdraw()}>
-            {owed ? `Withdraw ${bnb(owed.toString())} →` : "Withdraw →"}
+          <button className="k-btn k-btn--sm ac-self-start" type="button" onClick={() => void withdraw()}>
+            {owed ? `Withdraw ${bnb(owed.toString())}` : "Withdraw"}
           </button>
         )}
       </div>

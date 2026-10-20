@@ -5,13 +5,13 @@ import AppShell from "@/components/v2/shell/AppShell";
 import Agent from "@/components/characters/Agent";
 import { anchors } from "@/components/characters/engine";
 import InView from "@/components/k/InView";
+import AgentCard from "@/components/k/AgentCard";
 import { CATEGORY_LABEL, type Category } from "@/lib/config";
 import { LEASH_POLICIES, LIMITS } from "@/lib/leash/policy";
 import { viewHome } from "@/lib/view/home";
 import { viewJobs, viewMarket } from "@/lib/view/market";
 import { viewGraveCounts } from "@/lib/view/trust";
 import { answeredAgo, poseOf } from "@/lib/view/state";
-import type { MarketCard } from "@/lib/market/market-api";
 
 export const metadata: Metadata = {
   title: "MANDATE | BNB Smart Chain Agent Marketplace",
@@ -452,41 +452,5 @@ export default async function Home() {
         </div>
       </section>
     </AppShell>
-  );
-}
-
-/** One agent in the market's own template: its face, its words, its price, and how recently it answered. */
-function AgentCard({ a, i }: { a: MarketCard; i: number }) {
-  const pose = poseOf(a);
-  return (
-    <Link href={`/agents/${a.tokenId}`} className="k-agent" data-job={a.job ?? undefined} style={{ ["--i" as string]: i }}>
-      <span className="k-agent__art" aria-hidden="true">
-        <Agent job={a.job} seed={a.tokenId} house={a.ours} size={112} state={pose} slot="card" />
-      </span>
-      <span className="k-agent__body">
-        <span className="k-agent__top">
-          <span className="k-agent__job">{a.jobLabel}</span>
-          {a.ours ? <span className="k-tag k-tag--ours">Ours</span> : null}
-        </span>
-        <span className="k-agent__name">{a.name}</span>
-        {a.what ? <span className="k-agent__what">{a.what}</span> : null}
-        <span className="k-agent__facts">
-          <span className="k-agent__price k-num">{a.price ?? "No price"}</span>
-          <span className="k-agent__meta">
-            {a.delivers ? (
-              <span className="k-num">
-                delivers in {a.delivers.seconds < 60 ? `${a.delivers.seconds} s` : `${Math.round(a.delivers.seconds / 60)} min`}
-              </span>
-            ) : (
-              <span>no delivery yet</span>
-            )}
-            <span className="k-state">
-              <span className={`k-dot ${pose === "awake" ? "k-dot--live" : "k-dot--ready"}`} aria-hidden="true" />
-              {answeredAgo(a.answeredMinutesAgo) ?? "answering"}
-            </span>
-          </span>
-        </span>
-      </span>
-    </Link>
   );
 }

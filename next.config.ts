@@ -105,6 +105,8 @@ const config: NextConfig = {
       */
       { source: "/office/:category", destination: "/agents?category=:category", permanent: false },
       { source: "/offices", destination: "/agents", permanent: false },
+      // The four jobs side by side are the doors at the top of the marketplace now.
+      { source: "/categories", destination: "/agents", permanent: false },
       // The V1 session page; /desk reads the KeyStore and replaces it.
       { source: "/authority", destination: "/desk", permanent: false },
       // Your agents live at the top of My Desk now.
@@ -114,7 +116,6 @@ const config: NextConfig = {
         at the page that currently holds that content and is removed in the
         commit that builds the real route, so no link in the nav is ever dead.
       */
-      { source: "/trust", destination: "/verify", permanent: false },
       // What a visitor would call the walkthrough; the route keeps its old name.
       { source: "/demo", destination: "/judges", permanent: false },
       // The ladder became a page that checks a token; the old explainer's URL points at it.

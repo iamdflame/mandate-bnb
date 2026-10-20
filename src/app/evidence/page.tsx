@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ArrowRight, ExternalLink, Terminal } from "lucide-react";
 import AppShell from "@/components/v2/shell/AppShell";
+import Agent from "@/components/characters/Agent";
 import Command from "@/components/ui/Command";
-import { MARKET_ADDRESS } from "@/lib/chain/market";
+import TrustHead from "@/components/trust/TrustHead";
+import HashOpen from "@/components/trust/HashOpen";
 
 export const metadata: Metadata = {
   title: "Evidence | Mandate",
@@ -64,7 +67,7 @@ const ADVERSE: Item[] = [
   {
     title: "We measured our own agents wrong, and slashed one for it",
     body: "The valuation read native BNB and USDT and nothing else, so a V3 position, a Venus supply, a debt repayment or a WBNB wrap all counted as zero: the better an agent performed, the harder it was punished. Three slashes totalling 0.00037 BNB stand against one agent on that basis. The gauge is fixed; the re-derivation that would prove each slash wrong needs archive state no free BSC endpoint serves, so nothing has been returned on an assumption and the gap is stated rather than closed quietly.",
-    href: "https://github.com/iamdflame/mandate-bnb/blob/main/docs/RESTATEMENT.md",
+    href: "/evidence/restatement",
     hrefLabel: "Read the restatement",
   },
   {
@@ -148,72 +151,111 @@ const NOT_YET: Item[] = [
   },
 ];
 
-function Card({ item }: { item: Item }) {
+const slug = (t: string) => `e-${t.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 48).replace(/-$/, "")}`;
+
+/** One finding: the claim always visible, the working and its command one tap away. */
+function Card({ item, tone }: { item: Item; tone: "hold" | "against" | "open" }) {
   return (
-    <li className="ev">
-      <h3 className="ev-title">{item.title}</h3>
-      <p className="ev-body">{item.body}</p>
-      {item.command ? <Command>{item.command}</Command> : null}
-      {item.href ? (
-        <a className="ev-link" href={item.href} rel="noreferrer" target="_blank">
-          {item.hrefLabel ?? "Open"} →
-        </a>
-      ) : null}
+    <li>
+      <details className="tr-fold tr-ev" id={slug(item.title)} data-tone={tone}>
+        <summary>
+          <span className="tr-ev__dot" aria-hidden="true" />
+          <span className="tr-fold__s">
+            <span className="tr-fold__t">{item.title}</span>
+            <span className="tr-fold__d">
+              {item.command ? (
+                <span className="tr-ev__hint">
+                  <Terminal size={12} aria-hidden="true" /> with the command that reproduces it
+                </span>
+              ) : item.href ? (
+                <span className="tr-ev__hint">{item.hrefLabel ?? "Open"}</span>
+              ) : (
+                <span className="tr-ev__hint">Read the detail</span>
+              )}
+            </span>
+          </span>
+        </summary>
+        <div className="tr-fold__body">
+          <p className="k-body">{item.body}</p>
+          {item.command ? <Command>{item.command}</Command> : null}
+          {item.href ? (
+            item.href.startsWith("/") ? (
+              <Link className="k-btn k-btn--sm" href={item.href}>
+                {item.hrefLabel ?? "Open"} <ArrowRight size={14} className="k-btn__go" aria-hidden="true" />
+              </Link>
+            ) : (
+              <a className="k-btn k-btn--sm" href={item.href} rel="noreferrer" target="_blank">
+                {item.hrefLabel ?? "Open"} <ExternalLink size={14} aria-hidden="true" />
+              </a>
+            )
+          ) : null}
+        </div>
+      </details>
     </li>
   );
 }
 
+const GROUPS = [
+  { id: "holds", tone: "hold" as const, title: "What holds", note: "Claims we can stand behind, each with a way to check it.", items: PROOFS, job: "yield-optimisation", pose: "delivered" as const },
+  { id: "against", tone: "against" as const, title: "What went against us", note: "Kept permanently, not until they stopped being convenient.", items: ADVERSE, job: "health-factor", pose: "failed" as const },
+  { id: "not-yet", tone: "open" as const, title: "What is not true yet", note: "In the present tense, because a roadmap written as if it had shipped is the same unverifiable claim as an agent card.", items: NOT_YET, job: "grid-trading", pose: "dozing" as const },
+];
+
 export default function EvidencePage() {
   return (
     <AppShell>
-      <main className="ev-page shell">
-        <p className="mark-label">Evidence</p>
-        <h1 className="display start-title">Everything, including what went wrong.</h1>
-        <p className="lede start-sub">
-          Each item below carries the command that reproduces it. The second
-          section is the one that matters: a product built on distrust of
-          self-reported numbers does not get to publish only its wins.
-        </p>
+      <div className="tr">
+        <HashOpen />
+        <TrustHead
+          title="Everything, including what went wrong."
+          lede="A product built on distrust of self-reported numbers does not get to publish only its wins. Each item carries the command that reproduces it."
+          art={
+            <nav className="tr-piles" aria-label="On this page">
+              {GROUPS.map((g, i) => (
+                <a key={g.id} href={`#${g.id}`} className="tr-pile" data-tone={g.tone} style={{ ["--i" as string]: i }}>
+                  <span className="tr-pile__who" aria-hidden="true">
+                    <Agent job={g.job} seed={`evidence-${g.id}`} size={76} state={g.pose} slot="pile" />
+                  </span>
+                  <span className="tr-pile__stack" aria-hidden="true">
+                    {g.items.map((it) => (
+                      <span key={it.title} />
+                    ))}
+                  </span>
+                  <span className="tr-pile__n k-num">{g.items.length}</span>
+                  <span className="tr-pile__t">{g.title.replace(/^What /, "").replace(/^is /, "")}</span>
+                </a>
+              ))}
+            </nav>
+          }
+        />
 
-        <h2 className="section-title ev-head">What holds</h2>
-        <ul className="ev-grid">
-          {PROOFS.map((p) => (
-            <Card key={p.title} item={p} />
-          ))}
-        </ul>
+        {GROUPS.map((g, gi) => (
+          <section key={g.id} id={g.id} className={`tr-sec${gi === 0 ? " tr-sec--first" : ""} tr-evsec`} aria-labelledby={`h-${g.id}`} data-tone={g.tone}>
+            <div className="k-wrap tr-evsec__in">
+              <div className="tr-evsec__head">
+                <h2 id={`h-${g.id}`} className="k-h2">
+                  {g.title} <span className="tr-count k-num">{g.items.length}</span>
+                </h2>
+                <p className="k-small">{g.note}</p>
+              </div>
+              <ul className="tr-evs">
+                {g.items.map((p) => (
+                  <Card key={p.title} item={p} tone={g.tone} />
+                ))}
+              </ul>
+            </div>
+          </section>
+        ))}
 
-        <h2 className="section-title ev-head ev-head--adverse">
-          What went against us
-        </h2>
-        <p className="section-sub">
-          Kept permanently, not until they stopped being convenient.
-        </p>
-        <ul className="ev-grid">
-          {ADVERSE.map((p) => (
-            <Card key={p.title} item={p} />
-          ))}
-        </ul>
-
-        <h2 className="section-title ev-head ev-head--adverse">What is not true yet</h2>
-        <p className="section-sub">
-          In the present tense, because a roadmap written as if it had shipped is the
-          same unverifiable claim as an agent card.
-        </p>
-        <ul className="ev-grid">
-          {NOT_YET.map((p) => (
-            <Card key={p.title} item={p} />
-          ))}
-        </ul>
-
-        <p className="tbl__foot ladder-foot">
-          Start at the{" "}
-          <Link href="/agents" className="link-underline">
-            judge path
-          </Link>{" "}
-          if you would rather check the claims than read about them.
-        </p>
-      </main>
-
-      </AppShell>
+        <section className="tr-tail">
+          <div className="k-wrap tr-tail__in">
+            <p className="k-small">Start at the judge path if you would rather check the claims than read about them.</p>
+            <Link href="/judges" className="k-btn">
+              The judge path <ArrowRight size={16} className="k-btn__go" aria-hidden="true" />
+            </Link>
+          </div>
+        </section>
+      </div>
+    </AppShell>
   );
 }

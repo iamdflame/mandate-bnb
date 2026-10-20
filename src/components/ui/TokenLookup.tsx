@@ -2,18 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ArrowRight, Hash } from "lucide-react";
 
 /**
- * Assay any agent on BSC, including one you are being asked to trust
- * somewhere else.
- *
- * No wallet, no account, no permission from us. That framing matters more than
- * the control does: an assay office that only tested its own members would be
- * a trade association.
+ * Look up any agent on BSC by its token id, including one you are being asked
+ * to trust somewhere else. No wallet, no account, no permission from us.
+ * Opens the agent's page, where each check is shown with its evidence.
+ * Only /assay uses it; styles in src/styles/trust.css.
  */
 export default function TokenLookup({
-  label = "Assay any agent",
-  cta = "Assay →",
+  label = "See any agent's checks",
+  cta = "Open",
 }: {
   label?: string;
   cta?: string;
@@ -29,27 +28,26 @@ export default function TokenLookup({
   };
 
   return (
-    <form className="lookup" onSubmit={go}>
-      <label className="mark-label" htmlFor="lookup-input">
+    <form className="tr-lookup" onSubmit={go}>
+      <label className="k-label" htmlFor="lookup-input">
         {label}
       </label>
-      <div className="lookup__row">
+      <div className="k-field tr-lookup__field">
+        <Hash size={18} aria-hidden="true" />
         <input
           id="lookup-input"
           inputMode="numeric"
           pattern="[0-9]*"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="ERC-8004 token id"
-          aria-label="ERC-8004 token id"
+          placeholder="ERC-8004 token id, like 153776"
+          autoComplete="off"
         />
-        <button type="submit" className="btn btn--primary" disabled={!/^\d+$/.test(value.trim())}>
-          {cta}
+        <button type="submit" className="k-btn k-btn--primary" disabled={!/^\d+$/.test(value.trim())}>
+          {cta} <ArrowRight size={16} className="k-btn__go" aria-hidden="true" />
         </button>
       </div>
-      <p className="mark-label lookup__note">
-        Six tests run against BNB Smart Chain while you watch. No wallet required.
-      </p>
+      <p className="k-small">Opens its page, with each check and the evidence behind it. No wallet needed.</p>
     </form>
   );
 }

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { formatUnits, parseAbi, type Address } from "viem";
 import { marketClient } from "@/lib/chain/market";
 import { sendMarketTx, useWallet } from "@/lib/chain/wallet";
+import { KeyRound, ShieldCheck } from "lucide-react";
+import { Reading } from "@/components/account/None";
 
 const ERC20 = parseAbi(["function allowance(address owner, address spender) view returns (uint256)", "function approve(address spender, uint256 amount) returns (bool)"]);
 
@@ -78,31 +80,41 @@ export default function YourApprovals() {
   };
 
   if (!address) {
-    return <p className="x-muted">Connect a wallet to see any approval a hire here left on it, and to revoke it.</p>;
+    return <p className="ac-gate k-small">Connect a wallet to see any approval a hire here left on it, and to revoke it.</p>;
   }
-  if (rows === null) return <p className="x-muted">Reading your approvals from the chain…</p>;
+  if (rows === null) return <Reading label="Reading your approvals from the chain…" rows={1} />;
   return (
-    <div className="x-approvals">
+    <div className="ac-approvals">
       {rows.length === 0 ? (
-        <p className="x-approvals__none">No standing approvals. Nothing a hire here asked for can move your tokens.</p>
+        <p className="k-note k-note--ok ac-approvals__none">
+          <ShieldCheck size={18} aria-hidden="true" />
+          <span>No standing approvals. Nothing a hire here asked for can move your tokens.</span>
+        </p>
       ) : (
-        <ul className="x-approvals__list">
+        <ul className="ac-list">
           {rows.map((r) => (
-            <li key={r.key} className="x-approval">
-              <div>
-                <p className="x-approval__t">
-                  {r.spenderName} may move up to {formatUnits(r.amount, 18)} {r.symbol}
+            <li key={r.key} className="ac-row ac-row--approval">
+              <span className="ac-row__ic" aria-hidden="true">
+                <KeyRound size={18} />
+              </span>
+              <div className="ac-row__main">
+                <p className="ac-row__t">
+                  <span className="ac-row__name">
+                    {r.spenderName} may move up to <span className="k-num">{formatUnits(r.amount, 18)}</span> {r.symbol}
+                  </span>
                 </p>
-                <p className="x-approval__why">{r.why}.</p>
+                <p className="ac-row__d">{r.why}.</p>
               </div>
-              <button type="button" className="x-btn x-btn--sm" onClick={() => revoke(r)} disabled={busy === r.key || !ready}>
-                {busy === r.key ? "Revoking…" : "Revoke"}
-              </button>
+              <div className="ac-row__side">
+                <button type="button" className={`k-btn k-btn--sm k-btn--danger${busy === r.key ? " k-btn--busy" : ""}`} onClick={() => revoke(r)} disabled={busy === r.key || !ready}>
+                  {busy === r.key ? "Revoking…" : "Revoke"}
+                </button>
+              </div>
             </li>
           ))}
         </ul>
       )}
-      {error ? <p className="x-approvals__err">{error}</p> : null}
+      {error ? <p className="k-note k-note--err">{error}</p> : null}
     </div>
   );
 }

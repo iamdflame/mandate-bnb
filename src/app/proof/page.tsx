@@ -1,13 +1,19 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { ArrowRight, Lock } from "lucide-react";
 import AppShell from "@/components/v2/shell/AppShell";
+import Agent from "@/components/characters/Agent";
 import Source from "@/components/x/Source";
 import Empty from "@/components/x/Empty";
+import TrustHead from "@/components/trust/TrustHead";
 import { readAdvantage, type TaskReport, type Verdict } from "@/lib/advantage/report";
 import { snapshot, warm } from "@/lib/data/snapshots";
 import type { GridWindow } from "@/lib/grid/window";
 import { pauseForSlug } from "@/lib/market/paused";
 import { referenceRegistrations } from "@/lib/house";
+import { viewMarket } from "@/lib/view/market";
+import { poseOf } from "@/lib/view/state";
+import { withTimeout } from "@/lib/cache";
 import RerunPanel from "./RerunPanel";
 
 export const metadata: Metadata = {
@@ -28,20 +34,23 @@ const VERDICT_WORD: Record<Verdict, string> = {
   mixed: "Mixed",
   inconclusive: "Not measurable",
 };
+const TONE: Record<Verdict, string> = { win: "pass", loss: "fail", mixed: "warn", inconclusive: "none" };
+/** The job family each task belongs to, for its drawing; security tasks have none. */
+const JOB: Record<string, string | null> = { Rebalancing: "rebalancing", Grid: "grid-trading", Yield: "yield-optimisation", "Health Factor": "health-factor" };
 
-function Task({ t }: { t: TaskReport }) {
+function Task({ t, i }: { t: TaskReport; i: number }) {
   return (
-    <li className="x-task" data-verdict={t.verdict}>
-      <div className="x-task__top">
-        <span className="x-task__id x-mono">{t.id}</span>
-        <span className="x-task__cat">{t.category}</span>
-        <span className={`x-verdict x-verdict--${t.verdict}`}>{VERDICT_WORD[t.verdict]}</span>
+    <li className="tr-task" data-verdict={t.verdict} style={{ ["--i" as string]: i }}>
+      <div className="tr-task__top">
+        <span className="tr-task__id k-num">{t.id}</span>
+        <span className="tr-task__cat">{t.category}</span>
+        <span className={`tr-v tr-v--${TONE[t.verdict]}`}>{VERDICT_WORD[t.verdict]}</span>
       </div>
-      <h3 className="x-task__t">{t.title}</h3>
-      <p className="x-task__line">{t.line}</p>
-      <details className="x-task__more">
+      <h3 className="tr-task__t">{t.title}</h3>
+      <p className="tr-task__line">{t.line}</p>
+      <details className="tr-task__more">
         <summary>How it was measured</summary>
-        <dl className="x-kv x-task__arms">
+        <dl className="tr-arms">
           <div>
             <dt>Doing it yourself</dt>
             <dd>{t.humanArm}</dd>
@@ -50,12 +59,17 @@ function Task({ t }: { t: TaskReport }) {
             <dt>The agent</dt>
             <dd>{t.agentArm}</dd>
           </div>
-          <div>
+          <div className="tr-arms__wide">
             <dt>What was measured</dt>
             <dd>{t.metric}</dd>
           </div>
         </dl>
-        {t.result ? <pre className="x-pre x-mono">{JSON.stringify(t.result, null, 2).slice(0, 4000)}</pre> : null}
+        {t.result ? (
+          <details className="tr-raw">
+            <summary>The raw measurement</summary>
+            <pre className="k-code">{JSON.stringify(t.result, null, 2).slice(0, 4000)}</pre>
+          </details>
+        ) : null}
       </details>
     </li>
   );
@@ -83,17 +97,19 @@ export default async function ProofPage() {
   const grid = snapshot<GridWindow>("grid-window")?.payload ?? null;
   const pause = pauseForSlug("grid-1");
   const gridToken = referenceRegistrations()["grid-1"]?.tokenId ?? null;
+  // Grid-1 is drawn in the pose our last call found, never one chosen for the page.
+  const gridCard = gridToken ? ((await withTimeout(viewMarket({ view: "all", q: "Grid-1", limit: 10 }).catch(() => null), 6_000))?.agents.find((a) => a.tokenId === gridToken) ?? null) : null;
 
   if (!r) {
     return (
       <AppShell>
-        <section className="x-wrap x-mkt-head">
-          <h1 className="x-mkt-head__h">Proof</h1>
-        </section>
-        <div className="x-wrap x-section--tight">
-          <Empty title="The locked results are not readable on this deployment.">
-            They are committed in the repository under docs/advantage. Rather than render a page of numbers it cannot open, this page says so.
-          </Empty>
+        <div className="tr">
+          <TrustHead title="Proof" lede="Does hiring an agent beat doing it yourself? Six tasks, locked on chain before any of them ran." />
+          <div className="k-wrap tr-sec tr-sec--first">
+            <Empty title="The locked results are not readable on this deployment." job="grid-trading">
+              They are committed in the repository under docs/advantage. Rather than render a page of numbers it cannot open, this page says so.
+            </Empty>
+          </div>
         </div>
       </AppShell>
     );
@@ -111,151 +127,220 @@ export default async function ProofPage() {
 
   return (
     <AppShell>
-      <section className="x-wrap x-mkt-head">
-        <div className="x-mkt-head__row">
-          <h1 className="x-mkt-head__h">Proof</h1>
-          <p className="x-mkt-head__sub">Does hiring an agent beat doing it yourself? Six tasks, locked on chain before any of them ran.</p>
-        </div>
-        <p className="x-proof-lede">
-          The specification for every task was written and hashed first, and the hash was sent to BNB Smart Chain. Each task measures the{" "}
-          {r.windowBlocks.toLocaleString("en-GB")} blocks ending at the block that transaction landed in, so none of them could have been chosen after seeing the result.
-        </p>
-        <ul className="x-score" aria-label="Outcomes">
-          <li className="x-score__item x-score__item--win">
-            <span className="x-score__n x-mono">{counts.win}</span> won
-          </li>
-          <li className="x-score__item x-score__item--loss">
-            <span className="x-score__n x-mono">{counts.loss}</span> lost
-          </li>
-          <li className="x-score__item x-score__item--mixed">
-            <span className="x-score__n x-mono">{counts.mixed}</span> mixed
-          </li>
-          {counts.inconclusive ? (
-            <li className="x-score__item">
-              <span className="x-score__n x-mono">{counts.inconclusive}</span> not measurable
-            </li>
-          ) : null}
-        </ul>
-      </section>
+      <div className="tr">
+        <TrustHead
+          title="Does hiring an agent beat doing it yourself?"
+          lede="Six tasks, specified and hashed on BNB Smart Chain before any of them ran. The losses are printed as large as the wins."
+          art={
+            <figure className="tr-board" aria-label={`${counts.win} won, ${counts.loss} lost, ${counts.mixed} mixed${counts.inconclusive ? `, ${counts.inconclusive} not measurable` : ""}`}>
+              <span className="tr-board__seal" aria-hidden="true">
+                <Lock size={16} strokeWidth={2.4} />
+                <span className="k-num">block {anchor.anchorBlock.toLocaleString("en-GB")}</span>
+              </span>
+              <ol className="tr-board__grid" aria-hidden="true">
+                {tasks.map((t, i) => (
+                  <li key={t.id} className="tr-board__cell" data-verdict={t.verdict} style={{ ["--i" as string]: i }}>
+                    <span className="tr-board__id k-num">{t.id}</span>
+                    {JOB[t.category] ? (
+                      <span className="tr-board__who">
+                        <Agent job={JOB[t.category]} seed={`proof-${t.id}`} size={48} state={t.verdict === "loss" ? "failed" : t.verdict === "win" ? "delivered" : "awake"} slot="board" />
+                      </span>
+                    ) : null}
+                    <span className="tr-board__v">{t.verdict === "win" ? "won" : t.verdict === "loss" ? "lost" : t.verdict === "mixed" ? "mixed" : "not measurable"}</span>
+                    <span className="tr-board__cat">{t.category}</span>
+                  </li>
+                ))}
+              </ol>
+              <figcaption className="tr-board__sum">
+                <span data-v="win">
+                  <strong className="k-num">{counts.win}</strong> won
+                </span>
+                <span data-v="loss">
+                  <strong className="k-num">{counts.loss}</strong> lost
+                </span>
+                <span data-v="mixed">
+                  <strong className="k-num">{counts.mixed}</strong> mixed
+                </span>
+                {counts.inconclusive ? (
+                  <span>
+                    <strong className="k-num">{counts.inconclusive}</strong> not measurable
+                  </span>
+                ) : null}
+              </figcaption>
+            </figure>
+          }
+        />
 
-      <section className="x-wrap x-section--tight" aria-labelledby="h-lock">
-        <h2 id="h-lock" className="x-proof-h">The lock</h2>
-        <dl className="x-kv x-lock">
-          <div>
-            <dt>Specification hash</dt>
-            <dd className="x-mono">{anchor.specHash}</dd>
-          </div>
-          <div>
-            <dt>Sent to the chain in</dt>
-            <dd className="x-mono">
-              <a className="x-link" href={bscTx(anchor.txHash)} target="_blank" rel="noreferrer">
-                {anchor.txHash.slice(0, 18)}…{anchor.txHash.slice(-8)}
-              </a>
-            </dd>
-          </div>
-          <div>
-            <dt>Window measured</dt>
-            <dd className="x-mono">
-              blocks {anchor.fromBlock.toLocaleString("en-GB")} to {anchor.anchorBlock.toLocaleString("en-GB")}
-            </dd>
-          </div>
-        </dl>
-        <Source kind="chain" block={anchor.anchorBlock} at={anchor.lockedAt} verb="locked">
-          To check it, recompute the hash from <span className="x-mono">src/advantage/lock.ts</span> and compare it with the transaction&apos;s input, which carries the hash and
-          nothing else.
-        </Source>
-      </section>
-
-      <section className="x-wrap x-section--tight" aria-labelledby="h-tasks">
-        <h2 id="h-tasks" className="x-proof-h">The six tasks</h2>
-        <p className="x-ad-src">Each states what doing it yourself meant, what the agent did, and what was measured. The raw measurement is attached to each.</p>
-        <ol className="x-tasks">
-          {tasks.map((t) => (
-            <Task key={t.id} t={t} />
-          ))}
-        </ol>
-      </section>
-
-      <section className="x-wrap x-section--tight" aria-labelledby="h-rerun">
-        <h2 id="h-rerun" className="x-proof-h">Run it yourself, now</h2>
-        <p className="x-ad-src">
-          Three of the questions can be asked again of the chain as it is this second. The other three measure a 24,000 block window and need an archive node, so they stay as
-          the locked results above.
-        </p>
-        <RerunPanel />
-      </section>
-
-      {grid ? (
-        <section className="x-wrap x-section--tight" aria-labelledby="h-stakes">
-          <h2 id="h-stakes" className="x-proof-h">The record with real money on it</h2>
-          <div className="x-stakes" data-verdict={grid.pnlUsd < 0 ? "loss" : "win"}>
-            <div className="x-task__top">
-              <span className="x-task__id x-mono">Grid-1</span>
-              <span className="x-task__cat">Grid trading, live on mainnet</span>
-              <span className={`x-verdict x-verdict--${grid.pnlUsd < 0 ? "loss" : "win"}`}>{grid.pnlUsd < 0 ? "Lost to holding" : "Beat holding"}</span>
+        <section className="tr-sec tr-sec--first" aria-labelledby="h-lock">
+          <div className="k-wrap">
+            <div className="tr-lock k-panel">
+              <span className="tr-lock__icon" aria-hidden="true">
+                <Lock size={22} strokeWidth={2.2} />
+              </span>
+              <div className="tr-lock__copy">
+                <h2 id="h-lock" className="k-h3">
+                  Locked before it ran.
+                </h2>
+                <p className="k-body">
+                  The specification for every task was hashed and the hash sent to the chain. Each task measures the {r.windowBlocks.toLocaleString("en-GB")} blocks ending where that transaction landed, so none could be chosen after seeing its result.
+                </p>
+              </div>
+              <dl className="k-facts tr-lock__facts">
+                <div>
+                  <dt>Specification hash</dt>
+                  <dd className="k-mono">{anchor.specHash}</dd>
+                </div>
+                <div>
+                  <dt>Sent to the chain in</dt>
+                  <dd className="k-mono">
+                    <a className="tr-addr" href={bscTx(anchor.txHash)} target="_blank" rel="noreferrer">
+                      {anchor.txHash.slice(0, 18)}…{anchor.txHash.slice(-8)}
+                    </a>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Window measured</dt>
+                  <dd className="k-num">
+                    blocks {anchor.fromBlock.toLocaleString("en-GB")} to {anchor.anchorBlock.toLocaleString("en-GB")}
+                  </dd>
+                </div>
+              </dl>
+              <div className="tr-lock__src">
+                <Source kind="chain" block={anchor.anchorBlock} at={anchor.lockedAt} verb="locked">
+                  To check it, recompute the hash from <span className="k-mono">src/advantage/lock.ts</span> and compare it with the transaction&apos;s input, which carries the hash and nothing else.
+                </Source>
+              </div>
             </div>
-            <p className="x-task__line">
-              {grid.fills.length} real fills over {minutes === null ? "its window" : `${minutes} minutes`}, {usd(grid.pnlUsd)} against simply holding, net of{" "}
-              {usd(grid.gasUsd)} in gas.
-              {t2?.capitalBnb && typeof t2.netAdvantageBnb === "number" && fillWbnb && fillUsd && gasPerFill && gasShare !== null
-                ? ` The locked test ran the same kind of ladder on paper with ${t2.capitalBnb} BNB and ${t2.netAdvantageBnb > 0 ? "beat" : "lost to"} holding. Live, each fill was about ${fillWbnb.toFixed(4)} WBNB, ${usd(fillUsd)}, and paid about ${usd(gasPerFill)} in gas, ${Math.round((gasPerFill / fillUsd) * 100)}% of the trade. Gas was ${gasShare}% of the loss.`
-                : null}
-            </p>
-            {pause ? (
-              <p className="x-stakes__pause">
-                <strong>Paused since {pause.since}.</strong> {sentence(pause.reason.replace(/^Paused:\s*/, ""))}
-              </p>
-            ) : null}
-            <dl className="x-kv x-stakes__kv">
-              <div>
-                <dt>Fills</dt>
-                <dd className="x-mono">{grid.fills.length}</dd>
-              </div>
-              <div>
-                <dt>Round trips won</dt>
-                <dd className="x-mono">{grid.winRate === null ? "none closed" : `${grid.wins} of ${grid.roundTrips.length}`}</dd>
-              </div>
-              <div>
-                <dt>Against holding</dt>
-                <dd className="x-mono">{usd(grid.pnlUsd)}</dd>
-              </div>
-              <div>
-                <dt>Gas paid</dt>
-                <dd className="x-mono">{usd(grid.gasUsd)}</dd>
-              </div>
-            </dl>
-            <p className="x-stakes__links">
-              {gridToken ? (
-                <Link className="x-link" href={`/agents/${gridToken}`}>
-                  Grid-1&apos;s page
-                </Link>
-              ) : null}
-              {grid.fills.length ? (
-                <a className="x-link" href={bscTx(grid.fills[grid.fills.length - 1].tx)} target="_blank" rel="noreferrer">
-                  Its last fill on BscScan
-                </a>
-              ) : null}
-            </p>
-            <Source kind="chain" block={grid.toBlock} at={grid.readAt}>
-              Every Swapped event from SwapBound from block {grid.fromBlock.toLocaleString("en-GB")}. Check it with <span className="x-mono x-src__cmd">{grid.verify}</span>
-            </Source>
           </div>
         </section>
-      ) : null}
 
-      <section className="x-wrap x-section--tight">
-        <p className="x-ad-src">
-          The generated report, with the full method, is{" "}
-          <a className="x-link" href={`${REPO}/docs/AGENT_ADVANTAGE_REPORT.md`} target="_blank" rel="noreferrer">
-            docs/AGENT_ADVANTAGE_REPORT.md
-          </a>
-          . It is written from the same results and the same sentences as this page, so the two cannot disagree. Failures by agents we paid are kept on{" "}
-          <Link className="x-link" href="/graveyard">
-            the graveyard
-          </Link>
-          .
-        </p>
-      </section>
+        <section className="tr-sec" aria-labelledby="h-tasks">
+          <div className="k-wrap">
+            <div className="k-shead">
+              <div className="k-shead__copy">
+                <h2 id="h-tasks" className="k-h2">
+                  The six tasks.
+                </h2>
+                <p className="k-body">Each states what doing it yourself meant, what the agent did, and what was measured. The raw measurement is one tap away.</p>
+              </div>
+            </div>
+            <ol className="tr-tasks">
+              {tasks.map((t, i) => (
+                <Task key={t.id} t={t} i={i} />
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section className="tr-sec" aria-labelledby="h-rerun">
+          <div className="k-wrap">
+            <div className="k-shead">
+              <div className="k-shead__copy">
+                <h2 id="h-rerun" className="k-h2">
+                  Run it yourself, now.
+                </h2>
+                <p className="k-body">Three of the questions can be asked again of the chain as it is this second. The other three measure a 24,000 block window and need an archive node, so they stay as locked above.</p>
+              </div>
+            </div>
+            <RerunPanel />
+          </div>
+        </section>
+
+        {grid ? (
+          <section className="tr-sec" aria-labelledby="h-stakes">
+            <div className="k-wrap">
+              <div className="k-shead">
+                <div className="k-shead__copy">
+                  <h2 id="h-stakes" className="k-h2">
+                    The record with real money on it.
+                  </h2>
+                </div>
+              </div>
+              <div className="tr-stakes k-panel" data-verdict={grid.pnlUsd < 0 ? "loss" : "win"}>
+                <div className="tr-stakes__who">
+                  {gridCard ? (
+                    <span className="tr-stakes__art" aria-hidden="true">
+                      <Agent job="grid-trading" seed={gridCard.tokenId} house size={132} state={poseOf(gridCard)} slot="stakes" />
+                    </span>
+                  ) : null}
+                  <div>
+                    <p className="tr-stakes__name">Grid-1</p>
+                    <p className="k-small">Grid trading, live on mainnet</p>
+                  </div>
+                </div>
+                <div className="tr-stakes__main">
+                  <div className="tr-stakes__head">
+                    <span className={`tr-v tr-v--${grid.pnlUsd < 0 ? "fail" : "pass"}`}>{grid.pnlUsd < 0 ? "Lost to holding" : "Beat holding"}</span>
+                    <span className={`tr-stakes__pnl k-num${grid.pnlUsd < 0 ? " tr-stakes__pnl--loss" : ""}`}>{usd(grid.pnlUsd)}</span>
+                    <span className="k-small">against simply holding, net of gas</span>
+                  </div>
+                  <p className="k-body">
+                    {grid.fills.length} real fills over {minutes === null ? "its window" : `${minutes} minutes`}, {usd(grid.pnlUsd)} against simply holding, net of {usd(grid.gasUsd)} in gas.
+                    {t2?.capitalBnb && typeof t2.netAdvantageBnb === "number" && fillWbnb && fillUsd && gasPerFill && gasShare !== null
+                      ? ` The locked test ran the same kind of ladder on paper with ${t2.capitalBnb} BNB and ${t2.netAdvantageBnb > 0 ? "beat" : "lost to"} holding. Live, each fill was about ${fillWbnb.toFixed(4)} WBNB, ${usd(fillUsd)}, and paid about ${usd(gasPerFill)} in gas, ${Math.round((gasPerFill / fillUsd) * 100)}% of the trade. Gas was ${gasShare}% of the loss.`
+                      : null}
+                  </p>
+                  {pause ? (
+                    <p className="k-note k-note--warn">
+                      <span>
+                        <strong>Paused since {pause.since}.</strong> {sentence(pause.reason.replace(/^Paused:\s*/, ""))}
+                      </span>
+                    </p>
+                  ) : null}
+                  <ul className="tr-figs tr-stakes__figs">
+                    <li className="k-fig">
+                      <span className="k-fig__n k-num">{grid.fills.length}</span>
+                      <span className="k-fig__l">fills</span>
+                    </li>
+                    <li className="k-fig">
+                      <span className="k-fig__n k-num">{grid.winRate === null ? "none closed" : `${grid.wins} of ${grid.roundTrips.length}`}</span>
+                      <span className="k-fig__l">round trips won</span>
+                    </li>
+                    <li className={`k-fig${grid.pnlUsd < 0 ? " tr-fig--err" : ""}`}>
+                      <span className="k-fig__n k-num">{usd(grid.pnlUsd)}</span>
+                      <span className="k-fig__l">against holding</span>
+                    </li>
+                    <li className="k-fig">
+                      <span className="k-fig__n k-num">{usd(grid.gasUsd)}</span>
+                      <span className="k-fig__l">gas paid</span>
+                    </li>
+                  </ul>
+                  <div className="k-row">
+                    {gridToken ? (
+                      <Link className="k-btn k-btn--sm" href={`/agents/${gridToken}`}>
+                        Grid-1&apos;s page
+                      </Link>
+                    ) : null}
+                    {grid.fills.length ? (
+                      <a className="k-btn k-btn--sm k-btn--ghost" href={bscTx(grid.fills[grid.fills.length - 1].tx)} target="_blank" rel="noreferrer">
+                        Its last fill on BscScan
+                      </a>
+                    ) : null}
+                  </div>
+                  <Source kind="chain" block={grid.toBlock} at={grid.readAt}>
+                    Every Swapped event from SwapBound from block {grid.fromBlock.toLocaleString("en-GB")}. Check it with <span className="k-mono">{grid.verify}</span>
+                  </Source>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        <section className="tr-tail">
+          <div className="k-wrap tr-tail__in">
+            <p className="k-small">
+              The generated report, with the full method, is{" "}
+              <a className="k-link" href={`${REPO}/docs/AGENT_ADVANTAGE_REPORT.md`} target="_blank" rel="noreferrer">
+                docs/AGENT_ADVANTAGE_REPORT.md
+              </a>
+              , written from the same results and the same sentences as this page, so the two cannot disagree.
+            </p>
+            <Link className="k-btn" href="/graveyard">
+              Failures by agents we paid <ArrowRight size={16} className="k-btn__go" aria-hidden="true" />
+            </Link>
+          </div>
+        </section>
+      </div>
     </AppShell>
   );
 }

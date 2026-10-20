@@ -41,61 +41,76 @@ export default function BuildPrompt() {
   };
 
   return (
-    <section className="x-prompt" aria-labelledby="h-prompt">
-      <p className="x-eyebrow">Build it with your AI assistant</p>
-      <h2 id="h-prompt" className="x-prompt__h">
-        A prompt that knows the six checks
-      </h2>
-      <p className="x-prompt__lede">
-        Choose the job and the network, and paste this into Claude, ChatGPT, Cursor or Claude Code. It gives your assistant BNB Chain&apos;s six checks, BNB&apos;s
-        agent SDK, the onchain work that counts for the job, the contracts and where test tokens come from, and it never asks for your wallet&apos;s key.
-      </p>
-      <div className="x-prompt__form">
-        <label className="x-prompt__field">
-          <span>Job</span>
-          <select className="x-input" value={job} onChange={(e) => setJob(e.target.value as Category)}>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {CATEGORY_LABEL[c]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <fieldset className="x-prompt__field">
-          <legend>Network</legend>
-          <label className="x-prompt__radio">
-            <input type="radio" name="network" checked={network === "mainnet"} onChange={() => setNetwork("mainnet")} /> Mainnet: MANDATE checks all six for you
-          </label>
-          <label className="x-prompt__radio">
-            <input type="radio" name="network" checked={network === "testnet"} onChange={() => setNetwork("testnet")} /> Testnet: free test tokens, you check it yourself
-          </label>
-        </fieldset>
-        <label className="x-prompt__field">
-          <span>Your campaign wallet (optional)</span>
-          <input className="x-input x-mono" value={wallet} onChange={(e) => setWallet(e.target.value)} placeholder="0x…" spellCheck={false} />
-          {badWallet ? <span className="x-escrow__err">That is not a wallet address; the prompt will ask you for it instead.</span> : null}
-        </label>
-        <label className="x-prompt__field">
-          <span>What should it do? (optional)</span>
-          <input className="x-input" value={idea} maxLength={400} onChange={(e) => setIdea(e.target.value)} placeholder="Leave empty and your assistant will propose something" />
-        </label>
+    <section className="bd-prompt" aria-labelledby="h-prompt" id="prompt">
+      <div className="bd-prompt__head">
+        <h2 id="h-prompt" className="k-h2">
+          Or build it with your AI assistant
+        </h2>
+        <p className="k-body">
+          Choose the job and the network, and paste this into Claude, ChatGPT, Cursor or Claude Code. It carries BNB Chain&apos;s six checks, BNB&apos;s agent SDK, the onchain work that
+          counts for the job, the contracts and the test-token faucets. It never asks for your wallet&apos;s key.
+        </p>
       </div>
-      <textarea className="x-input x-input--area x-prompt__text x-mono" readOnly value={prompt} rows={12} aria-label="The prompt" />
-      <div className="x-prompt__acts">
-        <button type="button" className="x-btn x-btn--primary" onClick={() => void copy()}>
-          <Copy size={14} aria-hidden="true" /> {copied ? "Copied" : "Copy the prompt"}
-        </button>
-        <a className="x-btn" href={links.claude} target="_blank" rel="noreferrer">
-          Open in Claude
-        </a>
-        <a className="x-btn" href={links.chatgpt} target="_blank" rel="noreferrer">
-          Open in ChatGPT
-        </a>
+      <div className="bd-prompt__grid">
+        <div className="bd-prompt__form">
+          <label className="bd-f">
+            <span>Job</span>
+            <select value={job} onChange={(e) => setJob(e.target.value as Category)}>
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {CATEGORY_LABEL[c]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <fieldset className="bd-f bd-f--set">
+            <legend>Network</legend>
+            <label className="bd-radio">
+              <input type="radio" name="network" checked={network === "mainnet"} onChange={() => setNetwork("mainnet")} />
+              <span className="bd-radio__t">Mainnet</span>
+              <span className="bd-radio__d">MANDATE checks all six for you</span>
+            </label>
+            <label className="bd-radio">
+              <input type="radio" name="network" checked={network === "testnet"} onChange={() => setNetwork("testnet")} />
+              <span className="bd-radio__t">Testnet</span>
+              <span className="bd-radio__d">Free test tokens, you check it yourself</span>
+            </label>
+          </fieldset>
+          <label className="bd-f">
+            <span>Your campaign wallet (optional)</span>
+            <input className="k-mono" value={wallet} onChange={(e) => setWallet(e.target.value)} placeholder="0x…" spellCheck={false} />
+            {badWallet ? <small className="bd-f__err">That is not a wallet address; the prompt will ask you for it instead.</small> : null}
+          </label>
+          <label className="bd-f">
+            <span>What should it do? (optional)</span>
+            <input value={idea} maxLength={400} onChange={(e) => setIdea(e.target.value)} placeholder="Leave empty and your assistant will propose something" />
+          </label>
+        </div>
+        <div className="bd-prompt__out">
+          <div className="bd-prompt__bar" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <em>prompt.md</em>
+          </div>
+          <textarea className="bd-prompt__text k-mono" readOnly value={prompt} rows={12} aria-label="The prompt" />
+          <div className="bd-prompt__acts">
+            <button type="button" className="k-btn k-btn--primary" onClick={() => void copy()}>
+              <Copy size={15} aria-hidden="true" /> {copied ? "Copied" : "Copy the prompt"}
+            </button>
+            <a className="k-btn" href={links.claude} target="_blank" rel="noreferrer">
+              Open in Claude
+            </a>
+            <a className="k-btn" href={links.chatgpt} target="_blank" rel="noreferrer">
+              Open in ChatGPT
+            </a>
+          </div>
+          <p className="k-small">
+            The open links ask the assistant to read this prompt from its link; one that cannot open links asks you to paste it. Using Claude Code or Cursor? Add MANDATE&apos;s MCP server (
+            <span className="k-mono">/api/mcp</span>) and ask for <span className="k-mono">build_prompt</span>.
+          </p>
+        </div>
       </div>
-      <p className="x-prompt__fine">
-        The open links ask the assistant to read this prompt from its link; one that cannot open links asks you to paste it. Using Claude Code or Cursor? Add MANDATE&apos;s
-        MCP server (<span className="x-mono">/api/mcp</span>) and ask for <span className="x-mono">build_prompt</span>.
-      </p>
     </section>
   );
 }

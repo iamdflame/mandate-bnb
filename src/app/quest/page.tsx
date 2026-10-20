@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import { formatUnits } from "viem";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import AppShell from "@/components/v2/shell/AppShell";
+import Agent from "@/components/characters/Agent";
+import BuildersNav from "@/components/builders/BuildersNav";
+import { isHouse } from "@/components/builders/house";
+import { CAMPAIGN_ENDS } from "@/lib/campaign/rules";
+import { card } from "@/lib/market/market-api";
+import { poseOf } from "@/lib/view/state";
 import QuestBoard, { type QuestCard } from "@/components/x/QuestBoard";
 import { offerFor } from "@/components/x/offer";
 import { CATEGORY_LABEL } from "@/lib/config";
@@ -94,21 +102,80 @@ export default async function QuestPage({ searchParams }: { searchParams: Promis
       // The price of the hire the drawer leads with: an escrowed job where the agent takes one.
       price: offer ? priceOf(offer, p.pick!.priceLabel) : null,
       ours: p.pick ? isOurs(p.pick) : false,
+      // Its face and the pose the hire law's last reading gives it.
+      figure: p.pick ? <Agent job={p.category} seed={p.pick.tokenId} house={isHouse(p.pick.tokenId)} size={112} state={poseOf(card(p.pick))} slot="quest" /> : <Agent job={p.category} seed={`empty-${p.category}`} size={96} state="dozing" slot="quest" />,
     };
   });
+  const left = Date.parse(CAMPAIGN_ENDS) - Date.now();
+  const ended = left <= 0;
+  const days = Math.floor(left / 86_400_000);
+  const hours = Math.floor((left % 86_400_000) / 3_600_000);
   return (
     <AppShell>
-      <section className="x-wrap x-mkt-head">
-        <div className="x-mkt-head__row">
-          <h1 className="x-mkt-head__h">Set and Earn</h1>
-          <p className="x-mkt-head__sub">
-            BNB Chain&apos;s campaign, to 5 November: hire three different agents on at least two marketplaces, and build one of your own. BNB Chain sends merch to
-            the first 100 wallets that finish both.
-          </p>
-        </div>
-      </section>
-      <div className="x-wrap x-section--tight">
-        <QuestBoard cards={cards} campaign={CAMPAIGN} pack={pack} testnetPack={testnetPack} />
+      <div className="bd-page bd-questpage">
+        <BuildersNav current="quest" />
+        <header className="bd-hero bd-qhero">
+          <div className="bd-look__pool" aria-hidden="true" />
+          <div className="k-wrap bd-hero__in">
+            <div className="bd-hero__copy">
+              <h1 className="k-display k-rise" style={{ ["--i" as string]: 0 }}>
+                {ended ? "Set and Earn has closed" : "Set and Earn"}
+              </h1>
+              <p className="k-lede k-rise" style={{ ["--i" as string]: 1 }}>
+                {ended
+                  ? "BNB Chain's campaign ended on 5 November at 12:00 UTC. BNB Chain is checking hires and agents from the chain, and its determination is final. Your record here stays readable."
+                  : "BNB Chain's campaign, to 5 November: hire three different agents on at least two marketplaces, and build one of your own. BNB Chain sends merch to the first 100 wallets that finish both."}
+              </p>
+              <div className="bd-qhero__clock k-rise" style={{ ["--i" as string]: 2 }}>
+                {ended ? (
+                  <p className="k-fig">
+                    <span className="k-fig__n">Closed</span>
+                    <span className="k-src">5 Nov 2026, 12:00 UTC</span>
+                  </p>
+                ) : (
+                  <p className="k-fig">
+                    <span className="k-fig__n k-num">
+                      {days > 0 ? `${days} day${days === 1 ? "" : "s"}, ` : ""}
+                      {hours} h left
+                    </span>
+                    <span className="k-src">Ends 5 Nov 2026, 12:00 UTC, by BNB Chain&apos;s campaign page</span>
+                  </p>
+                )}
+              </div>
+              {ended ? (
+                <div className="k-row k-rise" style={{ ["--i" as string]: 3 }}>
+                  <Link className="k-btn k-btn--primary" href="/agents">
+                    Find an agent <ArrowRight size={16} className="k-btn__go" aria-hidden="true" />
+                  </Link>
+                  <Link className="k-btn" href="/check">
+                    Check your agent
+                  </Link>
+                </div>
+              ) : null}
+            </div>
+            <ol className="bd-qart" aria-label="Three hires and one agent of your own">
+              {(["health-factor", "yield-optimisation", "rebalancing"] as const).map((job, i) => (
+                <li key={job} className="bd-qart__hire" data-job={job} style={{ ["--i" as string]: i }}>
+                  <span aria-hidden="true">
+                    <Agent job={job} seed={`quest-${i + 1}`} size={118} state={ended ? "dozing" : "awake"} slot="qart" />
+                  </span>
+                  <em>Hire {i + 1}</em>
+                </li>
+              ))}
+              <li className="bd-qart__own" data-job="grid-trading" style={{ ["--i" as string]: 3 }}>
+                <span aria-hidden="true">
+                  <Agent job="grid-trading" seed="quest-own" size={132} state={ended ? "dozing" : "working"} slot="qart" />
+                </span>
+                <em>Your own</em>
+              </li>
+            </ol>
+          </div>
+        </header>
+        <section className="k-section k-section--tight bd-qbody">
+          <div className="k-wrap">
+            <QuestBoard cards={cards} campaign={CAMPAIGN} pack={pack} testnetPack={testnetPack} ended={ended} />
+          </div>
+        </section>
       </div>
     </AppShell>
   );

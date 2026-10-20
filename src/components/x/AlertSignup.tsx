@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell, Send } from "lucide-react";
 import { useWallet } from "@/lib/chain/wallet";
+import Agent from "@/components/characters/Agent";
 
 /**
  * Signing up for a free liquidation alert: a wallet, the health factor that
@@ -74,60 +75,74 @@ export default function AlertSignup() {
 
   if (on && !on.on) {
     return (
-      <div className="x-alerts__card">
-        <p className="x-muted">Alerts are being switched on. Check back shortly.</p>
+      <div className="k-panel k-panel--raised ac-al__card ac-al__card--off">
+        <Agent job="health-factor" seed="alerts-off" size={96} state="dozing" slot="aloff" />
+        <p className="k-h3">Alerts are being switched on.</p>
+        <p className="k-small">Check back shortly. Until then you can read any wallet&apos;s Venus loan on the wallet check.</p>
+        <a className="k-btn k-btn--sm" href="/diagnose">
+          Check a wallet
+        </a>
       </div>
     );
   }
 
+  const low = Boolean(now && ["low", "danger", "liquidatable"].includes(now.state));
+  // Where each level sits on a scale from 1.0 (liquidation) to 1.6.
+  const at = (v: number) => `${Math.min(100, Math.max(0, ((v - 1) / 0.6) * 100))}%`;
+
   return (
-    <div className="x-alerts__card">
-      <label className="x-field">
-        <span className="x-field__l">Wallet to watch</span>
-        <input
-          className="x-input x-mono"
-          value={wallet}
-          onChange={(e) => setWallet(e.target.value)}
-          placeholder="0x…"
-          autoComplete="off"
-          spellCheck={false}
-          inputMode="text"
-        />
+    <div className="k-panel k-panel--raised ac-al__card">
+      <label className="ac-al__field">
+        <span className="k-label">Wallet to watch</span>
+        <span className="k-field ac-al__input">
+          <input className="k-mono" value={wallet} onChange={(e) => setWallet(e.target.value)} placeholder="0x…" autoComplete="off" spellCheck={false} inputMode="text" />
+        </span>
       </label>
       {isAddress(wallet) ? (
-        <p className={`x-alerts__now${now && ["low", "danger", "liquidatable"].includes(now.state) ? " x-alerts__now--warn" : ""}`}>
+        <p className={`ac-al__now${low ? " ac-al__now--warn" : ""}`} role="status">
+          <span className={`k-dot ${now ? (low ? "k-dot--warn" : "k-dot--ready") : "k-dot--live"}`} aria-hidden="true" />
           {now ? `Right now: ${now.words}.` : "Reading its Venus position…"}
         </p>
       ) : null}
 
-      <fieldset className="x-alerts__levels">
-        <legend className="x-field__l">Wake me when its health factor falls below</legend>
-        <div className="x-alerts__chips">
-          {LEVELS.map((l) => (
-            <button key={l} type="button" className={`x-chip${level === l ? " x-chip--on" : ""}`} aria-pressed={level === l} onClick={() => setLevel(l)}>
-              {l.toFixed(1)}
+      <fieldset className="ac-al__levels">
+        <legend className="k-label">Wake me when its health factor falls below</legend>
+        <div className="ac-al__gauge" aria-hidden="true">
+          <span className="ac-al__track" />
+          <span className="ac-al__liq" style={{ left: at(1) }}>
+            <span>1.0 liquidation</span>
+          </span>
+          <span className="ac-al__pin" style={{ left: at(level) }} />
+        </div>
+        <div className="k-row ac-al__chips">
+          {[...LEVELS].sort((a, b) => a - b).map((l) => (
+            <button key={l} type="button" className="k-chip ac-al__chip" aria-pressed={level === l} onClick={() => setLevel(l)}>
+              <span className="k-num">{l.toFixed(1)}</span>
             </button>
           ))}
         </div>
-        <p className="x-alerts__hint">Below 1.0 Venus can liquidate the loan. 1.3 leaves time to act; 1.1 is a last call.</p>
+        <p className="k-small">Below 1.0 Venus can liquidate the loan. 1.3 leaves time to act; 1.1 is a last call.</p>
       </fieldset>
 
-      <button type="button" className="x-btn x-btn--primary x-btn--block x-btn--lg" onClick={() => void start()} disabled={!isAddress(wallet) || busy || !on}>
+      <button type="button" className={`k-btn k-btn--primary k-btn--block k-btn--lg${busy ? " k-btn--busy" : ""}`} onClick={() => void start()} disabled={!isAddress(wallet) || busy || !on}>
         <Send size={16} aria-hidden="true" /> {busy ? "Making your link…" : "Get alerts on Telegram"}
       </button>
       {link ? (
-        <p className="x-alerts__done" role="status">
-          <Bell size={14} aria-hidden="true" /> Telegram should have opened. Press <strong>Start</strong> there to finish.{" "}
-          <a className="x-link" href={link} target="_blank" rel="noreferrer">
-            Open it again
-          </a>
+        <p className="k-note k-note--ok ac-al__done" role="status">
+          <Bell size={16} aria-hidden="true" />
+          <span>
+            Telegram should have opened. Press <strong>Start</strong> there to finish.{" "}
+            <a className="k-link" href={link} target="_blank" rel="noreferrer">
+              Open it again
+            </a>
+          </span>
         </p>
       ) : null}
-      {error ? <p className="x-escrow__err">{error}</p> : null}
+      {error ? <p className="k-note k-note--err">{error}</p> : null}
       {on?.bot ? (
-        <p className="x-alerts__hint">
-          Already in Telegram? Send <span className="x-mono">/watch 0x… 1.3</span> to{" "}
-          <a className="x-link" href={`https://t.me/${on.bot}`} target="_blank" rel="noreferrer">
+        <p className="k-small">
+          Already in Telegram? Send <span className="k-mono">/watch 0x… 1.3</span> to{" "}
+          <a className="k-link" href={`https://t.me/${on.bot}`} target="_blank" rel="noreferrer">
             @{on.bot}
           </a>
           .

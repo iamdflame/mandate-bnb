@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useWallet } from "@/lib/chain/wallet";
+import None, { Reading } from "@/components/account/None";
 
 /**
  * What an agent is allowed to do with a wallet, and the button that stops it.
@@ -58,7 +59,7 @@ export default function Permissions({ embedded = false }: { embedded?: boolean }
   }, []);
 
   // Never blank while it reads: a section with nothing under it reads as broken.
-  if (!all) return <p className="x-muted">Reading what agents may do on this wallet…</p>;
+  if (!all) return <Reading label="Reading what agents may do on this wallet…" rows={1} />;
 
   const mine = address
     ? all.filter((s) => s.walletAddress.toLowerCase() === address.toLowerCase())
@@ -66,120 +67,99 @@ export default function Permissions({ embedded = false }: { embedded?: boolean }
   const now = Math.floor(Date.now() / 1000);
 
   return (
-    <section>
+    <section className="ac-perms">
       {embedded ? null : (
-        <div className="m-head">
-          <h2 className="m-h2">What your agents are allowed to do</h2>
-          <p className="m-head__note">
-            A session key lets an agent act without holding your keys. It can only
-            call what is listed, only up to a cap, and only until it expires.
-          </p>
+        <div className="ac-sec__h">
+          <div>
+            <h2 className="k-h2">What your agents are allowed to do</h2>
+            <p className="k-body">A session key lets an agent act without holding your keys. It can only call what is listed, only up to a cap, and only until it expires.</p>
+          </div>
         </div>
       )}
 
       {mine.length === 0 ? (
-        <div className="m-absent">
-          <p className="m-absent__t">No agent holds a permission over this wallet.</p>
-          <p className="m-small">
-            Nothing can act on your behalf right now. A permission is granted only
-            when you award a job to an agent, and it is scoped to that job: a
-            spend cap, an expiry, and a fixed list of calls it may make.
+        <None job="grid-trading" seed="desk-perms" pose="ready">
+          <p className="ac-none__claim">No agent holds a permission over this wallet.</p>
+          <p className="k-small">
+            Nothing can act on your behalf right now. A permission is granted only when you award a job to an agent, and it is scoped to that job: a spend cap, an expiry, and a fixed list of calls it may make.
+            {all.length ? ` ${all.length} ${all.length === 1 ? "permission has" : "permissions have"} been granted on this market by other wallets, all of them ${all.every((s) => s.expiry < now) ? "now expired" : "listed publicly"}.` : ""}
           </p>
-          {all.length ? (
-            <p className="m-note" style={{ marginTop: "0.8rem" }}>
-              {all.length} {all.length === 1 ? "permission has" : "permissions have"} been
-              granted on this market by other wallets, all of them{" "}
-              {all.every((s) => s.expiry < now) ? "now expired" : "listed publicly"}.
-            </p>
-          ) : null}
-        </div>
+        </None>
       ) : (
-        <div className="m-stack">
+        <div className="ac-perms__list">
           {mine.map((s) => {
             const expired = s.expiry < now;
             const dead = expired || Boolean(s.revokedAt);
             return (
-              <article className="m-job" key={s.sessionKey}>
-                <header className="m-job__head">
+              <article className="ac-perm" key={s.sessionKey} data-dead={dead ? "1" : undefined}>
+                <header className="ac-perm__head">
                   <div>
-                    <h3 className="m-h3">Job #{s.mandateId} · {s.category}</h3>
-                    <p className="m-note m-mono">{short(s.sessionKey)}</p>
+                    <h3 className="k-h3">
+                      Job #{s.mandateId}, {s.category}
+                    </h3>
+                    <p className="k-small k-mono">{short(s.sessionKey)}</p>
                   </div>
-                  <span className={`m-tag${dead ? "" : " m-tag--verified"}`}>
-                    {s.revokedAt ? "Revoked" : expired ? "Expired" : "Active"}
-                  </span>
+                  <span className={`k-tag${dead ? "" : " k-tag--ours"}`}>{s.revokedAt ? "Revoked" : expired ? "Expired" : "Active"}</span>
                 </header>
 
-                <dl className="m-kv m-job__kv">
+                <dl className="ac-perm__facts">
                   <div>
                     <dt>The most it can spend</dt>
-                    <dd className="m-fig">{bnb(s.capWei)}</dd>
+                    <dd className="k-num">{bnb(s.capWei)}</dd>
                   </div>
                   <div>
                     <dt>{expired ? "Expired" : "Expires"}</dt>
-                    <dd className="m-fig">{new Date(s.expiry * 1000).toUTCString()}</dd>
+                    <dd className="k-num">{new Date(s.expiry * 1000).toUTCString()}</dd>
                   </div>
                   <div>
                     <dt>Calls it may make</dt>
-                    <dd>{s.allowlist.length}</dd>
+                    <dd className="k-num">{s.allowlist.length}</dd>
                   </div>
                   <div>
                     <dt>Calls withheld from it</dt>
-                    <dd>{s.withheld.length}</dd>
+                    <dd className="k-num">{s.withheld.length}</dd>
                   </div>
                 </dl>
 
-                <details className="m-disclose" style={{ margin: "0 1.4rem" }}>
-                  <summary>Exactly what it may and may not call</summary>
-                  <div className="m-disclose__body">
-                    <p className="m-label">Allowed</p>
-                    <ul className="m-calls">
+                <details className="ac-more ac-more--sm">
+                  <summary>
+                    <span className="ac-more__t">Exactly what it may and may not call</span>
+                  </summary>
+                  <div className="ac-more__body">
+                    <p className="k-label">Allowed</p>
+                    <ul className="ac-calls">
                       {s.allowlist.map((c) => (
                         <li key={`${c.to}${c.signature}`}>
-                          <span className="m-mono">{c.signature}</span>
-                          <span className="m-note m-mono">on {short(c.to)}</span>
+                          <span className="k-mono">{c.signature}</span>
+                          <span className="k-small k-mono">on {short(c.to)}</span>
                         </li>
                       ))}
                     </ul>
                     {s.withheld.length ? (
                       <>
-                        <p className="m-label" style={{ marginTop: "1rem" }}>
-                          Withheld, and why
-                        </p>
-                        <ul className="m-calls m-calls--off">
+                        <p className="k-label">Withheld, and why</p>
+                        <ul className="ac-calls ac-calls--off">
                           {s.withheld.map((c) => (
                             <li key={`${c.to}${c.signature}`}>
-                              <span className="m-mono">{c.signature}</span>
-                              <span className="m-note">
-                                {c.because ?? "never observed on chain"}
-                              </span>
+                              <span className="k-mono">{c.signature}</span>
+                              <span className="k-small">{c.because ?? "never observed on chain"}</span>
                             </li>
                           ))}
                         </ul>
                       </>
                     ) : null}
-                    {s.scopeRationale ? (
-                      <p className="m-note" style={{ marginTop: "1rem" }}>
-                        {s.scopeRationale}
-                      </p>
-                    ) : null}
+                    {s.scopeRationale ? <p className="k-small">{s.scopeRationale}</p> : null}
                   </div>
                 </details>
 
-                <div className="m-job__act">
+                <div className="ac-perm__act">
                   {dead ? (
-                    <p className="m-small">
-                      This permission is {s.revokedAt ? "revoked" : "expired"} and can no
-                      longer be used by anyone. Nothing further is needed from you.
-                    </p>
+                    <p className="k-small">This permission is {s.revokedAt ? "revoked" : "expired"} and can no longer be used by anyone. Nothing further is needed from you.</p>
                   ) : revocable ? (
                     <RevokeButton mandateId={s.mandateId} />
                   ) : (
-                    <p className="m-small">
-                      Revocation for this permission runs through the operator that
-                      granted it, and that signer is not held by this deployment, so
-                      the button would fail if it were here. It is being said rather
-                      than shown.
+                    <p className="k-small">
+                      Revocation for this permission runs through the operator that granted it, and that signer is not held by this deployment, so the button would fail if it were here. It is being said rather than shown.
                     </p>
                   )}
                 </div>
@@ -214,24 +194,16 @@ function RevokeButton({ mandateId }: { mandateId: number }) {
   };
 
   if (state === "done") {
-    return <p className="m-ok">Revoked. This agent can no longer act on your behalf.</p>;
+    return <p className="k-note k-note--ok">Revoked. This agent can no longer act on your behalf.</p>;
   }
 
   return (
     <>
-      <p className="m-small" style={{ marginBottom: "0.8rem" }}>
-        Revoking takes effect immediately and cannot be undone. The job continues;
-        the agent simply loses the ability to act through this key.
-      </p>
-      <button
-        className="m-btn m-btn--primary m-btn--sm"
-        type="button"
-        disabled={state === "working"}
-        onClick={() => void revoke()}
-      >
+      <p className="k-small">Revoking takes effect immediately and cannot be undone. The job continues; the agent simply loses the ability to act through this key.</p>
+      <button className={`k-btn k-btn--danger k-btn--sm${state === "working" ? " k-btn--busy" : ""}`} type="button" disabled={state === "working"} onClick={() => void revoke()}>
         {state === "working" ? "Revoking…" : "Revoke this permission"}
       </button>
-      {why ? <p className="m-error" style={{ marginTop: "0.8rem" }}>{why}</p> : null}
+      {why ? <p className="k-note k-note--err">{why}</p> : null}
     </>
   );
 }

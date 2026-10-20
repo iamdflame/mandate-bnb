@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check as Tick, HelpCircle, X } from "lucide-react";
+import { ArrowRight, Check as Tick, Minus, X } from "lucide-react";
 
 interface Check {
   id: string;
@@ -25,12 +25,11 @@ const WORD: Record<Check["verdict"], string> = {
   fail: "Failed",
   inconclusive: "Could not measure",
 };
-const STATE: Record<Check["verdict"], "proven" | "failed" | "unproven"> = { pass: "proven", fail: "failed", inconclusive: "unproven" };
 
 function Glyph({ v }: { v: Check["verdict"] }) {
-  if (v === "pass") return <Tick size={16} strokeWidth={2.5} className="x-glyph x-glyph--proven" aria-label={WORD[v]} />;
-  if (v === "fail") return <X size={16} strokeWidth={2.5} className="x-glyph x-glyph--failed" aria-label={WORD[v]} />;
-  return <HelpCircle size={16} className="x-glyph x-glyph--unproven" aria-label={WORD[v]} />;
+  if (v === "pass") return <Tick size={14} strokeWidth={3} aria-label={WORD[v]} />;
+  if (v === "fail") return <X size={14} strokeWidth={3} aria-label={WORD[v]} />;
+  return <Minus size={14} strokeWidth={3} aria-label={WORD[v]} />;
 }
 
 /**
@@ -66,52 +65,56 @@ export default function RerunPanel() {
   }
 
   return (
-    <div className="x-rerun">
-      <div className="x-rerun__bar">
-        <button type="button" className="x-btn x-btn--primary" onClick={run} disabled={running}>
+    <div className="tr-rerun">
+      <div className="tr-rerun__bar k-panel">
+        <button type="button" className={`k-btn k-btn--primary${running ? " k-btn--busy" : ""}`} onClick={run} disabled={running}>
           {running ? "Reading the chain…" : reading ? "Run them again" : "Run the three live checks"}
+          {running ? null : <ArrowRight size={16} className="k-btn__go" aria-hidden="true" />}
         </button>
-        <p className="x-rerun__hint">Three reads of the head block. Nothing is signed, nothing is sent, and you need no wallet.</p>
+        <p className="k-small">Three reads of the head block. Nothing is signed, nothing is sent, and you need no wallet.</p>
       </div>
 
-      <div aria-live="polite">
-        {error ? <p className="x-rerun__err">{error}</p> : null}
+      <div aria-live="polite" className="tr-rerun__out">
+        {error ? <p className="k-note k-note--err">{error}</p> : null}
         {reading ? (
           <>
-            <p className="x-src">
+            <p className="k-src">
               <span className="x-src__k">BNB Smart Chain</span>
-              <span className="x-mono">block {reading.block?.toLocaleString("en-GB") ?? "unknown"}</span>
+              <span className="k-mono">block {reading.block?.toLocaleString("en-GB") ?? "unknown"}</span>
               <span>read {new Date(reading.at).toISOString().replace("T", " ").slice(0, 19)} UTC</span>
             </p>
-            <div className="x-proofs">
+            <ol className="tr-checks">
               {reading.checks.map((c) => (
-                <details key={c.id} className="x-proof" open>
-                  <summary>
+                <li key={c.id} className="tr-check" data-st={c.verdict}>
+                  <span className="tr-check__mark">
                     <Glyph v={c.verdict} />
-                    <span className="x-proof__label">{c.id}</span>
-                    <span className="x-proof__head">{c.title}</span>
-                    <span className={`x-proof__state x-proof__state--${STATE[c.verdict]}`}>
-                      {WORD[c.verdict]} <span className="x-mono">{c.ms} ms</span>
-                    </span>
-                  </summary>
-                  <div className="x-proof__body">
-                    <p className="x-proof__meaning">{c.question}</p>
-                    <p className="x-proof__finding">{c.finding}</p>
-                    {c.evidence.length ? (
-                      <dl className="x-proof__ev">
+                  </span>
+                  <span className="tr-check__t">
+                    <span className="tr-rerun__id k-num">{c.id}</span> {c.title}
+                  </span>
+                  <span className="tr-check__v">
+                    {WORD[c.verdict]} <span className="tr-check__pts k-num">{c.ms} ms</span>
+                  </span>
+                  <p className="tr-check__f">
+                    <span className="tr-rerun__q">{c.question}</span> {c.finding}
+                  </p>
+                  {c.evidence.length ? (
+                    <details className="tr-check__ev">
+                      <summary>Evidence ({c.evidence.length})</summary>
+                      <ul>
                         {c.evidence.map((e, i) => (
-                          <div key={`${e.label}-${i}`}>
-                            <dt>{e.label}</dt>
-                            <dd className="x-mono">{e.value}</dd>
-                          </div>
+                          <li key={`${e.label}-${i}`}>
+                            <span className="tr-check__evl">{e.label}</span>
+                            <span className="k-mono">{e.value}</span>
+                          </li>
                         ))}
-                      </dl>
-                    ) : null}
-                  </div>
-                </details>
+                      </ul>
+                    </details>
+                  ) : null}
+                </li>
               ))}
-            </div>
-            <p className="x-ad-src">{reading.note}</p>
+            </ol>
+            <p className="k-small">{reading.note}</p>
           </>
         ) : null}
       </div>

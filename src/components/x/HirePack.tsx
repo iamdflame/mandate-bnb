@@ -162,74 +162,74 @@ export default function HirePack({ agents }: { agents: PackAgent[] }) {
 
   const price = formatUnits(total, 18);
   return (
-    <section className="x-pack" aria-labelledby="h-pack">
-      <p className="x-eyebrow">Set and Earn · hire track</p>
-      <h2 id="h-pack" className="x-pack__h">
+    <section className="bd-pack" aria-labelledby="h-pack">
+      <p className="bd-pack__k">Hire track, on mainnet</p>
+      <h2 id="h-pack" className="bd-pack__h">
         Two hires, one confirmation
       </h2>
-      <p className="x-pack__lede">
+      <p className="bd-pack__lede">
         Two different agents, each a real escrowed job about your wallet, for {price} $U together. Pay with the BNB in your wallet if you hold no $U. Two of your
         three hires can be here; the third has to be on another shortlisted marketplace.
       </p>
-      <ul className="x-pack__agents">
+      <ul className="bd-pack__agents">
         {agents.map((a) => {
           const j = jobs.find((x) => x.tokenId === a.tokenId);
           const delivered = j && (j.status === "SUBMITTED" || j.status === "COMPLETED");
           return (
             <li key={a.tokenId}>
-              <span className="x-pack__mark" aria-hidden="true">
-                {delivered ? <Check size={14} strokeWidth={3} /> : j ? <Loader2 size={14} className="x-spin" /> : null}
+              <span className="bd-pack__mark" aria-hidden="true">
+                {delivered ? <Check size={14} strokeWidth={3} /> : j ? <Loader2 size={14} className="bd-spin" /> : null}
               </span>
               <span>
-                <Link className="x-pack__name" href={`/agents/${a.tokenId}`}>
+                <Link className="bd-pack__name" href={`/agents/${a.tokenId}`}>
                   {a.name}
                 </Link>
-                <span className="x-pack__does">{a.does}</span>
+                <span className="bd-pack__does">{a.does}</span>
                 {j ? (
-                  <span className="x-pack__job">
-                    Job <span className="x-mono">#{j.jobId}</span>: {delivered ? "delivered on chain. " : "funded, delivering… "}
+                  <span className="bd-pack__job">
+                    Job <span className="k-mono">#{j.jobId}</span>: {delivered ? "delivered on chain. " : "funded, delivering… "}
                     {delivered && j.url ? (
-                      <a className="x-link" href={j.url} target="_blank" rel="noreferrer">
+                      <a className="k-link" href={j.url} target="_blank" rel="noreferrer">
                         Read its answer
                       </a>
                     ) : null}
                   </span>
                 ) : null}
               </span>
-              <span className="x-pack__price x-mono">{formatUnits(BigInt(a.budget), 18)} $U</span>
+              <span className="bd-pack__price k-mono">{formatUnits(BigInt(a.budget), 18)} $U</span>
             </li>
           );
         })}
       </ul>
 
       {!available ? (
-        <div className="x-pack__wallet">
-          <p className="x-pack__note">Hiring needs a wallet on BNB Smart Chain. On a phone, open this page in your wallet app, or make one here with a passkey:</p>
+        <div className="bd-pack__wallet">
+          <p className="bd-pack__note">Hiring needs a wallet on BNB Smart Chain. On a phone, open this page in your wallet app, or make one here with a passkey:</p>
           <OpenInWallet label="Open this page in your wallet app" />
           <PasskeyStart quiet />
         </div>
       ) : !address ? (
         <>
-          <button type="button" className="x-btn x-btn--primary x-btn--lg x-btn--block" onClick={() => void connect().catch(() => undefined)}>
+          <button type="button" className="k-btn k-btn--primary k-btn--lg k-btn--block" onClick={() => void connect().catch(() => undefined)}>
             Connect your campaign wallet
           </button>
           {connectError ? (
-            <p className="x-escrow__err" role="alert">
+            <p className="bd-pack__err" role="alert">
               {connectError}
             </p>
           ) : null}
         </>
       ) : !ready ? (
-        <button type="button" className="x-btn x-btn--primary x-btn--lg x-btn--block" onClick={() => void switchChain().catch(() => undefined)}>
+        <button type="button" className="k-btn k-btn--primary k-btn--lg k-btn--block" onClick={() => void switchChain().catch(() => undefined)}>
           Switch to BNB Smart Chain
         </button>
       ) : phase === "done" ? (
-        <p className="x-pack__ok" role="status">
+        <p className="bd-pack__ok" role="status">
           Both jobs are funded{tx ? (
             <>
               {" "}
               in{" "}
-              <a className="x-link x-mono" href={`https://bscscan.com/tx/${tx}`} target="_blank" rel="noreferrer">
+              <a className="k-link k-mono" href={`https://bscscan.com/tx/${tx}`} target="_blank" rel="noreferrer">
                 {tx.slice(0, 10)}…
               </a>
             </>
@@ -237,11 +237,11 @@ export default function HirePack({ agents }: { agents: PackAgent[] }) {
           . Each agent delivers on chain within minutes; your progress above counts each hire once the chain confirms it.
         </p>
       ) : batch === false ? (
-        <div className="x-pack__wallet">
-          <p className="x-pack__note">Your wallet signs one transaction at a time, so hire them one by one:</p>
-          <div className="x-pack__each">
+        <div className="bd-pack__wallet">
+          <p className="bd-pack__note">Your wallet signs one transaction at a time, so hire them one by one:</p>
+          <div className="bd-pack__each">
             {agents.map((a) => (
-              <Link key={a.tokenId} className="x-btn" href={`/agents/${a.tokenId}#call`}>
+              <Link key={a.tokenId} className="k-btn" href={`/agents/${a.tokenId}#call`}>
                 Hire {a.name}
               </Link>
             ))}
@@ -250,18 +250,18 @@ export default function HirePack({ agents }: { agents: PackAgent[] }) {
       ) : (
         <>
           {short > 0n ? (
-            <p className="x-pack__note">
+            <p className="bd-pack__note">
               {plan
                 ? `About ${fmtBnb(plan.quote, 6)} BNB, at most ${fmtBnb(plan.maxIn, 6)}, buys the ${formatUnits(short, 18)} $U this wallet is short of, on PancakeSwap in the same confirmation. Unused BNB comes straight back.`
                 : "Reading PancakeSwap's price for the $U this wallet is short of…"}
             </p>
           ) : null}
           {bnb !== null && bnb < GAS + (plan?.maxIn ?? 0n) ? (
-            <p className="x-escrow__err">This wallet holds {fmtBnb(bnb, 5)} BNB; add a little BNB on BNB Smart Chain for the gas first.</p>
+            <p className="bd-pack__err">This wallet holds {fmtBnb(bnb, 5)} BNB; add a little BNB on BNB Smart Chain for the gas first.</p>
           ) : (
             <button
               type="button"
-              className="x-btn x-btn--primary x-btn--lg x-btn--block"
+              className="k-btn k-btn--primary k-btn--lg k-btn--block"
               onClick={() => void run()}
               disabled={batch === null || (short > 0n && !plan) || phase === "planning" || phase === "signing" || phase === "confirming" || phase === "recording"}
             >
@@ -275,13 +275,13 @@ export default function HirePack({ agents }: { agents: PackAgent[] }) {
             </button>
           )}
           {error ? (
-            <p className="x-escrow__err" role="alert">
+            <p className="bd-pack__err" role="alert">
               {error}
             </p>
           ) : null}
         </>
       )}
-      <p className="x-pack__fine">Nothing moves until you sign. Each budget sits in BNB Chain&apos;s ERC-8183 escrow, not with us, and comes back if the work does not.</p>
+      <p className="bd-pack__fine">Nothing moves until you sign. Each budget sits in BNB Chain&apos;s ERC-8183 escrow, not with us, and comes back if the work does not.</p>
     </section>
   );
 }

@@ -57,7 +57,7 @@ export interface MarketAgent extends MarketCard {
   settled: number;
 }
 
-function card(l: Listing, v: HireVerdict): MarketCard {
+export function card(l: Listing, v: HireVerdict = hirePath(l)): MarketCard {
   const delivers = l.deliveredIn ?? null;
   // The price Hire charges: the rail it leads with, as the tile shows it.
   const lead = primaryRail(v);

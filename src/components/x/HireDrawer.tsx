@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
+import AnswerView from "@/components/k/AnswerView";
 import { formatUnits } from "viem";
 import { ArrowLeft, Check, Gift, X } from "lucide-react";
 import Drawer from "./Drawer";
@@ -35,6 +36,8 @@ export interface HireOffer {
   tokenId: string;
   name: string;
   art: ReactNode;
+  /** The agent in its delivered pose, for the moment the answer lands. */
+  artDone?: ReactNode;
   categoryLabel: string | null;
   /** The job's slug, carried into a rating as its first tag. */
   category: string | null;
@@ -400,10 +403,7 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
             </div>
             {tried ? (
               tried.free ? (
-                <details className="x-hire__adv" open>
-                  <summary>Its free answer</summary>
-                  <pre className="x-pre">{typeof tried.answer === "string" ? tried.answer.slice(0, 4000) : JSON.stringify(tried.answer, null, 2).slice(0, 4000)}</pre>
-                </details>
+                <AnswerView answer={tried.answer} title="Its free answer" limit={4000} />
               ) : (
                 <p className="x-hire__sub">{tried.reason ?? tried.error}</p>
               )
@@ -621,6 +621,7 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
         </div>
         {step === "success" && result ? (
           <div className="x-hire__done">
+            {offer.artDone ? <span className="x-hire__hero" aria-hidden="true">{offer.artDone}</span> : null}
             <p className="x-hire__ok">
               <Check size={18} strokeWidth={3} aria-hidden="true" />
               {result.tx ? "Paid, and the agent answered." : "The agent answered without charging."}
@@ -649,10 +650,7 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
                 <dd>One call. Nothing else was authorised.</dd>
               </div>
             </dl>
-            <details className="x-hire__adv" open>
-              <summary>The answer</summary>
-              <pre className="x-pre">{typeof result.body === "string" ? result.body.slice(0, 6000) : JSON.stringify(result.body, null, 2).slice(0, 6000)}</pre>
-            </details>
+            <AnswerView answer={result.body} title="The answer" limit={6000} />
             {result.tx ? <RateAgent tokenId={offer.tokenId} name={offer.name} category={offer.category} hireTx={result.tx} /> : null}
           </div>
         ) : null}

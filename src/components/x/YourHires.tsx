@@ -8,6 +8,8 @@ import { sendMarketTx, useWallet } from "@/lib/chain/wallet";
 import { COMMERCE_ABI, ESCROW } from "@/lib/escrow/contracts";
 import RateAgent from "./RateAgent";
 import OpenInWallet from "./OpenInWallet";
+import Agent from "@/components/characters/Agent";
+import None, { Reading } from "@/components/account/None";
 
 interface Hire {
   kind: "paid-call" | "market-job" | "escrow-job";
@@ -107,10 +109,10 @@ export default function YourHires() {
 
   if (!address) {
     return (
-      <div className="x-yours-empty">
-        <p className="x-muted">Connect a wallet to see every hire it paid for, each escrowed job, and the agents it registered.</p>
+      <div className="ac-gate">
+        <p className="k-small">Connect a wallet to see every hire it paid for, each escrowed job, and the agents it registered.</p>
         {available ? (
-          <button type="button" className="x-btn x-btn--primary" onClick={connect}>
+          <button type="button" className="k-btn k-btn--sm" onClick={connect}>
             Connect wallet
           </button>
         ) : (
@@ -119,70 +121,85 @@ export default function YourHires() {
       </div>
     );
   }
-  if (hires === null) return <p className="x-muted">Reading your hires…</p>;
+  if (hires === null) return <Reading label="Reading your hires…" />;
 
   const rated = new Set(ratings.map((r) => r.hireTx?.toLowerCase()).filter(Boolean));
   const now = Math.floor(Date.now() / 1000);
 
   return (
-    <div className="x-hires">
+    <div className="ac-hires">
       {hires.length === 0 ? (
-        <div className="x-yours-empty">
-          <p className="x-muted">No hires from this wallet yet.</p>
-          <Link className="x-btn x-btn--primary" href="/quest">
-            Start with the quest
-          </Link>
-        </div>
+        <None
+          job="rebalancing"
+          seed="desk-hires"
+          action={
+            <Link className="k-btn k-btn--sm" href="/quest">
+              Start with the quest
+            </Link>
+          }
+        >
+          No hires from this wallet yet.
+        </None>
       ) : (
-        <ul className="x-hires__list">
-          {hires.map((h) => {
+        <ul className="ac-list">
+          {hires.map((h, i) => {
             const job = h.jobId ? jobs[h.jobId] : undefined;
             const lapsed = job && job.status === "FUNDED" && now > job.expiredAt;
             const symbol = h.asset ? (SYMBOL[h.asset.toLowerCase()] ?? "") : h.kind === "market-job" ? "BNB" : "";
             return (
-              <li key={`${h.kind}:${h.tx ?? h.jobId}`} className="x-hire-row">
-                <div className="x-hire-row__main">
-                  <p className="x-hire-row__t">
-                    <Link className="x-link" href={`/agents/${h.agentId}`}>
+              <li key={`${h.kind}:${h.tx ?? h.jobId}`} className="ac-row" data-job={h.category ?? undefined}>
+                <span className="ac-row__face" aria-hidden="true">
+                  <Agent job={h.category} seed={h.agentId} size={44} state={h.completed ? "delivered" : "working"} slot={`hire${i}`} />
+                </span>
+                <div className="ac-row__main">
+                  <p className="ac-row__t">
+                    <Link className="ac-row__name" href={`/agents/${h.agentId}`}>
                       {h.agentName ?? `Agent #${h.agentId}`}
                     </Link>
-                    {h.category ? <span className="x-hire-row__job">{JOB_WORD[h.category] ?? h.category}</span> : null}
+                    {h.category ? <span className="ac-row__job">{JOB_WORD[h.category] ?? h.category}</span> : null}
                   </p>
-                  <p className="x-hire-row__d">
-                    {h.kind === "paid-call" ? "Paid call" : h.kind === "escrow-job" ? `Escrowed job #${h.jobId}` : `Job #${h.jobId}`}
-                    {h.amount ? ` · ${formatUnits(BigInt(h.amount), 18)} ${symbol}` : ""}
-                    {h.at ? ` · ${when(h.at)}` : ""}
+                  <p className="ac-row__d">
+                    <span>{h.kind === "paid-call" ? "Paid call" : h.kind === "escrow-job" ? `Escrowed job #${h.jobId}` : `Job #${h.jobId}`}</span>
+                    {h.amount ? (
+                      <span className="k-num ac-row__amt">
+                        {formatUnits(BigInt(h.amount), 18)} {symbol}
+                      </span>
+                    ) : null}
+                    {h.at ? <span>{when(h.at)}</span> : null}
                   </p>
                 </div>
-                <div className="x-hire-row__side">
+                <div className="ac-row__side">
                   {h.onChain ? (
-                    <span className="x-hire-row__ok">
-                      <Check size={13} aria-hidden="true" /> on chain
+                    <span className="k-tag k-tag--ours">
+                      <Check size={12} aria-hidden="true" /> on chain
                     </span>
                   ) : (
-                    <span className="x-hire-row__wait">
-                      <Clock size={13} aria-hidden="true" /> confirming
+                    <span className="k-tag k-tag--warn">
+                      <Clock size={12} aria-hidden="true" /> confirming
                     </span>
                   )}
+                  {job ? <span className="k-tag">{job.status.toLowerCase()}</span> : null}
                   {h.tx ? (
-                    <a className="x-link x-mono" href={`https://bscscan.com/tx/${h.tx}`} target="_blank" rel="noreferrer">
+                    <a className="k-link k-mono ac-row__tx" href={`https://bscscan.com/tx/${h.tx}`} target="_blank" rel="noreferrer">
                       {shortTx(h.tx)}
                     </a>
                   ) : null}
                   {job?.deliverableUrl ? (
-                    <a className="x-link" href={job.deliverableUrl} target="_blank" rel="noreferrer">
+                    <a className="k-link ac-row__tx" href={job.deliverableUrl} target="_blank" rel="noreferrer">
                       delivery
                     </a>
                   ) : null}
-                  {job ? <span className="x-hire-row__job">{job.status.toLowerCase()}</span> : null}
                 </div>
                 {lapsed ? (
-                  <button type="button" className="x-btn x-btn--sm" onClick={() => refund(h.jobId!)} disabled={refunding === h.jobId}>
-                    {refunding === h.jobId ? "Claiming…" : "Claim your refund"}
-                  </button>
+                  <div className="ac-row__act">
+                    <button type="button" className={`k-btn k-btn--sm k-btn--primary${refunding === h.jobId ? " k-btn--busy" : ""}`} onClick={() => refund(h.jobId!)} disabled={refunding === h.jobId}>
+                      {refunding === h.jobId ? "Claiming…" : "Claim your refund"}
+                    </button>
+                    <span className="k-small">Nothing was delivered by the deadline, so the money is yours to take back.</span>
+                  </div>
                 ) : null}
                 {(h.kind === "paid-call" || (h.kind === "escrow-job" && h.completed)) && h.tx && h.onChain && !rated.has(h.tx.toLowerCase()) ? (
-                  <details className="x-hire-row__rate">
+                  <details className="ac-row__rate">
                     <summary>Rate this hire</summary>
                     <RateAgent tokenId={h.agentId} name={h.agentName ?? `Agent #${h.agentId}`} category={h.category} hireTx={h.tx} />
                   </details>
@@ -192,20 +209,20 @@ export default function YourHires() {
           })}
         </ul>
       )}
-      {error ? <p className="x-approvals__err">{error}</p> : null}
+      {error ? <p className="k-note k-note--err">{error}</p> : null}
 
       {owned.length ? (
-        <div className="x-hires__owned">
-          <p className="x-hires__h">Agents you registered</p>
-          <ul>
+        <div className="ac-owned">
+          <p className="k-label">Agents you registered</p>
+          <ul className="ac-owned__list">
             {owned.map((a) => (
               <li key={a.agentId}>
-                <Link className="x-link" href={`/agents/${a.agentId}`}>
+                <Link className="ac-owned__a" href={`/agents/${a.agentId}`}>
                   {a.name ?? `Agent #${a.agentId}`}
-                </Link>{" "}
-                <span className="x-hire-row__job">{a.rungName}</span>{" "}
-                <Link className="x-link" href={`/list?id=${a.agentId}`}>
-                  what moves it up
+                </Link>
+                <span className="k-tag">{a.rungName}</span>
+                <Link className="k-link k-small" href={`/list?id=${a.agentId}`}>
+                  What moves it up
                 </Link>
               </li>
             ))}

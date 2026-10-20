@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import AppShell from "@/components/v2/shell/AppShell";
 import QualifyPanel from "@/components/x/QualifyPanel";
 import NeedHelp from "@/components/x/NeedHelp";
 import CheckMine from "@/components/x/CheckMine";
+import Agent from "@/components/characters/Agent";
+import BuildersNav from "@/components/builders/BuildersNav";
+import Lookup from "@/components/builders/Lookup";
+import Climb from "@/components/builders/Climb";
+import SixChecks from "@/components/builders/SixChecks";
+import { isHouse } from "@/components/builders/house";
 import { live } from "@/lib/data/live";
 import { findAgent, getAgentIndex, type IndexedAgent } from "@/lib/data/agents";
 import { readCheckInput } from "@/lib/campaign/check-input";
@@ -13,10 +19,13 @@ import { listingFor } from "@/lib/market/listing";
 import { hirePath, primaryRail } from "@/lib/market/hire-law";
 import { SITE } from "@/lib/site";
 import { agentsOf } from "@/lib/market/tracking";
-import { QUALIFIES } from "@/lib/campaign/rules";
+import { CAMPAIGN_ENDS, QUALIFIES } from "@/lib/campaign/rules";
 import { CATEGORY_LABEL, type Category } from "@/lib/config";
 import { withTimeout } from "@/lib/cache";
 import { countArrival } from "@/lib/ops/arrivals";
+import { viewAgent } from "@/lib/view/market";
+import { poseOf } from "@/lib/view/state";
+import type { CharacterState } from "@/components/characters/Agent";
 
 const TITLE = "Does your agent qualify for Set and Earn?";
 const BLURB = "BNB Chain checks every Set and Earn agent after the campaign closes on 5 November. Check yours now against the same six things, read from the chain, while there is still time to fix it.";
@@ -67,6 +76,13 @@ function byName(text: string): IndexedAgent[] {
     .slice(0, 8);
 }
 
+/** An agent's pose from the hire law's own reading, for an agent the page only has an id for. */
+function poseFor(id: string): CharacterState {
+  const l = listingFor(id);
+  const v = l ? hirePath(l) : null;
+  return poseOf({ hireable: v?.ok, answeredMinutesAgo: v?.answeredMinutesAgo ?? null, checked: l?.checked?.verdict ?? null, whyNot: v && !v.ok ? { short: v.short, reason: v.reason ?? "" } : null });
+}
+
 /**
  * The Set and Earn check, on its own page and fast: an agent's id, or the
  * wallet that owns it, and the six checks BNB Chain makes after the campaign,
@@ -81,6 +97,7 @@ export default async function CheckPage({ searchParams }: { searchParams: Promis
   const input = readCheckInput(raw);
   const wallet = input.kind === "wallet" ? input.wallet : null;
   const bad = input.kind === "bad";
+  const ended = Date.now() >= Date.parse(CAMPAIGN_ENDS);
 
   await live();
   const owned = wallet ? ((await withTimeout(agentsOf(wallet).catch(() => []), 8_000)) ?? []) : [];
@@ -88,150 +105,198 @@ export default async function CheckPage({ searchParams }: { searchParams: Promis
   // One agent by that name is the agent; several are offered to pick from.
   const id = input.kind === "id" ? input.id : named.length === 1 ? named[0]!.tokenId : null;
   const agent = id ? findAgent(id) : null;
+  // Its face and its pose, as the marketplace last read it.
+  const market = id ? await withTimeout(viewAgent(id).catch(() => null), 5_000) : null;
+  const pose: CharacterState = id ? (market ? poseOf(market) : poseFor(id)) : "ready";
+  const job = market?.job ?? agent?.category ?? null;
+
+  const picks: { id: string; name: string | null; category: string | null }[] = wallet
+    ? owned.map((a) => ({ id: a.agentId, name: a.name ?? null, category: a.category ?? null }))
+    : input.kind === "name" && named.length !== 1
+      ? named.map((a) => ({ id: a.tokenId, name: a.name ?? null, category: a.category ?? null }))
+      : [];
 
   return (
     <AppShell>
-      <section className="x-wrap x-mkt-head">
-        <div className="x-mkt-head__row">
-          <h1 className="x-mkt-head__h">{TITLE}</h1>
-          <p className="x-mkt-head__sub">{BLURB}</p>
-        </div>
-        <form className="x-searchbar x-list-form" action="/check" method="get">
-          <Search size={18} className="x-searchbar__i" aria-hidden="true" />
-          <label htmlFor="check-q" className="x-sr">
-            Your agent&apos;s ERC-8004 id, or the wallet that owns it
-          </label>
-          <input
-            id="check-q"
-            name="q"
-            defaultValue={raw}
-            placeholder="Your agent's id, name or page link, or your wallet"
-            autoComplete="off"
-            spellCheck={false}
-            className="x-searchbar__in"
-          />
-          <button type="submit" className="x-btn x-btn--primary">
-            Check
-          </button>
-        </form>
-        <div className="x-check__ways">
-          <CheckMine />
-          {!raw ? (
-            <Link className="x-link" href={`/check?q=${EXAMPLE}`}>
-              See a real check first
-            </Link>
-          ) : null}
-        </div>
-        <p className="x-ad-src">Free, and nothing to sign. We read the registry, call its endpoint and read its wallets&apos; history on BNB Smart Chain.</p>
-      </section>
+      <div className="bd-page bd-check">
+        <BuildersNav current="check" />
+        <Lookup
+          tab="check"
+          carry={id}
+          compact={Boolean(raw)}
+          title={ended ? "Set and Earn has closed. See how your agent reads." : TITLE}
+          lede={
+            ended
+              ? "The campaign closed on 5 November at 12:00 UTC. BNB Chain is checking agents against these six, from the chain; this reads yours the same way."
+              : "BNB Chain checks every Set and Earn agent after the campaign closes on 5 November. Check yours against the same six now, while there is time to fix it."
+          }
+          action="/check"
+          name="q"
+          value={raw}
+          placeholder="Your agent's id, name or page link, or your wallet"
+          label="Your agent's ERC-8004 id, or the wallet that owns it"
+          button="Check"
+          ways={
+            <>
+              <CheckMine />
+              {!raw ? (
+                <Link className="k-btn k-btn--ghost k-btn--sm" href={`/check?q=${EXAMPLE}`}>
+                  See a real check first
+                </Link>
+              ) : null}
+            </>
+          }
+          note="Free, and nothing to sign. We read the registry, call its endpoint and read its wallets' history on BNB Smart Chain."
+          art={
+            raw ? null : (
+              <div className="bd-art k-panel k-panel--raised">
+                <p className="bd-art__k">BNB Chain&apos;s six, as a ladder</p>
+                <Climb
+                  compact
+                  at={-1}
+                  label="Set and Earn's six checks"
+                  figure={<Agent job="health-factor" seed="builder-climb" size={120} state="awake" slot="art" />}
+                  rungs={QUALIFIES.map(([t]) => ({ key: t, name: t, state: "open", word: "Not read" }))}
+                />
+              </div>
+            )
+          }
+        />
 
-      {bad ? (
-        <div className="x-wrap x-section--tight">
-          <p className="x-rerun__err" role="alert">
-            {/^0x/i.test(raw)
-              ? "That address is cut short: a wallet is 0x followed by 40 letters and digits."
-              : "Enter your agent's ERC-8004 id (a whole number, for example 341554), its name, a link to its page, or the wallet that owns it."}
-          </p>
-        </div>
-      ) : null}
-
-      {input.kind === "name" && named.length !== 1 ? (
-        <section className="x-wrap x-section--tight" aria-labelledby="h-named">
-          <h2 id="h-named" className="x-proof-h">
-            {named.length ? `Agents named like “${input.text}”` : `No agent named “${input.text}” yet`}
-          </h2>
-          {named.length ? (
-            <ul className="x-check__owned">
-              {named.map((a) => (
-                <li key={a.tokenId}>
-                  <Link className="x-check__agent" href={`/check?q=${a.tokenId}`}>
-                    <span>
-                      <strong>{a.name ?? `Agent ${a.tokenId}`}</strong> <span className="x-mono x-dim">#{a.tokenId}</span>
-                    </span>
-                    <span className="x-dim">{a.category ? CATEGORY_LABEL[a.category as Category] : "No job stated yet"}</span>
-                    <span className="x-link">Check it</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="x-ad-src">
-              We read new registrations within minutes. Try its id, a link to its page, or the wallet that registered it.
+        {bad ? (
+          <section className="k-wrap bd-err" aria-label="Not something we can check">
+            <Agent job="health-factor" seed="builder-wait" size={72} state="dozing" slot="err" />
+            <p className="k-note k-note--warn" role="alert">
+              {/^0x/i.test(raw)
+                ? "That address is cut short: a wallet is 0x followed by 40 letters and digits."
+                : "Enter your agent's ERC-8004 id (a whole number, for example 341554), its name, a link to its page, or the wallet that owns it."}
             </p>
-          )}
-        </section>
-      ) : null}
+          </section>
+        ) : null}
 
-      {wallet ? (
-        <section className="x-wrap x-section--tight" aria-labelledby="h-owned">
-          <h2 id="h-owned" className="x-proof-h">
-            Agents this wallet owns
-          </h2>
-          {owned.length ? (
-            <ul className="x-check__owned">
-              {owned.map((a) => (
-                <li key={a.agentId}>
-                  <Link className="x-check__agent" href={`/check?q=${a.agentId}`}>
-                    <span>
-                      <strong>{a.name ?? `Agent ${a.agentId}`}</strong> <span className="x-mono x-dim">#{a.agentId}</span>
-                    </span>
-                    <span className="x-dim">{a.category ? CATEGORY_LABEL[a.category as Category] : "No job stated yet"}</span>
-                    <span className="x-link">Check it</span>
+        {input.kind === "name" && named.length !== 1 ? (
+          <section className="k-wrap bd-pick" aria-labelledby="h-named">
+            <h2 id="h-named" className="k-h3">
+              {named.length ? `Agents named like “${input.text}”` : `No agent named “${input.text}” yet`}
+            </h2>
+            {named.length ? (
+              <PickList picks={picks} />
+            ) : (
+              <div className="k-empty">
+                <Agent job="health-factor" seed="empty-name" size={96} state="dozing" slot="empty" />
+                <p className="k-empty__t">Nobody by that name yet</p>
+                <p className="k-empty__d">We read new registrations within minutes. Try its id, a link to its page, or the wallet that registered it.</p>
+              </div>
+            )}
+          </section>
+        ) : null}
+
+        {wallet ? (
+          <section className="k-wrap bd-pick" aria-labelledby="h-owned">
+            <h2 id="h-owned" className="k-h3">
+              Agents this wallet owns
+            </h2>
+            {owned.length ? (
+              <PickList picks={picks} />
+            ) : (
+              <div className="k-empty">
+                <Agent job="rebalancing" seed="empty-wallet" size={96} state="dozing" slot="empty" />
+                <p className="k-empty__t">This wallet owns no agent we have read yet</p>
+                <p className="k-empty__d">Register one from it and it is read within minutes.</p>
+                <div className="k-row" style={{ justifyContent: "center" }}>
+                  <Link className="k-btn k-btn--primary" href="/build">
+                    Build and register one <ArrowRight size={16} className="k-btn__go" aria-hidden="true" />
                   </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="x-ad-src">
-              This wallet owns no agent we have read yet. Register one from it on{" "}
-              <Link className="x-link" href="/build">
-                /build
-              </Link>
-              ; a new registration is read within minutes.
-            </p>
-          )}
-        </section>
-      ) : null}
+                </div>
+              </div>
+            )}
+          </section>
+        ) : null}
 
-      {id ? (
-        <section className="x-wrap x-section--tight">
-          <p className="x-check__who">
-            {agent?.name ? <strong>{agent.name}</strong> : <strong>Agent {id}</strong>} <span className="x-mono x-dim">#{id}</span>{" "}
-            <Link className="x-link" href={`/agents/${id}`}>
-              its page
-            </Link>
-          </p>
-          <QualifyPanel tokenId={id} />
-          <HireHere id={id} />
-        </section>
-      ) : null}
+        {id ? (
+          <section className="k-section k-section--tight bd-result" aria-labelledby="h-who">
+            <div className="k-wrap">
+              <div className="bd-who k-rise" style={{ ["--i" as string]: 3 }}>
+                <h2 id="h-who" className="k-h2 bd-who__name">
+                  {agent?.name ?? market?.name ?? `Agent ${id}`} <span className="bd-who__id k-num">#{id}</span>
+                </h2>
+                <p className="bd-who__tags">
+                  {job ? <span className="k-tag">{CATEGORY_LABEL[job as Category]}</span> : null}
+                  {isHouse(id) ? <span className="k-tag k-tag--ours">Ours</span> : null}
+                  <Link className="k-btn k-btn--sm k-btn--ghost" href={`/agents/${id}`}>
+                    Its page <ArrowRight size={15} className="k-btn__go" aria-hidden="true" />
+                  </Link>
+                </p>
+              </div>
+              <div className="bd-result__grid">
+                <div className="k-panel bd-result__ladder">
+                  <QualifyPanel tokenId={id} figure={<Agent job={job} seed={id} house={isHouse(id)} size={104} state={pose} slot="climb" />} />
+                </div>
+                <aside className="bd-result__side">
+                  <HireHere id={id} />
+                  <Link className="bd-switch" href={`/list?id=${id}`}>
+                    <span className="bd-switch__t">Where it stands on our ladder</span>
+                    <span className="k-small">Six tests we run now: answering, priced, assayed, paid.</span>
+                    <ArrowRight size={18} className="bd-switch__go" aria-hidden="true" />
+                  </Link>
+                </aside>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
-      <section className="x-wrap x-section--tight">
-        <div className="x-build__rules">
-          <h2>The six checks</h2>
-          <p>In BNB Chain&apos;s words, from the campaign page. Your repository must be public too.</p>
-          <ol className="x-build__checks">
-            {QUALIFIES.map(([t, d]) => (
-              <li key={t}>
-                <strong>{t}.</strong> {d}
-              </li>
-            ))}
-          </ol>
-          <p className="x-build__note">
-            Not built one yet?{" "}
-            <Link className="x-link" href="/build">
-              Build and list it here
-            </Link>
-            . Hiring for the campaign?{" "}
-            <Link className="x-link" href="/quest">
-              Your Set and Earn progress
-            </Link>{" "}
-            is counted as you go.
-          </p>
-        </div>
-        <NeedHelp />
-      </section>
+        <section className="k-section k-section--tight bd-band" aria-labelledby="h-six">
+          <div className="k-wrap">
+            <div className="k-shead">
+              <div className="k-shead__copy">
+                <h2 id="h-six" className="k-h2">
+                  The six checks
+                </h2>
+                <p className="k-body">In BNB Chain&apos;s words, from the campaign page. Your repository must be public too.</p>
+              </div>
+              <div className="k-row">
+                <Link className="k-btn" href="/build">
+                  Build and list one
+                </Link>
+                {!ended ? (
+                  <Link className="k-btn k-btn--ghost" href="/quest">
+                    Your Set and Earn progress
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+            <SixChecks />
+            <div className="bd-help">
+              <NeedHelp />
+            </div>
+          </div>
+        </section>
+      </div>
     </AppShell>
+  );
+}
+
+/** Several agents to choose from, each one tap from its check. */
+function PickList({ picks }: { picks: { id: string; name: string | null; category: string | null }[] }) {
+  return (
+    <ul className="bd-picks">
+      {picks.map((a, i) => (
+        <li key={a.id}>
+          <Link className="bd-pickrow" href={`/check?q=${a.id}`} style={{ ["--i" as string]: i }}>
+            <Agent job={a.category} seed={a.id} house={isHouse(a.id)} size={48} state={poseFor(a.id)} slot={`pick${i}`} />
+            <span className="bd-pickrow__t">
+              <span className="bd-pickrow__name">{a.name ?? `Agent ${a.id}`}</span>
+              <span className="k-small">
+                <span className="k-num">#{a.id}</span> <span>{a.category ? CATEGORY_LABEL[a.category as Category] : "No job stated yet"}</span>
+              </span>
+            </span>
+            <span className="bd-pickrow__go">
+              Check it <ArrowRight size={15} aria-hidden="true" />
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -246,31 +311,33 @@ function HireHere({ id }: { id: string }) {
   const v = l ? hirePath(l) : null;
   const lead = v ? primaryRail(v) : null;
   return (
-    <div className="x-hirehere">
-      <h2 className="x-proof-h">Can people hire it on MANDATE?</h2>
+    <div className="k-panel k-panel--raised bd-hirehere">
+      <h2 className="k-h3">Can people hire it here?</h2>
       {!l ? (
-        <p className="x-ad-src">
-          Not under a job yet. Its card has to say which job it does (yield, grid trading, rebalancing or health factor) in its own description; we file it from
-          those words when we read its registration.
+        <p className="k-body">
+          Not under a job yet. Its card has to say which job it does (yield, grid trading, rebalancing or health factor) in its own description; we file it from those words when we read
+          its registration.
         </p>
       ) : v?.ok ? (
         <>
-          <p>
-            Yes{lead && "price" in lead ? `, for ${lead.price}` : ""}. Anyone can hire it here,{" "}
-            {lead?.kind === "escrow" ? "paying into BNB Chain's escrow until it delivers" : lead?.kind === "x402" ? "paying per call with one signature" : "through BNB Chain's escrow"}, and every hire
-            is read from the chain. This is its page to share with the people who use it:
+          <p className="bd-hirehere__yes">
+            <span className="k-dot k-dot--live" aria-hidden="true" />
+            <span>
+              <strong>Yes{lead && "price" in lead ? `, for ${lead.price}` : ""}.</strong> Anyone can hire it here,{" "}
+              {lead?.kind === "escrow" ? "paying into BNB Chain's escrow until it delivers" : lead?.kind === "x402" ? "paying per call with one signature" : "through BNB Chain's escrow"}, and every hire is read
+              from the chain.
+            </span>
           </p>
+          <p className="k-small">Its page, to share with the people who use it:</p>
           <ShareLink url={`${SITE}/agents/${id}`} />
-          <p className="x-ad-src">
-            For Set and Earn, only hires from wallets that are not yours and not funded by yours count, and BNB Chain excludes wash activity.
-          </p>
+          <p className="k-small">For Set and Earn, only hires from wallets that are not yours and not funded by yours count, and BNB Chain excludes wash activity.</p>
         </>
       ) : (
         <>
-          <p>
+          <p className="bd-hirehere__no">
             <strong>Not yet.</strong> {v?.reason}
           </p>
-          {v?.short && FIX[v.short] ? <p className="x-ad-src">{FIX[v.short]}</p> : null}
+          {v?.short && FIX[v.short] ? <p className="k-note k-note--warn">{FIX[v.short]}</p> : null}
         </>
       )}
     </div>

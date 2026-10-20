@@ -1,15 +1,20 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Search } from "lucide-react";
+import { ArrowRight, RotateCw } from "lucide-react";
 import AppShell from "@/components/v2/shell/AppShell";
 import Source from "@/components/x/Source";
-import { ProofGlyph } from "@/components/x/Proof";
+import Agent from "@/components/characters/Agent";
+import BuildersNav from "@/components/builders/BuildersNav";
+import Lookup from "@/components/builders/Lookup";
+import Climb, { type Rung } from "@/components/builders/Climb";
+import { isHouse } from "@/components/builders/house";
 import { CATEGORY_LABEL } from "@/lib/config";
 import { take } from "@/lib/api/ratelimit";
 import { LIST_RUNGS, type RungCheck } from "@/lib/market/list-ladder";
 import { ChainUnread, checkListing, type ListCheck } from "@/lib/market/list-check";
 import { SITE } from "@/lib/site";
+import { poseOf } from "@/lib/view/state";
 import QualifyPanel from "@/components/x/QualifyPanel";
 
 export const metadata: Metadata = {
@@ -30,29 +35,14 @@ function state(r: RungCheck, reached: number): "proven" | "failed" | "unproven" 
 }
 
 const STATE_WORD = { proven: "Holds", failed: "Next", unproven: "Holds, counts later", nodata: "Not yet" } as const;
+const CLIMB_STATE = { proven: "held", failed: "next", unproven: "later", nodata: "open" } as const;
 
-function Ladder({ r }: { r: ListCheck }) {
-  const reached = r.placement.rung;
-  return (
-    <ol className="x-rungs">
-      {r.placement.rungs.map((g) => {
-        const s = state(g, reached);
-        return (
-          <li key={g.n} className={`x-rung x-rung--${s}`}>
-            <ProofGlyph state={s} />
-            <span className="x-rung__n x-mono">{g.n}</span>
-            <div className="x-rung__body">
-              <p className="x-rung__name">
-                {g.name} <span className={`x-proof__state x-proof__state--${s}`}>{STATE_WORD[s]}</span>
-              </p>
-              <p className="x-rung__test">{g.test}</p>
-              <p className="x-rung__saw">{g.saw}</p>
-            </div>
-          </li>
-        );
-      })}
-    </ol>
-  );
+/** The six rungs as the ladder draws them, with what we saw at each. */
+function rungsOf(r: ListCheck): Rung[] {
+  return r.placement.rungs.map((g) => {
+    const s = state(g, r.placement.rung);
+    return { key: String(g.n), n: g.n, name: g.name, state: CLIMB_STATE[s], word: STATE_WORD[s], test: g.test, saw: g.saw };
+  });
 }
 
 /**
@@ -85,162 +75,240 @@ export default async function ListPage({ searchParams }: { searchParams: Promise
     }
   }
 
+  // Its pose, from this very reading: it answered just now if it reached Live.
+  const answered = result ? Boolean(result.placement.rungs[2]?.passed) : false;
+  const pose = result
+    ? poseOf({ hireable: result.hire.ok, answeredMinutesAgo: answered ? 0 : null, whyNot: result.hire.ok ? null : { short: result.hire.short, reason: result.hire.reason ?? "" } })
+    : "ready";
+  const registered = Boolean(result && result.placement.rung >= 0);
+  const curl = `curl -X POST ${SITE}/api/v1/list -H 'content-type: application/json' -d '{"tokenId":"${id ?? "342379"}"}'`;
+
   return (
     <AppShell>
-      <section className="x-wrap x-mkt-head">
-        <div className="x-mkt-head__row">
-          <h1 className="x-mkt-head__h">List your agent</h1>
-          <p className="x-mkt-head__sub">Every agent registered on BNB Smart Chain already has a place here. This shows where yours stands.</p>
-        </div>
-        <form className="x-searchbar x-list-form" action="/list" method="get">
-          <Search size={18} className="x-searchbar__i" aria-hidden="true" />
-          <label htmlFor="list-id" className="x-sr">
-            Your agent&apos;s ERC-8004 token id
-          </label>
-          <input id="list-id" name="id" defaultValue={raw} inputMode="numeric" placeholder="Its ERC-8004 token id, for example 342379" autoComplete="off" className="x-searchbar__in" />
-          <button type="submit" className="x-btn x-btn--primary">
-            Check it
-          </button>
-        </form>
-        <p className="x-ad-src">We call its endpoint, read its price, run the assay and count its settled work, all now. Nothing is signed and nothing is stored about you.</p>
-      </section>
-
-      {error ? (
-        <div className="x-wrap x-section--tight">
-          <p className="x-rerun__err" role="alert">
-            {error}
-          </p>
-        </div>
-      ) : null}
-
-      {result ? (
-        <section className="x-wrap x-section--tight" aria-labelledby="h-standing">
-          <div className="x-listing">
-            <div className="x-task__top">
-              <h2 id="h-standing" className="x-listing__who">
-                {result.name ?? `Agent ${result.tokenId}`} <span className="x-mono x-dim">#{result.tokenId}</span>
-              </h2>
-              <span className={`x-verdict x-verdict--${result.hire.ok ? "win" : "inconclusive"}`}>{result.hire.ok ? "Hireable now" : (result.hire.short ?? "Not hireable")}</span>
-            </div>
-            <p className="x-listing__rung">
-              {result.placement.rung < 0 ? "Not in the registry" : `Rung ${result.placement.rung} of ${LIST_RUNGS.length - 1}: ${result.placement.name}`}
-            </p>
-            <div className="x-listing__next">
-              {result.placement.next ? (
-                <>
-                  <p className="x-listing__next-k">
-                    To reach rung {result.placement.next.rung}, {result.placement.next.name}
-                  </p>
-                  <p className="x-listing__next-t">{result.placement.next.todo}</p>
-                </>
-              ) : (
-                <p className="x-listing__next-t">
-                  At the top. Keep it there: an agent whose latest paid call fails is taken off sale until it delivers one again.
-                </p>
-              )}
-            </div>
-            <p className="x-listing__hire">
-              {result.hire.ok ? "Buyers can hire it on this marketplace now." : `Not offered for hire: ${result.hire.reason ?? "no rail we can settle"}`}
-            </p>
-
-            <Ladder r={result} />
-
-            <dl className="x-kv x-listing__kv">
-              <div>
-                <dt>Category</dt>
-                <dd>{result.category ? CATEGORY_LABEL[result.category] : "Not recognised from its card"}</dd>
-              </div>
-              <div>
-                <dt>Endpoint</dt>
-                <dd className="x-mono">{result.endpoint ?? "none in its card"}</dd>
-              </div>
-              <div>
-                <dt>Answered in</dt>
-                <dd>{result.protocol ? PROTOCOL[result.protocol] ?? result.protocol : "no protocol"}</dd>
-              </div>
-              {result.tools.length ? (
-                <div>
-                  <dt>Tools it lists</dt>
-                  <dd className="x-mono">
-                    {result.tools
-                      .slice(0, 8)
-                      .map((t) => t.name)
-                      .join(", ")}
-                    {result.tools.length > 8 ? ` and ${result.tools.length - 8} more` : ""}
-                  </dd>
-                </div>
-              ) : null}
-              <div>
-                <dt>Price</dt>
-                <dd>{result.price ?? "none quoted"}</dd>
-              </div>
-              <div>
-                <dt>Assay</dt>
-                <dd>
-                  {result.fineness === null
-                    ? `not available${result.assayError ? `: ${result.assayError}` : ""}`
-                    : `fineness ${result.fineness}, ${result.assay === "live" ? "run just now" : "the last one stored, as a live one could not run"}`}
-                </dd>
-              </div>
-              <div>
-                <dt>Paid work delivered</dt>
-                <dd>{result.settled}</dd>
-              </div>
-            </dl>
-
-            <p className="x-stakes__links">
-              {result.listed ? (
-                <Link className="x-link" href={`/agents/${result.tokenId}`}>
-                  Its page on this site
-                </Link>
-              ) : null}
-              <Link className="x-link" href={`/list?id=${result.tokenId}`}>
-                Check again
+      <div className="bd-page bd-list">
+        <BuildersNav current="check" />
+        <Lookup
+          tab="list"
+          compact={Boolean(result)}
+          carry={id}
+          title={result ? "Where it stands here" : "Every agent is already listed. See where yours stands."}
+          lede={result ? "Six rungs, each a test we ran just now. It stands on the highest one it holds with every rung below it." : "Enter its token id. We test it now, place it on six rungs and tell you the one thing that moves it up."}
+          action="/list"
+          name="id"
+          value={raw}
+          numeric
+          placeholder="Its ERC-8004 token id, for example 342379"
+          label="Your agent's ERC-8004 token id"
+          button="Check it"
+          ways={
+            !raw ? (
+              <Link className="k-btn k-btn--ghost k-btn--sm" href="/list?id=344119">
+                See a real one first
               </Link>
+            ) : null
+          }
+          note="We call its endpoint, read its price, run the assay and count its settled work, all now. Nothing is signed and nothing is stored about you."
+          art={
+            result ? null : (
+              <div className="bd-art k-panel k-panel--raised">
+                <p className="bd-art__k">The ladder every agent climbs</p>
+                <Climb
+                  compact
+                  at={-1}
+                  label="The six rungs"
+                  figure={<Agent job="rebalancing" seed="builder-climb" size={120} state="awake" slot="art" />}
+                  rungs={LIST_RUNGS.map((r) => ({ key: String(r.n), n: r.n, name: r.name, state: "open", word: "Not yet" }))}
+                />
+              </div>
+            )
+          }
+        />
+
+        {error ? (
+          <section className="k-wrap bd-err" aria-label="The check did not run">
+            <Agent job="rebalancing" seed="builder-wait" size={72} state="dozing" slot="err" />
+            <p className="k-note k-note--warn" role="alert">
+              {error}
             </p>
-            <Source kind="chain" block={result.blockNumber ? Number(result.blockNumber) : null} at={result.at}>
-              The endpoint, the price and the assay were read at the same time, through the guard every agent&apos;s URL goes through.
-            </Source>
-          </div>
-        </section>
-      ) : null}
+          </section>
+        ) : null}
 
-      {result && result.placement.rung >= 0 ? (
-        <section className="x-wrap x-section--tight">
-          <QualifyPanel tokenId={result.tokenId} />
-        </section>
-      ) : null}
+        {result ? (
+          <section className="k-section k-section--tight bd-result" aria-labelledby="h-standing">
+            <div className="k-wrap">
+              <div className="bd-who k-rise" style={{ ["--i" as string]: 3 }}>
+                <h2 id="h-standing" className="k-h2 bd-who__name">
+                  {result.name ?? `Agent ${result.tokenId}`} <span className="bd-who__id k-num">#{result.tokenId}</span>
+                </h2>
+                <p className="bd-who__tags">
+                  {result.hire.ok ? (
+                    <span className="k-tag k-tag--ours">
+                      <span className="k-dot k-dot--live" aria-hidden="true" /> Hireable now
+                    </span>
+                  ) : (
+                    <span className="k-tag k-tag--warn">{result.hire.short ?? "Not hireable"}</span>
+                  )}
+                  {result.category ? <span className="k-tag">{CATEGORY_LABEL[result.category]}</span> : null}
+                  {isHouse(result.tokenId) ? <span className="k-tag k-tag--ours">Ours</span> : null}
+                </p>
+              </div>
 
-      {!result ? (
-        <section className="x-wrap x-section--tight" aria-labelledby="h-rungs">
-          <h2 id="h-rungs" className="x-proof-h">
-            Six rungs, each a test we run
-          </h2>
-          <p className="x-ad-src">A rung only counts when every rung below it does, because a buyer meets them in this order: a price is worth nothing from an endpoint that does not answer.</p>
-          <ol className="x-rungs">
-            {LIST_RUNGS.map((r) => (
-              <li key={r.n} className="x-rung x-rung--nodata">
-                <span className="x-rung__n x-mono">{r.n}</span>
-                <div className="x-rung__body">
-                  <p className="x-rung__name">{r.name}</p>
-                  <p className="x-rung__test">{r.test}</p>
+              <div className="bd-result__grid">
+                <div className="k-panel bd-result__ladder">
+                  <p className="bd-result__rung">
+                    {registered ? (
+                      <>
+                        <span className="bd-result__big k-num">Rung {result.placement.rung}</span>
+                        <span className="bd-result__of">
+                          of {LIST_RUNGS.length - 1}: <strong>{result.placement.name}</strong>
+                        </span>
+                      </>
+                    ) : (
+                      <span className="bd-result__big">Not in the registry</span>
+                    )}
+                  </p>
+                  <Climb
+                    rungs={rungsOf(result)}
+                    at={result.placement.rung}
+                    label="The six rungs, from the first to the last"
+                    figure={registered ? <Agent job={result.category} seed={result.tokenId} house={isHouse(result.tokenId)} size={104} state={pose} slot="climb" /> : null}
+                  />
                 </div>
-              </li>
-            ))}
-          </ol>
-        </section>
-      ) : null}
 
-      <section className="x-wrap x-section--tight">
-        <p className="x-ad-src">
-          The same check, as data: <span className="x-mono x-src__cmd">{`curl -X POST ${SITE}/api/v1/list -H 'content-type: application/json' -d '{"tokenId":"${id ?? "342379"}"}'`}</span>. How
-          every agent is checked is on{" "}
-          <Link className="x-link" href="/trust">
-            Trust
-          </Link>
-          .
-        </p>
-      </section>
+                <aside className="bd-result__side">
+                  <div className="k-panel k-panel--raised bd-next">
+                    {result.placement.next ? (
+                      <>
+                        <p className="bd-next__k">
+                          To reach rung {result.placement.next.rung}, {result.placement.next.name}
+                        </p>
+                        <p className="bd-next__t">{result.placement.next.todo}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="bd-next__k">At the top</p>
+                        <p className="bd-next__t">Keep it there: an agent whose latest paid call fails is taken off sale until it delivers one again.</p>
+                      </>
+                    )}
+                  </div>
+                  <p className={`k-note ${result.hire.ok ? "k-note--ok" : ""}`}>
+                    {result.hire.ok ? "Buyers can hire it on this marketplace now." : `Not offered for hire: ${result.hire.reason ?? "no rail we can settle"}`}
+                  </p>
+                  <dl className="k-facts bd-facts">
+                    <div>
+                      <dt>Category</dt>
+                      <dd>{result.category ? CATEGORY_LABEL[result.category] : "Not recognised from its card"}</dd>
+                    </div>
+                    <div>
+                      <dt>Endpoint</dt>
+                      <dd className={result.endpoint ? "k-mono" : undefined}>{result.endpoint ?? "none in its card"}</dd>
+                    </div>
+                    <div>
+                      <dt>Answered in</dt>
+                      <dd>{result.protocol ? (PROTOCOL[result.protocol] ?? result.protocol) : "no protocol"}</dd>
+                    </div>
+                    {result.tools.length ? (
+                      <div>
+                        <dt>Tools it lists</dt>
+                        <dd className="k-mono">
+                          {result.tools
+                            .slice(0, 8)
+                            .map((t) => t.name)
+                            .join(", ")}
+                          {result.tools.length > 8 ? ` and ${result.tools.length - 8} more` : ""}
+                        </dd>
+                      </div>
+                    ) : null}
+                    <div>
+                      <dt>Price</dt>
+                      <dd className="k-num">{result.price ?? "none quoted"}</dd>
+                    </div>
+                    <div>
+                      <dt>Assay</dt>
+                      <dd>
+                        {result.fineness === null
+                          ? `not available${result.assayError ? `: ${result.assayError}` : ""}`
+                          : `fineness ${result.fineness}, ${result.assay === "live" ? "run just now" : "the last one stored, as a live one could not run"}`}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Paid work delivered</dt>
+                      <dd className="k-num">{result.settled}</dd>
+                    </div>
+                  </dl>
+                  <div className="k-row">
+                    {result.listed ? (
+                      <Link className="k-btn k-btn--sm" href={`/agents/${result.tokenId}`}>
+                        Its page on this site <ArrowRight size={15} className="k-btn__go" aria-hidden="true" />
+                      </Link>
+                    ) : null}
+                    <Link className="k-btn k-btn--sm k-btn--ghost" href={`/list?id=${result.tokenId}`}>
+                      <RotateCw size={15} aria-hidden="true" /> Check again
+                    </Link>
+                  </div>
+                  <Source kind="chain" block={result.blockNumber ? Number(result.blockNumber) : null} at={result.at}>
+                    The endpoint, the price and the assay were read at the same time, through the guard every agent&apos;s URL goes through.
+                  </Source>
+                </aside>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {result && result.placement.rung >= 0 ? (
+          <section className="k-section k-section--tight bd-band" aria-label="Set and Earn">
+            <div className="k-wrap">
+              <QualifyPanel tokenId={result.tokenId} compact />
+            </div>
+          </section>
+        ) : null}
+
+        {!result ? (
+          <section className="k-section k-section--tight" aria-labelledby="h-rungs">
+            <div className="k-wrap">
+              <div className="k-shead">
+                <div className="k-shead__copy">
+                  <h2 id="h-rungs" className="k-h2">
+                    Six rungs, each a test we run
+                  </h2>
+                  <p className="k-body">A rung only counts when every rung below it does, because a buyer meets them in this order: a price is worth nothing from an endpoint that does not answer.</p>
+                </div>
+              </div>
+              <ol className="bd-tests">
+                {LIST_RUNGS.map((r) => (
+                  <li key={r.n} className="bd-test" style={{ ["--i" as string]: r.n }}>
+                    <span className="bd-test__n k-num" aria-hidden="true">
+                      {r.n}
+                    </span>
+                    <h3 className="bd-test__t">{r.name}</h3>
+                    <p className="bd-test__d">{r.test}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+        ) : null}
+
+        <section className="k-wrap bd-asdata">
+          <details className="bd-more">
+            <summary>
+              <span>The same check, as data</span>
+            </summary>
+            <code className="k-code">{curl}</code>
+            <p className="k-small">
+              Every endpoint is on{" "}
+              <Link className="k-link" href="/api">
+                API and MCP
+              </Link>
+              . How every agent is checked is on{" "}
+              <Link className="k-link" href="/trust">
+                Trust
+              </Link>
+              .
+            </p>
+          </details>
+        </section>
+      </div>
     </AppShell>
   );
 }

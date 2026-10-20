@@ -44,7 +44,7 @@ export default function Source({
   children?: ReactNode;
 }) {
   return (
-    <p className="x-src" title={MEANS[kind]}>
+    <p className="k-src x-src" title={MEANS[kind]}>
       <span className="x-src__k">{WORD[kind]}</span>
       {block ? <span className="x-mono">block {block.toLocaleString("en-GB")}</span> : null}
       {at ? (

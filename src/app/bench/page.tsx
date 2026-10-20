@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import AppShell from "@/components/v2/shell/AppShell";
-import Bench from "@/components/Bench";
+import Agent from "@/components/characters/Agent";
+import TrustHead from "@/components/trust/TrustHead";
+import BenchStage from "@/components/trust/BenchStage";
 import { readAgentIndex } from "@/lib/data/agents";
 import { CHAIN_ID } from "@/lib/config";
-import { MARKET_ADDRESS } from "@/lib/chain/market";
 
 export const metadata: Metadata = {
   title: "Run a check yourself | Mandate",
@@ -31,20 +33,35 @@ export default async function BenchPage() {
 
   return (
     <AppShell>
-
-      <main className="shell bench-page">
-        <p className="mark-label">The bench</p>
-        <h1 className="display bench__title">Assay anything on this chain.</h1>
-        <p className="lede bench__lede">
-          Six tests, run live against BNB Smart Chain. It does not have to be one of
-          ours, any agent in the ERC-8004 identity registry can be put on the bench,
-          including one you are being asked to trust somewhere else. No wallet, no
-          account, and no permission from us.
-        </p>
-
-        <Bench chainId={CHAIN_ID} suggestions={suggestions} />
-      </main>
-
-      </AppShell>
+      <div className="tr">
+        <TrustHead
+          title="Put any agent on the bench."
+          lede="Six checks, run live against BNB Smart Chain while you watch. It does not have to be one of ours. No wallet, no account, and no permission from us."
+          art={
+            <div className="tr-benchart" aria-hidden="true">
+              <div className="tr-benchart__lamps">
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <span key={i} style={{ ["--a" as string]: `${-62 + i * 24.8}deg` }} />
+                ))}
+              </div>
+              <Agent job="grid-trading" seed="bench-keeper" size={150} state="awake" slot="bart" />
+              <div className="tr-benchart__plinth" />
+            </div>
+          }
+        />
+        <section className="tr-sec tr-sec--first" aria-label="The bench">
+          <div className="k-wrap">
+            <BenchStage chainId={CHAIN_ID} suggestions={suggestions} />
+            <p className="k-small tr-sec__more">
+              What each check asks and what it is worth is on{" "}
+              <Link className="k-link" href="/assay">
+                the method
+              </Link>
+              . A check that cannot find evidence says so; it is never counted as a pass.
+            </p>
+          </div>
+        </section>
+      </div>
+    </AppShell>
   );
 }

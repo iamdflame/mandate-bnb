@@ -96,18 +96,18 @@ export default function CreateAgent() {
 
   if (state.at === "done") {
     return (
-      <div className="x-create x-create--done" role="status">
-        <p className="x-create__ok">
+      <div className="bd-create bd-create--done" role="status">
+        <p className="bd-create__ok">
           <Check size={18} aria-hidden="true" /> Registered{state.tokenId ? ` as agent #${state.tokenId}` : ""}.
         </p>
         <p>
-          <a className="x-link x-mono" href={`https://bscscan.com/tx/${state.hash}`} target="_blank" rel="noreferrer">
+          <a className="k-link k-mono" href={`https://bscscan.com/tx/${state.hash}`} target="_blank" rel="noreferrer">
             {state.hash?.slice(0, 12)}…
           </a>{" "}
           on BscScan.
         </p>
         {state.tokenId ? (
-          <Link className="x-btn x-btn--primary" href={`/list?id=${state.tokenId}`}>
+          <Link className="k-btn k-btn--primary" href={`/list?id=${state.tokenId}`}>
             See where it stands on MANDATE
           </Link>
         ) : null}
@@ -116,33 +116,33 @@ export default function CreateAgent() {
   }
 
   return (
-    <div className="x-create">
-      <div className="x-create__mode" role="tablist" aria-label="How to give its card">
-        <button type="button" role="tab" aria-selected={mode === "card"} className={`x-chip${mode === "card" ? " x-chip--on" : ""}`} onClick={() => setMode("card")}>
+    <div className="bd-create">
+      <div className="k-tabs bd-create__mode" role="tablist" aria-label="How to give its card">
+        <button type="button" role="tab" aria-selected={mode === "card"} className="k-tab" onClick={() => setMode("card")}>
           Fill in its card here
         </button>
-        <button type="button" role="tab" aria-selected={mode === "url"} className={`x-chip${mode === "url" ? " x-chip--on" : ""}`} onClick={() => setMode("url")}>
+        <button type="button" role="tab" aria-selected={mode === "url"} className="k-tab" onClick={() => setMode("url")}>
           I already serve a card
         </button>
       </div>
 
       {mode === "url" ? (
-        <label className="x-create__f">
+        <label className="bd-f">
           <span>Card address</span>
           <input value={f.cardUrl} onChange={set("cardUrl")} placeholder="https://my-agent.vercel.app/api/card" inputMode="url" autoComplete="off" />
           <small>The starter template serves its card at /api/card.</small>
         </label>
       ) : (
         <>
-          <label className="x-create__f">
+          <label className="bd-f">
             <span>Name</span>
             <input value={f.name} onChange={set("name")} placeholder="Venus Guard" maxLength={60} />
           </label>
-          <label className="x-create__f">
+          <label className="bd-f">
             <span>What one call returns</span>
             <textarea value={f.description} onChange={set("description")} placeholder="Reads a Venus account's health factor and says how far it is from liquidation." rows={3} maxLength={400} />
           </label>
-          <label className="x-create__f">
+          <label className="bd-f">
             <span>Job</span>
             <select value={f.category} onChange={set("category")}>
               {JOBS.map(([v, t]) => (
@@ -153,31 +153,33 @@ export default function CreateAgent() {
             </select>
             <small>We file it by what its card says it does. Pick the closest job and describe it plainly.</small>
           </label>
-          <label className="x-create__f">
+          <label className="bd-f">
             <span>x402 endpoint, to be hireable</span>
             <input value={f.x402} onChange={set("x402")} placeholder="https://my-agent.vercel.app/api/agent" inputMode="url" autoComplete="off" />
           </label>
-          <label className="x-create__f">
+          <label className="bd-f">
             <span>MCP endpoint (optional)</span>
             <input value={f.mcp} onChange={set("mcp")} placeholder="https://my-agent.example/mcp" inputMode="url" autoComplete="off" />
           </label>
-          <label className="x-create__f">
+          <label className="bd-f">
             <span>Website (optional)</span>
             <input value={f.web} onChange={set("web")} placeholder="https://my-agent.example" inputMode="url" autoComplete="off" />
           </label>
-          <label className="x-create__f">
+          <label className="bd-f">
             <span>Image (optional)</span>
             <input value={f.image} onChange={set("image")} placeholder="https://…/avatar.png" inputMode="url" autoComplete="off" />
           </label>
-          <details className="x-create__preview">
-            <summary>The card that will be written on chain</summary>
-            <pre className="x-pre x-mono">{JSON.stringify(card, null, 2)}</pre>
+          <details className="bd-more bd-create__preview">
+            <summary>
+              <span>The card that will be written on chain</span>
+            </summary>
+            <pre className="k-code">{JSON.stringify(card, null, 2)}</pre>
           </details>
         </>
       )}
 
       {problems.length ? (
-        <ul className="x-create__problems">
+        <ul className="bd-create__problems">
           {problems.map((p) => (
             <li key={p}>{p}</li>
           ))}
@@ -187,20 +189,20 @@ export default function CreateAgent() {
       {!available ? (
         <OpenInWallet />
       ) : !address ? (
-        <button type="button" className="x-btn x-btn--primary x-btn--block" onClick={connect}>
+        <button type="button" className="k-btn k-btn--primary k-btn--block k-btn--lg" onClick={connect}>
           Connect a wallet to register
         </button>
       ) : !ready ? (
-        <button type="button" className="x-btn x-btn--primary x-btn--block" onClick={switchChain}>
+        <button type="button" className="k-btn k-btn--primary k-btn--block k-btn--lg" onClick={switchChain}>
           Switch to BNB Smart Chain
         </button>
       ) : (
-        <button type="button" className="x-btn x-btn--primary x-btn--block" onClick={register} disabled={problems.length > 0 || state.at === "signing" || state.at === "pending"}>
+        <button type="button" className="k-btn k-btn--primary k-btn--block k-btn--lg" onClick={register} disabled={problems.length > 0 || state.at === "signing" || state.at === "pending"}>
           {state.at === "signing" ? "Sign in your wallet…" : state.at === "pending" ? "Registering on chain…" : "Register it from my wallet"}
         </button>
       )}
-      {state.at === "failed" ? <p className="x-create__err">{state.error}</p> : null}
-      <p className="x-create__note">One transaction on the ERC-8004 identity registry, a few cents of BNB. The agent is yours: its token is minted to this wallet.</p>
+      {state.at === "failed" ? <p className="k-note k-note--err" role="alert">{state.error}</p> : null}
+      <p className="k-small bd-create__note">One transaction on the ERC-8004 identity registry, a few cents of BNB. The agent is yours: its token is minted to this wallet.</p>
     </div>
   );
 }

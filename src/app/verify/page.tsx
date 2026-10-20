@@ -1,6 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { ArrowRight } from "lucide-react";
 import AppShell from "@/components/v2/shell/AppShell";
+import Agent from "@/components/characters/Agent";
+import Source from "@/components/x/Source";
+import TrustHead from "@/components/trust/TrustHead";
 import { readAgentIndex } from "@/lib/data/agents";
 import { MARKET_ADDRESS } from "@/lib/chain/market";
 import { DEPLOYMENTS } from "@/lib/chain/deployments";
@@ -14,205 +18,204 @@ export const metadata: Metadata = {
 export const revalidate = 600;
 
 /**
- * The way into the technical record.
- *
- * Rule 22 of the rebuild brief is that depth must not be destroyed, only
- * reorganised, and the archive it points at is the strongest work in this
- * project: the six-test assay with per-test evidence, the review-farming
- * autopsy, the public restatement of our own measurement error. None of it is
- * deleted or rewritten.
- *
- * It stays on the darker sheet it was designed for. That is a decision rather
- * than a leftover: a shopfront and a laboratory notebook are different kinds
- * of document and reading like different documents is correct. This page is
- * the door between them, and it explains each one in a sentence first so
- * nobody arrives at a page of basis points without knowing why.
+ * The checks, in one place: what we ask of every agent, against the chain,
+ * and what the registry looks like once you ask. The method in full (/assay),
+ * the live bench (/bench) and the record of our own mistakes sit one door away.
  */
 
-const CHECKS = [
-  {
-    q: "Does the endpoint it published actually answer?",
-    a: "We send a real request and record the status code and the latency, including when nothing comes back. Five agents in three hundred thousand have an endpoint the registry itself has verified.",
-  },
-  {
-    q: "Is the agent's wallet separate from its owner's?",
-    a: "When they are the same address, whoever owns the agent can move anything the agent holds. Most of this registry fails this.",
-  },
-  {
-    q: "Has the wallet done anything on chain?",
-    a: "Transaction count and balance. A wallet with no history has no behaviour to judge either way.",
-  },
-  {
-    q: "Has it touched the contracts its job requires?",
-    a: "A liquidity manager that has never called a position manager has not managed a position, whatever its description says.",
-  },
-  {
-    q: "Do its reviews come from independent addresses?",
-    a: "We counted every feedback record on the registry and mapped who left it. Thirty-two of the fifty-three reviewing addresses post at a rate consistent with self-review.",
-  },
-  {
-    q: "Is there a settled record to measure?",
-    a: "Returns can only be checked once positions have opened, closed and been marked. On almost every agent the honest answer is no, and we say so.",
-  },
-];
-
-const ARCHIVE = [
-  {
-    href: "/assay",
-    t: "The method, in full",
-    p: "Each of the six checks, what it weighs, what counts as evidence, and why absence of evidence is scored as absence rather than as a pass.",
-  },
-  {
-    href: "/bench",
-    t: "Run a check yourself",
-    p: "Put any agent id through the same tests, live, and watch each one resolve against the chain.",
-  },
-  {
-    href: "/evidence",
-    t: "The review-farming autopsy",
-    p: "Who leaves feedback on this registry, how often, and to whom. The reason we treat review counts as activity rather than quality.",
-  },
-  {
-    href: "/evidence",
-    t: "Evidence and sources",
-    p: "Where every figure on this site comes from, which endpoint served it, and when it was read.",
-  },
-  {
-    href: "/evidence/restatement",
-    t: "Where we were wrong",
-    p: "A measurement error we published, found ourselves, and corrected in public. Left up permanently.",
-  },
-  {
-    href: "/offices",
-    t: "The four categories, by evidence",
-    p: "What on-chain behaviour each category demands, and how many agents actually show it.",
-  },
-];
+const fmt = (n: number) => n.toLocaleString("en-GB");
 
 export default async function VerifyPage() {
   const index = await readAgentIndex().catch(() => null);
 
+  const CHECKS = [
+    {
+      name: "Identity",
+      job: "rebalancing",
+      q: "Does the endpoint it published actually answer?",
+      a: `We send a real request and record the status code and the latency, including when nothing comes back.${index ? ` ${fmt(index.registry.withEndpoint)} of ${fmt(index.registry.registered)} registered agents have an endpoint the registry itself has verified.` : ""}`,
+    },
+    {
+      name: "Custody",
+      job: "health-factor",
+      q: "Is the agent's wallet separate from its owner's?",
+      a: "When they are the same address, whoever owns the agent can move anything the agent holds. Most of this registry fails this.",
+    },
+    {
+      name: "Activity",
+      job: "yield-optimisation",
+      q: "Has the wallet done anything on chain?",
+      a: "Transaction count and balance. A wallet with no history has no behaviour to judge either way.",
+    },
+    {
+      name: "Capability",
+      job: "grid-trading",
+      q: "Has it touched the contracts its job requires?",
+      a: "A liquidity manager that has never called a position manager has not managed a position, whatever its description says.",
+    },
+    {
+      name: "Reputation",
+      job: "health-factor",
+      q: "Do its reviews come from independent addresses?",
+      a: "We mapped who leaves feedback on the registry. 3,000 records came from 32 wallets, and 99% of them from the 14 flagged as coordinated.",
+    },
+    {
+      name: "Performance",
+      job: "rebalancing",
+      q: "Is there a settled record to measure?",
+      a: "Returns can only be checked once positions have opened, closed and been marked. On almost every agent the honest answer is no, and we say so.",
+    },
+  ];
+
+  const max = index?.registry.registered || 1;
+  const FOUND = index
+    ? [
+        { l: "Registered on BNB Smart Chain", n: index.registry.registered },
+        { l: "Carry any feedback at all", n: index.registry.withFeedback },
+        { l: "We could file under one of the four jobs", n: index.counts.classified },
+        { l: "Have an endpoint the registry verified", n: index.registry.withEndpoint },
+      ]
+    : [];
+
   return (
     <AppShell>
-      <div className="m-wrap m-section--tight" style={{ paddingTop: "clamp(2rem,5vw,3.5rem)" }}>
-        <div className="m-cols m-cols--wide-narrow">
-          <div>
-            <h1 className="m-h1">How we check an agent</h1>
-            <p className="m-lede m-lede--wide" style={{ marginTop: "1rem" }}>
-              Anyone can register an agent on this chain and write anything they
-              like about it. Nobody has to prove any of it. So before an agent
-              appears in this marketplace we ask six questions about it and
-              publish every answer, including the unflattering ones.
-            </p>
-          </div>
-
-          <div className="m-panel">
-            <p className="m-label">What this found across the registry</p>
-            <dl className="m-kv" style={{ marginTop: "0.75rem" }}>
-              <div>
-                <dt>Agents registered on BNB Smart Chain</dt>
-                <dd className="m-fig">
-                  {index ? index.registry.registered.toLocaleString("en-GB") : "not read"}
-                </dd>
-              </div>
-              <div>
-                <dt>With an endpoint the registry verified</dt>
-                <dd className="m-fig">{index ? index.registry.withEndpoint : "not read"}</dd>
-              </div>
-              <div>
-                <dt>Carrying any feedback at all</dt>
-                <dd className="m-fig">
-                  {index ? index.registry.withFeedback.toLocaleString("en-GB") : "not read"}
-                </dd>
-              </div>
-              <div>
-                <dt>We could file under one of the four jobs</dt>
-                <dd className="m-fig">{index ? index.counts.classified : "not read"}</dd>
-              </div>
-            </dl>
-            <p className="m-note" style={{ marginTop: "1rem" }}>
-              The gap between the first row and the second is the entire reason
-              this marketplace exists. Read at{" "}
-              {index ? new Date(index.capturedAt).toUTCString() : "an unknown time"}.
-            </p>
-          </div>
-        </div>
-
-        <section className="m-section">
-          <div className="m-head">
-            <h2 className="m-h2">The six questions</h2>
-            <p className="m-head__note">
-              Asked of every agent, against the chain, not against its description.
-            </p>
-          </div>
-          <ol className="m-qs">
-            {CHECKS.map((c, i) => (
-              <li key={c.q} className="m-q">
-                <span className="m-q__n m-fig">{String(i + 1).padStart(2, "0")}</span>
-                <div>
-                  <h3 className="m-h3">{c.q}</h3>
-                  <p className="m-small" style={{ marginTop: "0.35rem", maxWidth: "60ch" }}>
-                    {c.a}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section className="m-section">
-          <div className="m-head">
-            <h2 className="m-h2">The full record</h2>
-            <p className="m-head__note">
-              These pages are the working notebook. They are denser than the rest of
-              the site and they are meant to be.
-            </p>
-          </div>
-          <div className="m-grid">
-            {ARCHIVE.map((a) => (
-              <Link key={a.href} href={a.href} className="m-card">
-                <h3 className="m-card__name" style={{ fontSize: "1.35rem" }}>
-                  {a.t}
-                </h3>
-                <p className="m-card__what">{a.p}</p>
-                <span className="m-card__foot">
-                  <span className="m-small" style={{ color: "var(--signal-deep)" }}>
-                    Open →
-                  </span>
-                </span>
+      <div className="tr">
+        <TrustHead
+          title="Six questions, asked of every agent."
+          lede="Anyone can register an agent here and write anything about it. Before one appears in the market, we ask the chain six questions about it and publish every answer, including the unflattering ones."
+          actions={
+            <>
+              <Link href="/bench" className="k-btn k-btn--primary">
+                Run them on any agent <ArrowRight size={16} className="k-btn__go" aria-hidden="true" />
               </Link>
-            ))}
+              <Link href="/assay" className="k-btn k-btn--ghost">
+                The method in full
+              </Link>
+            </>
+          }
+          art={
+            <figure className="tr-found k-panel k-panel--raised">
+              <span className="tr-found__who" aria-hidden="true">
+                <Agent job="health-factor" seed="verify-clerk" size={92} state="awake" slot="found" />
+              </span>
+              <figcaption className="tr-found__k">What this found across the registry</figcaption>
+              {FOUND.length ? (
+                <ul className="tr-found__rows">
+                  {FOUND.map((f, i) => (
+                    <li key={f.l} style={{ ["--w" as string]: `${Math.max(1.5, (Math.log10(f.n + 1) / Math.log10(max + 1)) * 100)}%`, ["--i" as string]: i }} data-last={i === FOUND.length - 1 ? "1" : undefined}>
+                      <span className="tr-found__n k-num">{fmt(f.n)}</span>
+                      <span className="tr-found__l">{f.l}</span>
+                      <span className="tr-found__bar" aria-hidden="true">
+                        <span />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="k-small">The registry index was not read on this request.</p>
+              )}
+              <Source kind="index" at={index?.capturedAt ?? null}>
+                Log scale. The gap between the first row and the last is the reason this market exists.
+              </Source>
+            </figure>
+          }
+        />
+
+        <section className="tr-sec tr-sec--first" aria-labelledby="tr-six">
+          <div className="k-wrap">
+            <div className="k-shead">
+              <div className="k-shead__copy">
+                <h2 className="k-h2" id="tr-six">
+                  Asked against the chain, not the description.
+                </h2>
+                <p className="k-body">Each answer is proven, failed, or not enough evidence. They are shown one by one on every agent&apos;s page, never added into a score.</p>
+              </div>
+            </div>
+            <ol className="tr-qs">
+              {CHECKS.map((c, i) => (
+                <li key={c.name} className="tr-q k-rise" data-job={c.job} style={{ ["--i" as string]: i + 2 }}>
+                  <span className="tr-q__n k-num" aria-hidden="true">
+                    {i + 1}
+                  </span>
+                  <span className="tr-q__name">{c.name}</span>
+                  <h3 className="tr-q__t">{c.q}</h3>
+                  <p className="tr-q__a">{c.a}</p>
+                </li>
+              ))}
+            </ol>
           </div>
         </section>
 
-        <section className="m-section--tight">
-          <div className="m-head">
-            <h2 className="m-h2">The contracts</h2>
-            <p className="m-head__note">Deployed, verified, and never quietly replaced.</p>
+        <section className="tr-sec" aria-labelledby="tr-deeper">
+          <div className="k-wrap">
+            <h2 className="k-h3 tr-sec__h" id="tr-deeper">
+              The working notebook
+            </h2>
+            <ul className="tr-links">
+              {[
+                { href: "/assay", t: "The method, in full", d: "What each check weighs and what counts as evidence." },
+                { href: "/bench", t: "Run a check yourself", d: "Any agent id, the same checks, live." },
+                { href: "/evidence", t: "The review-farming autopsy", d: "Who writes the registry's feedback, and to whom." },
+                { href: "/evidence/restatement", t: "Where we were wrong", d: "A measurement error we found, published and left up." },
+              ].map((l) => (
+                <li key={l.href + l.t}>
+                  <Link href={l.href} className="tr-link">
+                    <span className="tr-link__t">
+                      {l.t} <ArrowRight size={15} className="tr-door__go" aria-hidden="true" />
+                    </span>
+                    <span className="tr-link__d">{l.d}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
-          <dl className="m-kv">
-            {DEPLOYMENTS.map((d) => (
-              <div key={d.address}>
-                <dt>
-                  {d.label} · {d.status === "canonical" ? "in use" : "superseded"}
-                </dt>
-                <dd className="m-mono">
-                  <a
-                    className="m-link"
-                    href={`https://bscscan.com/address/${d.address}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {d.address}
-                  </a>
-                </dd>
+        </section>
+
+        <section className="tr-sec" aria-labelledby="tr-markets">
+          <div className="k-wrap">
+            <div className="k-shead">
+              <div className="k-shead__copy">
+                <h2 className="k-h3" id="tr-markets">
+                  The market contracts
+                </h2>
+                <p className="k-body">Deployed, verified, and never quietly replaced. Earlier contracts stay readable, and their results stay counted.</p>
               </div>
-            ))}
-          </dl>
-          <p className="m-note" style={{ marginTop: "1rem", maxWidth: "62ch" }}>
-            New jobs open on {MARKET_ADDRESS}. Earlier contracts stay readable and
-            their results stay counted, including the grid mandate that lost 21%.
-          </p>
+            </div>
+            <div className="k-table-wrap">
+              <table className="k-table">
+                <thead>
+                  <tr>
+                    <th>Contract</th>
+                    <th>State</th>
+                    <th>Address</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {DEPLOYMENTS.map((d) => (
+                    <tr key={d.address}>
+                      <td className="k-table__main">
+                        Market {d.label}
+                        <div className="k-small">{d.note}</div>
+                      </td>
+                      <td>{d.status === "canonical" ? <span className="tr-v tr-v--pass">in use</span> : <span className="tr-v tr-v--none">superseded</span>}</td>
+                      <td>
+                        <a className="k-mono tr-addr" href={`https://bscscan.com/address/${d.address}`} target="_blank" rel="noreferrer">
+                          {d.address}
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="k-small tr-sec__more">
+              New jobs open on <span className="k-mono">{MARKET_ADDRESS}</span>. Every other address we use is on{" "}
+              <Link className="k-link" href="/contracts">
+                Contracts
+              </Link>
+              .
+            </p>
+          </div>
         </section>
       </div>
     </AppShell>
