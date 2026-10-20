@@ -54,6 +54,30 @@
 @keyframes mc-gneedle{0%,6%{transform:rotate(0)}30%,46%{transform:rotate(-96deg)}52%{transform:rotate(14deg)}58%{transform:rotate(-5deg)}64%,100%{transform:rotate(0)}}
 @media (prefers-reduced-motion: reduce){.mc *{animation:none!important}}
 
+
+/*
+  The continuous motion (bob, breathing, dozing) runs on the drawing as a whole,
+  which the compositor moves without repainting, instead of on parts inside the
+  SVG, which Chrome repaints every frame: on the home page that kept a phone's
+  main thread a fifth busy while nothing happened. What stays inside are the
+  brief moments (a blink, a hop, a job's working loop) that hold still most of
+  the time, and the dozing z's, stepped so they redraw a few times a second.
+*/
+.mc .a-bob, .mc .a-bob2, .mc .a-shbob, .mc .a-breathe, .mc .a-doze { animation: none; }
+.mc .a-z, .mc .a-z2 { animation-timing-function: steps(10, end); }
+.k-char[data-on] > svg { transform-origin: 50% 88%; will-change: transform; animation-delay: var(--mc-d, 0s); }
+.k-char[data-on] > svg.mc-awake { animation: k-bob 1.8s cubic-bezier(.45, 0, .55, 1) infinite var(--mc-d, 0s); }
+.k-char[data-on] > svg.mc-leashed { animation: k-bob 2.6s cubic-bezier(.45, 0, .55, 1) infinite var(--mc-d, 0s); }
+.k-char[data-on] > svg.mc-ready { animation: k-breathe 3.6s ease-in-out infinite var(--mc-d, 0s); }
+.k-char[data-on] > svg.mc-dozing { animation: k-doze 5s ease-in-out infinite var(--mc-d, 0s); }
+@keyframes k-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3%); } }
+@keyframes k-breathe { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.012, 1.03); } }
+@keyframes k-doze { 0%, 100% { transform: scale(1, 1); } 45% { transform: scale(1.025, 1.05); } }
+@media (prefers-reduced-motion: reduce) { .k-char > svg { animation: none !important; } }
+
+/* Still until on screen and the page is idle (components/characters/clock.ts). */
+.k-char:not([data-on]) * { animation: none !important; }
+
 /* The wrapper: a fixed box so a drawing never shifts layout while it bobs. */
 .k-char { display: inline-block; flex: none; line-height: 0; vertical-align: middle; }
 .k-char > svg { display: block; width: 100%; height: 100%; overflow: visible; }
