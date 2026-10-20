@@ -38,6 +38,10 @@ export interface MarketCard {
   /** Its answer against MANDATE's own chain reading, when checked. */
   checked: string | null;
   hires: number;
+  /** Minutes since it last answered our call, as the hire law read it; null when it never has. */
+  answeredMinutesAgo: number | null;
+  /** What it says it does, in its own words from its registration. A claim, not a check. */
+  what: string | null;
   /** Median seconds from payment to delivery on chain, over how many jobs. */
   delivers: { seconds: number; jobs: number } | null;
   page: string;
@@ -45,12 +49,10 @@ export interface MarketCard {
 }
 
 export interface MarketAgent extends MarketCard {
-  what: string | null;
   owner: string | null;
   protocols: string[];
   /** Whether it answered when last called. */
   liveness: Listing["liveness"];
-  answeredMinutesAgo: number | null;
   rails: Rail[];
   settled: number;
 }
@@ -73,6 +75,8 @@ function card(l: Listing, v: HireVerdict): MarketCard {
     tryFree: tryFreeKind(l, v),
     checked: l.checked?.verdict ?? null,
     hires: l.hires,
+    answeredMinutesAgo: v.answeredMinutesAgo,
+    what: l.what,
     delivers: delivers ? { seconds: delivers.seconds, jobs: delivers.jobs } : null,
     page: `${SITE}/agents/${l.tokenId}`,
     hire: `${SITE}${hireHref(l.tokenId, v) ?? `/agents/${l.tokenId}`}`,
@@ -115,11 +119,9 @@ export async function marketAgent(tokenId: string): Promise<MarketAgent | null> 
   const v = hirePath(l);
   return {
     ...card(l, v),
-    what: l.what,
     owner: l.owner,
     protocols: l.protocols,
     liveness: l.liveness,
-    answeredMinutesAgo: v.answeredMinutesAgo,
     rails: v.rails,
     settled: l.settled,
   };

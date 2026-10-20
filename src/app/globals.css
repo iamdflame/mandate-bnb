@@ -1,3 +1,5 @@
+/* Legacy sheet, kept in the lowest cascade layer while pages move to src/styles (the renovation). New styles win without specificity fights; this file is deleted once no page uses it. */
+@layer legacy {
 /**
  * MANDATE — Assay Office for Autonomous Agents
  *
@@ -4142,3 +4144,5 @@ p code {
 .m-table tr:last-child td { border-bottom: 0; }
 .m-revoke { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
 .m-revoke .m-input { max-width: 14rem; min-width: 0; }
+
+}

@@ -1,20 +1,17 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowRight, Search } from "lucide-react";
-import { latestReceipt } from "@/lib/market/receipt";
+import { ArrowRight, Check, Search } from "lucide-react";
 import AppShell from "@/components/v2/shell/AppShell";
-import AgentTile from "@/components/x/AgentTile";
-import AgentArtwork from "@/components/x/AgentArtwork";
-import Guilloche from "@/components/x/Guilloche";
-import ProofCard from "@/components/x/ProofCard";
-import { priceUsd } from "@/components/x/Price";
-import { CATEGORIES, CATEGORY_LABEL, type Category } from "@/lib/config";
-import { censusAge, listings } from "@/lib/market/listing";
-import { hireCounts } from "@/lib/market/hires";
-import { PRED, applyQuery, EMPTY, categoryStats } from "@/lib/market/catalogue";
-import { funnel } from "@/lib/market/funnel";
-import { live } from "@/lib/data/live";
-import { withTimeout } from "@/lib/cache";
+import Agent from "@/components/characters/Agent";
+import { anchors } from "@/components/characters/engine";
+import InView from "@/components/k/InView";
+import { CATEGORY_LABEL, type Category } from "@/lib/config";
+import { LEASH_POLICIES, LIMITS } from "@/lib/leash/policy";
+import { viewHome } from "@/lib/view/home";
+import { viewJobs, viewMarket } from "@/lib/view/market";
+import { viewGraveCounts } from "@/lib/view/trust";
+import { answeredAgo, poseOf } from "@/lib/view/state";
+import type { MarketCard } from "@/lib/market/market-api";
 
 export const metadata: Metadata = {
   title: "MANDATE | BNB Smart Chain Agent Marketplace",
@@ -24,281 +21,472 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 export const maxDuration = 60;
 
-/** Each job in a line. */
-const JOBS: Record<Category, string> = {
-  rebalancing: "Keep liquidity in range",
-  "grid-trading": "Buy low, sell high in a band",
-  "yield-optimisation": "Move idle cash to the best rate",
-  "health-factor": "Act before liquidation",
+/** Mandate's own four, the founders of each job's family. */
+const FOUNDERS: { id: string; job: Category; name: string; verb: string }[] = [
+  { id: "344119", job: "rebalancing", name: "Range-1", verb: "keeps a position in range" },
+  { id: "344121", job: "grid-trading", name: "Grid-1", verb: "buys low, sells high" },
+  { id: "344122", job: "yield-optimisation", name: "Yield-1", verb: "moves idle cash to a better rate" },
+  { id: "344123", job: "health-factor", name: "Guard-1", verb: "acts before liquidation" },
+];
+
+/** Each job in the words a person would use, and the question that routes to it. */
+const JOB_COPY: Record<Category, { want: string; line: string; ask: string }> = {
+  rebalancing: { want: "Keep my LP in range", line: "Your PancakeSwap position drifts out of range and stops earning. An agent moves it back.", ask: "Keep my LP in range" },
+  "grid-trading": { want: "Grid trade BNB", line: "Buy a little lower, sell a little higher, level by level, inside a band you choose.", ask: "Grid trade BNB" },
+  "yield-optimisation": { want: "Earn on idle stablecoins", line: "Idle USDT earns nothing. An agent supplies it where the rate is, credited to your wallet.", ask: "Find better stablecoin yield" },
+  "health-factor": { want: "Protect my Venus loan", line: "Before your loan can be liquidated, an agent repays a little of it from your own wallet.", ask: "Protect my Venus loan" },
 };
 
-/** What people ask for, each routed to its job by the search (lib/market/intent). */
-const ASKS = ["Protect my Venus loan", "Keep my LP in range", "Find better stablecoin yield", "Grid trade BNB"];
-
-/*
-  How an escrowed hire is made, step by step. The steps a transaction proves
-  carry the latest hire's own transaction, so the explainer is also the proof.
-*/
-const HOW: { k: string; t: string; d: string; tx?: string }[] = [
-  { k: "Quote", t: "It prices your exact task", d: "Signed by the agent's own wallet, valid for 15 minutes. Free, before any wallet opens." },
-  { k: "Escrow", t: "You fund the job", d: "Exactly that price goes into BNB Chain's ERC-8183 contract: not to the agent, and not to us.", tx: "Paid into escrow" },
-  { k: "Delivery", t: "It delivers on chain", d: "With a hash of its answer, so anyone can check the file. Nothing by the deadline, and you take the money back.", tx: "Delivered on chain" },
-  { k: "Rating", t: "You rate it", d: "From your own wallet to the ERC-8004 registry, tied to the hire.", tx: "Rated by the buyer" },
-  { k: "Settlement", t: "It is paid", d: "Seven days after it delivers, unless you dispute." },
-];
-
-const ONLY = [
-  { href: "/standard", t: "Every answer checked", d: "Each agent's answer compared with our own reading of the chain, field by field, and published." },
-  { href: "/leash", t: "Agents on your own wallet", d: "A daily cap you set, calls it may make, and a one-tap revoke on chain." },
-  { href: "/hire/344119", t: "Jobs with capital", d: "An agent works your capital for a term, bonded against a benchmark, settled every epoch." },
-  { href: "/alerts", t: "Free liquidation alerts", d: "A Telegram message before your Venus loan can be liquidated." },
-];
-
-const since = (minutes: number | null) => (minutes === null ? "not yet" : minutes < 60 ? `${Math.max(1, minutes)} min` : `${Math.round(minutes / 60)} h`);
+const fmt = (n: number) => n.toLocaleString("en-US");
+const short = (tx: string) => `${tx.slice(0, 6)}…${tx.slice(-4)}`;
+const since = (iso: string | null) => {
+  if (!iso) return null;
+  const m = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000));
+  return m < 60 ? `${m} min ago` : m < 2880 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
+};
 
 /**
- * The front door. A person arrives wanting something done, so the first thing
- * they can do is say what; the campaign most of them came for is the second.
- * Beside it, the latest real hire, every step a transaction: the promise and
- * its proof on one screen. Then the figures, how a hire is made, the four
- * jobs and agents ready to work.
+ * The front door. The agents themselves are on the stage: Mandate's four, each
+ * posed by what the chain and our last call show, and the latest real hire
+ * holding one of them on the green leash. Below: how 376,000 registrations
+ * come down to the few you can hire, the four jobs, the agents ready now, how
+ * a hire works with its own transactions, the leash, and what failed.
  */
 export default async function Home() {
-  await live();
-  const hc = await hireCounts();
-  const all = listings(hc.byTokenId, hc.settled, hc.delivery);
-  const stages = await funnel(all);
-  const registered = stages.find((s) => s.key === "registered")?.n ?? null;
-  const hireable = all.filter(PRED.hireable);
-  const ready = applyQuery(hireable, EMPTY).shown.slice(0, 6);
-  const byCat = categoryStats(all);
-  const census = censusAge();
-  const receipt = await withTimeout(latestReceipt().catch(() => null), 6_000);
-  const txOf = (label?: string) => (label ? (receipt?.steps.find((s) => s.label === label)?.tx ?? null) : null);
+  const [home, market, jobs, graves] = await Promise.all([viewHome(), viewMarket({ view: "ready", limit: 50 }), viewJobs(), viewGraveCounts()]);
+  const ready = market.agents;
+  const byId = new Map(ready.map((a) => [a.tokenId, a]));
+  const registered = home.stages.find((s) => s.key === "registered");
+  const hireable = home.stages.find((s) => s.key === "hireable")?.n ?? market.ready;
+  const r = home.receipt;
+  const hiredId = r?.tokenId ?? "344119";
+
+  // The stage, in a 640 x 560 box: founders on a lit floor, the latest hire holding one on the leash.
+  const SPOTS: Record<string, { x: number; y: number; size: number; z: number }> = {
+    "344121": { x: 36, y: 236, size: 168, z: 1 },
+    "344122": { x: 418, y: 176, size: 150, z: 1 },
+    "344119": { x: 178, y: 286, size: 226, z: 3 },
+    "344123": { x: 446, y: 330, size: 172, z: 2 },
+  };
+  const hired = SPOTS[hiredId] ?? SPOTS["344119"];
+  const hiredJob = FOUNDERS.find((f) => f.id === hiredId)?.job ?? "rebalancing";
+  const ring = anchors({ job: hiredJob, seed: hiredId, state: "leashed", house: true, size: hired.size }).ring as [number, number];
+  const collar = { x: hired.x + ((ring[0] - 8) / 104) * hired.size, y: hired.y + ((ring[1] - 10) / 104) * hired.size };
+  const leashFrom = { x: 236, y: 178 };
+  const leash = `M ${leashFrom.x} ${leashFrom.y} C ${leashFrom.x + 70} ${leashFrom.y + 170}, ${collar.x + 190} ${collar.y + 30}, ${collar.x} ${collar.y}`;
+
+  const featured = ready.slice(0, 8);
 
   return (
     <AppShell>
-      <section className="x-hero2">
-        <div className="x-wrap x-hero2__grid">
-          <div className="x-hero2__copy">
-            <Link href="/quest" className="x-hero2__pill">
-              <span className="x-strip__dot" aria-hidden="true" />
-              BNB Chain Set and Earn<span className="x-hero2__pill-when"> · live until 5 November</span>
-              <ArrowRight size={14} aria-hidden="true" />
-            </Link>
-            <h1 className="x-home__h">
-              Hire an agent
-              <br />
-              you can check.
+      {/* ---------------------------------------------------------------- the front door */}
+      <section className="h-hero" aria-labelledby="h-hero">
+        <div className="h-hero__pool" aria-hidden="true" />
+        <div className="k-wrap k-wrap--wide h-hero__grid">
+          <div className="h-hero__copy">
+            <p className="h-live k-rise" style={{ ["--i" as string]: 0 }}>
+              <span className="k-dot k-dot--live" aria-hidden="true" />
+              <span>
+                <strong className="k-num">{hireable}</strong> agents ready to hire now
+              </span>
+              {home.censusMinutes !== null ? <span className="h-live__age">we called every agent {home.censusMinutes < 60 ? `${Math.max(1, home.censusMinutes)} min` : `${Math.round(home.censusMinutes / 60)} h`} ago</span> : null}
+            </p>
+            <h1 className="k-mega h-hero__h k-rise" id="h-hero" style={{ ["--i" as string]: 1 }}>
+              Hire an agent you can check.
             </h1>
-            <p className="x-home__sub">The BNB Chain agent marketplace where every agent is checked on chain before you hire it, and can only take what you sign.</p>
+            <p className="k-lede h-hero__lede k-rise" style={{ ["--i" as string]: 2 }}>
+              Every AI agent on BNB Chain is called, read and checked against the chain before you can hire it. It can only take what you sign, and you can take it back.
+            </p>
 
-            <form className="x-searchbar x-searchbar--lg x-hero2__ask" action="/agents" method="get" role="search">
-              <Search size={20} className="x-searchbar__i" aria-hidden="true" />
-              <label htmlFor="home-q" className="x-sr">
+            <form className="h-ask k-rise" style={{ ["--i" as string]: 3 }} action="/agents" method="get" role="search">
+              <label htmlFor="home-q" className="k-sr">
                 What do you need done?
               </label>
-              <input id="home-q" name="q" placeholder="What do you need done?" autoComplete="off" className="x-searchbar__in" />
-              <button type="submit" className="x-btn">
-                Find agents
-              </button>
+              <div className="k-field h-ask__field">
+                <Search size={20} aria-hidden="true" />
+                <input id="home-q" name="q" placeholder="What do you need done?" autoComplete="off" />
+                <button type="submit" className="k-btn k-btn--primary">
+                  Find an agent <ArrowRight size={16} className="k-btn__go" aria-hidden="true" />
+                </button>
+              </div>
+              <ul className="h-ask__jobs" aria-label="Or start from a job">
+                {jobs.map((j) => {
+                  const f = FOUNDERS.find((x) => x.job === j.job)!;
+                  return (
+                    <li key={j.job}>
+                      <Link href={`/agents?q=${encodeURIComponent(JOB_COPY[j.job].ask)}`} className="h-job-chip" data-job={j.job}>
+                        <Agent job={j.job} seed={f.id} house size={30} state="ready" slot="chip" />
+                        <span>{JOB_COPY[j.job].want}</span>
+                        <span className="h-job-chip__n k-num">{j.ready}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
             </form>
-            <ul className="x-hero2__asks" aria-label="Or start from one of these">
-              {ASKS.map((a) => (
-                <li key={a}>
-                  <Link href={`/agents?q=${encodeURIComponent(a)}`} className="x-chip">
-                    {a}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-
-            <div className="x-home__cta">
-              <Link href="/quest" className="x-btn x-btn--primary x-btn--lg">
-                Start Set and Earn
-              </Link>
-              <Link href="/check" className="x-btn x-btn--lg">
-                Check your agent
-              </Link>
-            </div>
-            <p className="x-hero2__note">No wallet needed to look around. Every price, answer and record is public.</p>
+            <p className="k-small h-hero__note k-rise" style={{ ["--i" as string]: 4 }}>
+              No wallet needed to look around. You only sign at the moment you hire.
+            </p>
           </div>
 
-          <div className="x-hero2__art">
-            <Guilloche className="x-hero2__rosette" />
-            {receipt ? (
-              <ProofCard receipt={receipt} />
-            ) : (
-              <div className="x-proofcard">
-                <p className="x-proofcard__k">Ready to hire right now</p>
-                <p className="x-proofcard__agent">{hireable.length} agents</p>
-                <p className="x-proofcard__note">Each one answered our last call, priced a job we can pay, and has no failure on record.</p>
-              </div>
-            )}
+          {/* The stage */}
+          <div className="h-stage" aria-label="Mandate's four agents, and the latest hire">
+            <div className="h-stage__box">
+              <div className="h-stage__floor" aria-hidden="true" />
+              <svg className="h-stage__leash" viewBox="0 0 640 560" aria-hidden="true" focusable="false">
+                <path className="h-stage__case" d={leash} pathLength={1} />
+                <path d={leash} pathLength={1} />
+                <circle cx={collar.x} cy={collar.y} r="4.5" />
+              </svg>
+              {FOUNDERS.map((f, i) => {
+                const s = SPOTS[f.id];
+                const a = byId.get(f.id);
+                const state = f.id === hiredId ? "leashed" : a ? poseOf(a) : "dozing";
+                return (
+                  <figure key={f.id} className="h-founder" data-job={f.job} style={{ left: `${(s.x / 640) * 100}%`, top: `${(s.y / 560) * 100}%`, width: `${(s.size / 640) * 100}%`, zIndex: s.z, ["--i" as string]: i }}>
+                    <Link href={`/agents/${f.id}`} className="h-founder__link" aria-label={`${f.name}, ${CATEGORY_LABEL[f.job]}`}>
+                      <Agent job={f.job} seed={f.id} house size={s.size} state={state} slot="stage" omit={f.id === hiredId ? ["leash"] : undefined} />
+                    </Link>
+                    <figcaption className="h-founder__tag">
+                      <span className="h-founder__name">{f.name}</span>
+                      <span className="h-founder__state">
+                        <span className={`k-dot ${a && poseOf(a) === "awake" ? "k-dot--live" : a?.hireable ? "k-dot--ready" : ""}`} aria-hidden="true" />
+                        {f.id === hiredId ? "on a buyer's leash" : (answeredAgo(a?.answeredMinutesAgo) ?? "not answering")}
+                      </span>
+                    </figcaption>
+                  </figure>
+                );
+              })}
+
+              {r ? (
+                <article className="h-receipt k-panel k-panel--float" aria-label="The latest hire">
+                  <p className="h-receipt__k">
+                    <span className="k-dot k-dot--live" aria-hidden="true" /> Latest hire, {since(r.at) ?? "recently"}
+                  </p>
+                  <p className="h-receipt__who">
+                    <Link href={`/agents/${r.tokenId}`}>{r.agent}</Link>
+                    <span className="h-receipt__price k-num">{r.budget}</span>
+                  </p>
+                  <ol className="h-receipt__steps">
+                    {r.steps.map((s, i) => (
+                      <li key={s.tx} style={{ ["--i" as string]: i }}>
+                        <span className="h-receipt__tick" aria-hidden="true">
+                          <Check size={12} strokeWidth={3} />
+                        </span>
+                        <span>{s.label}</span>
+                        <a className="k-mono h-receipt__tx" href={`https://bscscan.com/tx/${s.tx}`} target="_blank" rel="noreferrer" aria-label={`${s.label} transaction on BscScan`}>
+                          {short(s.tx)}
+                        </a>
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="h-receipt__note">
+                    {r.deliveredInSeconds !== null ? `Delivered ${r.deliveredInSeconds} s after payment. ` : ""}
+                    {r.team ? "Paid from one of our own wallets: a real mainnet hire, not counted as a customer." : r.outside ? "Paid by a buyer from their own wallet." : ""}
+                  </p>
+                </article>
+              ) : null}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* The figures, each read now, never typed in. */}
-      <section className="x-wrap x-measured" aria-labelledby="h-measured">
-        <p className="x-eyebrow" id="h-measured">
-          Measured, not claimed
-        </p>
-        <dl className="x-measured__row">
-          <div>
-            <dt>you can hire right now</dt>
-            <dd className="x-measured__fig x-measured__fig--lead">{hireable.length}</dd>
+      {/* ---------------------------------------------------------------- the descent */}
+      <section className="k-section h-descent" aria-labelledby="h-descent">
+        <div className="k-wrap">
+          <div className="h-head">
+            <h2 className="k-h2" id="h-descent">
+              {registered?.n ? fmt(registered.n) : "Hundreds of thousands of"} agents registered.
+              <br />
+              <span className="h-descent__few">{hireable} you can hire right now.</span>
+            </h2>
+            <p className="k-body">Anyone can register an agent for the price of gas, and almost none of them answer. We call every one, read what it does on chain, and only offer the ones that answer and can be paid. Every step is a count you can check.</p>
           </div>
-          <div>
-            <dt>agents listed in the four jobs</dt>
-            <dd className="x-measured__fig">{all.length.toLocaleString("en-US")}</dd>
-          </div>
-          <div>
-            <dt>on the ERC-8004 registry</dt>
-            <dd className="x-measured__fig">{registered === null ? "…" : registered.toLocaleString("en-US")}</dd>
-          </div>
-          <div>
-            <dt>since our last check of every agent</dt>
-            <dd className="x-measured__fig">
-              <span className="x-status__dot" style={{ background: census.stale ? "var(--c-text-3)" : "var(--c-ok)" }} aria-hidden="true" /> {since(census.minutes)}
-            </dd>
-          </div>
-        </dl>
+          <InView as="ol" className="h-steps">
+            {home.stages.map((s, i) => {
+              const max = registered?.n ?? 1;
+              const w = s.n ? Math.max(1.2, (Math.log10(s.n + 1) / Math.log10(max + 1)) * 100) : 0;
+              return (
+                <li key={s.key} className="h-step" data-key={s.key} data-empty={s.n === null ? "1" : undefined} style={{ ["--w" as string]: `${w}%`, ["--i" as string]: i }}>
+                  <div className="h-step__n k-num">{s.n === null ? "not measured" : `${s.key === "readable" || s.key === "reachable" ? "≥" : ""}${fmt(s.n)}`}</div>
+                  <div className="h-step__bar" aria-hidden="true">
+                    <span />
+                  </div>
+                  <div className="h-step__t">
+                    <span className="h-step__label">{s.label}</span>
+                    <span className="k-src">{s.source}</span>
+                  </div>
+                  {s.key === "hireable" ? (
+                    <div className="h-step__crowd" aria-hidden="true">
+                      {ready.slice(0, 28).map((a, k) => (
+                        <Agent key={a.tokenId} job={a.job} seed={a.tokenId} size={28} state={poseOf(a)} house={a.ours} slot={`d${k}`} />
+                      ))}
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
+          </InView>
+          <p className="k-small h-descent__note">Bars are on a log scale, or every bar after the first would be invisible. A step we do not measure is left empty, never drawn as zero.</p>
+        </div>
       </section>
 
-      <section className="x-wrap x-section" id="how" aria-labelledby="h-how">
-        <p className="x-eyebrow">ERC-8183 escrow · ERC-8004 ratings</p>
-        <h2 className="x-home__h2" id="h-how">
-          How a hire is made
-        </h2>
-        <ol className="x-how">
-          {HOW.map((s, i) => {
-            const tx = txOf(s.tx);
-            return (
-              <li key={s.k} className="x-how__step">
-                <span className="x-how__k">
-                  <span className="x-how__n">{i + 1}</span>
-                  {s.k}
+      {/* ---------------------------------------------------------------- the four jobs */}
+      <section className="k-section k-section--tight" aria-labelledby="h-jobs">
+        <div className="k-wrap">
+          <div className="h-head h-head--row">
+            <h2 className="k-h2" id="h-jobs">
+              Four jobs, done by agents.
+            </h2>
+            <Link href="/agents" className="k-btn k-btn--ghost">
+              All {market.ready} ready <ArrowRight size={16} className="k-btn__go" aria-hidden="true" />
+            </Link>
+          </div>
+          <ul className="h-jobs">
+            {jobs.map((j) => {
+              const f = FOUNDERS.find((x) => x.job === j.job)!;
+              return (
+                <li key={j.job}>
+                  <Link href={`/agents?category=${j.job}`} className="h-jobtile" data-job={j.job}>
+                    <span className="h-jobtile__art" aria-hidden="true">
+                      <span className="h-jobtile__rest">
+                        <Agent job={j.job} seed={f.id} house size={150} state="ready" slot="tile" />
+                      </span>
+                      <span className="h-jobtile__work">
+                        <Agent job={j.job} seed={f.id} house size={150} state="working" slot="tilew" />
+                      </span>
+                    </span>
+                    <span className="h-jobtile__body">
+                      <span className="h-jobtile__t">{j.label}</span>
+                      <span className="h-jobtile__d">{JOB_COPY[j.job].line}</span>
+                      <span className="h-jobtile__f">
+                        <span className="k-num">
+                          <strong>{j.ready}</strong> of {j.listed} ready
+                        </span>
+                        {j.from ? <span className="k-num">from {j.from}</span> : null}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------------- ready now */}
+      <section className="k-section k-section--tight" aria-labelledby="h-ready">
+        <div className="k-wrap">
+          <div className="h-head h-head--row">
+            <div className="k-stack" style={{ ["--gap" as string]: "10px" }}>
+              <h2 className="k-h2" id="h-ready">
+                Ready to work.
+              </h2>
+              <p className="k-body">Each one answered our call in the last day and has a price we can pay. Its face is its own; its pose is what our last call found.</p>
+            </div>
+            <Link href="/agents" className="k-btn">
+              Browse all {market.ready} <ArrowRight size={16} className="k-btn__go" aria-hidden="true" />
+            </Link>
+          </div>
+          <ul className="h-cards">
+            {featured.map((a, i) => (
+              <li key={a.tokenId}>
+                <AgentCard a={a} i={i} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------------- how a hire works */}
+      <section className="k-section h-how" aria-labelledby="h-how">
+        <div className="k-wrap">
+          <div className="h-head">
+            <h2 className="k-h2" id="h-how">
+              Your money waits in escrow,
+              <br /> not with the agent, and not with us.
+            </h2>
+            <p className="k-body">An escrowed hire runs on BNB Chain&apos;s own contract (ERC-8183). If the agent delivers nothing by its deadline, the money comes back to you.</p>
+          </div>
+          <InView as="ol" className="h-flow">
+            {[
+              { t: "It prices your exact task", d: "Signed by the agent's own wallet, valid for 15 minutes. Free, before any wallet opens.", tx: null },
+              { t: "You fund the job", d: "Exactly that price goes into escrow. Your wallet asks you once.", tx: r?.steps.find((s) => /escrow/i.test(s.label))?.tx ?? null },
+              { t: "It delivers on chain", d: "With a hash of its answer, so anyone can check the file it served.", tx: r?.steps.find((s) => /deliver/i.test(s.label))?.tx ?? null },
+              { t: "It is paid, or you are refunded", d: "Seven days after it delivers, unless you dispute. Nothing by the deadline, and you take it back.", tx: null },
+            ].map((s, i) => (
+              <li key={s.t} className="h-flow__step" style={{ ["--i" as string]: i }}>
+                <span className="h-flow__n k-num" aria-hidden="true">
+                  {i + 1}
                 </span>
-                <p className="x-how__t">{s.t}</p>
-                <p className="x-how__d">{s.d}</p>
-                {tx ? (
-                  <a className="x-how__tx x-link x-mono" href={`https://bscscan.com/tx/${tx}`} target="_blank" rel="noreferrer">
-                    Latest: {tx.slice(0, 6)}…{tx.slice(-4)}
+                <h3 className="k-h3">{s.t}</h3>
+                <p className="k-small h-flow__d">{s.d}</p>
+                {s.tx ? (
+                  <a className="h-flow__tx k-mono" href={`https://bscscan.com/tx/${s.tx}`} target="_blank" rel="noreferrer">
+                    Latest: {short(s.tx)}
                   </a>
                 ) : null}
               </li>
-            );
-          })}
-        </ol>
-        <p className="x-ad-src">
-          Before any of it, we call every agent, read its record on chain and check its answers against our own reading.{" "}
-          <Link className="x-link" href="/standard">
-            How we check
-          </Link>
-        </p>
-      </section>
-
-      <section className="x-wrap x-section--tight" aria-labelledby="h-jobs">
-        <h2 className="x-home__h2" id="h-jobs">
-          Four jobs agents do on BNB Chain
-        </h2>
-        <ul className="x-jobs2">
-          {CATEGORIES.map((c) => {
-            const s = byCat[c];
-            return (
-              <li key={c}>
-                <Link href={`/agents?category=${c}`} className="x-jobs2__tile">
-                  <span className="x-jobs2__art">
-                    <AgentArtwork category={c} seed={`job:${c}`} shape="wide" />
-                  </span>
-                  <span className="x-jobs2__body">
-                    <span className="x-jobs2__t">{CATEGORY_LABEL[c]}</span>
-                    <span className="x-jobs2__d">{JOBS[c]}</span>
-                    <span className="x-jobs2__f">
-                      <span>{s.hireable} hireable</span>
-                      {s.from !== null ? <span>from {priceUsd(s.from)}</span> : null}
-                    </span>
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-
-      <section className="x-wrap x-section">
-        <div className="x-head">
-          <h2 className="x-home__h2">Ready to work</h2>
-          <Link href="/agents" className="x-head__link">
-            All {hireable.length} <ArrowRight size={14} aria-hidden="true" />
-          </Link>
-        </div>
-        {ready.length ? (
-          <div className="x-grid x-grid--3">
-            {ready.map((l) => (
-              <AgentTile key={l.tokenId} l={l} />
             ))}
-          </div>
-        ) : (
-          <p className="x-muted">No agent can be hired right now. Every agent page says why.</p>
-        )}
+          </InView>
+          <p className="k-small h-how__more">
+            There are four ways to hire here: pay per answer, an escrowed job, an agent on your own wallet, or a job with capital.{" "}
+            <Link className="k-link" href="/help">
+              How each one works
+            </Link>
+          </p>
+        </div>
       </section>
 
-      {/* What no other marketplace here does. */}
-      <section className="x-wrap x-section--tight">
-        <h2 className="x-home__h2">Only on MANDATE</h2>
-        <ul className="x-only">
-          {ONLY.map((o) => (
-            <li key={o.href}>
-              <Link href={o.href} className="x-only__card">
-                <span className="x-only__t">{o.t}</span>
-                <span className="x-only__d">{o.d}</span>
+      {/* ---------------------------------------------------------------- the leash */}
+      <section className="k-section h-leash" aria-labelledby="h-leash">
+        <div className="k-wrap k-split">
+          <div className="h-leash__scene" aria-hidden="true">
+            <div className="h-leash__floor" />
+            <Agent job="health-factor" seed="344123" house size={260} state="leashed" slot="leash" />
+          </div>
+          <div className="k-stack" style={{ ["--gap" as string]: "22px" }}>
+            <h2 className="k-h2" id="h-leash">
+              Put an agent on your own wallet, on a leash you hold.
+            </h2>
+            <p className="k-body">Guard-1 watches your Venus loan and repays a little of it before it can be liquidated. It acts from your own passkey wallet, inside limits you set, and one tap takes the key back.</p>
+            <dl className="h-label k-panel k-panel--raised" aria-label="What Guard-1 may do on your wallet">
+              <div className="h-label__row">
+                <dt>Can touch</dt>
+                <dd>{LEASH_POLICIES["guard-1"].calls.map((c) => c.words).join("; ")}</dd>
+              </div>
+              <div className="h-label__row">
+                <dt>Cap</dt>
+                <dd>
+                  Up to a daily limit you choose, {LIMITS.minDailyUsdt} to {LIMITS.maxDailyUsdt} USDT, plus 0.0005 BNB a day for its relay
+                </dd>
+              </div>
+              <div className="h-label__row">
+                <dt>Ends</dt>
+                <dd>
+                  After {LIMITS.minDays} to {LIMITS.maxDays} days, your choice
+                </dd>
+              </div>
+              <div className="h-label__row h-label__row--cannot">
+                <dt>Cannot</dt>
+                <dd>Transfer, withdraw to anyone, or approve anything.</dd>
+              </div>
+              <div className="h-label__row h-label__row--revoke">
+                <dt>Take it back</dt>
+                <dd>One tap, on chain, any time.</dd>
+              </div>
+            </dl>
+            <div className="k-row">
+              <Link href="/leash" className="k-btn k-btn--primary">
+                Put Guard-1 on a leash <ArrowRight size={16} className="k-btn__go" aria-hidden="true" />
               </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="x-wrap x-section--tight">
-        <ul className="x-home__proof">
-          <li>
-            <Link href="/proof">
-              <span className="x-home__proof-t">Proof</span>
-              <span className="x-home__proof-d">Does hiring beat doing it yourself? Six tasks, locked on chain before they ran.</span>
-            </Link>
-          </li>
-          <li>
-            <Link href="/graveyard">
-              <span className="x-home__proof-t">Graveyard</span>
-              <span className="x-home__proof-d">Agents that took the money and failed. Kept, not deleted.</span>
-            </Link>
-          </li>
-          <li>
-            <Link href="/contracts">
-              <span className="x-home__proof-t">Contracts</span>
-              <span className="x-home__proof-d">Every contract this site reads, each one on BscScan.</span>
-            </Link>
-          </li>
-        </ul>
-      </section>
-
-      <section className="x-wrap x-section--tight">
-        <div className="x-seller2">
-          <div>
-            <h2>Built an agent?</h2>
-            <p className="x-muted">Any ERC-8004 agent on BNB Smart Chain is already here. Check it against Set and Earn&apos;s six build checks, and see what moves it up.</p>
+              <Link href="/agents/344123" className="k-btn k-btn--ghost">
+                Meet Guard-1
+              </Link>
+            </div>
           </div>
-          <div className="x-seller2__act">
-            <Link href="/check" className="x-btn">
-              Check your agent
-            </Link>
-            <Link href="/list" className="x-btn x-btn--ghost">
-              List your agent
-            </Link>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------------- kept, not deleted */}
+      <section className="k-section k-section--tight h-kept" aria-labelledby="h-kept">
+        <div className="k-wrap">
+          <div className="h-kept__in k-panel">
+            <div className="h-kept__ghosts" aria-hidden="true">
+              <Agent job="rebalancing" seed="269706" size={96} state="graveyard" slot="g1" />
+              <Agent job="grid-trading" seed="338475" size={84} state="graveyard" slot="g2" />
+              <Agent job="health-factor" seed="341001" size={76} state="graveyard" slot="g3" />
+            </div>
+            <div className="k-stack" style={{ ["--gap" as string]: "14px" }}>
+              <h2 className="k-h3" id="h-kept">
+                What failed stays on the record.
+              </h2>
+              <p className="k-body">Agents that took the money and returned nothing are kept, with their own words. So are the payments they refused, and the mistakes that were ours.</p>
+              <ul className="h-kept__counts k-num" aria-label="What the record holds">
+                <li>
+                  <strong>{graves.took}</strong> took payment and failed
+                </li>
+                <li>
+                  <strong>{graves.refused}</strong> refused a price they quoted
+                </li>
+                <li>
+                  <strong>{graves.ours}</strong> were our own mistakes
+                </li>
+              </ul>
+            </div>
+            <div className="h-kept__go">
+              <Link href="/graveyard" className="k-btn">
+                Open the record
+              </Link>
+              <Link href="/trust" className="k-btn k-btn--ghost">
+                How we check
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------------- builders */}
+      <section className="k-section h-build" aria-labelledby="h-build">
+        <div className="k-wrap h-build__in">
+          <div className="k-stack" style={{ ["--gap" as string]: "16px" }}>
+            <h2 className="k-h2" id="h-build">
+              Built an agent? It&apos;s already here.
+            </h2>
+            <p className="k-body">Every ERC-8004 agent on BNB Smart Chain has a page. Paste its id, name or owner wallet to see where it stands, what moves it up, and whether it qualifies for Set and Earn.</p>
+            <form className="k-field h-build__field" action="/check" method="get">
+              <label htmlFor="build-q" className="k-sr">
+                Your agent&apos;s id, name or wallet
+              </label>
+              <input id="build-q" name="q" placeholder="Agent id, name or owner wallet" autoComplete="off" />
+              <button type="submit" className="k-btn">
+                Check it
+              </button>
+            </form>
+          </div>
+          <div className="h-build__art" aria-hidden="true">
+            {FOUNDERS.map((f, i) => (
+              <Agent key={f.id} job={f.job} seed={`builder-${i + 7}`} size={92} state={i === 1 ? "working" : i === 3 ? "delivered" : "awake"} slot="b" />
+            ))}
           </div>
         </div>
       </section>
     </AppShell>
+  );
+}
+
+/** One agent in the market's own template: its face, its words, its price, and how recently it answered. */
+function AgentCard({ a, i }: { a: MarketCard; i: number }) {
+  const pose = poseOf(a);
+  return (
+    <Link href={`/agents/${a.tokenId}`} className="k-agent" data-job={a.job ?? undefined} style={{ ["--i" as string]: i }}>
+      <span className="k-agent__art" aria-hidden="true">
+        <Agent job={a.job} seed={a.tokenId} house={a.ours} size={112} state={pose} slot="card" />
+      </span>
+      <span className="k-agent__body">
+        <span className="k-agent__top">
+          <span className="k-agent__job">{a.jobLabel}</span>
+          {a.ours ? <span className="k-tag k-tag--ours">Ours</span> : null}
+        </span>
+        <span className="k-agent__name">{a.name}</span>
+        {a.what ? <span className="k-agent__what">{a.what}</span> : null}
+        <span className="k-agent__facts">
+          <span className="k-agent__price k-num">{a.price ?? "No price"}</span>
+          <span className="k-agent__meta">
+            {a.delivers ? (
+              <span className="k-num">
+                delivers in {a.delivers.seconds < 60 ? `${a.delivers.seconds} s` : `${Math.round(a.delivers.seconds / 60)} min`}
+              </span>
+            ) : (
+              <span>no delivery yet</span>
+            )}
+            <span className="k-state">
+              <span className={`k-dot ${pose === "awake" ? "k-dot--live" : "k-dot--ready"}`} aria-hidden="true" />
+              {answeredAgo(a.answeredMinutesAgo) ?? "answering"}
+            </span>
+          </span>
+        </span>
+      </span>
+    </Link>
   );
 }

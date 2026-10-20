@@ -8,6 +8,11 @@ import "./tokens.css";
 import "./globals.css";
 import "./theme.css";
 import "./market.css";
+import "@/styles/system.css";
+import "@/styles/shell.css";
+import "@/styles/characters.css";
+import "@/styles/agents.css";
+import "@/styles/home.css";
 
 /*
   The brand's three faces, self-hosted from ./fonts rather than fetched at

@@ -65,7 +65,7 @@ export default function WalletButton() {
   if (!available) {
     return (
       <details className="m-wallet" ref={ref}>
-        <summary className="x-btn x-btn--sm x-btn--primary">Connect wallet</summary>
+        <summary className="k-btn k-btn--sm k-btn--primary">Connect wallet</summary>
         <div className="m-wallet__panel">
           <p className="m-label">No wallet found</p>
           <p className="m-small">
@@ -74,7 +74,7 @@ export default function WalletButton() {
           </p>
           <PasskeyStart />
           <OpenInWallet label="On a phone? Open this page in your wallet app" />
-          <a className="x-btn x-btn--sm x-btn--block x-btn--ghost" href="https://www.bnbchain.org/en/wallets" target="_blank" rel="noreferrer">
+          <a className="k-btn k-btn--sm k-btn--block k-btn--ghost" href="https://www.bnbchain.org/en/wallets" target="_blank" rel="noreferrer">
             Get a BNB Smart Chain wallet
           </a>
         </div>
@@ -85,7 +85,7 @@ export default function WalletButton() {
   if (!address) {
     return (
       <span className="x-conn">
-        <button className="x-btn x-btn--sm x-btn--primary" onClick={() => void connect().catch(() => undefined)} type="button">
+        <button className="k-btn k-btn--sm k-btn--primary" onClick={() => void connect().catch(() => undefined)} type="button">
           Connect wallet
         </button>
         {/* A press that came to nothing says why, where it was pressed: it used to fail in silence. */}
@@ -113,7 +113,7 @@ export default function WalletButton() {
   return (
     <details className="m-wallet" ref={ref} onToggle={(e) => (e.currentTarget.open ? readQuest() : undefined)}>
       <summary
-        className={`m-btn m-btn--sm m-btn--quiet m-wallet__chip${ready ? "" : " m-wallet__chip--warn"}`}
+        className={`k-btn k-btn--sm m-wallet__chip${ready ? "" : " m-wallet__chip--warn"}`}
         aria-label={`Wallet ${short}${ready ? "" : ", wrong network"}. Open the wallet menu`}
       >
         <span className={`m-dot ${ready ? "m-dot--live" : "m-dot--cold"}`} />
@@ -127,10 +127,10 @@ export default function WalletButton() {
         <p className="m-label">Connected wallet</p>
         <p className="m-mono m-wallet__addr">{address}</p>
         <div className="m-wallet__row">
-          <button type="button" className="m-btn m-btn--sm m-btn--quiet" onClick={() => void copy()}>
+          <button type="button" className="k-btn k-btn--sm" onClick={() => void copy()}>
             {copied ? "Copied" : "Copy address"}
           </button>
-          <a className="m-btn m-btn--sm m-btn--quiet" href={`${explorer}/address/${address}`} target="_blank" rel="noreferrer">
+          <a className="k-btn k-btn--sm" href={`${explorer}/address/${address}`} target="_blank" rel="noreferrer">
             View on BscScan
           </a>
         </div>
@@ -157,7 +157,7 @@ export default function WalletButton() {
         {!ready ? (
           <button
             type="button"
-            className="m-btn m-btn--sm m-btn--primary m-btn--block"
+            className="k-btn k-btn--sm k-btn--primary k-btn--block"
             onClick={() => void switchChain().catch(() => undefined)}
           >
             Switch to {marketChain.name}
@@ -168,7 +168,7 @@ export default function WalletButton() {
 
         <button
           type="button"
-          className="m-btn m-btn--sm m-btn--block"
+          className="k-btn k-btn--sm k-btn--block"
           onClick={() => {
             if (ref.current) ref.current.open = false;
             void disconnect();

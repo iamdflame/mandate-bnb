@@ -1,0 +1,59 @@
+/* Character motion: idle, blink, breathing, each job's working loop, and the still under reduced motion. Generated with the character engine (src/components/characters/engine.ts). */
+.mc{overflow:visible;display:block}
+.mc g{transform-box:view-box}
+.mc .a-bob{animation:mc-bob 1.8s cubic-bezier(.45,0,.55,1) infinite var(--mc-d,0s)}
+.mc .a-bob2{animation:mc-bob 2.6s cubic-bezier(.45,0,.55,1) infinite var(--mc-d,0s)}
+.mc .a-shbob{animation:mc-shbob 1.8s cubic-bezier(.45,0,.55,1) infinite var(--mc-d,0s)}
+.mc-leashed .a-shbob{animation-duration:2.6s}
+@keyframes mc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3.4px)}}
+@keyframes mc-shbob{0%,100%{transform:scaleX(1);opacity:1}50%{transform:scaleX(.88);opacity:.75}}
+.mc .a-breathe{animation:mc-breathe 3.6s ease-in-out infinite var(--mc-d,0s)}
+@keyframes mc-breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.012,1.03)}}
+.mc .a-doze{animation:mc-doze 5s ease-in-out infinite var(--mc-d,0s)}
+@keyframes mc-doze{0%,100%{transform:scale(1,1)}45%{transform:scale(1.025,1.05)}}
+.mc .a-blink{animation:mc-blink 4.8s infinite var(--mc-d,0s)}
+@keyframes mc-blink{0%,92.5%,100%{transform:scaleY(1)}95%{transform:scaleY(.08)}97.5%{transform:scaleY(1)}}
+.mc .a-z{animation:mc-z 3.8s ease-out infinite var(--mc-d,0s)}
+.mc .a-z2{animation:mc-z 3.8s ease-out infinite calc(var(--mc-d,0s) - 1.9s)}
+@keyframes mc-z{0%{transform:translate(-2px,5px);opacity:0}25%{opacity:1}75%{opacity:.85}100%{transform:translate(5px,-9px);opacity:0}}
+.mc .a-hop{animation:mc-hop 1.9s cubic-bezier(.3,0,.3,1) infinite var(--mc-d,0s)}
+.mc .a-shhop{animation:mc-shhop 1.9s cubic-bezier(.3,0,.3,1) infinite var(--mc-d,0s)}
+@keyframes mc-hop{0%,64%,100%{transform:translateY(0) scale(1,1)}8%{transform:translateY(0) scale(1.08,.9)}24%{transform:translateY(-12px) scale(.95,1.06)}38%{transform:translateY(0) scale(1.07,.92)}48%{transform:translateY(0) scale(.98,1.02)}}
+@keyframes mc-shhop{0%,64%,100%{transform:scaleX(1);opacity:1}24%{transform:scaleX(.68);opacity:.45}38%{transform:scaleX(1.06);opacity:1}}
+.mc .a-spark{animation:mc-spark 1.9s ease-out infinite var(--mc-d,0s)}
+@keyframes mc-spark{0%,14%{opacity:0;transform:scale(.5)}26%{opacity:1;transform:scale(1)}48%{opacity:0;transform:scale(1.25)}100%{opacity:0}}
+.mc .a-tremble{animation:mc-tremble 3s linear infinite var(--mc-d,0s)}
+@keyframes mc-tremble{0%,58%,100%{transform:translateX(0)}62%{transform:translateX(-1.1px)}66%{transform:translateX(1.1px)}70%{transform:translateX(-.9px)}74%{transform:translateX(.7px)}78%{transform:translateX(0)}}
+.mc .a-pulse{animation:mc-pulse 1.5s ease-in-out infinite var(--mc-d,0s)}
+@keyframes mc-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+.mc .a-swing{animation:mc-swing 2.6s ease-in-out infinite var(--mc-d,0s)}
+@keyframes mc-swing{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+.mc .a-rtilt{animation:mc-rtilt 3.4s cubic-bezier(.45,0,.55,1) infinite var(--mc-d,0s)}
+.mc .a-rball{animation:mc-rball 3.4s cubic-bezier(.45,0,.55,1) infinite var(--mc-d,0s)}
+@keyframes mc-rtilt{0%,100%{transform:rotate(0)}20%{transform:rotate(6deg)}42%{transform:rotate(0)}70%{transform:rotate(-6deg)}92%{transform:rotate(0)}}
+@keyframes mc-rball{0%,100%{transform:translate(0,0)}12%{transform:translate(-13px,var(--by,2px))}36%{transform:translate(0,0)}62%{transform:translate(13px,var(--by,2px))}86%{transform:translate(0,0)}}
+.mc .a-gstep{animation:mc-gstep 3.2s cubic-bezier(.3,1.4,.5,1) infinite var(--mc-d,0s)}
+.mc .a-gmark{animation:mc-gmark 3.2s cubic-bezier(.3,1.4,.5,1) infinite var(--mc-d,0s)}
+.mc .a-shstep{animation:mc-shstep 3.2s cubic-bezier(.3,1.4,.5,1) infinite var(--mc-d,0s)}
+@keyframes mc-gstep{0%,14%,86%,100%{transform:translateY(0)}20%,34%{transform:translateY(-6px)}40%,54%{transform:translateY(-12px)}60%,74%{transform:translateY(-6px)}80%{transform:translateY(0)}}
+@keyframes mc-gmark{0%,14%,86%,100%{transform:translateY(0)}20%,34%{transform:translateY(var(--sp))}40%,54%{transform:translateY(calc(var(--sp) * 2))}60%,74%{transform:translateY(var(--sp))}80%{transform:translateY(0)}}
+@keyframes mc-shstep{0%,14%,86%,100%{transform:scaleX(1);opacity:1}20%,34%{transform:scaleX(.88);opacity:.7}40%,54%{transform:scaleX(.78);opacity:.5}60%,74%{transform:scaleX(.88);opacity:.7}}
+.mc .a-ywalk{animation:mc-ywalk 3.8s cubic-bezier(.45,0,.55,1) infinite var(--mc-d,0s)}
+.mc .a-ycoin{animation:mc-ycoin 3.8s ease-in-out infinite var(--mc-d,0s)}
+.mc .a-ysprout{animation:mc-ysprout 3.8s cubic-bezier(.3,1.5,.5,1) infinite var(--mc-d,0s)}
+.mc .a-yspot{animation:mc-yspot 3.8s ease-out infinite var(--mc-d,0s)}
+@keyframes mc-ywalk{0%,100%{transform:translate(-10px,0)}8%{transform:translate(-7px,-3px)}16%{transform:translate(-3px,0)}24%{transform:translate(1px,-3px)}32%{transform:translate(5px,0)}40%{transform:translate(8px,-2px)}46%,74%{transform:translate(10px,0)}}
+@keyframes mc-ycoin{0%,44%{transform:translate(0,0);opacity:1}52%{transform:translate(9px,-7px);opacity:1}60%{transform:translate(16px,var(--cy));opacity:1}66%{transform:translate(16px,var(--cy));opacity:0}67%,90%{transform:translate(0,-6px);opacity:0}100%{transform:translate(0,0);opacity:1}}
+@keyframes mc-ysprout{0%,58%,100%{transform:scale(1)}66%{transform:scale(1.32)}74%,92%{transform:scale(1.22)}}
+@keyframes mc-yspot{0%,56%,100%{transform:scale(1);opacity:.55}62%{transform:scale(1.5);opacity:1}80%{transform:scale(1.1);opacity:.7}}
+.mc .a-brace{animation:mc-brace 3.2s ease-in-out infinite var(--mc-d,0s)}
+.mc .a-gshield{animation:mc-gshield 3.2s cubic-bezier(.4,0,.3,1) infinite var(--mc-d,0s)}
+.mc .a-gneedle{animation:mc-gneedle 3.2s cubic-bezier(.4,0,.3,1) infinite var(--mc-d,0s)}
+@keyframes mc-brace{0%,18%,68%,100%{transform:scale(1,1)}36%,52%{transform:scale(1.03,.96)}}
+@keyframes mc-gshield{0%,18%{transform:translate(0,0) rotate(0)}34%,50%{transform:translate(-9px,-16px) rotate(-7deg)}64%,100%{transform:translate(0,0) rotate(0)}}
+@keyframes mc-gneedle{0%,6%{transform:rotate(0)}30%,46%{transform:rotate(-96deg)}52%{transform:rotate(14deg)}58%{transform:rotate(-5deg)}64%,100%{transform:rotate(0)}}
+@media (prefers-reduced-motion: reduce){.mc *{animation:none!important}}
+
+/* The wrapper: a fixed box so a drawing never shifts layout while it bobs. */
+.k-char { display: inline-block; flex: none; line-height: 0; vertical-align: middle; }
+.k-char > svg { display: block; width: 100%; height: 100%; overflow: visible; }

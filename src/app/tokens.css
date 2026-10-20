@@ -127,6 +127,41 @@
   --w-max: 1320px;
   --w-gutter: clamp(16px, 3vw, 32px);
   --h-nav: 64px;
+
+  /*
+    The renovation (src/styles). Same brand, same palette: ink, the Seal's
+    green, the four job colours. What it adds is light, depth and motion,
+    so the ground reads as a lit room and not a flat black.
+  */
+  --k-ink-0: #070809; /* below the ground: wells, the footer's floor */
+  --k-hair: rgba(255, 255, 255, 0.07);
+  --k-hair-strong: rgba(255, 255, 255, 0.12);
+  --k-top-light: inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  --k-lift-1: 0 1px 1px rgba(0, 0, 0, 0.35), 0 2px 6px -1px rgba(0, 0, 0, 0.35);
+  --k-lift-2: 0 1px 1px rgba(0, 0, 0, 0.3), 0 8px 18px -6px rgba(0, 0, 0, 0.5), 0 24px 48px -16px rgba(0, 0, 0, 0.55);
+  --k-lift-3: 0 2px 2px rgba(0, 0, 0, 0.3), 0 18px 40px -12px rgba(0, 0, 0, 0.6), 0 48px 96px -24px rgba(0, 0, 0, 0.6);
+  --k-glow: 0 10px 28px -10px rgba(19, 185, 138, 0.65);
+  --k-glow-soft: 0 0 0 1px rgba(19, 185, 138, 0.35), 0 12px 36px -12px rgba(19, 185, 138, 0.45);
+  --k-pool: radial-gradient(60% 55% at 50% 0%, rgba(19, 185, 138, 0.14), rgba(19, 185, 138, 0) 70%);
+
+  --k-ts-mega: clamp(3rem, 7.4vw, 6.75rem); /* 48 to 108: the one statement per page */
+  --k-ts-display: clamp(2.5rem, 5vw, 4.25rem); /* 40 to 68 */
+  --k-ts-h2: clamp(1.75rem, 3.2vw, 2.75rem); /* 28 to 44 */
+  --k-ts-h3: clamp(1.25rem, 1.8vw, 1.5rem); /* 20 to 24 */
+  --k-ts-body: 1.0625rem; /* 17 */
+  --k-ts-ui: 0.9375rem; /* 15 */
+  --k-ts-small: 0.8125rem; /* 13: provenance and captions only */
+
+  --k-s-10: 96px;
+  --k-s-11: 128px;
+  --k-section: clamp(72px, 10vw, 144px);
+
+  --k-ease: cubic-bezier(0.16, 1, 0.3, 1); /* reveals and arrivals */
+  --k-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --k-d-micro: 130ms;
+  --k-d-ui: 220ms;
+  --k-d-reveal: 760ms;
+  --k-stagger: 70ms;
 }
 
 /*
@@ -144,5 +179,9 @@
     --d-card: 0ms;
     --d-panel: 0ms;
     --d-large: 0ms;
+    --k-d-micro: 0ms;
+    --k-d-ui: 0ms;
+    --k-d-reveal: 0ms;
+    --k-stagger: 0ms;
   }
 }

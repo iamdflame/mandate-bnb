@@ -7,19 +7,19 @@ import { PasskeyHost } from "./Passkey";
 /**
  * The one shell every page renders inside.
  *
- * It carries both class roots: `x-app` for the marketplace system and
- * `m-app` for pages still written against the older sheet, whose tokens now
- * resolve to the same palette.
+ * It still carries the older class roots (`x-app`, `m-app`) for pages not yet
+ * moved to the renovation's system; those sheets sit in @layer legacy, so the
+ * k- classes always win where both apply.
  */
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="m-app x-app">
+    <div className="m-app x-app k-app">
       <a className="x-skip" href="#main">
         Skip to content
       </a>
       <CampaignStrip />
       <Navbar />
-      <main id="main" className="x-main m-main">
+      <main id="main" className="x-main m-main k-main" tabIndex={-1}>
         {children}
       </main>
       <Footer />

@@ -1,3 +1,5 @@
+/* Legacy sheet, kept in the lowest cascade layer while pages move to src/styles (the renovation). New styles win without specificity fights; this file is deleted once no page uses it. */
+@layer legacy {
 /*
   The marketplace component system. Namespace `x-`.
 
@@ -8372,4 +8374,6 @@ a.x-house__name:hover {
   .x-approve__acts .x-btn {
     flex: 1;
   }
+}
+
 }
