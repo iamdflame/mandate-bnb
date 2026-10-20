@@ -5,7 +5,8 @@ import { formatEther } from "viem";
 import AppShell from "@/components/v2/shell/AppShell";
 import Ledger, { type LedgerEvent } from "@/components/ui/Ledger";
 import Attestation, { type AttestationView } from "@/components/ui/Attestation";
-import Observation from "@/components/ui/Observation";
+import { Reading } from "@/components/account/None";
+import { ReceiptHead, ReceiptPaper, ReceiptPart } from "@/components/account/Receipt";
 import {
   CATEGORY_NAMES,
   MARKET_ADDRESS,
@@ -17,7 +18,7 @@ import {
 import { previousMark, readEpochAttestation, readOpenAttestation } from "@/lib/settlement";
 import { bucketName, objectName } from "@/lib/chain/greenfield";
 import { readCareerForWallet } from "@/lib/career";
-import { CHAIN_ID, EXPLORER } from "@/lib/config";
+import { CATEGORIES, CHAIN_ID, EXPLORER } from "@/lib/config";
 import { withTimeout } from "@/lib/cache";
 
 export const dynamic = "force-dynamic";
@@ -45,14 +46,12 @@ interface EpochRead {
 /** A panel that is still reading. A hairline pulse, never a spinner. */
 function PendingPanel({ title }: { title: string }) {
   return (
-    <section className="panel" aria-busy="true">
-      <div className="panel__head">
-        <h2 className="mark-label">{title}</h2>
-        <span className="mark-label">scanning event logs</span>
+    <section className="ac-part" aria-busy="true">
+      <div className="ac-part__head">
+        <h2 className="k-h3">{title}</h2>
+        <p className="k-small">Scanning event logs. This can take a few seconds.</p>
       </div>
-      <div className="panel__body">
-        <span className="hairline" aria-hidden />
-      </div>
+      <Reading label="Scanning event logs" rows={3} />
     </section>
   );
 }
@@ -118,14 +117,14 @@ async function Life({
       block: att?.blockNumber ?? settled?.blockNumber,
       title: `Epoch ${e} settled`,
       figure: alpha === null ? "none" : pct(alpha),
-      // Gold is earned, not defaulted to: zero alpha is neither a gain nor a
-      // loss and takes the neutral ink. Trailing dims; it never alarms.
+      // Zero alpha is neither a gain nor a loss and takes the neutral ink; a
+      // loss is shown as a loss, softly, never as an alarm.
       tone:
         alpha === null || alpha === 0
           ? null
           : alpha > 0
-            ? "var(--gold-999)"
-            : "var(--pewter-500)",
+            ? "var(--c-accent-hi)"
+            : "#ff9aa8",
       flag:
         slashed > 0n
           ? `slashed ${bnb(slashed)}`
@@ -143,7 +142,7 @@ async function Life({
       block: d.blockNumber,
       title: "Holder dismissed",
       figure: "bond forfeit",
-      tone: "var(--cancelled)",
+      tone: "var(--c-err)",
       flag: "dismissed",
       txHash: d.txHash,
       note: d.reason || "no reason recorded",
@@ -152,67 +151,55 @@ async function Life({
 
   return (
     <>
-      <section className="panel" aria-labelledby="life-title">
-        <div className="panel__head">
-          <h2 id="life-title" className="mark-label">
-            The ledger
+      <section className="ac-part" aria-labelledby="life-title">
+        <div className="ac-part__head">
+          <h2 id="life-title" className="k-h3">
+            What happened, in order
           </h2>
-          <Observation size="small" at={m.lastSettledAt ? m.lastSettledAt * 1000 : null} />
+          <p className="k-small">{m.lastSettledAt ? `Last settled ${new Date(m.lastSettledAt * 1000).toISOString().slice(0, 16).replace("T", " ")} UTC. ` : ""}Each row is an event the chain recorded, with the transaction that did it.</p>
         </div>
-        <div className="panel__body">
-          <Ledger events={events} />
-          {career && !career.logsRead ? (
-            <p className="tbl__foot">
-              No provider would serve the log range, so the transactions behind these
-              epochs could not be listed. The attestations below are contract storage and
-              are complete.
-            </p>
-          ) : null}
-        </div>
+        <Ledger events={events} />
+        {career && !career.logsRead ? (
+          <p className="k-small">No provider would serve the log range, so the transactions behind these epochs could not be listed. The attestations below are contract storage and are complete.</p>
+        ) : null}
       </section>
 
       {epochs.length ? (
-        <section className="panel" aria-labelledby="marks-title">
-          <div className="panel__head">
-            <h2 id="marks-title" className="mark-label">
+        <section className="ac-part" aria-labelledby="marks-title">
+          <div className="ac-part__head">
+            <h2 id="marks-title" className="k-h3">
               What the marks imply
             </h2>
-            <span className="mark-label">recomputed here from the two commitments</span>
+            <p className="k-small">Recomputed here from the two commitments.</p>
           </div>
-          <div className="panel__body">
-            <div className="tablewrap">
-              <table className="tbl">
-                <thead>
-                  <tr>
-                    <th>epoch</th>
-                    <th className="r">previous mark</th>
-                    <th className="r">this mark</th>
-                    <th className="r">implied α</th>
-                    <th className="r">settled α</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {epochs.map(({ e, att, prev, implied }) => {
-                    const settled = settledHere.find((x) => x.epoch === e);
-                    return (
-                      <tr key={e}>
-                        <td>{e}</td>
-                        <td className="r">{prev ? bnb(prev.valuationWei) : "none"}</td>
-                        <td className="r">{att ? bnb(att.valuationWei) : "none"}</td>
-                        <td className="r">{implied === null ? "none" : pct(implied)}</td>
-                        <td className="r">{settled ? pct(Number(settled.alphaBps)) : "none"}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <p className="tbl__foot">
-              The two right-hand columns are computed independently: the implied figure is
-              this page&rsquo;s arithmetic over the committed marks, the settled figure is
-              what the contract wrote. Their agreeing is the check.
-            </p>
+          <div className="k-table-wrap">
+            <table className="k-table">
+              <thead>
+                <tr>
+                  <th>Hour</th>
+                  <th className="ac-r">Previous mark</th>
+                  <th className="ac-r">This mark</th>
+                  <th className="ac-r">Implied</th>
+                  <th className="ac-r">Settled</th>
+                </tr>
+              </thead>
+              <tbody>
+                {epochs.map(({ e, att, prev, implied }) => {
+                  const settled = settledHere.find((x) => x.epoch === e);
+                  return (
+                    <tr key={e}>
+                      <td className="k-table__main">{e}</td>
+                      <td className="ac-r">{prev ? bnb(prev.valuationWei) : "none"}</td>
+                      <td className="ac-r">{att ? bnb(att.valuationWei) : "none"}</td>
+                      <td className="ac-r">{implied === null ? "none" : pct(implied)}</td>
+                      <td className="ac-r">{settled ? pct(Number(settled.alphaBps)) : "none"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
+          <p className="k-small">The two right-hand columns are computed independently: the implied figure is this page&rsquo;s arithmetic over the committed marks, the settled figure is what the contract wrote. Their agreeing is the check.</p>
         </section>
       ) : null}
     </>
@@ -299,109 +286,115 @@ export default async function MandatePage({ params }: { params: Promise<{ id: st
       })),
   ];
 
+  const job = CATEGORIES[m.category] ?? null;
+  const alpha = Number(m.cumulativeAlphaBps);
+
   return (
     <AppShell>
-
-      <main className="shell mandate-page">
-        <header className="mandate__head">
-          <div>
-            <p className="mark-label">Mandate {n}</p>
-            <h1 className="h1">
-              {CATEGORY_NAMES[m.category] ?? "Mandate"} · {STATE_NAMES[m.state] ?? ""}
-            </h1>
+      <ReceiptHead
+        kind={`Mandate ${n}, the full record`}
+        title={`${CATEGORY_NAMES[m.category] ?? "Mandate"}, job #${n}`}
+        status={STATE_NAMES[m.state] ?? `State ${m.state}`}
+        tone={m.state === 1 ? "live" : m.state === 0 ? "warn" : "neutral"}
+        job={job}
+        seed={`job:${n}`}
+        pose={m.state === 1 ? "working" : m.state === 0 ? "ready" : "dozing"}
+        views={[
+          { href: `/receipts/${n}`, label: "Receipt" },
+          { href: `/mandate/${n}`, label: "The full record", current: true },
+        ]}
+      >
+        <div className="k-figs ac-rh__figs k-rise" style={{ ["--i" as string]: 5 }}>
+          <div className="k-fig">
+            <span className="k-fig__n">{bnb(m.capital)}</span>
+            <span className="k-fig__l">BNB capital</span>
           </div>
-          <div className="stats">
-            <div className="stat">
-              <span className="stat__value">{bnb(m.capital)}</span>
-              <span className="mark-label">BNB capital</span>
-            </div>
-            <div className="stat">
-              <span className="stat__value">{bnb(m.bond)}</span>
-              <span className="mark-label">BNB bond at risk</span>
-            </div>
-            <div className="stat">
-              <span className="stat__value">
-                {m.epochsSettled}/{m.epochsTotal}
-              </span>
-              <span className="mark-label">epochs</span>
-            </div>
-            <div className="stat">
-              <span className="stat__value">{pct(m.cumulativeAlphaBps)}</span>
-              <span className="mark-label">cumulative α</span>
-            </div>
-            <div className="stat">
-              <span className="stat__value">{m.strikes}</span>
-              <span className="mark-label">strikes</span>
-            </div>
+          <div className="k-fig">
+            <span className="k-fig__n">{bnb(m.bond)}</span>
+            <span className="k-fig__l">BNB bond at risk</span>
           </div>
-        </header>
-
-        <p className="small mandate__terms">
-          Held by{" "}
-          <a className="link-underline num" href={`${EXPLORER}/address/${m.agent}`} rel="noreferrer" target="_blank">
-            {m.agent}
-          </a>{" "}
-          for{" "}
-          <a className="link-underline num" href={`${EXPLORER}/address/${m.principal}`} rel="noreferrer" target="_blank">
-            {m.principal.slice(0, 14)}…
-          </a>
-          . Tolerance {m.toleranceBps} bps, fee {m.feeBps} bps of positive alpha, slash{" "}
-          {m.slashBps} bps of the bond per failing epoch.
-        </p>
-
-        {/*
-          The ledger and the settled-alpha column both come from an event log
-          scan, which against a free provider is the whole cost of this page,
-          eighteen seconds for a mandate with a few epochs behind it. The
-          attestations are contract reads and arrive at once, so they are not
-          made to wait behind the logs.
-        */}
-        <Suspense fallback={<PendingPanel title="The ledger" />}>
-          <Life mandateId={n} mandate={m} opening={opening} epochs={epochs} />
-        </Suspense>
-
-        <Attestation attestations={attestations} mandateId={n} chainId={CHAIN_ID} />
-
-        <section className="panel" aria-labelledby="queue-title">
-          <div className="panel__head">
-            <h2 id="queue-title" className="mark-label">
-              Succession queue
-            </h2>
-            <span className="mark-label">{bids.length} waiting</span>
+          <div className="k-fig">
+            <span className="k-fig__n">
+              {m.epochsSettled}/{m.epochsTotal}
+            </span>
+            <span className="k-fig__l">hours settled</span>
           </div>
-          <div className="panel__body">
+          <div className={`k-fig ${alpha > 0 ? "ac-up" : alpha < 0 ? "ac-down" : ""}`}>
+            <span className="k-fig__n">{pct(m.cumulativeAlphaBps)}</span>
+            <span className="k-fig__l">against the benchmark</span>
+          </div>
+          <div className="k-fig">
+            <span className="k-fig__n">{m.strikes}</span>
+            <span className="k-fig__l">strikes</span>
+          </div>
+        </div>
+      </ReceiptHead>
+
+      <div className="k-wrap ac-rbody ac-rbody--full">
+        <ReceiptPaper
+          title="The terms"
+          note="Read from the contract as this page renders."
+          rows={[
+            {
+              k: "Held by",
+              v: (
+                <a className="k-link k-mono ac-break" href={`${EXPLORER}/address/${m.agent}`} rel="noreferrer" target="_blank">
+                  {m.agent}
+                </a>
+              ),
+            },
+            {
+              k: "For",
+              v: (
+                <a className="k-link k-mono" href={`${EXPLORER}/address/${m.principal}`} rel="noreferrer" target="_blank">
+                  {m.principal.slice(0, 14)}…
+                </a>
+              ),
+            },
+            { k: "Tolerance", v: <span className="k-num">{m.toleranceBps} bps</span> },
+            { k: "Fee", v: <span className="k-num">{m.feeBps} bps of positive alpha</span> },
+            { k: "Slash", v: <span className="k-num">{m.slashBps} bps of the bond per failing hour</span> },
+          ]}
+        />
+
+        <div className="ac-rbody__side">
+          {/*
+            The ledger and the settled-alpha column both come from an event log
+            scan, which against a free provider is the whole cost of this page,
+            eighteen seconds for a mandate with a few epochs behind it. The
+            attestations are contract reads and arrive at once, so they are not
+            made to wait behind the logs.
+          */}
+          <Suspense fallback={<PendingPanel title="What happened, in order" />}>
+            <Life mandateId={n} mandate={m} opening={opening} epochs={epochs} />
+          </Suspense>
+
+          <Attestation attestations={attestations} mandateId={n} chainId={CHAIN_ID} />
+
+          <ReceiptPart title="Who takes over" note={`${bids.length} ${bids.length === 1 ? "bid" : "bids"} in the queue, waiting or already spent.`}>
             {bids.length ? (
               <>
-                <p className="small excl__lede">
-                  If the incumbent is dismissed, one of these takes the mandate in the
-                  same transaction. Each has its own capital escrowed against the target
-                  it is committing to.
-                </p>
-                <div className="tablewrap">
-                  <table className="tbl">
+                <p className="k-small">If the agent holding it is dismissed, one of these takes the mandate in the same transaction. Each has its own capital escrowed against the target it is committing to.</p>
+                <div className="k-table-wrap">
+                  <table className="k-table">
                     <thead>
                       <tr>
-                        <th>agent</th>
-                        <th className="r">bond</th>
-                        <th className="r">target α</th>
-                        <th>state</th>
+                        <th>Agent</th>
+                        <th className="ac-r">Bond</th>
+                        <th className="ac-r">Target</th>
+                        <th>State</th>
                       </tr>
                     </thead>
                     <tbody>
                       {bids.map((b, i) => (
                         <tr key={`${b.agent}-${i}`}>
                           <td>
-                            <a
-                              className="link-underline num"
-                              href={`${EXPLORER}/address/${b.agent}`}
-                              rel="noreferrer"
-                              target="_blank"
-                            >
+                            <a className="k-link k-mono" href={`${EXPLORER}/address/${b.agent}`} rel="noreferrer" target="_blank">
                               {b.agent.slice(0, 16)}…
                             </a>
                           </td>
-                          <td className="r">{bnb(b.bond)}</td>
-                          <td className="r">{pct(b.targetAlphaBps)}</td>
+                          <td className="ac-r">{bnb(b.bond)}</td>
+                          <td className="ac-r">{pct(b.targetAlphaBps)}</td>
                           <td>{b.spent ? "promoted or withdrawn" : "waiting"}</td>
                         </tr>
                       ))}
@@ -410,15 +403,11 @@ export default async function MandatePage({ params }: { params: Promise<{ id: st
                 </div>
               </>
             ) : (
-              <p className="small">
-                Nobody is waiting to take this mandate. A dismissal here would return the
-                capital rather than hand it on.
-              </p>
+              <p className="k-small">Nobody is waiting to take this mandate. A dismissal here would return the capital rather than hand it on.</p>
             )}
-          </div>
-        </section>
-      </main>
-
-      </AppShell>
+          </ReceiptPart>
+        </div>
+      </div>
+    </AppShell>
   );
 }

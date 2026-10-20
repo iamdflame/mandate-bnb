@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Agent, { type CharacterState } from "@/components/characters/Agent";
 import type { MarketEvent } from "@/lib/market/events";
 import Ago from "./Ago";
 
@@ -15,39 +16,65 @@ const KIND_WORD: Record<MarketEvent["kind"], string> = {
 };
 
 /**
- * Market events as a flat timeline: a dot, who, what, the one figure that
- * matters, and when. The source and proof open underneath for anyone who
- * wants them.
+ * The pose an event's agent is drawn in: what actually happened in that
+ * event, never a mood. An answer is awake, a silence dozes, a delivered
+ * payment hops, a failed one is shown failing, a granted key is a leash.
  */
-export default function Timeline({ events, detail = false }: { events: MarketEvent[]; detail?: boolean }) {
+export const EVENT_POSE: Record<MarketEvent["kind"], CharacterState> = {
+  responded: "awake",
+  silent: "dozing",
+  paid: "delivered",
+  failed: "failed",
+  job: "working",
+  granted: "leashed",
+  revoked: "ready",
+  listed: "ready",
+  acted: "working",
+};
+
+/**
+ * Market events as a live tape: the agent, drawn in the pose its event
+ * left it in, who, what, the one figure that matters, and when. The source
+ * and proof open underneath for anyone who wants them. Rows arrive one
+ * after another, the newest first.
+ */
+export default function Timeline({ events, detail = false, start = 0 }: { events: MarketEvent[]; detail?: boolean; start?: number }) {
   return (
-    <ol className="x-tl">
-      {events.map((e) => {
+    <ol className="ac-tape">
+      {events.map((e, i) => {
         const row = (
           <>
-            <span className={`x-tl__dot x-tl__dot--${e.kind}`} aria-hidden="true" />
-            <span className="x-tl__main">
+            <span className="ac-tape__face" aria-hidden="true">
+              <Agent job={e.category} seed={e.tokenId ?? e.actor} size={36} state={EVENT_POSE[e.kind]} omit={["leash"]} slot={`tl${start + i}`} />
+            </span>
+            <span className="ac-tape__main">
               {e.tokenId ? (
-                <Link href={`/agents/${e.tokenId}`} className="x-tl__actor">
+                <Link href={`/agents/${e.tokenId}`} className="ac-tape__who">
                   {e.actor}
                 </Link>
               ) : (
-                <span className="x-tl__actor">{e.actor}</span>
+                <span className="ac-tape__who">{e.actor}</span>
               )}{" "}
-              <span className="x-tl__what">{e.what}</span>
+              <span className="ac-tape__what">{e.what}</span>
             </span>
-            {e.figure ? <span className="x-tl__fig x-mono">{e.figure}</span> : <span />}
-            <span className="x-tl__at">
+            {e.figure ? <span className="ac-tape__fig k-num">{e.figure}</span> : <span />}
+            <span className="ac-tape__at">
               <Ago iso={e.at} />
             </span>
           </>
         );
-        if (!detail) return <li key={e.id} className="x-tl__row">{row}</li>;
+        const style = { ["--i" as string]: Math.min(start + i, 14) };
+        if (!detail)
+          return (
+            <li key={e.id} className="ac-tape__row" data-kind={e.kind} style={style}>
+              {row}
+            </li>
+          );
         return (
-          <li key={e.id} className="x-tl__item">
+          <li key={e.id} className="ac-tape__item" data-kind={e.kind} style={style}>
             <details>
-              <summary className="x-tl__row">{row}</summary>
-              <dl className="x-tl__more">
+              <summary className="ac-tape__row">{row}</summary>
+              <dl className="ac-tape__more">
                 <div>
                   <dt>Type</dt>
                   <dd>{KIND_WORD[e.kind]}</dd>
@@ -58,7 +85,7 @@ export default function Timeline({ events, detail = false }: { events: MarketEve
                 </div>
                 <div>
                   <dt>When</dt>
-                  <dd className="x-mono">{new Date(e.at).toUTCString()}</dd>
+                  <dd className="k-num">{new Date(e.at).toUTCString()}</dd>
                 </div>
                 {e.note ? (
                   <div>
@@ -70,7 +97,7 @@ export default function Timeline({ events, detail = false }: { events: MarketEve
                   <div>
                     <dt>Proof</dt>
                     <dd>
-                      <a className="x-link x-mono" href={e.proof} target="_blank" rel="noreferrer">
+                      <a className="k-link k-mono" href={e.proof} target="_blank" rel="noreferrer">
                         {e.proof.replace("https://", "").slice(0, 60)}
                       </a>
                     </dd>

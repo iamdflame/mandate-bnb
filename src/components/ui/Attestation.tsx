@@ -1,5 +1,4 @@
-import Command from "./Command";
-import Observation from "./Observation";
+import CopyLine from "@/components/account/CopyLine";
 
 export interface AttestationView {
   /** Which epoch this commitment covers. "open" is the pre-award reading. */
@@ -38,71 +37,44 @@ export default function Attestation({
   chainId?: number;
 }) {
   return (
-    <section className="panel" aria-labelledby="attest-title">
-      <div className="panel__head">
-        <h2 id="attest-title" className="mark-label">
+    <section className="ac-part" aria-labelledby="attest-title">
+      <div className="ac-part__head">
+        <h2 id="attest-title" className="k-h3">
           Attestations
         </h2>
-        <span className="mark-label">committed before the outcome</span>
+        <p className="k-small">Each valuation was committed on chain before the outcome was known. The preimage is on Greenfield.</p>
       </div>
 
-      <div className="panel__body panel__body--flush">
-        {attestations.length === 0 ? (
-          <p className="small dim att__empty">No attestation has been committed yet.</p>
-        ) : (
-          <ul className="att">
-            {attestations.map((a) => (
-              <li className="att__row" key={String(a.epoch)}>
-                <span className="att__epoch mark-label">
-                  {a.epoch === "open" ? "opening" : `epoch ${a.epoch}`}
-                </span>
-
-                <code className="att__hash num" title={a.observationHash}>
-                  {short(a.observationHash)}
-                </code>
-
-                <Observation
-                  size="small"
-                  value={a.valuationWei ? `${weiToBnb(a.valuationWei)} BNB` : undefined}
-                  block={a.blockNumber}
-                  at={a.takenAt ?? null}
-                />
-
-                <span className="att__links">
-                  {a.breakdownUrl ? (
-                    <a
-                      className="num"
-                      href={a.breakdownUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      title={a.breakdownRef ?? undefined}
-                    >
-                      preimage ↗
-                    </a>
-                  ) : (
-                    <span className="num dim">no preimage</span>
-                  )}
-                </span>
-
-                {a.matches === null || a.matches === undefined ? null : (
-                  <span
-                    className="att__match mark-label"
-                    style={{ color: a.matches ? "var(--verify)" : "var(--cancelled)" }}
-                  >
-                    {a.matches ? "re-hashes" : "MISMATCH"}
-                  </span>
+      {attestations.length === 0 ? (
+        <p className="k-small">No attestation has been committed yet.</p>
+      ) : (
+        <ul className="ac-att">
+          {attestations.map((a) => (
+            <li className="ac-att__row" key={String(a.epoch)}>
+              <span className="ac-att__e">{a.epoch === "open" ? "Opening" : `Epoch ${a.epoch}`}</span>
+              <code className="k-mono ac-att__h" title={a.observationHash}>
+                {short(a.observationHash)}
+              </code>
+              <span className="k-small k-num">
+                {a.valuationWei ? `${weiToBnb(a.valuationWei)} BNB, ` : ""}block {String(a.blockNumber)}
+                {a.takenAt ? `, ${new Date(a.takenAt).toISOString().slice(0, 16).replace("T", " ")} UTC` : ""}
+              </span>
+              <span className="ac-att__l">
+                {a.breakdownUrl ? (
+                  <a className="k-link" href={a.breakdownUrl} target="_blank" rel="noreferrer" title={a.breakdownRef ?? undefined}>
+                    Preimage
+                  </a>
+                ) : (
+                  <span className="k-small">no preimage</span>
                 )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+              </span>
+              {a.matches === null || a.matches === undefined ? null : <span className={`k-tag ${a.matches ? "k-tag--ours" : "k-tag--err"}`}>{a.matches ? "re-hashes" : "mismatch"}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
 
-      <div className="panel__body">
-        <Command note="Reads the chain and nothing else, no database, no API, no file we control. Exit 0 verified, 1 mismatch, 3 inconclusive.">
-          {`npx mandate-verify --mandate ${mandateId} --chain ${chainId}`}
-        </Command>
-      </div>
+      <CopyLine note="Reads the chain and nothing else: no database, no API, no file we control. Exit 0 verified, 1 mismatch, 3 inconclusive.">{`npx mandate-verify --mandate ${mandateId} --chain ${chainId}`}</CopyLine>
     </section>
   );
 }

@@ -30,55 +30,46 @@ export interface LedgerEvent {
  */
 export default function Ledger({ events }: { events: LedgerEvent[] }) {
   if (!events.length) {
-    return <p className="small dim">Nothing has happened yet.</p>;
+    return <p className="k-small">Nothing has happened yet.</p>;
   }
 
   return (
-    <ol className="ledger">
+    <ol className="ac-rtape ac-ledger">
       {events.map((e, i) => (
-        <li className="ledger__row" key={`${e.txHash ?? ""}-${i}`}>
-          <span className="ledger__time num">{clock(e.at)}</span>
-          <span className="ledger__title">{e.title}</span>
-          <span
-            className="ledger__figure num"
-            style={e.tone ? { color: e.tone } : undefined}
-          >
+        <li className="ac-rtape__row" key={`${e.txHash ?? ""}-${i}`} style={{ ["--i" as string]: Math.min(i, 12) }}>
+          <span className="ac-rtape__dot" aria-hidden="true" style={e.tone ? { background: e.tone } : undefined} />
+          <div className="ac-rtape__main">
+            <p className="ac-rtape__t">
+              {e.title}
+              {e.flag ? <span className="k-tag k-tag--err">{e.flag}</span> : null}
+            </p>
+            {e.note ? <div className="ac-rtape__d ac-break">{e.note}</div> : null}
+          </div>
+          <span className="ac-rtape__fig k-num" style={e.tone ? { color: e.tone } : undefined}>
             {e.figure ?? ""}
           </span>
-          <span className="ledger__flag num">{e.flag ?? ""}</span>
-          <span className="ledger__tx">
+          <span className="ac-rtape__at k-num">
+            {clock(e.at)}
             {e.txHash ? (
-              <a
-                className="num"
-                href={`${EXPLORER}/tx/${e.txHash}`}
-                target="_blank"
-                rel="noreferrer"
-                title={e.txHash}
-              >
+              <a className="k-link" href={`${EXPLORER}/tx/${e.txHash}`} target="_blank" rel="noreferrer" title={e.txHash}>
                 tx
               </a>
             ) : e.block !== undefined && e.block !== null ? (
-              <a
-                className="num"
-                href={`${EXPLORER}/block/${String(e.block)}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                blk
+              <a className="k-link" href={`${EXPLORER}/block/${String(e.block)}`} target="_blank" rel="noreferrer">
+                block
               </a>
             ) : null}
           </span>
-          {e.note ? <p className="ledger__note num">{e.note}</p> : null}
         </li>
       ))}
     </ol>
   );
 }
 
-/** HH:MM in UTC, so two readers in two timezones see the same ledger. */
+/** Day and HH:MM in UTC, so two readers in two timezones see the same ledger. */
 function clock(at: LedgerEvent["at"]): string {
-  if (at === null || at === undefined) return "not recorded";
+  if (at === null || at === undefined) return "time not recorded";
   const d = new Date(at);
-  if (!Number.isFinite(d.getTime())) return "not recorded";
-  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+  if (!Number.isFinite(d.getTime())) return "time not recorded";
+  return `${d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })}, ${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")} UTC`;
 }

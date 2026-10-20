@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Code2, Gift, Hammer, ScanSearch, Stamp } from "lucide-react";
+import ShowCurrent from "./ShowCurrent";
 
 export type BuildersPlace = "build" | "check" | "quest" | "api" | "brand";
 
@@ -27,6 +28,7 @@ export default function BuildersNav({ current }: { current: BuildersPlace | null
             {label}
           </Link>
         ))}
+        <ShowCurrent />
       </div>
     </nav>
   );

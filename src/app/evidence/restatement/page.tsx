@@ -12,7 +12,7 @@ import restatement from "@/data/restatement.json";
 export const metadata: Metadata = {
   title: "Where we were wrong | Mandate",
   description:
-    "We measured our own agents wrong and slashed one for it. Every settled epoch, re-run through the corrected gauge, including what we still cannot prove.",
+    "We measured our own agents wrong and slashed their bonds for it. Every settled epoch, re-run through the corrected gauge, including what we still cannot prove.",
 };
 
 const bnb = (wei: string) => (Number(BigInt(wei)) / 1e18).toFixed(8);

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { ArrowRight, Lock } from "lucide-react";
 import AppShell from "@/components/v2/shell/AppShell";
 import Agent from "@/components/characters/Agent";
+import { FOUNDERS } from "@/components/builders/house";
 import Source from "@/components/x/Source";
 import Empty from "@/components/x/Empty";
 import TrustHead from "@/components/trust/TrustHead";
@@ -143,7 +144,7 @@ export default async function ProofPage() {
                     <span className="tr-board__id k-num">{t.id}</span>
                     {JOB[t.category] ? (
                       <span className="tr-board__who">
-                        <Agent job={JOB[t.category]} seed={`proof-${t.id}`} size={48} state={t.verdict === "loss" ? "failed" : t.verdict === "win" ? "delivered" : "awake"} slot="board" />
+                        <Agent job={JOB[t.category]} seed={FOUNDERS.find((f) => f.job === JOB[t.category])?.id ?? `proof-${t.id}`} house={FOUNDERS.some((f) => f.job === JOB[t.category])} size={48} state={t.verdict === "win" ? "delivered" : "awake"} slot={`board${i}`} />
                       </span>
                     ) : null}
                     <span className="tr-board__v">{t.verdict === "win" ? "won" : t.verdict === "loss" ? "lost" : t.verdict === "mixed" ? "mixed" : "not measurable"}</span>

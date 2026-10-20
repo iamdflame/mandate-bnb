@@ -60,6 +60,9 @@ export default async function ComparePage({
     .map((id) => all.find((l) => l.tokenId === id) ?? listingFor(id, hires?.get(id) ?? 0, (hc?.settled.get(id) ?? 0) + (hires?.get(id) ?? 0)))
     .filter((l): l is Listing => Boolean(l));
 
+  // The same pose wherever this agent is drawn on the page: hireable, or how long since it answered.
+  const poseFor = ({ l, verdict }: { l: Listing; verdict: { ok: boolean } }) =>
+    poseOf({ hireable: verdict.ok, answeredMinutesAgo: l.probe?.answered && l.probe.at ? (Date.now() - Date.parse(l.probe.at)) / 60000 : null });
   const cols = chosen.map((l) => {
     const report = assayFor(l.tokenId);
     return { l, report, trust: trustOf(l, report), verdict: hirePath(l) };
@@ -97,7 +100,7 @@ export default async function ComparePage({
         crumbs={[{ href: "/agents", label: "Agents" }]}
         title="Compare agents"
         lede="Side by side, on what we checked. No overall score: the right agent depends on your job."
-        agent={{ job: cols[0]?.l.category ?? "rebalancing", seed: cols[0]?.l.tokenId ?? "344119", state: "awake" }}
+        agent={cols[0] ? { job: cols[0].l.category ?? "rebalancing", seed: cols[0].l.tokenId, state: poseFor(cols[0]) } : { job: "rebalancing", seed: "344119", house: true, state: "awake" }}
       >
         {usingDefault ? (
           <p className="k-small">
@@ -140,7 +143,7 @@ export default async function ComparePage({
                     <th key={l.tokenId} scope="col">
                       <div className="x-cmpt__head">
                         <span className="x-cmpt__art" aria-hidden="true">
-                          <Agent job={l.category} seed={l.tokenId} size={88} state={poseOf({ hireable: verdict.ok, answeredMinutesAgo: l.probe?.answered && l.probe.at ? (Date.now() - Date.parse(l.probe.at)) / 60000 : null })} slot="cmp" />
+                          <Agent job={l.category} seed={l.tokenId} size={88} state={poseFor({ l, verdict })} slot="cmp" />
                         </span>
                         <Link href={`/agents/${l.tokenId}`} className="x-cmpt__name">
                           {l.name}

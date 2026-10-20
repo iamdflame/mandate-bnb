@@ -55,76 +55,76 @@ export default function JobTile({ m, art, title, viewHref }: { m: MarketMandate;
   };
 
   return (
-    <article className="x-job">
-      <div className="x-job__art">
+    <article className="ac-jtile" data-job-id={m.id}>
+      <div className="ac-jtile__art">
         {art}
-        <span className="x-job__open">
-          <span className="x-status__dot" aria-hidden="true" />
+        <span className="k-tag k-tag--ours ac-jtile__open">
+          <span className="k-dot k-dot--live" aria-hidden="true" />
           Open
         </span>
       </div>
-      <div className="x-job__body">
-        <h3 className="x-job__t">{title}</h3>
-        <dl className="x-job__facts">
+      <div className="ac-jtile__body">
+        <h3 className="k-h3">{title}</h3>
+        <dl className="ac-perm__facts ac-jtile__facts">
           <div>
             <dt>Capital</dt>
-            <dd className="x-mono">{bnb(m.capitalWei)}</dd>
+            <dd className="k-num">{bnb(m.capitalWei)}</dd>
           </div>
           <div>
             <dt>Bond required</dt>
-            <dd className="x-mono">{floorWei ? bnb(floorWei, 5) : "Not read"}</dd>
+            <dd className="k-num">{floorWei ? bnb(floorWei, 5) : "Not read"}</dd>
           </div>
           <div>
             <dt>Duration</dt>
-            <dd>{m.epochsTotal} hours</dd>
+            <dd className="k-num">{m.epochsTotal} hours</dd>
           </div>
           <div>
             <dt>Bids</dt>
-            <dd>{bids}</dd>
+            <dd className="k-num">{bids}</dd>
           </div>
         </dl>
 
-        <div className="x-job__act">
-          <Link href={viewHref} className="x-btn x-btn--sm x-btn--ghost">
+        <div className="ac-jtile__act">
+          <Link href={viewHref} className="k-btn k-btn--sm k-btn--ghost">
             View job
           </Link>
-          <details className="x-job__bid">
-            <summary className="x-btn x-btn--sm x-btn--primary">Bid</summary>
-            <div className="x-job__form">
+          <details className="ac-jtile__bid">
+            <summary className="k-btn k-btn--sm k-btn--primary">Bid</summary>
+            <div className="ac-jtile__form">
               {tx.phase === "confirmed" ? (
-                <p className="x-pay__ok">
+                <p className="k-note k-note--ok">
                   Bid placed.{" "}
-                  <a className="x-link" href={`${marketChain.blockExplorers?.default.url}/tx/${tx.hash}`} target="_blank" rel="noreferrer">
+                  <a className="k-link" href={`${marketChain.blockExplorers?.default.url}/tx/${tx.hash}`} target="_blank" rel="noreferrer">
                     View it
                   </a>
                   . The buyer decides from here.
                 </p>
               ) : !available ? (
-                <p className="x-pay__what">Bidding stakes real BNB, so it needs a wallet. There is none in this browser.</p>
+                <p className="k-small">Bidding stakes real BNB, so it needs a wallet. There is none in this browser.</p>
               ) : !address ? (
-                <button className="x-btn x-btn--primary x-btn--block" type="button" onClick={() => void connect()}>
+                <button className="k-btn k-btn--primary k-btn--block" type="button" onClick={() => void connect()}>
                   Connect wallet
                 </button>
               ) : !ready ? (
-                <button className="x-btn x-btn--primary x-btn--block" type="button" onClick={() => void switchChain()}>
+                <button className="k-btn k-btn--primary k-btn--block" type="button" onClick={() => void switchChain()}>
                   Switch to {marketChain.name}
                 </button>
               ) : (
                 <>
-                  <label className="x-field">
-                    <span className="x-field__l">You will beat the benchmark by (basis points an hour)</span>
-                    <input className="x-input x-mono" inputMode="numeric" value={target} onChange={(e) => setTarget(e.target.value)} />
-                    <span className="x-pay__note">{Number.isFinite(targetNum) ? `${(targetNum / 100).toFixed(2)}% an hour.` : "A whole number of basis points."}</span>
+                  <label className="ac-dialog__field">
+                    <span className="k-label">You will beat the benchmark by (basis points an hour)</span>
+                    <input className="ac-dialog__input k-num" inputMode="numeric" value={target} onChange={(e) => setTarget(e.target.value)} />
+                    <span className="k-small">{Number.isFinite(targetNum) ? `${(targetNum / 100).toFixed(2)}% an hour.` : "A whole number of basis points."}</span>
                   </label>
-                  <label className="x-field">
-                    <span className="x-field__l">Your bond, in BNB</span>
-                    <input className="x-input x-mono" inputMode="decimal" placeholder={suggested} value={bond} onChange={(e) => setBond(e.target.value)} />
-                    <span className="x-pay__note">A quarter is taken for each hour you fall behind. Returned in full if you serve the term.</span>
+                  <label className="ac-dialog__field">
+                    <span className="k-label">Your bond, in BNB</span>
+                    <input className="ac-dialog__input k-num" inputMode="decimal" placeholder={suggested} value={bond} onChange={(e) => setBond(e.target.value)} />
+                    <span className="k-small">A quarter is taken for each hour you fall behind. Returned in full if you serve the term.</span>
                   </label>
-                  {refusal ? <p className="x-pay__err">{refusal}</p> : null}
-                  {tx.phase === "failed" ? <p className="x-pay__err">{tx.error}</p> : null}
+                  {refusal ? <p className="k-small ac-step__wait">{refusal}</p> : null}
+                  {tx.phase === "failed" ? <p className="k-note k-note--err">{tx.error}</p> : null}
                   <button
-                    className="x-btn x-btn--primary x-btn--block"
+                    className="k-btn k-btn--primary k-btn--block"
                     type="button"
                     disabled={Boolean(refusal) || tx.phase === "signing" || tx.phase === "pending"}
                     onClick={() => void submit()}

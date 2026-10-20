@@ -2,18 +2,20 @@ import Link from "next/link";
 import { EPOCHS_FROM } from "@/lib/market/epochs";
 import type { Metadata } from "next";
 import { formatEther } from "viem";
-import { ArrowRight, Briefcase } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import AppShell from "@/components/v2/shell/AppShell";
-import AgentArtwork from "@/components/x/AgentArtwork";
-import AgentTile from "@/components/x/AgentTile";
+import Agent from "@/components/characters/Agent";
+import AgentCard from "@/components/k/AgentCard";
+import PageHead from "@/components/k/PageHead";
+import None from "@/components/account/None";
+import Empty from "@/components/x/Empty";
 import JobTile from "@/components/x/JobTile";
 import Ago from "@/components/x/Ago";
 import { CATEGORIES, CATEGORY_LABEL } from "@/lib/config";
 import { mandatePath } from "@/lib/chain/deployments";
 import { marketState, type MarketMandate } from "@/lib/market/market-state";
-import { listings } from "@/lib/market/listing";
 import { hireCounts, OPERATED_WALLETS } from "@/lib/market/hires";
-import { PRED, applyQuery, EMPTY } from "@/lib/market/catalogue";
+import { viewTakers } from "@/lib/view/jobs";
 import { live } from "@/lib/data/live";
 
 export const metadata: Metadata = {
@@ -45,7 +47,7 @@ export default async function JobsPage() {
   await live();
   const state = await marketState().catch(() => null);
   const hc = await hireCounts();
-  const takers = applyQuery(listings(hc.byTokenId, hc.settled, hc.delivery).filter(PRED.job), EMPTY).shown.slice(0, 8);
+  const takers = viewTakers(hc, 8);
 
   const all = state?.mandates ?? [];
   const open = all.filter((m) => m.canonical && m.state === 0);
@@ -56,221 +58,228 @@ export default async function JobsPage() {
   const running = all.filter((m) => m.canonical && m.state === 1 && !halted(m));
   const over = all.filter((m) => m.state >= 2 || (!m.canonical && m.state === 1) || halted(m));
 
+  const pose = (m: MarketMandate) => (m.state === 1 && !halted(m) && m.canonical ? "working" : m.state === 0 ? "ready" : "dozing");
+  const signed = (m: MarketMandate) => {
+    const alpha = m.cumulativeAlphaBps / 100;
+    return m.epochsSettled ? `${alpha >= 0 ? "+" : "−"}${Math.abs(alpha).toFixed(2)}%` : null;
+  };
+
   return (
     <AppShell>
-      <section className="x-wrap x-mkt-head">
-        <div className="x-mkt-head__row">
-          <h1 className="x-mkt-head__h">Jobs</h1>
-          <p className="x-mkt-head__sub">Capital put to work by an agent that stakes a bond it loses if it falls short.</p>
-          <p className="x-fresh x-mkt-head__fresh">
-            {state ? (
-              <>
-                <span className="x-status__dot" style={{ background: "var(--c-ok)" }} aria-hidden="true" />
-                Block {Number(state.blockNumber).toLocaleString("en-GB")} · <Ago iso={state.at} prefix="read" />
-              </>
-            ) : (
-              "The chain did not answer this time"
-            )}
-          </p>
-        </div>
+      <PageHead
+        crumbs={[{ href: "/activity", label: "Live" }]}
+        title="Jobs with capital"
+        lede="Capital put to work by an agent that stakes a bond it loses if it falls short."
+        agent={{ job: "grid-trading", seed: "jobs-board", state: "working" }}
+        source={
+          state ? (
+            <>
+              <span className="k-dot k-dot--live" aria-hidden="true" /> BNB Smart Chain, block {Number(state.blockNumber).toLocaleString("en-GB")}, <Ago iso={state.at} prefix="read" />
+            </>
+          ) : (
+            "The chain did not answer this time"
+          )
+        }
+      >
         {state ? (
-          <dl className="x-jobstats">
-            <div>
-              <dt>Open for bids</dt>
-              <dd>{open.length}</dd>
+          <div className="k-figs ac-jb__figs k-rise" style={{ ["--i" as string]: 4 }}>
+            <div className="k-fig">
+              <span className="k-fig__n">{open.length}</span>
+              <span className="k-fig__l">open for bids</span>
             </div>
-            <div>
-              <dt>Running now</dt>
-              <dd>{running.length}</dd>
+            <div className="k-fig">
+              <span className="k-fig__n">{running.length}</span>
+              <span className="k-fig__l">running now</span>
             </div>
-            <div>
-              <dt>Capital under mandate</dt>
-              <dd className="x-mono">{bnb(state.totals.underMandateWei)}</dd>
+            <div className="k-fig">
+              <span className="k-fig__n">{state.totals.opened}</span>
+              <span className="k-fig__l">ever opened</span>
             </div>
-            <div>
-              <dt>Bonds at stake</dt>
-              <dd className="x-mono">{bnb(state.totals.bondedWei, 5)}</dd>
-            </div>
-            <div>
-              <dt>Jobs ever opened</dt>
-              <dd>{state.totals.opened}</dd>
-            </div>
-          </dl>
+          </div>
+        ) : null}
+        {state ? (
+          <p className="k-small">
+            {bnb(state.totals.underMandateWei)} under mandate, {bnb(state.totals.bondedWei, 5)} of bonds at stake. The amounts are small, and most of the books are held by wallets we operate.
+          </p>
         ) : null}
         {state?.unread.length ? (
-          <p className="x-ad-src">
-            {state.unread.join(", ")} did not answer, so {state.unread.length === 1 ? "its" : "their"} jobs are missing from these figures rather than counted as
-            zero.
+          <p className="k-small">
+            {state.unread.join(", ")} did not answer, so {state.unread.length === 1 ? "its" : "their"} jobs are missing from these figures rather than counted as zero.
           </p>
         ) : null}
-      </section>
+      </PageHead>
 
       {/* -------------------------------------------------------- open jobs */}
-      <section className="x-wrap x-section--tight" aria-labelledby="h-open">
-        <div className="x-head">
+      <section className="k-wrap ac-sec" aria-labelledby="h-open">
+        <div className="ac-sec__h">
           <div>
-            <h2 id="h-open">Open for bids</h2>
-            <p>Any wallet can bid. The bond is what makes a stranger&rsquo;s bid believable.</p>
+            <h2 className="k-h2" id="h-open">
+              Open for bids
+            </h2>
+            <p className="k-body">Any wallet can bid. The bond is what makes a stranger&rsquo;s bid believable.</p>
           </div>
         </div>
         {!state ? (
-          <p className="x-muted">The market could not be read just now. That is our node failing, not the market. Reload in a moment.</p>
+          <Empty title="The market could not be read just now" job="grid-trading" pose="dozing">
+            That is our node failing, not the market. Reload in a moment.
+          </Empty>
         ) : open.length ? (
-          <div className="x-grid x-grid--3">
-            {open.map((m) => (
-              <JobTile
-                key={m.id}
-                m={m}
-                title={titleOf(m)}
-                viewHref={mandatePath(m.deploymentAddress, m.id)}
-                art={<AgentArtwork category={catOf(m)} seed={`job:${m.id}`} />}
-              />
+          <div className="ac-jobgrid">
+            {open.map((m, i) => (
+              <JobTile key={m.id} m={m} title={titleOf(m)} viewHref={mandatePath(m.deploymentAddress, m.id)} art={<Agent job={catOf(m)} seed={`job:${m.id}`} size={104} state="ready" slot={`open${i}`} />} />
             ))}
           </div>
         ) : (
-          <div className="x-jobs-empty">
-            <span className="x-jobs-empty__i" aria-hidden="true">
-              <Briefcase size={22} />
-            </span>
-            <div>
-              <h3>No open jobs right now</h3>
-              <p>A job appears here the moment someone commits capital to one, and any wallet can bid on it. Start one by choosing an agent that takes jobs.</p>
-              <div className="x-jobs-empty__act">
-                <Link href="/agents?rail=job" className="x-btn x-btn--primary">
+          <Empty
+            title="No open jobs right now"
+            job="yield-optimisation"
+            pose="ready"
+            action={
+              <>
+                <Link href="/agents?rail=job" className="k-btn k-btn--primary">
                   Create a job
                 </Link>
                 {running.length ? (
-                  <a href="#running" className="x-btn x-btn--ghost">
+                  <a href="#running" className="k-btn k-btn--ghost">
                     See running jobs
                   </a>
                 ) : null}
-              </div>
-            </div>
-          </div>
+              </>
+            }
+          >
+            A job appears here the moment someone commits capital to one, and any wallet can bid on it. Start one by choosing an agent that takes jobs.
+          </Empty>
         )}
       </section>
 
       {/* ---------------------------------------------------------- running */}
-      <section className="x-wrap x-section--tight" aria-labelledby="h-running" id="running">
-        <div className="x-head">
+      <section className="k-wrap ac-sec" aria-labelledby="h-running" id="running">
+        <div className="ac-sec__h">
           <div>
-            <h2 id="h-running">Running now</h2>
-            <p>Marked against the benchmark every hour, on chain.</p>
+            <h2 className="k-h2" id="h-running">
+              Running now
+            </h2>
+            <p className="k-body">Marked against the benchmark every hour, on chain.</p>
           </div>
         </div>
         {running.length ? (
-          <ol className="x-runs">
-            {running.map((m) => {
+          <ol className="ac-jruns">
+            {running.map((m, i) => {
               const pct = m.epochsTotal ? Math.min(100, Math.round((m.epochsSettled / m.epochsTotal) * 100)) : 0;
               const alpha = m.cumulativeAlphaBps / 100;
               const ours = OPERATED_WALLETS.has(m.agent.toLowerCase());
               return (
-                <li key={`${m.deployment}-${m.id}`} className="x-run">
-                  <span className="x-run__art" aria-hidden="true">
-                    <AgentArtwork category={catOf(m)} seed={`job:${m.id}`} shape="square" />
+                <li key={`${m.deployment}-${m.id}`} className="ac-jrun" data-job={catOf(m) ?? undefined}>
+                  <span className="ac-jrun__art" aria-hidden="true">
+                    <Agent job={catOf(m)} seed={`job:${m.id}`} size={56} state={pose(m)} slot={`run${i}`} />
                   </span>
-                  <span className="x-run__main">
-                    <Link href={mandatePath(m.deploymentAddress, m.id)} className="x-run__t">
+                  <span className="ac-jrun__main">
+                    <Link href={mandatePath(m.deploymentAddress, m.id)} className="ac-jrun__t">
                       {titleOf(m)}
                     </Link>
-                    <span className="x-run__sub">
-                      {bnb(m.capitalWei)} · held by <span className="x-mono">{short(m.agent)}</span>
+                    <span className="k-small">
+                      <span className="k-num">{bnb(m.capitalWei)}</span>, held by <span className="k-mono">{short(m.agent)}</span>
                       {ours ? " (one of ours)" : ""}
-                      {m.canonical ? "" : ` · on ${m.deployment}`}
+                      {m.canonical ? "" : `, on ${m.deployment}`}
                     </span>
                   </span>
-                  <span className="x-run__prog">
-                    <span className="x-run__bar" aria-hidden="true">
+                  <span className="ac-jrun__prog">
+                    <span className="ac-run__bar" aria-hidden="true">
                       <span style={{ width: `${pct}%` }} />
                     </span>
-                    <span className="x-run__ep">
+                    <span className="k-small k-num">
                       Hour {m.epochsSettled} of {m.epochsTotal}
                     </span>
                   </span>
-                  <span className={`x-run__alpha x-mono${m.epochsSettled ? (alpha >= 0 ? " x-run__alpha--up" : " x-run__alpha--down") : ""}`}>
-                    {m.epochsSettled ? `${alpha >= 0 ? "+" : "−"}${Math.abs(alpha).toFixed(2)}%` : "None yet"}
-                  </span>
-                  <span className="x-run__strikes">{m.strikes ? `${m.strikes} strike${m.strikes === 1 ? "" : "s"}` : "No strikes"}</span>
+                  <span className={`ac-alpha k-num${m.epochsSettled ? (alpha >= 0 ? " ac-alpha--up" : " ac-alpha--down") : ""}`}>{signed(m) ?? "None yet"}</span>
+                  <span className="k-small">{m.strikes ? `${m.strikes} strike${m.strikes === 1 ? "" : "s"}` : "No strikes"}</span>
                 </li>
               );
             })}
           </ol>
         ) : (
-          <p className="x-muted">Nothing is running right now.</p>
+          <None job="rebalancing" seed="jobs-running">
+            Nothing is running right now.
+          </None>
         )}
 
         {over.length ? (
-          <details className="x-over">
+          <details className="ac-more ac-jb__over">
             <summary>
-              Finished, cancelled and on earlier contracts <span className="x-chip__n">{over.length}</span>
+              <span className="ac-more__t">Finished, cancelled and on earlier contracts</span>
+              <span className="ac-more__n">{over.length}</span>
             </summary>
-            <ol className="x-runs x-runs--over">
-              {over.map((m) => {
-                const alpha = m.cumulativeAlphaBps / 100;
-                return (
-                  <li key={`${m.deployment}-${m.id}`} className="x-run">
-                    <span className="x-run__art" aria-hidden="true">
-                      <AgentArtwork category={catOf(m)} seed={`job:${m.id}`} shape="square" />
-                    </span>
-                    <span className="x-run__main">
-                      <Link href={mandatePath(m.deploymentAddress, m.id)} className="x-run__t">
-                        {titleOf(m)}
-                      </Link>
-                      <span className="x-run__sub">
-                        {halted(m) ? "Our own test, halted in September" : m.canonical ? (STATE[m.state] ?? `State ${m.state}`) : `Left on ${m.deployment}, a contract we replaced`} · {bnb(m.capitalWei)}
+            <div className="ac-more__body">
+              <ol className="ac-jruns">
+                {over.map((m, i) => {
+                  const alpha = m.cumulativeAlphaBps / 100;
+                  return (
+                    <li key={`${m.deployment}-${m.id}`} className="ac-jrun ac-jrun--over" data-job={catOf(m) ?? undefined}>
+                      <span className="ac-jrun__art" aria-hidden="true">
+                        <Agent job={catOf(m)} seed={`job:${m.id}`} size={44} state="dozing" slot={`over${i}`} />
                       </span>
-                    </span>
-                    <span className="x-run__ep">
-                      {m.epochsSettled} of {m.epochsTotal} hours
-                    </span>
-                    <span className={`x-run__alpha x-mono${m.epochsSettled ? (alpha >= 0 ? " x-run__alpha--up" : " x-run__alpha--down") : ""}`}>
-                      {m.epochsSettled ? `${alpha >= 0 ? "+" : "−"}${Math.abs(alpha).toFixed(2)}%` : "None settled"}
-                    </span>
-                    <span className="x-run__strikes">{m.strikes ? `${m.strikes} strike${m.strikes === 1 ? "" : "s"}` : ""}</span>
-                  </li>
-                );
-              })}
-            </ol>
+                      <span className="ac-jrun__main">
+                        <Link href={mandatePath(m.deploymentAddress, m.id)} className="ac-jrun__t">
+                          {titleOf(m)}
+                        </Link>
+                        <span className="k-small">
+                          {halted(m) ? "Our own test, halted in September" : m.canonical ? (STATE[m.state] ?? `State ${m.state}`) : `Left on ${m.deployment}, a contract we replaced`}, <span className="k-num">{bnb(m.capitalWei)}</span>
+                        </span>
+                      </span>
+                      <span className="k-small k-num">
+                        {m.epochsSettled} of {m.epochsTotal} hours
+                      </span>
+                      <span className={`ac-alpha k-num${m.epochsSettled ? (alpha >= 0 ? " ac-alpha--up" : " ac-alpha--down") : ""}`}>{signed(m) ?? "None settled"}</span>
+                      <span className="k-small">{m.strikes ? `${m.strikes} strike${m.strikes === 1 ? "" : "s"}` : ""}</span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
           </details>
         ) : null}
       </section>
 
       {/* ----------------------------------------------------------- takers */}
-      <section className="x-wrap x-section--tight" aria-labelledby="h-takers">
-        <div className="x-head">
+      <section className="k-wrap ac-sec" aria-labelledby="h-takers">
+        <div className="ac-sec__h">
           <div>
-            <h2 id="h-takers">Agents available for jobs</h2>
-            <p>These take escrowed jobs in this market, with a bond behind every bid.</p>
+            <h2 className="k-h2" id="h-takers">
+              Agents that take jobs
+            </h2>
+            <p className="k-body">These take jobs with capital in this market, with a bond behind every bid.</p>
           </div>
-          <Link href="/agents?rail=job" className="x-head__link">
-            All of them <ArrowRight size={14} aria-hidden="true" />
+          <Link href="/agents?rail=job" className="k-btn k-btn--ghost">
+            All of them <ArrowRight size={16} className="k-btn__go" aria-hidden="true" />
           </Link>
         </div>
         {takers.length ? (
-          <div className="x-grid x-grid--4">
-            {takers.map((l) => (
-              <AgentTile key={l.tokenId} l={l} />
+          <ul className="ac-takers">
+            {takers.map((a, i) => (
+              <li key={a.tokenId}>
+                <AgentCard a={a} i={i} slot={`tk${i}`} />
+              </li>
             ))}
-          </div>
+          </ul>
         ) : (
-          <p className="x-muted">No agent takes jobs in this market yet.</p>
+          <None job="health-factor" seed="jobs-takers">
+            No agent takes jobs in this market yet.
+          </None>
         )}
       </section>
 
-      <section className="x-wrap">
-        <div className="x-seller2">
-          <div>
-            <h2>Run an agent?</h2>
-            <p className="x-muted">
-              Bid on an open job by naming the return you will beat the benchmark by and staking BNB against it. A quarter of the bond is taken for every hour you
-              fall behind, and all of it comes back if you serve the term.
-            </p>
+      <section className="k-wrap ac-sec">
+        <div className="ac-seller">
+          <div className="ac-seller__art" aria-hidden="true">
+            <Agent job="grid-trading" seed="seller-bond" size={96} state="awake" slot="seller" />
           </div>
-          <div className="x-seller2__act">
-            <Link href="/list" className="x-btn">
-              List your agent
-            </Link>
+          <div className="k-stack" style={{ ["--gap" as string]: "8px" }}>
+            <h2 className="k-h3">Run an agent?</h2>
+            <p className="k-small">Bid on an open job by naming the return you will beat the benchmark by and staking BNB against it. A quarter of the bond is taken for every hour you fall behind, and all of it comes back if you serve the term.</p>
           </div>
+          <Link href="/list" className="k-btn">
+            List your agent
+          </Link>
         </div>
       </section>
     </AppShell>

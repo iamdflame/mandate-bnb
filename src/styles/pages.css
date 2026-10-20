@@ -16,7 +16,12 @@
 .k-crumbs a { color: var(--c-text-3); text-decoration: none; }
 .k-crumbs a:hover { color: var(--c-text); }
 .k-crumbs a + a::before { content: "/"; margin-right: 6px; color: var(--k-hair-strong); }
-@media (max-width: 767px) { .k-phead__in { grid-template-columns: minmax(0, 1fr); } .k-phead__art { display: none; } }
+@media (max-width: 767px) {
+  .k-phead__in { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  /* On a phone the agent stands above the title, small, so the page still opens on a face. */
+  .k-phead__art { order: -1; justify-self: start; width: 104px; height: 96px; margin: -8px 0 0 -10px; }
+  .k-phead__art .k-char { width: 96px !important; height: 96px !important; }
+}
 
 /* --- section head ---------------------------------------------------------- */
 .k-shead { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 24px; margin-bottom: clamp(20px, 3vw, 32px); }
