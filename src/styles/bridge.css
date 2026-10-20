@@ -22,8 +22,8 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38), inset 0 -1px 0 rgba(0, 0, 0, 0.18), var(--k-glow);
 }
 .x-btn--primary:hover, .m-btn--primary:hover { color: var(--c-accent-ink); background: linear-gradient(180deg, #24d6a3 0%, #15ba8c 100%); }
-.x-btn--ghost, .m-btn--quiet, .m-btn--ghost { background: transparent; box-shadow: none; color: var(--c-text-2); }
-.x-btn--ghost:hover, .m-btn--quiet:hover, .m-btn--ghost:hover { background: rgba(255, 255, 255, 0.06); color: var(--c-text); }
+.x-btn--ghost, .m-btn--quiet { background: transparent; box-shadow: none; color: var(--c-text-2); }
+.x-btn--ghost:hover, .m-btn--quiet:hover { background: rgba(255, 255, 255, 0.06); color: var(--c-text); }
 .x-btn--sm, .m-btn--sm { height: 36px; padding: 0 13px; border-radius: 10px; font-size: 0.875rem; }
 .x-btn--lg, .m-btn--lg { height: 54px; padding: 0 26px; border-radius: 14px; font-size: 1rem; }
 .x-btn--block, .m-btn--block { width: 100%; }

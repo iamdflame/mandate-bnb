@@ -1,3 +1,4 @@
+import "@/styles/builders.css";
 import type { Metadata } from "next";
 import { Check, Download, X } from "lucide-react";
 import AppShell from "@/components/v2/shell/AppShell";

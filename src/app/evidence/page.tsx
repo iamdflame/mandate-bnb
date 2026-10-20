@@ -1,3 +1,4 @@
+import "@/styles/trust.css";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, ExternalLink, Terminal } from "lucide-react";

@@ -1,3 +1,4 @@
+import "@/styles/account.css";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { AlertTriangle, ArrowRight, Bell, Search, Wallet } from "lucide-react";

@@ -1,3 +1,4 @@
+import "@/styles/builders.css";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight, ExternalLink } from "lucide-react";

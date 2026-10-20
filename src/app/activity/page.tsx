@@ -1,3 +1,4 @@
+import "@/styles/account.css";
 import Link from "next/link";
 import { EPOCHS_FROM } from "@/lib/market/epochs";
 import type { Metadata } from "next";

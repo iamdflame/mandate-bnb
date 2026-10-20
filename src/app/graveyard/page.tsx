@@ -1,3 +1,4 @@
+import "@/styles/trust.css";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowRight } from "lucide-react";

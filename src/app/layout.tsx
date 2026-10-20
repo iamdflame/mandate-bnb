@@ -18,9 +18,6 @@ import "@/styles/home.css";
 import "@/styles/pages.css";
 import "@/styles/market.css";
 import "@/styles/agent.css";
-import "@/styles/trust.css";
-import "@/styles/builders.css";
-import "@/styles/account.css";
 
 /*
   The brand's three faces, self-hosted from ./fonts rather than fetched at

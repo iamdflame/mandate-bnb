@@ -1,3 +1,4 @@
+import "@/styles/builders.css";
 import type { Metadata } from "next";
 import { formatUnits } from "viem";
 import Link from "next/link";

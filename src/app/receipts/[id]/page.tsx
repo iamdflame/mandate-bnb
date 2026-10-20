@@ -1,3 +1,4 @@
+import "@/styles/account.css";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { formatEther } from "viem";

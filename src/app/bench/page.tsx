@@ -1,3 +1,4 @@
+import "@/styles/trust.css";
 import type { Metadata } from "next";
 import Link from "next/link";
 import AppShell from "@/components/v2/shell/AppShell";

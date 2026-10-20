@@ -1,3 +1,4 @@
+import "@/styles/account.css";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { formatEther, formatUnits, keccak256, type Address, type Hex } from "viem";
