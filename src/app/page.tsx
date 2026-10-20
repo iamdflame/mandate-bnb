@@ -166,7 +166,7 @@ export default async function Home() {
                   </p>
                   <p className="h-receipt__who">
                     <Link href={`/agents/${r.tokenId}`}>{r.agent}</Link>
-                    <span className="h-receipt__price k-num">{formatUnits(BigInt(r.budget), 18)} $U</span>
+                    <span className="h-receipt__price k-num">{/^\d+$/.test(String(r.budget)) ? `${formatUnits(BigInt(r.budget), 18)} $U` : r.budget}</span>
                   </p>
                   <ol className="h-receipt__steps">
                     {r.steps.map((s, i) => (
