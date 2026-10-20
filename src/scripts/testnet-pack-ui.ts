@@ -12,7 +12,7 @@
  * transaction while the page has it on any other chain.
  */
 
-import { chromium } from "playwright-core";
+import { chromium, type Page } from "playwright-core";
 import { createWalletClient, http, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { bscTestnet } from "viem/chains";
@@ -20,6 +20,24 @@ import { bscTestnet } from "viem/chains";
 const baseIdx = process.argv.indexOf("--base");
 const BASE = (baseIdx > -1 ? process.argv[baseIdx + 1]! : "https://www.mandatemarkets.com").replace(/\/$/, "");
 const RPC: Record<number, string> = { 56: "https://bsc-dataseed.bnbchain.org", 97: "https://bsc-testnet-rpc.publicnode.com" };
+
+/*
+  A candidate deployment, served under the live address: a passkey is bound to
+  mandatemarkets.com, so the browser stays there while every page and API
+  request is answered by the candidate (with the protection bypass, if set).
+*/
+const candIdx = process.argv.indexOf("--candidate");
+const CANDIDATE = candIdx > -1 ? process.argv[candIdx + 1]!.replace(/\/$/, "") : null;
+async function serveCandidate(target: Pick<Page, "route">, base: string) {
+  if (!CANDIDATE) return;
+  await target.route(`${base}/**`, async (route) => {
+    const req = route.request();
+    const u = new URL(req.url());
+    const headers = { ...req.headers(), ...(process.env.VERCEL_BYPASS ? { "x-vercel-protection-bypass": process.env.VERCEL_BYPASS } : {}) };
+    delete (headers as Record<string, string>).host;
+    await route.fulfill({ response: await route.fetch({ url: CANDIDATE + u.pathname + u.search, headers }) });
+  });
+}
 const key = process.env.TEST_WALLET_KEY!;
 const account = privateKeyToAccount((key.startsWith("0x") ? key : `0x${key}`) as Hex);
 const wallet = createWalletClient({ account, chain: bscTestnet, transport: http(RPC[97]) });
@@ -30,6 +48,7 @@ async function main() {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   page.on("pageerror", (e) => console.log("page error:", e.message));
+  await serveCandidate(page, BASE);
 
   await page.exposeFunction("__wallet", async (method: string, params: unknown[]) => {
     switch (method) {
@@ -79,7 +98,7 @@ async function main() {
   `);
 
   await page.goto(`${BASE}/quest`, { waitUntil: "networkidle" });
-  const pack = page.locator("section.x-pack--testnet");
+  const pack = page.locator("section.bd-pack--testnet");
   await pack.waitFor();
   console.log("found the testnet pack");
   await pack.getByRole("button", { name: /Connect your campaign wallet/ }).click();
@@ -91,8 +110,8 @@ async function main() {
   await pack.getByText(/Both testnet jobs are funded/).waitFor({ timeout: 240_000 });
   console.log(`funded after ${sent.length} signatures`);
   // A job line, not the pack's own description, which also says "delivered on chain".
-  await pack.locator(".x-pack__job", { hasText: /delivered/ }).first().waitFor({ timeout: 180_000 });
-  const jobs = await pack.locator(".x-pack__job").allTextContents();
+  await pack.locator(".bd-pack__job", { hasText: /delivered/ }).first().waitFor({ timeout: 180_000 });
+  const jobs = await pack.locator(".bd-pack__job").allTextContents();
   console.log("jobs:", jobs.map((t) => t.replace(/\s+/g, " ").trim()).join(" | "));
   await page.screenshot({ path: process.env.SHOT ?? "/tmp/testnet-pack.png", fullPage: false, clip: (await pack.boundingBox()) ?? undefined });
   await browser.close();

@@ -20,6 +20,8 @@ import { SITE } from "@/lib/site";
 const baseIdx = process.argv.indexOf("--base");
 const BASE = (baseIdx > -1 ? process.argv[baseIdx + 1]! : process.env.SMOKE_BASE ?? SITE).replace(/\/$/, "");
 const TIMEOUT = Number(process.env.SMOKE_TIMEOUT_MS ?? 45_000);
+/** A deployment that is not yet on the domain sits behind Vercel's protection: VERCEL_BYPASS carries the project's automation bypass token. */
+const SMOKE_HEADERS: Record<string, string> = { "user-agent": "mandate-smoke", ...(process.env.VERCEL_BYPASS ? { "x-vercel-protection-bypass": process.env.VERCEL_BYPASS } : {}) };
 const DEMO = "0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90";
 
 interface Check {
@@ -33,7 +35,7 @@ const record = (name: string, ok: boolean, detail: string) => checks.push({ name
 async function get(path: string): Promise<{ status: number; text: string; ms: number }> {
   const started = Date.now();
   try {
-    const res = await fetch(BASE + path, { redirect: "follow", signal: AbortSignal.timeout(TIMEOUT), headers: { "user-agent": "mandate-smoke" } });
+    const res = await fetch(BASE + path, { redirect: "follow", signal: AbortSignal.timeout(TIMEOUT), headers: SMOKE_HEADERS });
     return { status: res.status, text: await res.text(), ms: Date.now() - started };
   } catch (e) {
     return { status: 0, text: String((e as Error).message), ms: Date.now() - started };
@@ -59,10 +61,9 @@ async function main() {
     {
       name: "six beats, each with a link",
       test: (h) => {
-        const list = h.split('class="m-walkbig"')[1]?.split("</ol>")[0] ?? "";
-        const items = list.split("<li").slice(1);
+        const items = h.split('<li class="bd-step bd-beat"').slice(1);
         if (items.length !== 6) return `expected 6 beats, found ${items.length}`;
-        const bare = items.findIndex((li) => !/href="/.test(li));
+        const bare = items.findIndex((li) => !/href="/.test(li.split('class="bd-beat__acts"')[1]?.slice(0, 600) ?? ""));
         return bare === -1 ? true : `beat ${bare + 1} has no link`;
       },
     },
@@ -140,7 +141,7 @@ async function main() {
   // Proof shows the lock and the losses; the graveyard keeps its rows, ours labelled.
   await page("/proof", [
     { name: "the lock transaction is shown", test: (h) => h.includes("0x00b0e484c69fc3f149") || "no lock transaction on the page" },
-    { name: "the losses are counted", test: (h) => /x-score__item--loss/.test(h) || "no loss count on the page" },
+    { name: "the losses are counted", test: (h) => /data-v="loss"><strong[^>]*>\d+<\/strong> lost/.test(h) || "no loss count on the page" },
   ]);
   // Every contract we read is listed, each with its BscScan link: a hard gate for Phase 2.
   await page("/contracts", [
@@ -174,51 +175,59 @@ async function main() {
   // Build takes a builder from nothing to registered.
   await page("/build", [
     { name: "the starter deploys in one click", test: (h) => h.includes("vercel.com/new/clone") || "no deploy button" },
-    { name: "the ladder is shown", test: (h) => h.includes("x-build__ladder") || "no ladder" },
+    { name: "the ladder is shown", test: (h) => h.includes('class="bd-climb"') || "no ladder" },
   ]);
   // The quest offers a hire in each of the four jobs, and the builder step.
   await page("/quest", [
-    { name: "all four jobs are offered", test: (h) => (h.match(/x-quest__job"/g) ?? []).length + (h.match(/x-quest__job x-quest__job--done"/g) ?? []).length >= 4 || "fewer than four job cards" },
+    { name: "all four jobs are offered", test: (h) => (h.match(/class="bd-qjob(?: bd-qjob--done)?"/g) ?? []).length >= 4 || "fewer than four job cards" },
     { name: "every job has an agent to hire", test: (h) => !h.includes("Nobody can be hired for this job right now") || "a job with nobody to hire" },
     { name: "BNB's rules and its registration are stated", test: (h) => (h.includes("forms.gle/jzTajVNZEgukeoYT9") && h.includes("different agents")) || "no campaign rules or registration link" },
-    // Most people arrive here to hire: two of the three, in one confirmation, before the rules.
-    { name: "the two-hire pack comes first", test: (h) => (h.includes('class="x-pack"') && h.indexOf('class="x-pack"') < h.indexOf("x-quest__steps")) || "no pack ahead of the steps" },
+    // Most people arrive here to hire: two of the three, in one confirmation, before picking one job at a time.
+    { name: "the two-hire pack comes before the single hires", test: (h) => (h.includes('class="bd-pack"') && h.indexOf('class="bd-pack"') < h.indexOf('class="bd-qjobs"')) || "no pack ahead of the job list" },
     { name: "the same two hires are offered free on testnet", test: (h) => h.includes("free on testnet") || "no testnet pack" },
   ]);
   // A builder learns whether people can hire their agent here.
-  await page("/check?q=344119", [{ name: "says whether people can hire it here", test: (h) => h.includes("Can people hire it on MANDATE?") || "no hire box" }]);
+  await page("/check?q=344119", [{ name: "says whether people can hire it here", test: (h) => h.includes("Can people hire it here?") || "no hire box" }]);
   // The Set and Earn check our posts link to: it renders the checks for an agent, and a wallet's agents.
   await page("/check?q=344123", [
-    { name: "the six checks render for an agent", test: (h) => (h.includes("x-qualify") && h.includes("Set and Earn checks")) || "no check panel" },
+    { name: "the six checks render for an agent", test: (h) => (h.includes('class="bd-qual"') && h.includes("Set and Earn&#x27;s checks")) || "no check panel" },
   ]);
   // Builders rarely know their id: a name, or a link to the agent's page, finds it too.
   await page(`/check?q=${encodeURIComponent("Mandate Guard-1")}`, [
-    { name: "an agent's name finds its check", test: (h) => h.includes("x-qualify") || h.includes("x-check__agent") || "the name found nothing" },
+    { name: "an agent's name finds its check", test: (h) => h.includes('class="bd-qual"') || "the name found nothing" },
   ]);
-  // The shop opens on what can be hired: every card on the first screen has a Hire button.
+  // The shop opens on what can be hired: every card on it opens its agent and shows a price, not a reason it cannot be hired.
+  let firstCard: string | undefined;
   await page("/agents", [
     {
       name: "opens on Ready to hire, every card hireable",
       test: (h) => {
-        if (!/x-tab x-tab--on"[^>]*><span class="x-tab__long">Ready to hire/.test(h)) return "not on the Ready to hire tab";
-        // A card's body can stream in after its frame, so each card's Hire link is looked for anywhere in the page.
-        const ids = [...h.matchAll(/class="x-agent[^"]*" data-agent="(\d+)"/g)].slice(0, 12).map((m) => m[1]!);
-        const dead = ids.filter((id) => !h.includes(`href="/agents/${id}#call"`) && !h.includes(`href="/hire/${id}"`));
-        return (ids.length > 0 && dead.length === 0) || `${dead.length} of ${ids.length} cards cannot be hired (${dead.join(", ")})`;
+        if (!/class="k-tab" aria-current="page"[^>]*>Ready to hire/.test(h)) return "not on the Ready to hire tab";
+        const ids = [...h.matchAll(/<a class="k-agent"[^>]*href="\/agents\/(\d+)"/g)].map((m) => m[1]!);
+        firstCard = ids[0];
+        // A card's body can stream in after its frame, so the price labels are read from anywhere in the page.
+        const labels = [...h.matchAll(/class="k-agent__price k-num">([^<]*)</g)].map((m) => m[1]!);
+        const unpriced = labels.filter((l) => !/^\d[\d.]* \S+$/.test(l));
+        if (!ids.length) return "no agent cards";
+        return unpriced.length === 0 || `${unpriced.length} of ${labels.length} cards show no price (${unpriced.slice(0, 3).join("; ")})`;
       },
     },
     {
       // 19 on 6 Oct before the hireability pass, 28 after it: a slide back below 25 means something on our side broke again.
       name: "at least 25 agents are ready to hire",
       test: (h) => {
-        const n = Number(/x-tab x-tab--on"[^>]*>.*?<span class="x-tab__n">(\d+)</.exec(h)?.[1] ?? NaN);
+        const n = Number(/class="k-tab" aria-current="page"[^>]*>Ready to hire<span class="k-tab__n">(\d+)</.exec(h)?.[1] ?? NaN);
         return n >= 25 || `the Ready to hire tab counts ${Number.isNaN(n) ? "nothing" : n}`;
       },
     },
   ]);
+  // A card opens its agent, and the agent's page is where the Hire button is.
+  if (firstCard) {
+    await page(`/agents/${firstCard}`, [{ name: "the first card's agent can be hired from its page", test: (h) => /href="(?:#call|\/hire\/\d+)"[^>]*>Hire/.test(h) || "no Hire button on the page" }]);
+  }
   await page("/graveyard", [
-    { name: "failures are listed", test: (h) => h.includes("x-grave__who") || "no rows" },
-    { name: "our own mistake is labelled", test: (h) => h.includes("Our mistake, not theirs") || "no row labelled as ours" },
+    { name: "failures are listed", test: (h) => h.includes("tr-ghost__who") || "no rows" },
+    { name: "our own mistake is labelled", test: (h) => h.includes("our mistake, not theirs") || "no row labelled as ours" },
   ]);
 
   // The re-run is the page's live claim, so it is checked live: three reads of the head block.
@@ -238,8 +247,8 @@ async function main() {
 
   // The seller's door: a real token placed on the ladder, with the next step named.
   await page("/list?id=342379", [
-    { name: "a token is placed on the ladder", test: (h) => /Rung \d of 5/.test(h) || "no rung on the page" },
-    { name: "the next step or the top is named", test: (h) => h.includes("x-listing__next") || "no next step" },
+    { name: "a token is placed on the ladder", test: (h) => /Rung \d\s*of 5/.test(h.replace(/<[^>]+>/g, "").replace(/\s+/g, " ")) || "no rung on the page" },
+    { name: "the next step or the top is named", test: (h) => h.includes('class="bd-next__k"') || "no next step" },
   ]);
 
   // The buyer's door as data: the diagnosis names the block it read.
@@ -283,7 +292,7 @@ async function main() {
   try {
     const res = await fetch(`${BASE}/api/mcp`, {
       method: "POST",
-      headers: { "content-type": "application/json", accept: "application/json, text/event-stream", "user-agent": "mandate-smoke" },
+      headers: { ...SMOKE_HEADERS, "content-type": "application/json", accept: "application/json, text/event-stream" },
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/list", params: {} }),
       signal: AbortSignal.timeout(TIMEOUT),
     });
