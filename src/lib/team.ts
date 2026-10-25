@@ -23,6 +23,7 @@ const FIXED: Record<string, string> = {
   "0xf2e72df2d0a2ede03ce22d40ba1c70202e6ffcab": "Passkey wallet from an interrupted phone screenshot run (funded, no hires)",
   // The renovation's candidate, walked end to end on 20 Oct.
   "0x40de942cf5a0b40be07def5464666266ceb2c038": "Passkey wallet from our passkey-ui run on the renovation candidate (testnet jobs 1577, 1578)",
+  "0xc4608ffc7068f95b40ddcdedce8484da9495324d": "Passkey wallet from our passkey-ui run on the performance-pass candidate, 25 Oct (testnet jobs 1652, 1653)",
 };
 
 /** Every team wallet, lowercase, with what it is for. */
