@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { Menu, Search, X } from "lucide-react";
 import Brand from "./Brand";
-import WalletButton from "@/components/v2/shell/WalletButton";
+import WalletButton from "@/components/x/WalletSlot";
 import NetworkBadge from "./NetworkBadge";
 
 /*
@@ -85,7 +85,7 @@ export default function Navbar() {
           {PLACES.map((p) => (
             <Link key={p.href} href={p.href} className="k-nav__place" aria-current={active === p.href ? "page" : undefined}>
               {active === p.href ? (
-                <motion.span
+                <m.span
                   layoutId="k-nav-active"
                   className="k-nav__pill"
                   transition={reduce ? { duration: 0 } : { type: "spring", bounce: 0.18, duration: 0.45 }}
@@ -125,7 +125,7 @@ export default function Navbar() {
 
       <AnimatePresence>
         {open ? (
-          <motion.div
+          <m.div
             id="k-sheet"
             ref={sheet}
             className="k-sheet"
@@ -139,7 +139,7 @@ export default function Navbar() {
           >
             <nav className="k-sheet__places" aria-label="Main">
               {PLACES.map((p, i) => (
-                <motion.div
+                <m.div
                   key={p.href}
                   initial={reduce ? false : { opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -149,7 +149,7 @@ export default function Navbar() {
                     <span className="k-sheet__t">{p.label}</span>
                     <span className="k-sheet__n">{p.note}</span>
                   </Link>
-                </motion.div>
+                </m.div>
               ))}
             </nav>
             <div className="k-sheet__wallet">
@@ -163,7 +163,7 @@ export default function Navbar() {
                 </Link>
               ))}
             </nav>
-          </motion.div>
+          </m.div>
         ) : null}
       </AnimatePresence>
     </header>

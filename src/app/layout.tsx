@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import MotionRoot from "@/components/k/MotionRoot";
 import { Analytics } from "@vercel/analytics/next";
 import Palette from "@/components/shell/Palette";
 import Landing from "@/components/x/Landing";
@@ -31,7 +32,8 @@ import "@/styles/agent.css";
 */
 const display = localFont({ src: "./fonts/InstrumentSans.woff2", variable: "--font-display", weight: "400 700", display: "swap" });
 const sans = localFont({ src: "./fonts/Inter.woff2", variable: "--font-sans", weight: "100 900", display: "swap" });
-const mono = localFont({ src: "./fonts/JetBrainsMono.woff2", variable: "--font-mono", weight: "100 800", display: "swap" });
+// Not preloaded: mono is for hashes and code, rarely above the fold, and its 38 KB would queue ahead of the page.
+const mono = localFont({ src: "./fonts/JetBrainsMono.woff2", variable: "--font-mono", weight: "100 800", display: "swap", preload: false });
 
 /*
   Titles are per route; this is the template and the fallback.
@@ -87,7 +89,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: `try{if(sessionStorage.getItem("strip:set-and-earn")==="off")document.documentElement.dataset.strip="off"}catch(e){}` }} />
       </head>
       <body>
-        {children}
+        <MotionRoot>{children}</MotionRoot>
         {/* ⌘K, mounted once. It renders nothing until it is opened. */}
         <Palette />
         {/* Where this visit came from, noted once for the hire funnel. Renders nothing. */}

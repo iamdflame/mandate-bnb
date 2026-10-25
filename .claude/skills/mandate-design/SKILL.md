@@ -22,7 +22,7 @@ Mandate is a marketplace for AI agents on BNB Smart Chain where every agent is c
 ## Tokens and layers
 
 - Brand tokens: `src/app/tokens.css` (`--c-*`, plus the renovation's `--k-*` for depth, type scale, motion). Add a token there before using a new value.
-- Stylesheets: `src/styles/system.css` (base, type, buttons, surfaces, chips, fields, motion), `shell.css` (nav, sheet, footer), `characters.css`, `agents.css` (the agent card), `pages.css` (inner-page primitives), then one sheet per area: `home.css`, `market.css` (agents, agent page, hire), `trust.css`, `builders.css`, `account.css` (diagnose, leash, desk, live, jobs, receipts, help, judges, misc). The three legacy sheets (`src/app/globals.css`, `theme.css`, `market.css`) sit in `@layer legacy` and lose to every k- rule; a migrated page stops using their classes (`x-`, `m-`, unprefixed).
+- Stylesheets: `src/styles/system.css` (base, type, buttons, surfaces, chips, fields, motion), `shell.css` (nav, sheet, footer), `characters.css`, `agents.css` (the agent card), `pages.css` (inner-page primitives), then one sheet per area: `home.css`, `market.css` (agents, agent page, compare, hire), `trust.css`, `builders.css`, `account.css` (diagnose, alerts, pool gaps, leash, desk, live, jobs, receipts, help, 404, error). The root layout imports only the shared sheets plus home and market; `trust.css`, `builders.css` and `account.css` are imported by each page of their area (first line of the page file), so a page never downloads another area's CSS. A new page in an area imports its sheet the same way. The three legacy sheets (`src/app/globals.css`, `theme.css`, `market.css`) sit in `@layer legacy` and lose to every k- rule; a migrated page stops using their classes (`x-`, `m-`, unprefixed). They were pruned to the selectors still named somewhere in `src`; when a component stops using a legacy class, its rule can go too. `bridge.css` and `bridge-m.css` restyle legacy components that are still shared (the hire drawer, passkey prompts, NeedHelp, OpenInWallet) until they move to k- classes.
 - Class prefix `k-` for shared parts; a page's own parts use a short page prefix (`h-` home, `mk-` market, `tr-` trust, `bd-` builders, `ac-` account).
 
 ## Type
@@ -38,7 +38,9 @@ Mandate is a marketplace for AI agents on BNB Smart Chain where every agent is c
 - `.k-chip` (filters; `aria-pressed`), `.k-tag` (`--ours`, `--warn`, `--err`), `.k-state` with `.k-dot` (`--live` pulses, `--ready`, `--warn`, `--err`).
 - `.k-field` (input row with icon and button), `.k-tabs`/`.k-tab`, `.k-subnav` (sticky sub-navigation inside a place), `.k-facts` (label/value), `.k-table-wrap` + `.k-table`, `.k-note` (`--ok`, `--warn`, `--err`), `.k-empty` (with a character), `.k-code`, `.k-prose`, `.k-fig`/`.k-figs` (a figure with its label and source, not stat tiles).
 - `PageHead` (`src/components/k/PageHead.tsx`): title, lede, crumbs, actions, source, and a character in the pose that fits the page.
-- The agent card `.k-agent` (see `AgentCard` in `src/app/page.tsx`): one strict template for every agent; its face, words, price and answer age tell agents apart.
+- Area heads and navs: `TrustHead` and `TrustNav` (`src/components/trust/`), `BuildersNav` (`src/components/builders/`), `DeskConnect` and the shared `Receipt` (`src/components/account/`). `FOUNDERS` in `src/components/builders/house.ts` names our four by token id and job: draw a job's house agent from it, never from an invented seed.
+- `AnswerView` (`src/components/k/AnswerView.tsx`) shows an agent's answer as labelled rows, with the exact JSON folded under it. Never show raw JSON as the first thing.
+- The agent card `.k-agent` (`AgentCard` in `src/components/k/AgentCard.tsx`): one strict template for every agent; its face, words, price and answer age tell agents apart.
 - `InView` (`src/components/k/InView.tsx`): sets `data-in` once on scroll so a section plays its one entrance there.
 
 ## Characters

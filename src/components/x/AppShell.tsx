@@ -2,7 +2,7 @@ import Navbar from "./Navbar";
 import CampaignStrip from "./CampaignStrip";
 import Footer from "./Footer";
 import CompareTray from "./CompareTray";
-import { PasskeyHost } from "./Passkey";
+import PasskeyHost from "./PasskeySlot";
 
 /**
  * The one shell every page renders inside.
