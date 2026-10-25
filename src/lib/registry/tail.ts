@@ -246,6 +246,29 @@ export async function scanMints(opts: { budgetMs: number; maxChunks?: number }):
 }
 
 /** Resolve: read the cards of stored agents that have not been read yet, as many as time allows. */
+/** A card that did not load: the registry answered, the host behind its tokenURI did not. */
+export function cardUnread(entry: RegistryEntry): boolean {
+  return entry.cardSource === "unresolved";
+}
+
+/** When an unread card is tried again: after 1 h, 6 h, 24 h, then weekly. */
+export function retryAt(attempts: number, now = Date.now()): string {
+  const wait = [3_600, 21_600, 86_400][attempts - 1] ?? 604_800;
+  return new Date(now + wait * 1000).toISOString();
+}
+
+/**
+ * A row that never got its card (no name and no job), last read over an hour
+ * ago: a page asked about it reads the card again rather than showing the
+ * blank row for good. Once an hour at most, so a crawler cannot make every
+ * visit a read.
+ */
+export function readAgain(a: Pick<IndexedAgent, "name" | "category" | "lastSeen">, now = Date.now()): boolean {
+  if (a.name || a.category) return false;
+  const seen = Date.parse(a.lastSeen ?? "");
+  return !Number.isFinite(seen) || now - seen > 3_600_000;
+}
+
 export async function resolvePending(opts: { budgetMs: number; limit?: number }): Promise<{ resolved: number; classified: number; left: number }> {
   await ensureTables();
   const started = Date.now();
@@ -274,15 +297,15 @@ export async function resolvePending(opts: { budgetMs: number; limit?: number })
         const r = queue.shift();
         if (!r) return;
         const entry = await withTimeout(readRegistryEntry(r.token_id).catch(() => null), 10_000);
-        if (!entry) {
+        if (!entry || cardUnread(entry)) {
           /*
-            The card did not load: a slow host, a timeout. It used to be stored
-            as read, with no name and no job, and was never read again (652
-            agents by 6 Oct). It is tried again after 1 h, 6 h, 24 h, then weekly.
+            The card did not load: a slow host, a timeout, a host that was down
+            when we asked. It used to be stored as read, with no name and no
+            job, and was never read again (652 agents by 6 Oct, 1,416 by 25 Oct).
+            It is tried again after 1 h, 6 h, 24 h, then weekly.
           */
           const attempts = (r.attempts ?? 0) + 1;
-          const wait = [3_600, 21_600, 86_400][attempts - 1] ?? 604_800;
-          unread.push({ tokenId: r.token_id, attempts, nextTryAt: new Date(Date.now() + wait * 1000).toISOString() });
+          unread.push({ tokenId: r.token_id, attempts, nextTryAt: retryAt(attempts) });
           continue;
         }
         const agent = agentFrom(r.token_id, entry, { owner: r.owner ?? undefined, block: r.block === null ? undefined : Number(r.block), tx: r.tx ?? undefined });
@@ -360,14 +383,23 @@ export async function tailRegistry(opts: { budgetMs: number }): Promise<string> 
 /**
  * Index one token now, for /list and for a page asked about a token the tail
  * has not reached. Its mint transaction is filled in when the scan passes it.
+ *
+ * A card that does not load this time never blanks a row that read one
+ * before; a card that has never loaded is stored unread, so the tail tries it
+ * again instead of keeping a nameless row for good (#382582 on 24 Oct).
  */
-export async function indexToken(tokenId: string, source: "list" | "view"): Promise<IndexedAgent | null> {
-  const entry = await readRegistryEntry(tokenId).catch(() => null);
+export async function indexToken(tokenId: string, source: "list" | "view", read?: RegistryEntry): Promise<IndexedAgent | null> {
+  const entry = read ?? (await readRegistryEntry(tokenId).catch(() => null));
   if (!entry) return null;
+  const known = registryExtras().rows.get(tokenId);
+  if (cardUnread(entry) && known?.name) return known;
   const agent = agentFrom(tokenId, entry, {}, source);
   if (pg) {
     await ensureTables();
-    await upsert(agent, true);
+    await upsert(agent, !cardUnread(entry));
+    if (cardUnread(entry)) {
+      await pg`update registry_agents set record = record || jsonb_build_object('attempts', 1, 'nextTryAt', ${retryAt(1)}::text) where token_id = ${tokenId}`;
+    }
     const [row] = (await pg`select tx, block from registry_agents where token_id = ${tokenId}`) as { tx: string | null; block: string | number | null }[];
     if (row?.tx) {
       agent.registeredTx = row.tx;

@@ -31,7 +31,7 @@ import { SPONSORED } from "@/lib/market/sponsored-targets";
 import { STATE_WORD, trustOf, type ProofState } from "@/lib/market/trust";
 import { houseSlug, performanceOf } from "@/lib/market/performance";
 import { houseActivity } from "@/lib/house/runs";
-import { indexToken } from "@/lib/registry/tail";
+import { indexToken, readAgain } from "@/lib/registry/tail";
 import { listPaidCalls } from "@/lib/market/paid-calls";
 import { buriedFor, graveAnchor, graveyard } from "@/lib/market/graveyard";
 import { HOUSE_LEASHES } from "@/lib/chain/house";
@@ -123,7 +123,9 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
     that the tail has not reached yet: it is read from the chain now, indexed,
     and shown. Only a token the registry does not hold is a 404.
   */
-  const agent = findAgent(tokenId) ?? (/^\d{1,20}$/.test(tokenId) ? await indexToken(tokenId, "view").catch(() => null) : null);
+  const known = findAgent(tokenId);
+  // A row kept without its card is read again, at most once an hour.
+  const agent = known && !readAgain(known) ? known : ((/^\d{1,20}$/.test(tokenId) ? await indexToken(tokenId, "view").catch(() => null) : null) ?? known);
   if (!agent) notFound();
 
   const hc = await hireCounts();

@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { TRANSFER_TOPIC, agentFrom, decodeMints, protocolsOf } from "../registry/tail";
+import { TRANSFER_TOPIC, agentFrom, cardUnread, decodeMints, protocolsOf, readAgain, retryAt } from "../registry/tail";
 import { getAgentIndex } from "../data/agents";
 import { putRegistryExtra } from "../registry/extras";
 import type { RegistryEntry } from "../sources/registry";
@@ -68,6 +68,35 @@ describe("filing an agent", () => {
   it("reads only the protocols it knows, in the crawl's spelling", () => {
     expect(protocolsOf({ services: [{ name: "a2a", endpoint: "" }, { name: "Web", endpoint: "" }, { name: "telegram", endpoint: "" }] })).toEqual(["A2A", "Web"]);
     expect(protocolsOf(null)).toEqual([]);
+  });
+});
+
+describe("a card that did not load", () => {
+  const now = Date.parse("2026-10-25T06:00:00Z");
+
+  it("is not taken as read: it waits 1 h, 6 h, 24 h, then a week", () => {
+    expect(cardUnread(entry({ cardSource: "unresolved", cardError: "HTTP 503" }))).toBe(true);
+    expect(cardUnread(entry({ cardSource: "http", name: "cfo Venus health factor monitor" }))).toBe(false);
+    expect([1, 2, 3, 4, 9].map((n) => (Date.parse(retryAt(n, now)) - now) / 3_600_000)).toEqual([1, 6, 24, 168, 168]);
+  });
+
+  it("leaves a nameless, unfiled row to be read again after an hour, and never a row that has its card", () => {
+    const blank = { name: null, category: null };
+    expect(readAgain({ ...blank, lastSeen: "2026-10-24T13:23:23Z" }, now)).toBe(true);
+    expect(readAgain({ ...blank, lastSeen: "2026-10-25T05:30:00Z" }, now)).toBe(false);
+    expect(readAgain({ ...blank, lastSeen: undefined }, now)).toBe(true);
+    expect(readAgain({ name: "cfo Venus health factor monitor", category: null, lastSeen: "2026-10-01T00:00:00Z" }, now)).toBe(false);
+    expect(readAgain({ name: null, category: "health-factor", lastSeen: "2026-10-01T00:00:00Z" }, now)).toBe(false);
+  });
+
+  it("files #382582's card under health factor once it reads", () => {
+    const a = agentFrom(
+      "382582",
+      entry({ tokenId: "382582", cardSource: "http", name: "cfo Venus health factor monitor", description: "Reads a Venus position's health factor and how far it is from liquidation.", x402Endpoint: "https://cfo.test/api/agent" }),
+      {},
+      "list",
+    );
+    expect(a.category).toBe("health-factor");
   });
 });
 

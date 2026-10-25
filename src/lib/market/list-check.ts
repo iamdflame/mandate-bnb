@@ -98,8 +98,13 @@ export async function checkListing(tokenId: string, opts: { liveAssay?: boolean 
   }
 
   const endpoint = endpointFor(entry);
-  // Checking a token lists it: it is indexed now and has a page here from this moment.
-  const indexed = findAgent(tokenId) ?? (await indexToken(tokenId, "list").catch(() => null));
+  /*
+    Checking a token lists it: it is indexed now and has a page here from this
+    moment. It is filed again from the card just read, every time, so a
+    builder who fixes their card sees the fix stored, not the row we kept
+    from before (#382582 stayed nameless and unfiled after its card loaded).
+  */
+  const indexed = (await indexToken(tokenId, "list", entry).catch(() => null)) ?? findAgent(tokenId);
 
   const [reading, live, counts] = await Promise.all([
     probe(tokenId, endpoint),
