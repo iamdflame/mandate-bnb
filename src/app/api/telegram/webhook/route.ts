@@ -84,6 +84,9 @@ export async function POST(request: Request) {
         const lines = await Promise.all(all.map(async (w) => `${short(w.wallet)}, below ${w.threshold.toFixed(2)}: ${describe(await readWallet(w.wallet, w.threshold).catch(() => ({ state: "unread" as const, hf: null, collateralUsd: null, debtUsd: null, shortfallUsd: 0 })))}`));
         await send(chat, `You are watching:\n${lines.join("\n")}`);
       }
+    } else if (cmd === "/id") {
+      // This chat's own id, for an operator setting OPS_CHAT_ID to receive the self-check's alerts here.
+      await send(chat, `This chat's id is ${chat}.`);
     } else if (cmd === "/stop") {
       const n = await stop(chat);
       await send(chat, n ? `Stopped ${n} ${n === 1 ? "alert" : "alerts"}. Nothing more will be sent. Send /watch 0x… to start again.` : "You had no alerts running.");

@@ -26,6 +26,7 @@ import { runHouse, HOUSE_CADENCE_MIN } from "@/lib/house/run";
 import { continuePoolGap } from "@/lib/pancake/pool-gap";
 import { tailRegistry, warmRegistry } from "@/lib/registry/tail";
 import { refreshTestnetSellers } from "@/lib/testnet/sellers";
+import { runSelfCheck } from "@/lib/ops/self-check";
 import { sweepTestnetOutside } from "@/lib/testnet/outside-jobs";
 import { confirmPending } from "@/lib/market/confirm";
 import { sweepEscrow } from "@/lib/escrow/jobs";
@@ -227,6 +228,14 @@ export const JOBS: Job[] = [
     new agent appears here within minutes.
   */
   {
+    // What is failing on our side, found by us: outside services, every job, and the failure counts against a day earlier.
+    name: "self-check",
+    everyMinutes: 60,
+    budgetMs: 50_000,
+    afterResponse: true,
+    run: () => runSelfCheck({ cadence: Object.fromEntries(JOBS.filter((j) => j.name !== "self-check").map((j) => [j.name, j.everyMinutes])) }),
+  },
+  {
     // Agents anyone can hire free on BNB Smart Chain testnet, every builder's: new tokens read, older ones re-read, prices asked on chain 97.
     name: "testnet-sellers",
     everyMinutes: 30,
@@ -423,7 +432,7 @@ export async function tick(opts: { only?: string[]; force?: boolean; maxMs?: num
  * route): their budgets add up to minutes, and run one after another in the
  * time one function has left, the later ones never ran at all.
  */
-const AFTER_PRIORITY = ["escrow", "alerts", "leashes", "epochs", "settlements", "registry", "escrow-quotes", "testnet-jobs", "testnet-sellers", "pool-gap", "test-buys", "test-hires", "requirements", "conformance"];
+const AFTER_PRIORITY = ["escrow", "alerts", "leashes", "epochs", "settlements", "registry", "escrow-quotes", "testnet-jobs", "self-check", "testnet-sellers", "pool-gap", "test-buys", "test-hires", "requirements", "conformance"];
 
 export async function dueAfterJobs(): Promise<string[]> {
   const last = await lastRuns();

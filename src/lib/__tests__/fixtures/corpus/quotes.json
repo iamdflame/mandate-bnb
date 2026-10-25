@@ -1,0 +1,1854 @@
+[
+ {
+  "chain": 56,
+  "tokenId": "265375",
+  "sdk": {
+   "request": {
+    "task_description": "PancakeSwap V3 range check and re-centre plan for the positions of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "PancakeSwap V3 range check and re-centre plan for the positions of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x84d8288937accc92b9e88b77c3bfdca899eec3b77ab3350daba28206f715752c",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "PancakeSwap V3 range check and re-centre plan for the positions of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944764,
+    "negotiated_at": 1792943864
+   },
+   "response_hash": "0xb9ddd24d06af3a506781fc028d1501da454e58e41fd579bdfc78c4c07bdf5f56",
+   "negotiation_hash": "0xeedb43c81e99231ad12fc5e9e3b08750357b4d7befa8bfb8895ba15aeb0466b8",
+   "provider_sig": "0x9321ee974e479c66254a38bec063d2f045e990edfa84e09fa8c047fbeea2d5a463f3a693c9d6d7d62f306a3261a949f30e37f645e979ca4ca28ebeff0578124d1b",
+   "chain_id": 56,
+   "verifying_contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6"
+  },
+  "signers": [
+   "0x20f1cA5d1e5A3Ee94C29DbF95e6BF6ceA6a8d64b"
+  ],
+  "expect": {
+   "provider": "0x20f1cA5d1e5A3Ee94C29DbF95e6BF6ceA6a8d64b",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "269223",
+  "sdk": {
+   "request": {
+    "task_description": "{\"holdings\":{\"BTC\":1,\"ETH\":10},\"targets\":{\"BTC\":0.5,\"ETH\":0.5},\"prices\":{\"BTC\":60000,\"ETH\":2000},\"driftThresholdPct\":1,\"via\":\"mandatemarkets.com\"}",
+    "terms": {
+     "deliverables": "{\"holdings\":{\"BTC\":1,\"ETH\":10},\"targets\":{\"BTC\":0.5,\"ETH\":0.5},\"prices\":{\"BTC\":60000,\"ETH\":2000},\"driftThresholdPct\":1,\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0xe5e38c3da9285b2027d75cd040450e4346393778a606ae078c1e418b1f881613",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "{\"holdings\":{\"BTC\":1,\"ETH\":10},\"targets\":{\"BTC\":0.5,\"ETH\":0.5},\"prices\":{\"BTC\":60000,\"ETH\":2000},\"driftThresholdPct\":1,\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "500000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944765,
+    "negotiated_at": 1792943865
+   },
+   "response_hash": "0x102d47b4e4e2042d1940e3d7ac2f55b7a5947039eae16eba47d167ad31312a01",
+   "negotiation_hash": "0x80c58d5a89c98e50472c3587fe73760f45b7ba10d63ceea8c03c3847e81c4ca1",
+   "provider_sig": "0x5473a1bb06610bc6492a966b3eac2e2578181a3ad39508b760ba6a5def00c3f37e2b3d9d6ef819ae08170add2146cc37fe614d3a4e27cf26ee8ea50ddfd82d8f1c",
+   "chain_id": 56,
+   "verifying_contract": "0xea4daa3100a767e86fded867729ae7446476eba6"
+  },
+  "signers": [
+   "0x72070fAa1e33D7F8b31397Bc8DA65be2b1f6281f"
+  ],
+  "expect": {
+   "provider": "0x72070fAa1e33D7F8b31397Bc8DA65be2b1f6281f",
+   "price": "500000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "269224",
+  "sdk": {
+   "request": {
+    "task_description": "{\"price\":691.65,\"budgetUsd\":1000,\"levels\":5,\"spanPct\":2,\"walls\":{\"677.8\":3,\"705.5\":2},\"via\":\"mandatemarkets.com\"}",
+    "terms": {
+     "deliverables": "{\"price\":691.65,\"budgetUsd\":1000,\"levels\":5,\"spanPct\":2,\"walls\":{\"677.8\":3,\"705.5\":2},\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0xd4e412d8e6261a5401b65656866451b5cbbda7211cb23274b4cde369bdb6f730",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "{\"price\":691.65,\"budgetUsd\":1000,\"levels\":5,\"spanPct\":2,\"walls\":{\"677.8\":3,\"705.5\":2},\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "500000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944766,
+    "negotiated_at": 1792943866
+   },
+   "response_hash": "0xe8f522e6da8de693b634f34057685a640bd107feec672d7be0e14c569b3ad95d",
+   "negotiation_hash": "0xa125753d857fb5362512f06e3969c1591872f46aabe0be76ca64e7228c379655",
+   "provider_sig": "0xa07f0d80717cfc072facd22a15524fd620eab88a4baee1f996b4543b5cbbf3142bd84da25678fc57d2549bcb3e73f4c35b748d903aaace22cf5b97c1fae92b381c",
+   "chain_id": 56,
+   "verifying_contract": "0xea4daa3100a767e86fded867729ae7446476eba6"
+  },
+  "signers": [
+   "0xB8143345687aA5A527f4f9568D508EBbC612d06D"
+  ],
+  "expect": {
+   "provider": "0xB8143345687aA5A527f4f9568D508EBbC612d06D",
+   "price": "500000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "269226",
+  "sdk": {
+   "request": {
+    "task_description": "{\"pools\":{\"pcs-wbnb-usdt\":{\"apyPct\":12.5,\"tvlUsd\":50000000,\"riskScore\":2},\"venus-usdt\":{\"apyPct\":6.1,\"tvlUsd\":200000000,\"riskScore\":1},\"new-farm\":{\"apyPct\":80,\"tvlUsd\":400000,\"riskScore\":5}},\"capitalUsd\":10000,\"maxPerPoolPct\":40,\"via\":\"mandatemarkets.com\"}",
+    "terms": {
+     "deliverables": "{\"pools\":{\"pcs-wbnb-usdt\":{\"apyPct\":12.5,\"tvlUsd\":50000000,\"riskScore\":2},\"venus-usdt\":{\"apyPct\":6.1,\"tvlUsd\":200000000,\"riskScore\":1},\"new-farm\":{\"apyPct\":80,\"tvlUsd\":400000,\"riskScore\":5}},\"capitalUsd\":10000,\"maxPerPoolPct\":40,\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0xd4953ce0325ca163162d2c398364144185baf0bca33849df36f3eaac4f43c42e",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "{\"pools\":{\"pcs-wbnb-usdt\":{\"apyPct\":12.5,\"tvlUsd\":50000000,\"riskScore\":2},\"venus-usdt\":{\"apyPct\":6.1,\"tvlUsd\":200000000,\"riskScore\":1},\"new-farm\":{\"apyPct\":80,\"tvlUsd\":400000,\"riskScore\":5}},\"capitalUsd\":10000,\"maxPerPoolPct\":40,\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "500000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944767,
+    "negotiated_at": 1792943867
+   },
+   "response_hash": "0x3709501d860924f5919054ae33a179e2b4828f34774a504d40539143c4492f30",
+   "negotiation_hash": "0x59467f5c7f087fb4ba6089f6f519a871515d738e1f326e7a5beed6f379a7d991",
+   "provider_sig": "0xf93cd884fb610cb6049908421731965c7895229c5641fbde9365c63399a44578483245f81b89c268178d8eb63467e83cacabef6009731d96bb7131cb562fa2951c",
+   "chain_id": 56,
+   "verifying_contract": "0xea4daa3100a767e86fded867729ae7446476eba6"
+  },
+  "signers": [
+   "0xcCAe2DA18278C663Fc808fa858FD89CC34cf701f"
+  ],
+  "expect": {
+   "provider": "0xcCAe2DA18278C663Fc808fa858FD89CC34cf701f",
+   "price": "500000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "269228",
+  "sdk": {
+   "request": {
+    "task_description": "{\"collateral\":{\"ETH\":{\"amount\":10,\"liqThreshold\":0.8}},\"debt\":{\"USDT\":10000},\"prices\":{\"ETH\":2000,\"USDT\":1},\"via\":\"mandatemarkets.com\"}",
+    "terms": {
+     "deliverables": "{\"collateral\":{\"ETH\":{\"amount\":10,\"liqThreshold\":0.8}},\"debt\":{\"USDT\":10000},\"prices\":{\"ETH\":2000,\"USDT\":1},\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0xb0bd5de5fe811fecbe6d21df32e6b2ad01c2468dc346a7e7868f239ec819a623",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "{\"collateral\":{\"ETH\":{\"amount\":10,\"liqThreshold\":0.8}},\"debt\":{\"USDT\":10000},\"prices\":{\"ETH\":2000,\"USDT\":1},\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "500000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944768,
+    "negotiated_at": 1792943868
+   },
+   "response_hash": "0xb794993a81ba760ee15ca1c82ee442419240fc2f8628741fa5b978b1ca121c2b",
+   "negotiation_hash": "0x7533aa23dfc27859dd7e52fec88178ef82c582d108d77811393b5bbffa325b69",
+   "provider_sig": "0x21d800dc94845c604d8232d13f5696908fe4ff1f16fb6bc50f3b996841b99c857fa5907f3c8f5676ba545a2aef862c80e1100a40bd2b16cf946008f2b21a79a81b",
+   "chain_id": 56,
+   "verifying_contract": "0xea4daa3100a767e86fded867729ae7446476eba6"
+  },
+  "signers": [
+   "0x91F4602760e1627007BFc16F78A74cF8B9De8Da2"
+  ],
+  "expect": {
+   "provider": "0x91F4602760e1627007BFc16F78A74cF8B9De8Da2",
+   "price": "500000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "269233",
+  "sdk": {
+   "request": {
+    "task_description": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x3ebffb9fd5053e8030c1bd1693757e9cde567fc813b3be911d34ac894d8c2b63",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944770,
+    "negotiated_at": 1792943870
+   },
+   "response_hash": "0xf67b6c56be5a5249beba6b8f88ca7df02d3592e63209c7565668581a1fa6e316",
+   "negotiation_hash": "0x0f0cb4131000742a2bd1e476e30a82c669b2611ac1bb81c739541c0677bee164",
+   "provider_sig": "0xf7fdbff3c44a56ed6c9920d87b0eae0a21017c140fbdf86ec596d648c27a1e307dad243ab43f0d83c3fa7261e53266b95559fd1bda0a62759f4c2c59dae907891b",
+   "chain_id": 56,
+   "verifying_contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6"
+  },
+  "signers": [
+   "0xFAf0ffd121947B9EE3920Fa0CfbF9EEEB0AcBF7f"
+  ],
+  "expect": {
+   "provider": "0xFAf0ffd121947B9EE3920Fa0CfbF9EEEB0AcBF7f",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "302257",
+  "sdk": {
+   "request": {
+    "task_description": "{\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+    "terms": {
+     "deliverables": "{\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x5650512a939a026a1c3f315dc7ffe82f3d79e117968b856db3f5392576421309",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "service health_factor — {\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 120,
+    "quote_expires_at": 1792944771,
+    "negotiated_at": 1792943871
+   },
+   "response_hash": "0x1bc6fad17cfb3fcf49374c092e23884f6011f5355ce2cbbc8b0d79664cf27ed3",
+   "negotiation_hash": "0x4132e2a9b0b8c932c13c058ee504f1449dfbb6ef53c10062b5a8da5dfdafa862",
+   "provider_sig": "0x150da4e4e4791a203cdda5342a5948b8f3e7c2f34e2772e3c0baad235df7578c054136f66bb8ff98494f30e768c0b14eb1f87b812c2065641993fe74574387c01c",
+   "chain_id": 56,
+   "verifying_contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6",
+   "provider_address": "0xEAC21928DE023677A25eb925D1cb1b0786FaF946",
+   "job_requirements": {
+    "evaluator": "0x51895229E12F9876011789B04f8698af06cCD6DA",
+    "hook": "0x51895229E12F9876011789B04f8698af06cCD6DA",
+    "min_expiry_seconds_after_funding": 691200,
+    "why": "The job must be evaluated by the escrow's router 0x51895229E12F9876011789B04f8698af06cCD6DA (hook the router or none), and must expire at least 8 days after it is funded: the kernel refuses any delivery to a job that expires inside its 7-day dispute window, and a job evaluated by anyone else never reaches the policy. Such a job is refused before any work, and its budget returns to you at expiry."
+   }
+  },
+  "signers": [
+   "0xbFAA69233741924eD5b9d5DAA9B4Bf7B84567F0A",
+   "0xEAC21928DE023677A25eb925D1cb1b0786FaF946"
+  ],
+  "expect": {
+   "provider": "0xEAC21928DE023677A25eb925D1cb1b0786FaF946",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "302258",
+  "sdk": {
+   "request": {
+    "task_description": "{\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+    "terms": {
+     "deliverables": "{\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x5650512a939a026a1c3f315dc7ffe82f3d79e117968b856db3f5392576421309",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "service grid_plan — No token was named: the plan is for WBNB (0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c), BNB Chain's own coin. {\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 120,
+    "quote_expires_at": 1792944773,
+    "negotiated_at": 1792943873
+   },
+   "response_hash": "0x48df01ea86e3fe5b4b8188d83a258b9ada1dddba11863f8478b6ca1648c53ed9",
+   "negotiation_hash": "0xe665ac829d97ea7d92e08842688990698ce44dfff4bf23551aa5961969e343b0",
+   "provider_sig": "0xd84e8d84638c116d580dfba9a92a8ff1000022110746e4ebccaa481dbb7c13cf7f912cc9272866ca5089b9ef16d32a5e83cd70e3e16e187827ef8dcd0ea7e9731c",
+   "chain_id": 56,
+   "verifying_contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6",
+   "provider_address": "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963",
+   "job_requirements": {
+    "evaluator": "0x51895229E12F9876011789B04f8698af06cCD6DA",
+    "hook": "0x51895229E12F9876011789B04f8698af06cCD6DA",
+    "min_expiry_seconds_after_funding": 691200,
+    "why": "The job must be evaluated by the escrow's router 0x51895229E12F9876011789B04f8698af06cCD6DA (hook the router or none), and must expire at least 8 days after it is funded: the kernel refuses any delivery to a job that expires inside its 7-day dispute window, and a job evaluated by anyone else never reaches the policy. Such a job is refused before any work, and its budget returns to you at expiry."
+   }
+  },
+  "signers": [
+   "0xbFAA69233741924eD5b9d5DAA9B4Bf7B84567F0A",
+   "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963"
+  ],
+  "expect": {
+   "provider": "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "304493",
+  "sdk": {
+   "request": {
+    "task_description": "{\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+    "terms": {
+     "deliverables": "{\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x5650512a939a026a1c3f315dc7ffe82f3d79e117968b856db3f5392576421309",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "service yield_plan — {\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 120,
+    "quote_expires_at": 1792944774,
+    "negotiated_at": 1792943874
+   },
+   "response_hash": "0xf2c7b00c5cad0723d5e32d393390b3bafe62726972facba4d173447dab6425a8",
+   "negotiation_hash": "0xb49680dc1e99844178bfdfb696472a7a933f871b8b9dedbcd98c4935aa81df80",
+   "provider_sig": "0x354619b302f3321b55c4796fc639106540d70dff2d5321948d954a10237db3c41af986a3068754c033a5a081aa8260f1315d1afabe3942394a0d26ad3377bd421b",
+   "chain_id": 56,
+   "verifying_contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6",
+   "provider_address": "0x497dAc54FD7238027Ecbbd194b353379a1D605F0",
+   "job_requirements": {
+    "evaluator": "0x51895229E12F9876011789B04f8698af06cCD6DA",
+    "hook": "0x51895229E12F9876011789B04f8698af06cCD6DA",
+    "min_expiry_seconds_after_funding": 691200,
+    "why": "The job must be evaluated by the escrow's router 0x51895229E12F9876011789B04f8698af06cCD6DA (hook the router or none), and must expire at least 8 days after it is funded: the kernel refuses any delivery to a job that expires inside its 7-day dispute window, and a job evaluated by anyone else never reaches the policy. Such a job is refused before any work, and its budget returns to you at expiry."
+   }
+  },
+  "signers": [
+   "0xbFAA69233741924eD5b9d5DAA9B4Bf7B84567F0A",
+   "0x497dAc54FD7238027Ecbbd194b353379a1D605F0"
+  ],
+  "expect": {
+   "provider": "0x497dAc54FD7238027Ecbbd194b353379a1D605F0",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "304494",
+  "sdk": {
+   "request": {
+    "task_description": "{\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+    "terms": {
+     "deliverables": "{\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x5650512a939a026a1c3f315dc7ffe82f3d79e117968b856db3f5392576421309",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "service rebalance_plan — No holdings or position were named: the plan prices the hiring wallet's holdings, read from the chain at delivery, to equal weight (a wallet with fewer than two gets the DeFi agent's own wallet, said so in the answer). Name holdings, or a PancakeSwap V3 position or wallet for a range check, to choose. {\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 120,
+    "quote_expires_at": 1792944774,
+    "negotiated_at": 1792943874
+   },
+   "response_hash": "0xc0b61fd9582851e660bdacd724ade1aabdd7de85c48b7c8d4df32eb1358597bc",
+   "negotiation_hash": "0xb854fd20c7f2e0ad238dedd1209d7469ff99a2b416061a78bcb2f72fd6434c3f",
+   "provider_sig": "0x13391a35236879b0d85520abe838f903ab2bb8e5abea6f7356729d3b761d8ff00b83713a40d16da21e4bac156bbdf2e14e70adaf81b9cf3f5a802cbb9c619c2e1c",
+   "chain_id": 56,
+   "verifying_contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6",
+   "provider_address": "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963",
+   "job_requirements": {
+    "evaluator": "0x51895229E12F9876011789B04f8698af06cCD6DA",
+    "hook": "0x51895229E12F9876011789B04f8698af06cCD6DA",
+    "min_expiry_seconds_after_funding": 691200,
+    "why": "The job must be evaluated by the escrow's router 0x51895229E12F9876011789B04f8698af06cCD6DA (hook the router or none), and must expire at least 8 days after it is funded: the kernel refuses any delivery to a job that expires inside its 7-day dispute window, and a job evaluated by anyone else never reaches the policy. Such a job is refused before any work, and its budget returns to you at expiry."
+   }
+  },
+  "signers": [
+   "0xbFAA69233741924eD5b9d5DAA9B4Bf7B84567F0A",
+   "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963"
+  ],
+  "expect": {
+   "provider": "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "310460",
+  "sdk": {
+   "request": {
+    "task_description": "{\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+    "terms": {
+     "deliverables": "{\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x5650512a939a026a1c3f315dc7ffe82f3d79e117968b856db3f5392576421309",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "service lp_tier_plan — No token was named: the plan is for WBNB (0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c), BNB Chain's own coin. {\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 120,
+    "quote_expires_at": 1792944775,
+    "negotiated_at": 1792943875
+   },
+   "response_hash": "0xa0c0bbc56356868b89f68277b50e701f659dc88e09ee8ae2bfbdedd6eff36682",
+   "negotiation_hash": "0xcace2c6ed45ff96aa1e6fdb02e62d321b9de7bfda249c56496379e13d14de94f",
+   "provider_sig": "0x4179ee929977355f40b7266a7f5d5189d7a20d7a526f5781b1a3d0b44761a3692e29c02457a3415f131974e3daef9e67b11eadc8cfbf0ebd685ba371caf89e2b1b",
+   "chain_id": 56,
+   "verifying_contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6",
+   "provider_address": "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963",
+   "job_requirements": {
+    "evaluator": "0x51895229E12F9876011789B04f8698af06cCD6DA",
+    "hook": "0x51895229E12F9876011789B04f8698af06cCD6DA",
+    "min_expiry_seconds_after_funding": 691200,
+    "why": "The job must be evaluated by the escrow's router 0x51895229E12F9876011789B04f8698af06cCD6DA (hook the router or none), and must expire at least 8 days after it is funded: the kernel refuses any delivery to a job that expires inside its 7-day dispute window, and a job evaluated by anyone else never reaches the policy. Such a job is refused before any work, and its budget returns to you at expiry."
+   }
+  },
+  "signers": [
+   "0xbFAA69233741924eD5b9d5DAA9B4Bf7B84567F0A",
+   "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963"
+  ],
+  "expect": {
+   "provider": "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "341553",
+  "sdk": {
+   "request": {
+    "task_description": "PancakeSwap V3 range check and re-centre plan for the positions of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "PancakeSwap V3 range check and re-centre plan for the positions of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x84d8288937accc92b9e88b77c3bfdca899eec3b77ab3350daba28206f715752c",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "PancakeSwap V3 range check and re-centre plan for the positions of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "150000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944777,
+    "negotiated_at": 1792943877
+   },
+   "response_hash": "0x03868bf2a76be6b1159d7d9027f7c3face7714728b3cde6e637f5b7d0f6bd2cb",
+   "negotiation_hash": "0x3810da414a62fe27f52f50db2f8211368406954fa14fd005ec67c85c46302961",
+   "provider_sig": "0x91812a75e99b323f07488638dabe7b43f413e7665f203b1b3fb00a24ab4ce0db48267d30dab2442c032235fdd60d2139487df075ac55ed6e44e7a8b31f2411491b",
+   "chain_id": 56,
+   "verifying_contract": "0xea4daa3100a767e86fded867729ae7446476eba6"
+  },
+  "signers": [
+   "0x5B1c9fBc684a1722Bb5C66C0B22F149dA69768d6"
+  ],
+  "expect": {
+   "provider": "0x5B1c9fBc684a1722Bb5C66C0B22F149dA69768d6",
+   "price": "150000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "341554",
+  "sdk": {
+   "request": {
+    "task_description": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x3ebffb9fd5053e8030c1bd1693757e9cde567fc813b3be911d34ac894d8c2b63",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944778,
+    "negotiated_at": 1792943878
+   },
+   "response_hash": "0xd5add45f29d89c172795b24deb1a32a1bc65da59c39dee662e01f0938eb68564",
+   "negotiation_hash": "0x3c81e13999d5542cd5ee8deb52d58fbdb97d114896147731757ffd3b881e8b61",
+   "provider_sig": "0x5d12bec0bbb7f4608af1031da654c6bd00be0ee37bd9dbb9acab8aa02cb296d96309539078506dee145f9e4cbcd8a82661db75a56f6cd5680091863932d31d651c",
+   "chain_id": 56,
+   "verifying_contract": "0xea4daa3100a767e86fded867729ae7446476eba6"
+  },
+  "signers": [
+   "0x5aAF7b5B2170986C59279682Bd714c475ae8C718"
+  ],
+  "expect": {
+   "provider": "0x5aAF7b5B2170986C59279682Bd714c475ae8C718",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "341555",
+  "sdk": {
+   "request": {
+    "task_description": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0xfb67c7ede320949531d02692e5d1ab1c2faee7a5d59739518c1854ed8460eca9",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944779,
+    "negotiated_at": 1792943879
+   },
+   "response_hash": "0x6892983461d3ef902326348e4847927d4fa03ab66525e8ed32c3dc18f2fe3682",
+   "negotiation_hash": "0x49417d838b9bb0ba34a8db06dce205a3f5ba3cd5c0a4b0452d95a5b0222cc55c",
+   "provider_sig": "0xfdbccada4b0abe498e5443470740f2a1dc1e0af690f0ae23359381c87568a22022d0a4b5691d00652e766267f7bf168cfe4d11469c0da91ffdb3195abd97f6681b",
+   "chain_id": 56,
+   "verifying_contract": "0xea4daa3100a767e86fded867729ae7446476eba6"
+  },
+  "signers": [
+   "0x253F7Ad5D52099C4a2293418a661e9974DfB5e84"
+  ],
+  "expect": {
+   "provider": "0x253F7Ad5D52099C4a2293418a661e9974DfB5e84",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "341556",
+  "sdk": {
+   "request": {
+    "task_description": "Venus health factor, liquidation price and the repay that restores a safe level, for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Venus health factor, liquidation price and the repay that restores a safe level, for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x8d27d55133ac353aabcd1e16a2a06d8c8f7fec79311d3cd2bda416237c2990ce",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Venus health factor, liquidation price and the repay that restores a safe level, for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "50000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944779,
+    "negotiated_at": 1792943879
+   },
+   "response_hash": "0xb5337b6eda869b3413906c0c7ef61d8bd9bc1be202a966d167e4ee3abca28f7f",
+   "negotiation_hash": "0xda2e5c3ff1b12efcc8e3eeb7b2530bb0ec22db1da3f1f1bda15998fbdd8bbf14",
+   "provider_sig": "0x505e05d0ce94ab97e23a36dc0bb973d6041514cc048e2d710438435858a2bdbd172de12d27290f010af5322aee04f1174facaff9ed674372825b1e327e3a62271c",
+   "chain_id": 56,
+   "verifying_contract": "0xea4daa3100a767e86fded867729ae7446476eba6"
+  },
+  "signers": [
+   "0xdF1074a272C53A1a10b96Fa0201Eb58bbbaaFe00"
+  ],
+  "expect": {
+   "provider": "0xdF1074a272C53A1a10b96Fa0201Eb58bbbaaFe00",
+   "price": "50000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "344119",
+  "sdk": {
+   "request": {
+    "task_description": "PancakeSwap V3 range check and re-centre plan for the positions of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "PancakeSwap V3 range check and re-centre plan for the positions of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x84d8288937accc92b9e88b77c3bfdca899eec3b77ab3350daba28206f715752c",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "PancakeSwap V3 range check and re-centre plan for the positions of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "10000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944781,
+    "negotiated_at": 1792943881
+   },
+   "response_hash": "0xa8199e43841f3e1b9228cc03bee656256e7f99140a8fd48da7719ba4b4b7ef7f",
+   "chain_id": 56,
+   "verifying_contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6",
+   "negotiation_hash": "0xd5f154df09fa1b87d4cb1c33880ac0f8c969cf20397101c807c1041f4200ae37",
+   "provider_sig": "0x3b40da9e6fa6a5d04e354589647d4f58b0ce9ff0d01c160b5fa64698f10bbbe76ea743a05d43fdaaaf027a2d689eb1443afbc410853143940546a0f3c015f9121c",
+   "provider_address": "0x004c7Ae8077560c75fE5687dA39E7bE0697ddBFD"
+  },
+  "signers": [
+   "0x004c7Ae8077560c75fE5687dA39E7bE0697ddBFD"
+  ],
+  "expect": {
+   "provider": "0x004c7Ae8077560c75fE5687dA39E7bE0697ddBFD",
+   "price": "10000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "344121",
+  "sdk": {
+   "request": {
+    "task_description": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x3ebffb9fd5053e8030c1bd1693757e9cde567fc813b3be911d34ac894d8c2b63",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "10000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944781,
+    "negotiated_at": 1792943881
+   },
+   "response_hash": "0xb8b7fd961d9814fb807006829267649ae9cc3e8a4a58a3989358efef3e4be97e",
+   "chain_id": 56,
+   "verifying_contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6",
+   "negotiation_hash": "0x6dfce60d2cefaa0ae423a47bc31900119b6dbb981b7ec3653290a0aed0d812ee",
+   "provider_sig": "0x94c64934b8dfabc4319c63a0d196b5d6d5161ba7d060f9b9c35c7e144794475c52a4872990eef3310c3ae2bf06d7f1bac1e7eb0bdf502cad6c96d8107b1988a31c",
+   "provider_address": "0xbebF6B026e1fFC06A3c8d3C1b57b8142BF027454"
+  },
+  "signers": [
+   "0xbebF6B026e1fFC06A3c8d3C1b57b8142BF027454"
+  ],
+  "expect": {
+   "provider": "0xbebF6B026e1fFC06A3c8d3C1b57b8142BF027454",
+   "price": "10000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "344122",
+  "sdk": {
+   "request": {
+    "task_description": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0xfb67c7ede320949531d02692e5d1ab1c2faee7a5d59739518c1854ed8460eca9",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "10000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944782,
+    "negotiated_at": 1792943882
+   },
+   "response_hash": "0x13299cd6298ad8bca00775d4740ee1e714f74b73a710e0ea9fdf22c059310904",
+   "chain_id": 56,
+   "verifying_contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6",
+   "negotiation_hash": "0x017f28aa439e080f01b2bb4c99cc0b0c6dee4318e8168ca8732d3c709adac76b",
+   "provider_sig": "0x991afff913b3b9d1bde67c6ef16152f805f953234b5c0ddd2e168cedd6e6aef84aebadda82a483097d2feec7cd28136c2664b463f322588ae378469d61e80fdd1b",
+   "provider_address": "0x7e91367c77E561F0d99C2B42925aF29cd90AE838"
+  },
+  "signers": [
+   "0x7e91367c77E561F0d99C2B42925aF29cd90AE838"
+  ],
+  "expect": {
+   "provider": "0x7e91367c77E561F0d99C2B42925aF29cd90AE838",
+   "price": "10000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "344123",
+  "sdk": {
+   "request": {
+    "task_description": "Venus health factor, liquidation price and the repay that restores a safe level, for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Venus health factor, liquidation price and the repay that restores a safe level, for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x8d27d55133ac353aabcd1e16a2a06d8c8f7fec79311d3cd2bda416237c2990ce",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Venus health factor, liquidation price and the repay that restores a safe level, for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "10000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944783,
+    "negotiated_at": 1792943883
+   },
+   "response_hash": "0x9bfeffd69016f3d66d98fcbac601d8eaa0dd3e5134c7282b2bdd98780d1a4dfb",
+   "chain_id": 56,
+   "verifying_contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6",
+   "negotiation_hash": "0x303077b9798213c4ff215190f63ca81f25f8d343d22929681bbbce3de15f0fb2",
+   "provider_sig": "0xc6745f45e027f3a0114fb248ea28accdef5288b853108890beef98c2aeb5fee015b35b0aeff58d7656d3a8efc092919988f44142e8fe22a0cd64f51d1402d1481c",
+   "provider_address": "0x81762d5214fCB6fB3b102beF9D69d13A56c1a2d0"
+  },
+  "signers": [
+   "0x81762d5214fCB6fB3b102beF9D69d13A56c1a2d0"
+  ],
+  "expect": {
+   "provider": "0x81762d5214fCB6fB3b102beF9D69d13A56c1a2d0",
+   "price": "10000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "358786",
+  "sdk": {
+   "request": {
+    "task_description": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0xfb67c7ede320949531d02692e5d1ab1c2faee7a5d59739518c1854ed8460eca9",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944785,
+    "negotiated_at": 1792943885
+   },
+   "response_hash": "0xe19f32893213f846db3a7c215af4a06fef2f60cef5ae8ff2550fe9dd7be5fc20",
+   "negotiation_hash": "0x4bec63767267e5600c88b40466a2b2cd324d4bc7977b173d34b3a57194c36aa2",
+   "provider_sig": "0x400bf6ecc0a7aab549cdd799950d36290a6bab1d72045ef58698a04b5185b19c69537e8a01e1c539fcd11319d47051eb6bf06e564c8d83b1722a5189102a57471b",
+   "chain_id": 56,
+   "verifying_contract": "0xea4daa3100a767e86fded867729ae7446476eba6"
+  },
+  "signers": [
+   "0x8122991297DC98Dc5c735fDE90a501528922aFdC"
+  ],
+  "expect": {
+   "provider": "0x8122991297DC98Dc5c735fDE90a501528922aFdC",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "363709",
+  "sdk": {
+   "request": {
+    "task_description": "{\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+    "terms": {
+     "deliverables": "{\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x5650512a939a026a1c3f315dc7ffe82f3d79e117968b856db3f5392576421309",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "service lp_position_plan — {\"skill\":\"plaza-board\",\"action\":\"read\",\"status\":\"open\",\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 120,
+    "quote_expires_at": 1792944788,
+    "negotiated_at": 1792943888
+   },
+   "response_hash": "0x27d7a7511584eecb6e1f513d4e66580f1853ce2f26e24582a373a984bbb37a05",
+   "negotiation_hash": "0x3df434241ffb388d22f1e1dc27bdec3a652ea0c23ca31735e4fcd2060b2c633a",
+   "provider_sig": "0x5e6a7af5cb1cc38bd8b852a4705f0be97dbbb036ae2362a2e9eba369bb28a85f6f5751c9b8c083b40a68715257dea00f45ae259461415ea67795cebd0601529b1b",
+   "chain_id": 56,
+   "verifying_contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6",
+   "provider_address": "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963",
+   "job_requirements": {
+    "evaluator": "0x51895229E12F9876011789B04f8698af06cCD6DA",
+    "hook": "0x51895229E12F9876011789B04f8698af06cCD6DA",
+    "min_expiry_seconds_after_funding": 691200,
+    "why": "The job must be evaluated by the escrow's router 0x51895229E12F9876011789B04f8698af06cCD6DA (hook the router or none), and must expire at least 8 days after it is funded: the kernel refuses any delivery to a job that expires inside its 7-day dispute window, and a job evaluated by anyone else never reaches the policy. Such a job is refused before any work, and its budget returns to you at expiry."
+   }
+  },
+  "signers": [
+   "0xbFAA69233741924eD5b9d5DAA9B4Bf7B84567F0A",
+   "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963"
+  ],
+  "expect": {
+   "provider": "0x73809F69916FcF7Ddc5BB1315fBdf96A569a5963",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "367904",
+  "sdk": {
+   "request": {
+    "task_description": "{\"address\":\"0x60AA3AEE06E2345A17E4d4B12c53E046F4F63CAf\",\"targetHealthFactor\":2.5,\"via\":\"mandatemarkets.com\"}",
+    "terms": {
+     "deliverables": "{\"address\":\"0x60AA3AEE06E2345A17E4d4B12c53E046F4F63CAf\",\"targetHealthFactor\":2.5,\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x2553bf684860a7909c5046f229441b4053842b8e4a80bab188b1a1ace9e902aa",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "{\"address\":\"0x60AA3AEE06E2345A17E4d4B12c53E046F4F63CAf\",\"targetHealthFactor\":2.5,\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "10000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 120,
+    "quote_expires_at": 1792944790,
+    "negotiated_at": 1792943890
+   },
+   "response_hash": "0xef46bb2480348351db48b0a185302978267022605d842ce1f7db624ce93f0c75",
+   "negotiation_hash": "0xea5ced1a9494861b6513ba3123a9a62b8986742c5345b5c5199446723cd836b4",
+   "provider_sig": "0x61b26294cf568d4c007ef5474950dbcde896b58305e8c21af10d35ed2a802a0033433de95a3f12dd4cfaee7fde83bb18e12dda18b7411ce3b4c0bd251e98974f1c",
+   "chain_id": 56,
+   "verifying_contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6",
+   "provider_address": "0x15A97307cAA68C24E4b5a0b83D331A6AA1EA195F",
+   "parsed_task": {
+    "address": "0x60AA3AEE06E2345A17E4d4B12c53E046F4F63CAf",
+    "sources": {
+     "address": "data.address",
+     "targetHealthFactor": "data.targetHealthFactor",
+     "blockNumber": "default (latest)"
+    },
+    "warnings": [],
+    "targetHealthFactor": 2.5,
+    "blockNumber": "latest",
+    "chainId": 56,
+    "pool": "Venus Core Pool"
+   }
+  },
+  "signers": [
+   "0x15A97307cAA68C24E4b5a0b83D331A6AA1EA195F"
+  ],
+  "expect": {
+   "provider": "0x15A97307cAA68C24E4b5a0b83D331A6AA1EA195F",
+   "price": "10000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "369195",
+  "sdk": {
+   "request": {
+    "task_description": "{\"skill\":\"preview\",\"ticker\":\"NVDA\",\"usdt\":500,\"via\":\"mandatemarkets.com\"}",
+    "terms": {
+     "deliverables": "{\"skill\":\"preview\",\"ticker\":\"NVDA\",\"usdt\":500,\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x8c394179f12c91e91457cafb4b021bbccbc105441c7d536c3cd18951035d1db2",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "{\"skill\":\"preview\",\"ticker\":\"NVDA\",\"usdt\":500,\"via\":\"mandatemarkets.com\"}",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944792,
+    "negotiated_at": 1792943892
+   },
+   "response_hash": "0x5b6b0243e3864bcda8bf59ca31455ef2d9a4a7f771a5d554d693d2a2995c0733",
+   "negotiation_hash": "0xc1961616398858b61f2cb4408588a33e5061a4e73445998fa48a32c300417692",
+   "provider_sig": "0xa2db1906aa46b59b8a6d34939895c957eebed6e70397bfd8bd0f66004c5ab26177631640f60a691e58188e8db02c786a79fda7b9ad5f04fa6870ac972040f2e01c",
+   "chain_id": 56,
+   "verifying_contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6"
+  },
+  "signers": [
+   "0x592EF127feFd45eAA56fE0D715dAAF72F998A652"
+  ],
+  "expect": {
+   "provider": "0x592EF127feFd45eAA56fE0D715dAAF72F998A652",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "382582",
+  "sdk": {
+   "request": {
+    "task_description": "Venus health factor for 0x0000000000000000000000000000000000000001, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Venus health factor for 0x0000000000000000000000000000000000000001, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0xedc8c4f2714580d0ce43ac8ec11d0634fc43fd2971d4b71c653ea881e38dde61",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Venus health factor for 0x0000000000000000000000000000000000000001, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "10000000000000000",
+     "currency": "0xcE24439F2D9C6a2289F741120FE202248B666666"
+    },
+    "estimated_completion_seconds": 120,
+    "quote_expires_at": 1792944792,
+    "negotiated_at": 1792943892
+   },
+   "response_hash": "0xc214ee7ca14b158096082eb2023414961c6b9b7fbe5d69207c2e9eac5d7690a9",
+   "chain_id": 56,
+   "verifying_contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6",
+   "negotiation_hash": "0xf3953804a25550c393f451a7ece4be63f5ae1731883813e127869fd6b20f85e3",
+   "provider_sig": "0xcc17b6e634623e5ff9ba21a58b2c8af2dc4be3beb541a5bda80f1d67edbf18977edf78a7121c71484636e1ee1aa0057105eb7f6130c33c5cd17c32f9c64bf12c1c",
+   "provider_address": "0xAC8BFF07f2B518d91fEE8D7e2Fa3fCB3e7fEf1b3"
+  },
+  "signers": [
+   "0x7751bE7B2BA4141D5E32Ef14e9E5cc73e9D7bf0C",
+   "0xAC8BFF07f2B518d91fEE8D7e2Fa3fCB3e7fEf1b3"
+  ],
+  "expect": {
+   "provider": "0xAC8BFF07f2B518d91fEE8D7e2Fa3fCB3e7fEf1b3",
+   "price": "10000000000000000"
+  }
+ },
+ {
+  "chain": 97,
+  "tokenId": "2588",
+  "sdk": {
+   "request": {
+    "task_description": "PancakeSwap V3 range check and re-centre plan for the positions of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "PancakeSwap V3 range check and re-centre plan for the positions of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x84d8288937accc92b9e88b77c3bfdca899eec3b77ab3350daba28206f715752c",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "PancakeSwap V3 range check and re-centre plan for the positions of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "10000000000000000",
+     "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944794,
+    "negotiated_at": 1792943894
+   },
+   "response_hash": "0xe00f40ae38ed738d0128132ec770360f3d4f7e9ac376953af47b6a941eb979d5",
+   "chain_id": 97,
+   "verifying_contract": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE",
+   "negotiation_hash": "0xf3173f9bf18df737341eae1201fb2f972ccb87de43b3682343fe4b0924b1ae1c",
+   "provider_sig": "0xba3226e7a942713a72da190c1c055df2117419e1b75155ab8ab8af6b2a6e17974b1014581bfa378a1929627f0ce794961e6541e2abf3f3c736b871d65469b06b1b",
+   "provider_address": "0x004c7Ae8077560c75fE5687dA39E7bE0697ddBFD"
+  },
+  "signers": [
+   "0x004c7Ae8077560c75fE5687dA39E7bE0697ddBFD"
+  ],
+  "expect": {
+   "provider": "0x004c7Ae8077560c75fE5687dA39E7bE0697ddBFD",
+   "price": "10000000000000000"
+  }
+ },
+ {
+  "chain": 97,
+  "tokenId": "2589",
+  "sdk": {
+   "request": {
+    "task_description": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x3ebffb9fd5053e8030c1bd1693757e9cde567fc813b3be911d34ac894d8c2b63",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "10000000000000000",
+     "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944798,
+    "negotiated_at": 1792943898
+   },
+   "response_hash": "0xd8362371968aac56eb89391398deb26491bb1efbb3e85f3c21b7d89f942edc37",
+   "chain_id": 97,
+   "verifying_contract": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE",
+   "negotiation_hash": "0xe9750908254eea67e37b8a47fe1e1f4bfff27d168c0912aa560d6d6896194554",
+   "provider_sig": "0x441fde9b231c6cc1a67ee83c1a8794473d75a5433a57490f7747bee5a71412024471e83d50d2c08807833f0c5d59a594b27d268606641cd84f8963beaf9183e81b",
+   "provider_address": "0xbebF6B026e1fFC06A3c8d3C1b57b8142BF027454"
+  },
+  "signers": [
+   "0xbebF6B026e1fFC06A3c8d3C1b57b8142BF027454"
+  ],
+  "expect": {
+   "provider": "0xbebF6B026e1fFC06A3c8d3C1b57b8142BF027454",
+   "price": "10000000000000000"
+  }
+ },
+ {
+  "chain": 97,
+  "tokenId": "2590",
+  "sdk": {
+   "request": {
+    "task_description": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0xfb67c7ede320949531d02692e5d1ab1c2faee7a5d59739518c1854ed8460eca9",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "10000000000000000",
+     "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944800,
+    "negotiated_at": 1792943900
+   },
+   "response_hash": "0x1725fe6a16766996e896e66d9573c58f3efee7332e66d82df419420ef5c19a60",
+   "chain_id": 97,
+   "verifying_contract": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE",
+   "negotiation_hash": "0x4ec62403aaa6bf9ae4616d3a336558f3e5e2365fe0ee4eaa8d7c0e418cc95b21",
+   "provider_sig": "0xbd54e6144c6450a2f7cf66f04a07b81ac83325ec7c1376b268dc846e434ecb870a4c2ad699bd7c66912e0562ca262917a8ef8205e13842981e54c62408a31f291c",
+   "provider_address": "0x7e91367c77E561F0d99C2B42925aF29cd90AE838"
+  },
+  "signers": [
+   "0x7e91367c77E561F0d99C2B42925aF29cd90AE838"
+  ],
+  "expect": {
+   "provider": "0x7e91367c77E561F0d99C2B42925aF29cd90AE838",
+   "price": "10000000000000000"
+  }
+ },
+ {
+  "chain": 97,
+  "tokenId": "2591",
+  "sdk": {
+   "request": {
+    "task_description": "Venus health factor, liquidation price and the repay that restores a safe level, for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Venus health factor, liquidation price and the repay that restores a safe level, for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x8d27d55133ac353aabcd1e16a2a06d8c8f7fec79311d3cd2bda416237c2990ce",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Venus health factor, liquidation price and the repay that restores a safe level, for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "10000000000000000",
+     "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944802,
+    "negotiated_at": 1792943902
+   },
+   "response_hash": "0xfc153e3a91654adccafe950cf2e671e9731e611f8772e56cc16ee6566e2668ae",
+   "chain_id": 97,
+   "verifying_contract": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE",
+   "negotiation_hash": "0x1596d552859d167a14a92800ab2733752141684fa15b99603394b51cb2e76919",
+   "provider_sig": "0x2b5b1165875542cdb54fb07dfca7829594fdcf3324d3bc9667a78348b2450b047ad4b7aeec1eb15fc8ede692e62c575b27410716775d829792cbfeda425c98bd1b",
+   "provider_address": "0x81762d5214fCB6fB3b102beF9D69d13A56c1a2d0"
+  },
+  "signers": [
+   "0x81762d5214fCB6fB3b102beF9D69d13A56c1a2d0"
+  ],
+  "expect": {
+   "provider": "0x81762d5214fCB6fB3b102beF9D69d13A56c1a2d0",
+   "price": "10000000000000000"
+  }
+ },
+ {
+  "chain": 97,
+  "tokenId": "2053",
+  "sdk": {
+   "request": {
+    "skill": "negotiate",
+    "task_description": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+    "description": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated."
+    }
+   },
+   "request_hash": "0xf8f2390210fb1f217a556d62f401cc7bb58ab32f62d9ab8e4151bc1e8e876897",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "price": "100000000000000000",
+     "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    },
+    "estimated_completion_seconds": 180,
+    "quote_expires_at": 1792944803,
+    "negotiated_at": 1792943903
+   },
+   "response_hash": "0xf5c0286f8a7c725d25465604c0cea168529097a525580cb07f29cf0553fdcdab",
+   "negotiation_hash": "0x1b170f960eb50c90a5df2b04f7654f6947ea1b5083b458a24a0fecfe99cda17f",
+   "provider_sig": "0x460464f4ba08a453d8987b6eab3eb63c51645e1ab66abaea039212c945bdd4334016161e44c689ab3affaa9f8326224b8babafb85d8d087b9e18b8d706dad37f1b",
+   "provider_address": "0x1007950f2cd328ceA873e212b0D18EF17c51dc9f",
+   "chain_id": 97,
+   "verifying_contract": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE"
+  },
+  "signers": [
+   "0x1007950f2cd328ceA873e212b0D18EF17c51dc9f"
+  ],
+  "expect": {
+   "provider": "0x1007950f2cd328ceA873e212b0D18EF17c51dc9f",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 97,
+  "tokenId": "2234",
+  "sdk": {
+   "request": {
+    "task_description": "PancakeSwap V3 range check and re-centre plan for the positions of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "PancakeSwap V3 range check and re-centre plan for the positions of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x84d8288937accc92b9e88b77c3bfdca899eec3b77ab3350daba28206f715752c",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "PancakeSwap V3 range check and re-centre plan for the positions of 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "150000000000000000",
+     "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944805,
+    "negotiated_at": 1792943905
+   },
+   "response_hash": "0x4a8bd1515a8402da00ef7f2b09fddeb22607283e8078ee129fe9d652b0653826",
+   "negotiation_hash": "0x24bbac9b719befc1b5f453eb1f56c06f2dd247b5f6e824b72a0b568320930d1e",
+   "provider_sig": "0x67cd29637c550ec61241e20036e9594dbfd1842dae4f75c722628e095a5b0f8376a8453607ed1ae79e91a02546f5b3edf66aeb3dfd93799f6932e8448413fec31c",
+   "chain_id": 97,
+   "verifying_contract": "0xa206c0517b6371c6638cd9e4a42cc9f02a33b0de"
+  },
+  "signers": [
+   "0x5B1c9fBc684a1722Bb5C66C0B22F149dA69768d6"
+  ],
+  "expect": {
+   "provider": "0x5B1c9fBc684a1722Bb5C66C0B22F149dA69768d6",
+   "price": "150000000000000000"
+  }
+ },
+ {
+  "chain": 97,
+  "tokenId": "2236",
+  "sdk": {
+   "request": {
+    "task_description": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x3ebffb9fd5053e8030c1bd1693757e9cde567fc813b3be911d34ac894d8c2b63",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944807,
+    "negotiated_at": 1792943907
+   },
+   "response_hash": "0xaecb3f2ce3d85a1b947f7a1762e9597392e67bc75bb78fe9e906c7023c342dab",
+   "negotiation_hash": "0x76c9c0ed81c4e4ecde05240eb95d43955e3d8b2bc915a7706808a417f719a375",
+   "provider_sig": "0x871dcdab19ebd22bbc0dbc6e55a0fd1d2590e909e73fdd79a2c2c81d60db807115b16ced5eba235fd5caeed5d389315a1877b11325d2205e74a260aaa63ea8901c",
+   "chain_id": 97,
+   "verifying_contract": "0xa206c0517b6371c6638cd9e4a42cc9f02a33b0de"
+  },
+  "signers": [
+   "0x5aAF7b5B2170986C59279682Bd714c475ae8C718"
+  ],
+  "expect": {
+   "provider": "0x5aAF7b5B2170986C59279682Bd714c475ae8C718",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 97,
+  "tokenId": "2237",
+  "sdk": {
+   "request": {
+    "task_description": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0xfb67c7ede320949531d02692e5d1ab1c2faee7a5d59739518c1854ed8460eca9",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Best net yield: 1000 USDT on BNB Smart Chain, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944808,
+    "negotiated_at": 1792943908
+   },
+   "response_hash": "0x2ec6e2d6f0de7a3b87cd1da54880c76115781f6c917f9f107f05cf9be9a72093",
+   "negotiation_hash": "0x3b91ea17bcb60fc3f36a45e40b7248aab50f9a69c0d47ed13fc4c92785c3168d",
+   "provider_sig": "0x87f66fd3f2a7d65d53e3bdf42f8cfcdd086cbdadb3049e48cbc21bfdf73be16b5940801ed40ed0bc53d342605d5f9d63005ac6bd335bfa7fcbf9a664c47bba1b1b",
+   "chain_id": 97,
+   "verifying_contract": "0xa206c0517b6371c6638cd9e4a42cc9f02a33b0de"
+  },
+  "signers": [
+   "0x253F7Ad5D52099C4a2293418a661e9974DfB5e84"
+  ],
+  "expect": {
+   "provider": "0x253F7Ad5D52099C4a2293418a661e9974DfB5e84",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 97,
+  "tokenId": "2238",
+  "sdk": {
+   "request": {
+    "task_description": "Venus health factor, liquidation price and the repay that restores a safe level, for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Venus health factor, liquidation price and the repay that restores a safe level, for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x8d27d55133ac353aabcd1e16a2a06d8c8f7fec79311d3cd2bda416237c2990ce",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Venus health factor, liquidation price and the repay that restores a safe level, for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "50000000000000000",
+     "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944809,
+    "negotiated_at": 1792943909
+   },
+   "response_hash": "0x476c8fdc8cd64f67711657097c38aac658146c838b9e452996117c3b83fc9669",
+   "negotiation_hash": "0x69a7aaccc216b8e176d7e53ee5ceaf787001f11c7df3ba155885d854b75976c9",
+   "provider_sig": "0x2b73178291515da6fcc241028590fe13d7c7b9d43f2e3ee72e4f0a3df2ca5f471ae246078e22f0b95718a2d59d8c37bd70b975ff7d49af4a00f4fc708abd90ff1c",
+   "chain_id": 97,
+   "verifying_contract": "0xa206c0517b6371c6638cd9e4a42cc9f02a33b0de"
+  },
+  "signers": [
+   "0xdF1074a272C53A1a10b96Fa0201Eb58bbbaaFe00"
+  ],
+  "expect": {
+   "provider": "0xdF1074a272C53A1a10b96Fa0201Eb58bbbaaFe00",
+   "price": "50000000000000000"
+  }
+ },
+ {
+  "chain": 97,
+  "tokenId": "2555",
+  "sdk": {
+   "request": {
+    "task_description": "Which payouts went out today?, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Which payouts went out today?, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x3f6c797716b942f392dbb93827ff495b1879082b6e1ae37e334c571670f8a510",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Which payouts went out today?, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+    },
+    "estimated_completion_seconds": 300,
+    "quote_expires_at": 1792954711,
+    "negotiated_at": 1792943911
+   },
+   "response_hash": "0xf95379b3f36d848e42effe8dfccdd169aad1d5ff6fc93d486fbe1d40893f895e",
+   "negotiation_hash": "0xb179d6d932ec67e33191ce5b52d305ea19f5aa796cff45af6558c69559e6f7fb",
+   "provider_sig": "0x7939d19c7efa6d6140e6667652f7e095883715c9f17219a7fabcf66027b248be54f443491fffee339d7db46e0ee998964e39ed7e4ffbe9e34d46a8a49d9c5d5c1c",
+   "chain_id": 97,
+   "verifying_contract": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE",
+   "provider_address": "0x96E4a83512fBcDbC62375c862F021d63f398C241"
+  },
+  "signers": [
+   "0x37Fc1F942085C2eF2bE4F6C0b6b9ABa426d7bD68",
+   "0x96E4a83512fBcDbC62375c862F021d63f398C241"
+  ],
+  "expect": {
+   "provider": "0x96E4a83512fBcDbC62375c862F021d63f398C241",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 97,
+  "tokenId": "2556",
+  "sdk": {
+   "request": {
+    "task_description": "Where is the BNB allocated and why?, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Where is the BNB allocated and why?, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0xb63a2f9b21e53b0ad4fd823a035a5aa218f9e4d01598d3b48be6e22be7c195de",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Where is the BNB allocated and why?, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+    },
+    "estimated_completion_seconds": 300,
+    "quote_expires_at": 1792954713,
+    "negotiated_at": 1792943913
+   },
+   "response_hash": "0x49322ec05a1dd0680ecd292afaf954f812c02b9b8a83d3a80c19eaea6e26ecf4",
+   "negotiation_hash": "0x7cb70043d1673a3dc12a7b5e41646efd10a0899f2a57f5276695c2e6819d3b33",
+   "provider_sig": "0xc9cbe44a2211002088cbd48832f4b229d00a3a34689c1366a6ed1b642ef25d190532c9d0449758fb261abdee5a230fdd234de723e05dae358a3a21d9fd17ac491b",
+   "chain_id": 97,
+   "verifying_contract": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE",
+   "provider_address": "0xA4579B343FB8975784571EA53acd076Bd544EA68"
+  },
+  "signers": [
+   "0x37Fc1F942085C2eF2bE4F6C0b6b9ABa426d7bD68",
+   "0xA4579B343FB8975784571EA53acd076Bd544EA68"
+  ],
+  "expect": {
+   "provider": "0xA4579B343FB8975784571EA53acd076Bd544EA68",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 97,
+  "tokenId": "2623",
+  "sdk": {
+   "request": {
+    "task_description": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x3ebffb9fd5053e8030c1bd1693757e9cde567fc813b3be911d34ac894d8c2b63",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Grid plan for WBNB/USDT (token 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c) between 683 and 801 USDT, stop 649, capital 1000 USD, 10 levels, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+    },
+    "estimated_completion_seconds": 120,
+    "quote_expires_at": 1792944214,
+    "negotiated_at": 1792943914
+   },
+   "response_hash": "0x5d4785d92884edbb926b4dddd2892bcea13faff80449a7bbc726f547a2229a07",
+   "negotiation_hash": "0x4d63c74536d7b26da7a31590a08dd136a9e2469a0d299fcc810dabb950ebb081",
+   "provider_sig": "0x4281c551d37a82e5399dff6cbfb267778a4512b4469ab3b462b76f77a1e6bc5e5d206ffbfc634420b40f68b76f9ea9083948e2d8742b5935640d9ec5f318c7051c",
+   "chain_id": 97,
+   "verifying_contract": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE",
+   "provider_address": "0x3EE8cFA277A612B5a2Ec26C69001f545ad4e95FF"
+  },
+  "signers": [
+   "0x3EE8cFA277A612B5a2Ec26C69001f545ad4e95FF"
+  ],
+  "expect": {
+   "provider": "0x3EE8cFA277A612B5a2Ec26C69001f545ad4e95FF",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 97,
+  "tokenId": "2647",
+  "sdk": {
+   "request": {
+    "task_description": "Where should I deposit 5,000 USDT for the best yield over 90 days?, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Where should I deposit 5,000 USDT for the best yield over 90 days?, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x5f88dfb5fd467c1b681ec7ec6be9a0e5e14b260e89462936dc075ce5ddf3d6b5",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Where should I deposit 5,000 USDT for the best yield over 90 days?, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "50000000000000000",
+     "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+    },
+    "estimated_completion_seconds": 120,
+    "quote_expires_at": 1792944816,
+    "negotiated_at": 1792943916
+   },
+   "response_hash": "0x8a029e67477680ec5fe673c6e87d20813a8c89b0eeda2706af32168d83c2dec7",
+   "negotiation_hash": "0x1c4e653f96ace46367277a09c3c3a336997bb5b6cd92abaabe0426d8e9b9b63a",
+   "provider_sig": "0x269fb62b59c4e309fde05d473250d62386bc1f997241ec7de1cd9508a938f27f52a9f5b5b83ca6bb468355d7f492382098d814e7f657142bf825f61a077ecbed1b",
+   "chain_id": 97,
+   "verifying_contract": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE",
+   "provider_address": "0x6108C0076cF5997aCe0Ea0c92b7f90BC17243aba",
+   "negotiated_at": 1792943916,
+   "quote_expires_at": 1792944816
+  },
+  "signers": [
+   "0x97Ff1a1101011db815d3C573113fC4d9c5Fa9872",
+   "0x6108C0076cF5997aCe0Ea0c92b7f90BC17243aba"
+  ],
+  "expect": {
+   "provider": "0x6108C0076cF5997aCe0Ea0c92b7f90BC17243aba",
+   "price": "50000000000000000"
+  }
+ },
+ {
+  "chain": 97,
+  "tokenId": "2659",
+  "sdk": {
+   "kind": "message",
+   "role": "agent",
+   "messageId": "7d163fb7-864d-4a4c-a1a8-b119b4cf9ba8",
+   "parts": [
+    {
+     "kind": "data",
+     "data": {
+      "request": {
+       "task_description": "Analyse my 60/40 BNB/stable split and tell me how to rebalance, via mandatemarkets.com",
+       "terms": {
+        "deliverables": "Analyse my 60/40 BNB/stable split and tell me how to rebalance, via mandatemarkets.com",
+        "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+        "evaluation_required": true,
+        "evaluator_type": "uma_oov3"
+       }
+      },
+      "request_hash": "0x641f7d9682f3f35ca8ab033cfb5ce796ba6f229237b1fac465c1ef2a3702a93e",
+      "response": {
+       "accepted": true,
+       "terms": {
+        "deliverables": "Analyse my 60/40 BNB/stable split and tell me how to rebalance, via mandatemarkets.com",
+        "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+        "evaluation_required": true,
+        "evaluator_type": "uma_oov3",
+        "price": "100000000000000000",
+        "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+       },
+       "estimated_completion_seconds": 120,
+       "quote_expires_at": 1792944218,
+       "negotiated_at": 1792943918,
+       "price": "100000000000000000",
+       "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565",
+       "negotiation_hash": "0x4dc47b5a871d997b79c6e311f7f3c20818b3895cae8838bbba64d028dbd88804",
+       "provider_sig": "0x2c7fb15cfe91881514d8bd004dfdad25a3b7c3fc262d1c3eb21118df28fc423d38759138b44c5daa17c1472827e2eed7d3dae88b6fbfcac54a21b09dd5657d4f1b"
+      },
+      "response_hash": "0xa6e2cdfb949301ccd7e971221a9e21bcd3075bc1f52a4efb722494491ab0834d",
+      "negotiation_hash": "0x4dc47b5a871d997b79c6e311f7f3c20818b3895cae8838bbba64d028dbd88804",
+      "provider_sig": "0x2c7fb15cfe91881514d8bd004dfdad25a3b7c3fc262d1c3eb21118df28fc423d38759138b44c5daa17c1472827e2eed7d3dae88b6fbfcac54a21b09dd5657d4f1b",
+      "chain_id": 97,
+      "verifying_contract": "0xa206c0517b6371c6638cd9e4a42cc9f02a33b0de",
+      "provider_address": "0xa59C56C5D269c85Af6eb997deA9A1791E4E4e9C5",
+      "negotiated_at": 1792943918,
+      "price": "100000000000000000",
+      "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565",
+      "accepted": true,
+      "terms": {
+       "deliverables": "Analyse my 60/40 BNB/stable split and tell me how to rebalance, via mandatemarkets.com",
+       "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+       "evaluation_required": true,
+       "evaluator_type": "uma_oov3",
+       "price": "100000000000000000",
+       "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+      }
+     }
+    }
+   ],
+   "request": {
+    "task_description": "Analyse my 60/40 BNB/stable split and tell me how to rebalance, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Analyse my 60/40 BNB/stable split and tell me how to rebalance, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x641f7d9682f3f35ca8ab033cfb5ce796ba6f229237b1fac465c1ef2a3702a93e",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Analyse my 60/40 BNB/stable split and tell me how to rebalance, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+    },
+    "estimated_completion_seconds": 120,
+    "quote_expires_at": 1792944218,
+    "negotiated_at": 1792943918,
+    "price": "100000000000000000",
+    "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565",
+    "negotiation_hash": "0x4dc47b5a871d997b79c6e311f7f3c20818b3895cae8838bbba64d028dbd88804",
+    "provider_sig": "0x2c7fb15cfe91881514d8bd004dfdad25a3b7c3fc262d1c3eb21118df28fc423d38759138b44c5daa17c1472827e2eed7d3dae88b6fbfcac54a21b09dd5657d4f1b"
+   },
+   "response_hash": "0xa6e2cdfb949301ccd7e971221a9e21bcd3075bc1f52a4efb722494491ab0834d",
+   "negotiation_hash": "0x4dc47b5a871d997b79c6e311f7f3c20818b3895cae8838bbba64d028dbd88804",
+   "provider_sig": "0x2c7fb15cfe91881514d8bd004dfdad25a3b7c3fc262d1c3eb21118df28fc423d38759138b44c5daa17c1472827e2eed7d3dae88b6fbfcac54a21b09dd5657d4f1b",
+   "chain_id": 97,
+   "verifying_contract": "0xa206c0517b6371c6638cd9e4a42cc9f02a33b0de",
+   "provider_address": "0xa59C56C5D269c85Af6eb997deA9A1791E4E4e9C5",
+   "negotiated_at": 1792943918,
+   "price": "100000000000000000",
+   "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565",
+   "accepted": true,
+   "terms": {
+    "deliverables": "Analyse my 60/40 BNB/stable split and tell me how to rebalance, via mandatemarkets.com",
+    "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+    "evaluation_required": true,
+    "evaluator_type": "uma_oov3",
+    "price": "100000000000000000",
+    "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+   },
+   "message": {
+    "kind": "message",
+    "role": "agent",
+    "messageId": "7d163fb7-864d-4a4c-a1a8-b119b4cf9ba8",
+    "parts": [
+     {
+      "kind": "data",
+      "data": {
+       "request": {
+        "task_description": "Analyse my 60/40 BNB/stable split and tell me how to rebalance, via mandatemarkets.com",
+        "terms": {
+         "deliverables": "Analyse my 60/40 BNB/stable split and tell me how to rebalance, via mandatemarkets.com",
+         "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+         "evaluation_required": true,
+         "evaluator_type": "uma_oov3"
+        }
+       },
+       "request_hash": "0x641f7d9682f3f35ca8ab033cfb5ce796ba6f229237b1fac465c1ef2a3702a93e",
+       "response": {
+        "accepted": true,
+        "terms": {
+         "deliverables": "Analyse my 60/40 BNB/stable split and tell me how to rebalance, via mandatemarkets.com",
+         "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+         "evaluation_required": true,
+         "evaluator_type": "uma_oov3",
+         "price": "100000000000000000",
+         "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+        },
+        "estimated_completion_seconds": 120,
+        "quote_expires_at": 1792944218,
+        "negotiated_at": 1792943918,
+        "price": "100000000000000000",
+        "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565",
+        "negotiation_hash": "0x4dc47b5a871d997b79c6e311f7f3c20818b3895cae8838bbba64d028dbd88804",
+        "provider_sig": "0x2c7fb15cfe91881514d8bd004dfdad25a3b7c3fc262d1c3eb21118df28fc423d38759138b44c5daa17c1472827e2eed7d3dae88b6fbfcac54a21b09dd5657d4f1b"
+       },
+       "response_hash": "0xa6e2cdfb949301ccd7e971221a9e21bcd3075bc1f52a4efb722494491ab0834d",
+       "negotiation_hash": "0x4dc47b5a871d997b79c6e311f7f3c20818b3895cae8838bbba64d028dbd88804",
+       "provider_sig": "0x2c7fb15cfe91881514d8bd004dfdad25a3b7c3fc262d1c3eb21118df28fc423d38759138b44c5daa17c1472827e2eed7d3dae88b6fbfcac54a21b09dd5657d4f1b",
+       "chain_id": 97,
+       "verifying_contract": "0xa206c0517b6371c6638cd9e4a42cc9f02a33b0de",
+       "provider_address": "0xa59C56C5D269c85Af6eb997deA9A1791E4E4e9C5",
+       "negotiated_at": 1792943918,
+       "price": "100000000000000000",
+       "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565",
+       "accepted": true,
+       "terms": {
+        "deliverables": "Analyse my 60/40 BNB/stable split and tell me how to rebalance, via mandatemarkets.com",
+        "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+        "evaluation_required": true,
+        "evaluator_type": "uma_oov3",
+        "price": "100000000000000000",
+        "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+       }
+      }
+     }
+    ]
+   }
+  },
+  "signers": [
+   "0xa59C56C5D269c85Af6eb997deA9A1791E4E4e9C5"
+  ],
+  "expect": {
+   "provider": "0xa59C56C5D269c85Af6eb997deA9A1791E4E4e9C5",
+   "price": "100000000000000000"
+  }
+ },
+ {
+  "chain": 97,
+  "tokenId": "2668",
+  "sdk": {
+   "request": {
+    "task_description": "Venus health factor, liquidation price and the repay that restores a safe level, for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+    "terms": {
+     "deliverables": "Venus health factor, liquidation price and the repay that restores a safe level, for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3"
+    }
+   },
+   "request_hash": "0x8d27d55133ac353aabcd1e16a2a06d8c8f7fec79311d3cd2bda416237c2990ce",
+   "response": {
+    "accepted": true,
+    "terms": {
+     "deliverables": "Venus health factor, liquidation price and the repay that restores a safe level, for 0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90, via mandatemarkets.com",
+     "quality_standards": "Figures read from BNB Smart Chain at delivery, internally consistent, with their sources stated.",
+     "evaluation_required": true,
+     "evaluator_type": "uma_oov3",
+     "price": "100000000000000000",
+     "currency": "0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565"
+    },
+    "estimated_completion_seconds": 600,
+    "quote_expires_at": 1792944821,
+    "negotiated_at": 1792943921
+   },
+   "response_hash": "0xa4a0473c5171989745ba9bc28bf163f049f8031c9592f710b5b76d581041c8f9",
+   "negotiation_hash": "0x9e88fa8093f936a5d88466e1ca0912c28af07c37441858aede1d49b6960b97fc",
+   "provider_sig": "0xd9aa5cbf6a5ed32982448bf439b40a290debbbb73154d0704080ea3925788860203d7a53cc96480316018845f4c2f2c91cf894975631d3df360c7782e328f49a1b",
+   "chain_id": 97,
+   "verifying_contract": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE"
+  },
+  "signers": [
+   "0x968C4aaDf408623BE47792bD7703fBa31a46aCcd",
+   "0xa73c4D9FC0bdA68B743A0b428A9746696B40a4E7"
+  ],
+  "expect": {
+   "provider": "0xa73c4D9FC0bdA68B743A0b428A9746696B40a4E7",
+   "price": "100000000000000000"
+  }
+ }
+]

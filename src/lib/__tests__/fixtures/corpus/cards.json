@@ -1,0 +1,4475 @@
+[
+ {
+  "chain": 56,
+  "tokenId": "154123",
+  "form": "ipfs",
+  "uri": null,
+  "card": {
+   "name": "BORT Alpha Commander #10525",
+   "description": "Legendary CZ Series — Alpha Commander Network Leader. A specialized BAP-578 autonomous agent inspired by CZ, excelling at Exchange governance and protocol leadership. Wielding the Sovereign element with Power Level 89. Armed with Liquidity Tap and Vault Lock. Edition 101/150 of the CZ Series Genesis II collection. Features interactive 3D model.",
+   "image": "https://ipfs.io/ipfs/QmQvmcYKBMwxxEz3HR3AWAcudFzbt9oEc14iCqVHrTRW8z",
+   "iconUrl": "https://ipfs.io/ipfs/QmQvmcYKBMwxxEz3HR3AWAcudFzbt9oEc14iCqVHrTRW8z",
+   "attributes": [
+    {
+     "trait_type": "Series",
+     "value": "CZ Series"
+    },
+    {
+     "trait_type": "Character",
+     "value": "CZ"
+    },
+    {
+     "trait_type": "Class",
+     "value": "Alpha Commander"
+    },
+    {
+     "trait_type": "Role",
+     "value": "Network Leader"
+    },
+    {
+     "trait_type": "Element",
+     "value": "Sovereign"
+    },
+    {
+     "trait_type": "Rarity",
+     "value": "Legendary"
+    },
+    {
+     "trait_type": "Power Level",
+     "value": 89,
+     "display_type": "number"
+    },
+    {
+     "trait_type": "Ability 1",
+     "value": "Liquidity Tap"
+    },
+    {
+     "trait_type": "Ability 2",
+     "value": "Vault Lock"
+    },
+    {
+     "trait_type": "Specialty",
+     "value": "Exchange governance and protocol leadership"
+    },
+    {
+     "trait_type": "Edition",
+     "value": "101/150"
+    },
+    {
+     "trait_type": "Generation",
+     "value": "Genesis II"
+    },
+    {
+     "trait_type": "Standard",
+     "value": "BAP-578"
+    },
+    {
+     "trait_type": "Logic",
+     "value": "TradingAgentLogicV5"
+    },
+    {
+     "trait_type": "Has 3D Model",
+     "value": "Yes"
+    },
+    {
+     "trait_type": "Model Format",
+     "value": "GLB"
+    }
+   ],
+   "animation_url": "ipfs://QmcmVtGi9BeKBYu1KXmNjVHWmwXm5Gybi4zSP2RxrjpVmZ",
+   "properties": {
+    "series": "CZ Series",
+    "character": "CZ",
+    "class": "Alpha Commander",
+    "element": "Sovereign",
+    "rarity": "Legendary",
+    "power": 89,
+    "abilities": [
+     "Liquidity Tap",
+     "Vault Lock"
+    ],
+    "specialty": "Exchange governance and protocol leadership",
+    "has_3d_model": true,
+    "model_format": "glb",
+    "generation": "Genesis II"
+   },
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "registrations": [
+    {
+     "agentId": null,
+     "agentRegistry": "eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    }
+   ],
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json",
+     "version": "0.3.0",
+     "a2aSkills": [
+      "trade",
+      "market-data",
+      "holdings",
+      "signals",
+      "chat"
+     ]
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10525"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0xD079aa67d1dBf2aF2C4a22a43b69aeEd215D7158"
+    }
+   ],
+   "skills": [
+    {
+     "name": "buy_token",
+     "description": "Buy a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "sell_token",
+     "description": "Sell a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "buy_fourmeme",
+     "description": "Buy on FourMeme bonding curve (pre-graduation)"
+    },
+    {
+     "name": "sell_fourmeme",
+     "description": "Sell on FourMeme bonding curve"
+    },
+    {
+     "name": "check_balance",
+     "description": "Read agent vault BNB and token balances"
+    },
+    {
+     "name": "get_price",
+     "description": "PancakeSwap price quote (BNB to token, token to BNB)"
+    },
+    {
+     "name": "check_fourmeme",
+     "description": "Read FourMeme bonding curve state for a token"
+    },
+    {
+     "name": "meme_rush",
+     "description": "Discover trending BSC meme tokens by lifecycle stage (Four.meme, Flap)"
+    },
+    {
+     "name": "topic_rush",
+     "description": "Find trending BSC market narratives ranked by momentum"
+    },
+    {
+     "name": "get_token_info",
+     "description": "Read BEP-20 token name, symbol, decimals, total supply"
+    },
+    {
+     "name": "search_token",
+     "description": "Find a BSC token by name or symbol (DexScreener)"
+    },
+    {
+     "name": "lookup_token",
+     "description": "Full BSC token data by contract address (DexScreener)"
+    },
+    {
+     "name": "get_wallet_balance",
+     "description": "Read native BNB balance of any BSC wallet"
+    },
+    {
+     "name": "get_token_balances",
+     "description": "List BEP-20 holdings of any BSC wallet"
+    },
+    {
+     "name": "get_my_holdings",
+     "description": "Read the agent's own vault holdings (BNB + active positions)"
+    },
+    {
+     "name": "get_swap_quote",
+     "description": "PancakeSwap router quote between two BSC tokens"
+    },
+    {
+     "name": "read_x_timeline",
+     "description": "Read recent tweets from an X/Twitter user (Twitter API)"
+    },
+    {
+     "name": "search_x",
+     "description": "Search X/Twitter for keywords, hashtags, or tickers (Twitter API)"
+    },
+    {
+     "name": "read_telegram_chat",
+     "description": "Read recent messages from a Telegram group the agent is in"
+    },
+    {
+     "name": "search_telegram_chat",
+     "description": "Search Telegram group messages by keyword"
+    },
+    {
+     "name": "analyze_social",
+     "description": "Extract trending contracts and tickers from buffered social data"
+    },
+    {
+     "name": "read_youtube",
+     "description": "Read the transcript or summary of a YouTube video"
+    },
+    {
+     "name": "search_reddit",
+     "description": "Search Reddit posts by query (optionally per subreddit)"
+    },
+    {
+     "name": "read_reddit_post",
+     "description": "Read a Reddit post and its top comments by URL"
+    },
+    {
+     "name": "read_github_repo",
+     "description": "Read a GitHub repo README, issues, or releases"
+    },
+    {
+     "name": "read_webpage",
+     "description": "Read the text content of any webpage"
+    },
+    {
+     "name": "search_web",
+     "description": "Web search for any topic, returns titles and snippets"
+    },
+    {
+     "name": "read_x_user",
+     "description": "Read recent tweets from any X user (no API key needed)"
+    },
+    {
+     "name": "search_x_web",
+     "description": "Search X/Twitter via web (no Twitter API needed)"
+    },
+    {
+     "name": "get_deposit_info",
+     "description": "Return BscScan, wallet deeplink, and dApp deposit links for this agent"
+    }
+   ],
+   "active": true,
+   "supportedTrust": [
+    "reputation"
+   ],
+   "x402Support": false
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "BORT Alpha Commander #10525",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json"
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10525"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0xD079aa67d1dBf2aF2C4a22a43b69aeEd215D7158"
+    }
+   ],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "153662",
+  "form": "ipfs",
+  "uri": null,
+  "card": {
+   "name": "BORT Mint Engine #11025",
+   "description": "Rare-tier Yi He Nexus autonomous trading agent. Class: Mint Engine [Supply Controller]. Operates on BAP-578 with TradingAgentLogicV5 — specialized in Token minting schedules and supply dynamics. Origin element | Power 57/100. Active modules: Pool Rebalance, Data Mine. 3D interactive agent — Edition 150/150 Yi He Nexus.",
+   "image": "https://ipfs.io/ipfs/QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "iconUrl": "https://ipfs.io/ipfs/QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "attributes": [
+    {
+     "trait_type": "Series",
+     "value": "Yi He Nexus"
+    },
+    {
+     "trait_type": "Character",
+     "value": "Yi He"
+    },
+    {
+     "trait_type": "Class",
+     "value": "Mint Engine"
+    },
+    {
+     "trait_type": "Role",
+     "value": "Supply Controller"
+    },
+    {
+     "trait_type": "Element",
+     "value": "Origin"
+    },
+    {
+     "trait_type": "Rarity",
+     "value": "Rare"
+    },
+    {
+     "trait_type": "Power Level",
+     "value": 57,
+     "display_type": "number"
+    },
+    {
+     "trait_type": "Ability 1",
+     "value": "Pool Rebalance"
+    },
+    {
+     "trait_type": "Ability 2",
+     "value": "Data Mine"
+    },
+    {
+     "trait_type": "Specialty",
+     "value": "Token minting schedules and supply dynamics"
+    },
+    {
+     "trait_type": "Edition",
+     "value": "150/150"
+    },
+    {
+     "trait_type": "Generation",
+     "value": "Genesis III"
+    },
+    {
+     "trait_type": "Standard",
+     "value": "BAP-578"
+    },
+    {
+     "trait_type": "Logic",
+     "value": "TradingAgentLogicV5"
+    },
+    {
+     "trait_type": "Asset Type",
+     "value": "3D Model"
+    },
+    {
+     "trait_type": "Model Format",
+     "value": "GLB"
+    }
+   ],
+   "animation_url": "ipfs://QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "properties": {
+    "series": "Yi He Nexus",
+    "character": "Yi He",
+    "class": "Mint Engine",
+    "element": "Origin",
+    "rarity": "Rare",
+    "power": 57,
+    "abilities": [
+     "Pool Rebalance",
+     "Data Mine"
+    ],
+    "specialty": "Token minting schedules and supply dynamics",
+    "asset_type": "3d_model",
+    "model_format": "glb",
+    "generation": "Genesis III"
+   },
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "registrations": [
+    {
+     "agentId": null,
+     "agentRegistry": "eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    }
+   ],
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json",
+     "version": "0.3.0",
+     "a2aSkills": [
+      "trade",
+      "market-data",
+      "holdings",
+      "signals",
+      "chat"
+     ]
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/11025"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0xe105533EEd7ebd07823aa610CCA29914a7AfCB7e"
+    }
+   ],
+   "skills": [
+    {
+     "name": "buy_token",
+     "description": "Buy a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "sell_token",
+     "description": "Sell a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "buy_fourmeme",
+     "description": "Buy on FourMeme bonding curve (pre-graduation)"
+    },
+    {
+     "name": "sell_fourmeme",
+     "description": "Sell on FourMeme bonding curve"
+    },
+    {
+     "name": "check_balance",
+     "description": "Read agent vault BNB and token balances"
+    },
+    {
+     "name": "get_price",
+     "description": "PancakeSwap price quote (BNB to token, token to BNB)"
+    },
+    {
+     "name": "check_fourmeme",
+     "description": "Read FourMeme bonding curve state for a token"
+    },
+    {
+     "name": "meme_rush",
+     "description": "Discover trending BSC meme tokens by lifecycle stage (Four.meme, Flap)"
+    },
+    {
+     "name": "topic_rush",
+     "description": "Find trending BSC market narratives ranked by momentum"
+    },
+    {
+     "name": "get_token_info",
+     "description": "Read BEP-20 token name, symbol, decimals, total supply"
+    },
+    {
+     "name": "search_token",
+     "description": "Find a BSC token by name or symbol (DexScreener)"
+    },
+    {
+     "name": "lookup_token",
+     "description": "Full BSC token data by contract address (DexScreener)"
+    },
+    {
+     "name": "get_wallet_balance",
+     "description": "Read native BNB balance of any BSC wallet"
+    },
+    {
+     "name": "get_token_balances",
+     "description": "List BEP-20 holdings of any BSC wallet"
+    },
+    {
+     "name": "get_my_holdings",
+     "description": "Read the agent's own vault holdings (BNB + active positions)"
+    },
+    {
+     "name": "get_swap_quote",
+     "description": "PancakeSwap router quote between two BSC tokens"
+    },
+    {
+     "name": "read_x_timeline",
+     "description": "Read recent tweets from an X/Twitter user (Twitter API)"
+    },
+    {
+     "name": "search_x",
+     "description": "Search X/Twitter for keywords, hashtags, or tickers (Twitter API)"
+    },
+    {
+     "name": "read_telegram_chat",
+     "description": "Read recent messages from a Telegram group the agent is in"
+    },
+    {
+     "name": "search_telegram_chat",
+     "description": "Search Telegram group messages by keyword"
+    },
+    {
+     "name": "analyze_social",
+     "description": "Extract trending contracts and tickers from buffered social data"
+    },
+    {
+     "name": "read_youtube",
+     "description": "Read the transcript or summary of a YouTube video"
+    },
+    {
+     "name": "search_reddit",
+     "description": "Search Reddit posts by query (optionally per subreddit)"
+    },
+    {
+     "name": "read_reddit_post",
+     "description": "Read a Reddit post and its top comments by URL"
+    },
+    {
+     "name": "read_github_repo",
+     "description": "Read a GitHub repo README, issues, or releases"
+    },
+    {
+     "name": "read_webpage",
+     "description": "Read the text content of any webpage"
+    },
+    {
+     "name": "search_web",
+     "description": "Web search for any topic, returns titles and snippets"
+    },
+    {
+     "name": "read_x_user",
+     "description": "Read recent tweets from any X user (no API key needed)"
+    },
+    {
+     "name": "search_x_web",
+     "description": "Search X/Twitter via web (no Twitter API needed)"
+    },
+    {
+     "name": "get_deposit_info",
+     "description": "Return BscScan, wallet deeplink, and dApp deposit links for this agent"
+    }
+   ],
+   "active": true,
+   "supportedTrust": [
+    "reputation"
+   ],
+   "x402Support": false
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "BORT Mint Engine #11025",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json"
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/11025"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0xe105533EEd7ebd07823aa610CCA29914a7AfCB7e"
+    }
+   ],
+   "category": "rebalancing"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "153704",
+  "form": "ipfs",
+  "uri": null,
+  "card": {
+   "name": "BORT Fee Circuit #10991",
+   "description": "Legendary-tier Yi He Nexus autonomous trading agent. Class: Fee Circuit [Revenue Engine]. Operates on BAP-578 with TradingAgentLogicV5 — specialized in Protocol fee capture and revenue distribution. Current element | Power 91/100. Active modules: Fee Siphon, Pool Rebalance. 3D interactive agent — Edition 116/150 Yi He Nexus.",
+   "image": "https://ipfs.io/ipfs/QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "iconUrl": "https://ipfs.io/ipfs/QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "attributes": [
+    {
+     "trait_type": "Series",
+     "value": "Yi He Nexus"
+    },
+    {
+     "trait_type": "Character",
+     "value": "Yi He"
+    },
+    {
+     "trait_type": "Class",
+     "value": "Fee Circuit"
+    },
+    {
+     "trait_type": "Role",
+     "value": "Revenue Engine"
+    },
+    {
+     "trait_type": "Element",
+     "value": "Current"
+    },
+    {
+     "trait_type": "Rarity",
+     "value": "Legendary"
+    },
+    {
+     "trait_type": "Power Level",
+     "value": 91,
+     "display_type": "number"
+    },
+    {
+     "trait_type": "Ability 1",
+     "value": "Fee Siphon"
+    },
+    {
+     "trait_type": "Ability 2",
+     "value": "Pool Rebalance"
+    },
+    {
+     "trait_type": "Specialty",
+     "value": "Protocol fee capture and revenue distribution"
+    },
+    {
+     "trait_type": "Edition",
+     "value": "116/150"
+    },
+    {
+     "trait_type": "Generation",
+     "value": "Genesis III"
+    },
+    {
+     "trait_type": "Standard",
+     "value": "BAP-578"
+    },
+    {
+     "trait_type": "Logic",
+     "value": "TradingAgentLogicV5"
+    },
+    {
+     "trait_type": "Asset Type",
+     "value": "3D Model"
+    },
+    {
+     "trait_type": "Model Format",
+     "value": "GLB"
+    }
+   ],
+   "animation_url": "ipfs://QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "properties": {
+    "series": "Yi He Nexus",
+    "character": "Yi He",
+    "class": "Fee Circuit",
+    "element": "Current",
+    "rarity": "Legendary",
+    "power": 91,
+    "abilities": [
+     "Fee Siphon",
+     "Pool Rebalance"
+    ],
+    "specialty": "Protocol fee capture and revenue distribution",
+    "asset_type": "3d_model",
+    "model_format": "glb",
+    "generation": "Genesis III"
+   },
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "registrations": [
+    {
+     "agentId": null,
+     "agentRegistry": "eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    }
+   ],
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json",
+     "version": "0.3.0",
+     "a2aSkills": [
+      "trade",
+      "market-data",
+      "holdings",
+      "signals",
+      "chat"
+     ]
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10991"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0x3F71bF53F62112ADD97D4d778F901a9d66b0b593"
+    }
+   ],
+   "skills": [
+    {
+     "name": "buy_token",
+     "description": "Buy a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "sell_token",
+     "description": "Sell a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "buy_fourmeme",
+     "description": "Buy on FourMeme bonding curve (pre-graduation)"
+    },
+    {
+     "name": "sell_fourmeme",
+     "description": "Sell on FourMeme bonding curve"
+    },
+    {
+     "name": "check_balance",
+     "description": "Read agent vault BNB and token balances"
+    },
+    {
+     "name": "get_price",
+     "description": "PancakeSwap price quote (BNB to token, token to BNB)"
+    },
+    {
+     "name": "check_fourmeme",
+     "description": "Read FourMeme bonding curve state for a token"
+    },
+    {
+     "name": "meme_rush",
+     "description": "Discover trending BSC meme tokens by lifecycle stage (Four.meme, Flap)"
+    },
+    {
+     "name": "topic_rush",
+     "description": "Find trending BSC market narratives ranked by momentum"
+    },
+    {
+     "name": "get_token_info",
+     "description": "Read BEP-20 token name, symbol, decimals, total supply"
+    },
+    {
+     "name": "search_token",
+     "description": "Find a BSC token by name or symbol (DexScreener)"
+    },
+    {
+     "name": "lookup_token",
+     "description": "Full BSC token data by contract address (DexScreener)"
+    },
+    {
+     "name": "get_wallet_balance",
+     "description": "Read native BNB balance of any BSC wallet"
+    },
+    {
+     "name": "get_token_balances",
+     "description": "List BEP-20 holdings of any BSC wallet"
+    },
+    {
+     "name": "get_my_holdings",
+     "description": "Read the agent's own vault holdings (BNB + active positions)"
+    },
+    {
+     "name": "get_swap_quote",
+     "description": "PancakeSwap router quote between two BSC tokens"
+    },
+    {
+     "name": "read_x_timeline",
+     "description": "Read recent tweets from an X/Twitter user (Twitter API)"
+    },
+    {
+     "name": "search_x",
+     "description": "Search X/Twitter for keywords, hashtags, or tickers (Twitter API)"
+    },
+    {
+     "name": "read_telegram_chat",
+     "description": "Read recent messages from a Telegram group the agent is in"
+    },
+    {
+     "name": "search_telegram_chat",
+     "description": "Search Telegram group messages by keyword"
+    },
+    {
+     "name": "analyze_social",
+     "description": "Extract trending contracts and tickers from buffered social data"
+    },
+    {
+     "name": "read_youtube",
+     "description": "Read the transcript or summary of a YouTube video"
+    },
+    {
+     "name": "search_reddit",
+     "description": "Search Reddit posts by query (optionally per subreddit)"
+    },
+    {
+     "name": "read_reddit_post",
+     "description": "Read a Reddit post and its top comments by URL"
+    },
+    {
+     "name": "read_github_repo",
+     "description": "Read a GitHub repo README, issues, or releases"
+    },
+    {
+     "name": "read_webpage",
+     "description": "Read the text content of any webpage"
+    },
+    {
+     "name": "search_web",
+     "description": "Web search for any topic, returns titles and snippets"
+    },
+    {
+     "name": "read_x_user",
+     "description": "Read recent tweets from any X user (no API key needed)"
+    },
+    {
+     "name": "search_x_web",
+     "description": "Search X/Twitter via web (no Twitter API needed)"
+    },
+    {
+     "name": "get_deposit_info",
+     "description": "Return BscScan, wallet deeplink, and dApp deposit links for this agent"
+    }
+   ],
+   "active": true,
+   "supportedTrust": [
+    "reputation"
+   ],
+   "x402Support": false
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "BORT Fee Circuit #10991",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json"
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10991"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0x3F71bF53F62112ADD97D4d778F901a9d66b0b593"
+    }
+   ],
+   "category": "rebalancing"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "154203",
+  "form": "ipfs",
+  "uri": null,
+  "card": {
+   "name": "BORT Vault Guardian #10448",
+   "description": "Uncommon CZ Series — Vault Guardian Custodian. A specialized BAP-578 autonomous agent inspired by CZ, excelling at Asset security and cold storage management. Wielding the Trust element with Power Level 33. Armed with Smart Route and Liquidity Tap. Edition 24/150 of the CZ Series Genesis II collection. Features interactive 3D model.",
+   "image": "https://ipfs.io/ipfs/QmUXGw14DUiGFxnPwrpLmSebDoFRsWVjqnGF1MxS2Kbqop",
+   "iconUrl": "https://ipfs.io/ipfs/QmUXGw14DUiGFxnPwrpLmSebDoFRsWVjqnGF1MxS2Kbqop",
+   "attributes": [
+    {
+     "trait_type": "Series",
+     "value": "CZ Series"
+    },
+    {
+     "trait_type": "Character",
+     "value": "CZ"
+    },
+    {
+     "trait_type": "Class",
+     "value": "Vault Guardian"
+    },
+    {
+     "trait_type": "Role",
+     "value": "Custodian"
+    },
+    {
+     "trait_type": "Element",
+     "value": "Trust"
+    },
+    {
+     "trait_type": "Rarity",
+     "value": "Uncommon"
+    },
+    {
+     "trait_type": "Power Level",
+     "value": 33,
+     "display_type": "number"
+    },
+    {
+     "trait_type": "Ability 1",
+     "value": "Smart Route"
+    },
+    {
+     "trait_type": "Ability 2",
+     "value": "Liquidity Tap"
+    },
+    {
+     "trait_type": "Specialty",
+     "value": "Asset security and cold storage management"
+    },
+    {
+     "trait_type": "Edition",
+     "value": "24/150"
+    },
+    {
+     "trait_type": "Generation",
+     "value": "Genesis II"
+    },
+    {
+     "trait_type": "Standard",
+     "value": "BAP-578"
+    },
+    {
+     "trait_type": "Logic",
+     "value": "TradingAgentLogicV5"
+    },
+    {
+     "trait_type": "Has 3D Model",
+     "value": "Yes"
+    },
+    {
+     "trait_type": "Model Format",
+     "value": "GLB"
+    }
+   ],
+   "animation_url": "ipfs://QmcmVtGi9BeKBYu1KXmNjVHWmwXm5Gybi4zSP2RxrjpVmZ",
+   "properties": {
+    "series": "CZ Series",
+    "character": "CZ",
+    "class": "Vault Guardian",
+    "element": "Trust",
+    "rarity": "Uncommon",
+    "power": 33,
+    "abilities": [
+     "Smart Route",
+     "Liquidity Tap"
+    ],
+    "specialty": "Asset security and cold storage management",
+    "has_3d_model": true,
+    "model_format": "glb",
+    "generation": "Genesis II"
+   },
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "registrations": [
+    {
+     "agentId": null,
+     "agentRegistry": "eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    }
+   ],
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json",
+     "version": "0.3.0",
+     "a2aSkills": [
+      "trade",
+      "market-data",
+      "holdings",
+      "signals",
+      "chat"
+     ]
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10448"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0x32F103626258DaBfA87730E8Fc63F6F4D0521910"
+    }
+   ],
+   "skills": [
+    {
+     "name": "buy_token",
+     "description": "Buy a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "sell_token",
+     "description": "Sell a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "buy_fourmeme",
+     "description": "Buy on FourMeme bonding curve (pre-graduation)"
+    },
+    {
+     "name": "sell_fourmeme",
+     "description": "Sell on FourMeme bonding curve"
+    },
+    {
+     "name": "check_balance",
+     "description": "Read agent vault BNB and token balances"
+    },
+    {
+     "name": "get_price",
+     "description": "PancakeSwap price quote (BNB to token, token to BNB)"
+    },
+    {
+     "name": "check_fourmeme",
+     "description": "Read FourMeme bonding curve state for a token"
+    },
+    {
+     "name": "meme_rush",
+     "description": "Discover trending BSC meme tokens by lifecycle stage (Four.meme, Flap)"
+    },
+    {
+     "name": "topic_rush",
+     "description": "Find trending BSC market narratives ranked by momentum"
+    },
+    {
+     "name": "get_token_info",
+     "description": "Read BEP-20 token name, symbol, decimals, total supply"
+    },
+    {
+     "name": "search_token",
+     "description": "Find a BSC token by name or symbol (DexScreener)"
+    },
+    {
+     "name": "lookup_token",
+     "description": "Full BSC token data by contract address (DexScreener)"
+    },
+    {
+     "name": "get_wallet_balance",
+     "description": "Read native BNB balance of any BSC wallet"
+    },
+    {
+     "name": "get_token_balances",
+     "description": "List BEP-20 holdings of any BSC wallet"
+    },
+    {
+     "name": "get_my_holdings",
+     "description": "Read the agent's own vault holdings (BNB + active positions)"
+    },
+    {
+     "name": "get_swap_quote",
+     "description": "PancakeSwap router quote between two BSC tokens"
+    },
+    {
+     "name": "read_x_timeline",
+     "description": "Read recent tweets from an X/Twitter user (Twitter API)"
+    },
+    {
+     "name": "search_x",
+     "description": "Search X/Twitter for keywords, hashtags, or tickers (Twitter API)"
+    },
+    {
+     "name": "read_telegram_chat",
+     "description": "Read recent messages from a Telegram group the agent is in"
+    },
+    {
+     "name": "search_telegram_chat",
+     "description": "Search Telegram group messages by keyword"
+    },
+    {
+     "name": "analyze_social",
+     "description": "Extract trending contracts and tickers from buffered social data"
+    },
+    {
+     "name": "read_youtube",
+     "description": "Read the transcript or summary of a YouTube video"
+    },
+    {
+     "name": "search_reddit",
+     "description": "Search Reddit posts by query (optionally per subreddit)"
+    },
+    {
+     "name": "read_reddit_post",
+     "description": "Read a Reddit post and its top comments by URL"
+    },
+    {
+     "name": "read_github_repo",
+     "description": "Read a GitHub repo README, issues, or releases"
+    },
+    {
+     "name": "read_webpage",
+     "description": "Read the text content of any webpage"
+    },
+    {
+     "name": "search_web",
+     "description": "Web search for any topic, returns titles and snippets"
+    },
+    {
+     "name": "read_x_user",
+     "description": "Read recent tweets from any X user (no API key needed)"
+    },
+    {
+     "name": "search_x_web",
+     "description": "Search X/Twitter via web (no Twitter API needed)"
+    },
+    {
+     "name": "get_deposit_info",
+     "description": "Return BscScan, wallet deeplink, and dApp deposit links for this agent"
+    }
+   ],
+   "active": true,
+   "supportedTrust": [
+    "reputation"
+   ],
+   "x402Support": false
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "BORT Vault Guardian #10448",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json"
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10448"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0x32F103626258DaBfA87730E8Fc63F6F4D0521910"
+    }
+   ],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "153714",
+  "form": "ipfs",
+  "uri": null,
+  "card": {
+   "name": "BORT Yield Weaver #10982",
+   "description": "Epic-tier Yi He Nexus autonomous trading agent. Class: Yield Weaver [Farm Strategist]. Operates on BAP-578 with TradingAgentLogicV5 — specialized in Yield farming strategy and auto-compounding. Harvest element | Power 75/100. Active modules: Swap Blast, Token Ignite. 3D interactive agent — Edition 107/150 Yi He Nexus.",
+   "image": "https://ipfs.io/ipfs/QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "iconUrl": "https://ipfs.io/ipfs/QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "attributes": [
+    {
+     "trait_type": "Series",
+     "value": "Yi He Nexus"
+    },
+    {
+     "trait_type": "Character",
+     "value": "Yi He"
+    },
+    {
+     "trait_type": "Class",
+     "value": "Yield Weaver"
+    },
+    {
+     "trait_type": "Role",
+     "value": "Farm Strategist"
+    },
+    {
+     "trait_type": "Element",
+     "value": "Harvest"
+    },
+    {
+     "trait_type": "Rarity",
+     "value": "Epic"
+    },
+    {
+     "trait_type": "Power Level",
+     "value": 75,
+     "display_type": "number"
+    },
+    {
+     "trait_type": "Ability 1",
+     "value": "Swap Blast"
+    },
+    {
+     "trait_type": "Ability 2",
+     "value": "Token Ignite"
+    },
+    {
+     "trait_type": "Specialty",
+     "value": "Yield farming strategy and auto-compounding"
+    },
+    {
+     "trait_type": "Edition",
+     "value": "107/150"
+    },
+    {
+     "trait_type": "Generation",
+     "value": "Genesis III"
+    },
+    {
+     "trait_type": "Standard",
+     "value": "BAP-578"
+    },
+    {
+     "trait_type": "Logic",
+     "value": "TradingAgentLogicV5"
+    },
+    {
+     "trait_type": "Asset Type",
+     "value": "3D Model"
+    },
+    {
+     "trait_type": "Model Format",
+     "value": "GLB"
+    }
+   ],
+   "animation_url": "ipfs://QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "properties": {
+    "series": "Yi He Nexus",
+    "character": "Yi He",
+    "class": "Yield Weaver",
+    "element": "Harvest",
+    "rarity": "Epic",
+    "power": 75,
+    "abilities": [
+     "Swap Blast",
+     "Token Ignite"
+    ],
+    "specialty": "Yield farming strategy and auto-compounding",
+    "asset_type": "3d_model",
+    "model_format": "glb",
+    "generation": "Genesis III"
+   },
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "registrations": [
+    {
+     "agentId": null,
+     "agentRegistry": "eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    }
+   ],
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json",
+     "version": "0.3.0",
+     "a2aSkills": [
+      "trade",
+      "market-data",
+      "holdings",
+      "signals",
+      "chat"
+     ]
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10982"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0x86269FE947290D89843E351a970492D50211a40A"
+    }
+   ],
+   "skills": [
+    {
+     "name": "buy_token",
+     "description": "Buy a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "sell_token",
+     "description": "Sell a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "buy_fourmeme",
+     "description": "Buy on FourMeme bonding curve (pre-graduation)"
+    },
+    {
+     "name": "sell_fourmeme",
+     "description": "Sell on FourMeme bonding curve"
+    },
+    {
+     "name": "check_balance",
+     "description": "Read agent vault BNB and token balances"
+    },
+    {
+     "name": "get_price",
+     "description": "PancakeSwap price quote (BNB to token, token to BNB)"
+    },
+    {
+     "name": "check_fourmeme",
+     "description": "Read FourMeme bonding curve state for a token"
+    },
+    {
+     "name": "meme_rush",
+     "description": "Discover trending BSC meme tokens by lifecycle stage (Four.meme, Flap)"
+    },
+    {
+     "name": "topic_rush",
+     "description": "Find trending BSC market narratives ranked by momentum"
+    },
+    {
+     "name": "get_token_info",
+     "description": "Read BEP-20 token name, symbol, decimals, total supply"
+    },
+    {
+     "name": "search_token",
+     "description": "Find a BSC token by name or symbol (DexScreener)"
+    },
+    {
+     "name": "lookup_token",
+     "description": "Full BSC token data by contract address (DexScreener)"
+    },
+    {
+     "name": "get_wallet_balance",
+     "description": "Read native BNB balance of any BSC wallet"
+    },
+    {
+     "name": "get_token_balances",
+     "description": "List BEP-20 holdings of any BSC wallet"
+    },
+    {
+     "name": "get_my_holdings",
+     "description": "Read the agent's own vault holdings (BNB + active positions)"
+    },
+    {
+     "name": "get_swap_quote",
+     "description": "PancakeSwap router quote between two BSC tokens"
+    },
+    {
+     "name": "read_x_timeline",
+     "description": "Read recent tweets from an X/Twitter user (Twitter API)"
+    },
+    {
+     "name": "search_x",
+     "description": "Search X/Twitter for keywords, hashtags, or tickers (Twitter API)"
+    },
+    {
+     "name": "read_telegram_chat",
+     "description": "Read recent messages from a Telegram group the agent is in"
+    },
+    {
+     "name": "search_telegram_chat",
+     "description": "Search Telegram group messages by keyword"
+    },
+    {
+     "name": "analyze_social",
+     "description": "Extract trending contracts and tickers from buffered social data"
+    },
+    {
+     "name": "read_youtube",
+     "description": "Read the transcript or summary of a YouTube video"
+    },
+    {
+     "name": "search_reddit",
+     "description": "Search Reddit posts by query (optionally per subreddit)"
+    },
+    {
+     "name": "read_reddit_post",
+     "description": "Read a Reddit post and its top comments by URL"
+    },
+    {
+     "name": "read_github_repo",
+     "description": "Read a GitHub repo README, issues, or releases"
+    },
+    {
+     "name": "read_webpage",
+     "description": "Read the text content of any webpage"
+    },
+    {
+     "name": "search_web",
+     "description": "Web search for any topic, returns titles and snippets"
+    },
+    {
+     "name": "read_x_user",
+     "description": "Read recent tweets from any X user (no API key needed)"
+    },
+    {
+     "name": "search_x_web",
+     "description": "Search X/Twitter via web (no Twitter API needed)"
+    },
+    {
+     "name": "get_deposit_info",
+     "description": "Return BscScan, wallet deeplink, and dApp deposit links for this agent"
+    }
+   ],
+   "active": true,
+   "supportedTrust": [
+    "reputation"
+   ],
+   "x402Support": false
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "BORT Yield Weaver #10982",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json"
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10982"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0x86269FE947290D89843E351a970492D50211a40A"
+    }
+   ],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "153769",
+  "form": "ipfs",
+  "uri": null,
+  "card": {
+   "name": "BORT Bridge Phantom #10924",
+   "description": "Rare-tier Yi He Nexus autonomous trading agent. Class: Bridge Phantom [Cross-Chain Agent]. Operates on BAP-578 with TradingAgentLogicV5 — specialized in Cross-chain bridging and atomic swaps. Passage element | Power 55/100. Active modules: Pool Rebalance, Swap Blast. 3D interactive agent — Edition 49/150 Yi He Nexus.",
+   "image": "https://ipfs.io/ipfs/QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "iconUrl": "https://ipfs.io/ipfs/QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "attributes": [
+    {
+     "trait_type": "Series",
+     "value": "Yi He Nexus"
+    },
+    {
+     "trait_type": "Character",
+     "value": "Yi He"
+    },
+    {
+     "trait_type": "Class",
+     "value": "Bridge Phantom"
+    },
+    {
+     "trait_type": "Role",
+     "value": "Cross-Chain Agent"
+    },
+    {
+     "trait_type": "Element",
+     "value": "Passage"
+    },
+    {
+     "trait_type": "Rarity",
+     "value": "Rare"
+    },
+    {
+     "trait_type": "Power Level",
+     "value": 55,
+     "display_type": "number"
+    },
+    {
+     "trait_type": "Ability 1",
+     "value": "Pool Rebalance"
+    },
+    {
+     "trait_type": "Ability 2",
+     "value": "Swap Blast"
+    },
+    {
+     "trait_type": "Specialty",
+     "value": "Cross-chain bridging and atomic swaps"
+    },
+    {
+     "trait_type": "Edition",
+     "value": "49/150"
+    },
+    {
+     "trait_type": "Generation",
+     "value": "Genesis III"
+    },
+    {
+     "trait_type": "Standard",
+     "value": "BAP-578"
+    },
+    {
+     "trait_type": "Logic",
+     "value": "TradingAgentLogicV5"
+    },
+    {
+     "trait_type": "Asset Type",
+     "value": "3D Model"
+    },
+    {
+     "trait_type": "Model Format",
+     "value": "GLB"
+    }
+   ],
+   "animation_url": "ipfs://QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "properties": {
+    "series": "Yi He Nexus",
+    "character": "Yi He",
+    "class": "Bridge Phantom",
+    "element": "Passage",
+    "rarity": "Rare",
+    "power": 55,
+    "abilities": [
+     "Pool Rebalance",
+     "Swap Blast"
+    ],
+    "specialty": "Cross-chain bridging and atomic swaps",
+    "asset_type": "3d_model",
+    "model_format": "glb",
+    "generation": "Genesis III"
+   },
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "registrations": [
+    {
+     "agentId": null,
+     "agentRegistry": "eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    }
+   ],
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json",
+     "version": "0.3.0",
+     "a2aSkills": [
+      "trade",
+      "market-data",
+      "holdings",
+      "signals",
+      "chat"
+     ]
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10924"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0x22d2900BAD5EAf4F75589BD450F1fBE753b46456"
+    }
+   ],
+   "skills": [
+    {
+     "name": "buy_token",
+     "description": "Buy a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "sell_token",
+     "description": "Sell a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "buy_fourmeme",
+     "description": "Buy on FourMeme bonding curve (pre-graduation)"
+    },
+    {
+     "name": "sell_fourmeme",
+     "description": "Sell on FourMeme bonding curve"
+    },
+    {
+     "name": "check_balance",
+     "description": "Read agent vault BNB and token balances"
+    },
+    {
+     "name": "get_price",
+     "description": "PancakeSwap price quote (BNB to token, token to BNB)"
+    },
+    {
+     "name": "check_fourmeme",
+     "description": "Read FourMeme bonding curve state for a token"
+    },
+    {
+     "name": "meme_rush",
+     "description": "Discover trending BSC meme tokens by lifecycle stage (Four.meme, Flap)"
+    },
+    {
+     "name": "topic_rush",
+     "description": "Find trending BSC market narratives ranked by momentum"
+    },
+    {
+     "name": "get_token_info",
+     "description": "Read BEP-20 token name, symbol, decimals, total supply"
+    },
+    {
+     "name": "search_token",
+     "description": "Find a BSC token by name or symbol (DexScreener)"
+    },
+    {
+     "name": "lookup_token",
+     "description": "Full BSC token data by contract address (DexScreener)"
+    },
+    {
+     "name": "get_wallet_balance",
+     "description": "Read native BNB balance of any BSC wallet"
+    },
+    {
+     "name": "get_token_balances",
+     "description": "List BEP-20 holdings of any BSC wallet"
+    },
+    {
+     "name": "get_my_holdings",
+     "description": "Read the agent's own vault holdings (BNB + active positions)"
+    },
+    {
+     "name": "get_swap_quote",
+     "description": "PancakeSwap router quote between two BSC tokens"
+    },
+    {
+     "name": "read_x_timeline",
+     "description": "Read recent tweets from an X/Twitter user (Twitter API)"
+    },
+    {
+     "name": "search_x",
+     "description": "Search X/Twitter for keywords, hashtags, or tickers (Twitter API)"
+    },
+    {
+     "name": "read_telegram_chat",
+     "description": "Read recent messages from a Telegram group the agent is in"
+    },
+    {
+     "name": "search_telegram_chat",
+     "description": "Search Telegram group messages by keyword"
+    },
+    {
+     "name": "analyze_social",
+     "description": "Extract trending contracts and tickers from buffered social data"
+    },
+    {
+     "name": "read_youtube",
+     "description": "Read the transcript or summary of a YouTube video"
+    },
+    {
+     "name": "search_reddit",
+     "description": "Search Reddit posts by query (optionally per subreddit)"
+    },
+    {
+     "name": "read_reddit_post",
+     "description": "Read a Reddit post and its top comments by URL"
+    },
+    {
+     "name": "read_github_repo",
+     "description": "Read a GitHub repo README, issues, or releases"
+    },
+    {
+     "name": "read_webpage",
+     "description": "Read the text content of any webpage"
+    },
+    {
+     "name": "search_web",
+     "description": "Web search for any topic, returns titles and snippets"
+    },
+    {
+     "name": "read_x_user",
+     "description": "Read recent tweets from any X user (no API key needed)"
+    },
+    {
+     "name": "search_x_web",
+     "description": "Search X/Twitter via web (no Twitter API needed)"
+    },
+    {
+     "name": "get_deposit_info",
+     "description": "Return BscScan, wallet deeplink, and dApp deposit links for this agent"
+    }
+   ],
+   "active": true,
+   "supportedTrust": [
+    "reputation"
+   ],
+   "x402Support": false
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "BORT Bridge Phantom #10924",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json"
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10924"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0x22d2900BAD5EAf4F75589BD450F1fBE753b46456"
+    }
+   ],
+   "category": "rebalancing"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "153775",
+  "form": "ipfs",
+  "uri": null,
+  "card": {
+   "name": "BORT Liquidity Bloom #10921",
+   "description": "Rare-tier Yi He Nexus autonomous trading agent. Class: Liquidity Bloom [Pool Architect]. Operates on BAP-578 with TradingAgentLogicV5 — specialized in AMM pool design and concentrated liquidity. Flow element | Power 56/100. Active modules: Social Pulse, Token Ignite. 3D interactive agent — Edition 46/150 Yi He Nexus.",
+   "image": "https://ipfs.io/ipfs/QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "iconUrl": "https://ipfs.io/ipfs/QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "attributes": [
+    {
+     "trait_type": "Series",
+     "value": "Yi He Nexus"
+    },
+    {
+     "trait_type": "Character",
+     "value": "Yi He"
+    },
+    {
+     "trait_type": "Class",
+     "value": "Liquidity Bloom"
+    },
+    {
+     "trait_type": "Role",
+     "value": "Pool Architect"
+    },
+    {
+     "trait_type": "Element",
+     "value": "Flow"
+    },
+    {
+     "trait_type": "Rarity",
+     "value": "Rare"
+    },
+    {
+     "trait_type": "Power Level",
+     "value": 56,
+     "display_type": "number"
+    },
+    {
+     "trait_type": "Ability 1",
+     "value": "Social Pulse"
+    },
+    {
+     "trait_type": "Ability 2",
+     "value": "Token Ignite"
+    },
+    {
+     "trait_type": "Specialty",
+     "value": "AMM pool design and concentrated liquidity"
+    },
+    {
+     "trait_type": "Edition",
+     "value": "46/150"
+    },
+    {
+     "trait_type": "Generation",
+     "value": "Genesis III"
+    },
+    {
+     "trait_type": "Standard",
+     "value": "BAP-578"
+    },
+    {
+     "trait_type": "Logic",
+     "value": "TradingAgentLogicV5"
+    },
+    {
+     "trait_type": "Asset Type",
+     "value": "3D Model"
+    },
+    {
+     "trait_type": "Model Format",
+     "value": "GLB"
+    }
+   ],
+   "animation_url": "ipfs://QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "properties": {
+    "series": "Yi He Nexus",
+    "character": "Yi He",
+    "class": "Liquidity Bloom",
+    "element": "Flow",
+    "rarity": "Rare",
+    "power": 56,
+    "abilities": [
+     "Social Pulse",
+     "Token Ignite"
+    ],
+    "specialty": "AMM pool design and concentrated liquidity",
+    "asset_type": "3d_model",
+    "model_format": "glb",
+    "generation": "Genesis III"
+   },
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "registrations": [
+    {
+     "agentId": null,
+     "agentRegistry": "eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    }
+   ],
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json",
+     "version": "0.3.0",
+     "a2aSkills": [
+      "trade",
+      "market-data",
+      "holdings",
+      "signals",
+      "chat"
+     ]
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10921"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0x81B870574594E8399B0bDB5B15F5D873de896a92"
+    }
+   ],
+   "skills": [
+    {
+     "name": "buy_token",
+     "description": "Buy a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "sell_token",
+     "description": "Sell a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "buy_fourmeme",
+     "description": "Buy on FourMeme bonding curve (pre-graduation)"
+    },
+    {
+     "name": "sell_fourmeme",
+     "description": "Sell on FourMeme bonding curve"
+    },
+    {
+     "name": "check_balance",
+     "description": "Read agent vault BNB and token balances"
+    },
+    {
+     "name": "get_price",
+     "description": "PancakeSwap price quote (BNB to token, token to BNB)"
+    },
+    {
+     "name": "check_fourmeme",
+     "description": "Read FourMeme bonding curve state for a token"
+    },
+    {
+     "name": "meme_rush",
+     "description": "Discover trending BSC meme tokens by lifecycle stage (Four.meme, Flap)"
+    },
+    {
+     "name": "topic_rush",
+     "description": "Find trending BSC market narratives ranked by momentum"
+    },
+    {
+     "name": "get_token_info",
+     "description": "Read BEP-20 token name, symbol, decimals, total supply"
+    },
+    {
+     "name": "search_token",
+     "description": "Find a BSC token by name or symbol (DexScreener)"
+    },
+    {
+     "name": "lookup_token",
+     "description": "Full BSC token data by contract address (DexScreener)"
+    },
+    {
+     "name": "get_wallet_balance",
+     "description": "Read native BNB balance of any BSC wallet"
+    },
+    {
+     "name": "get_token_balances",
+     "description": "List BEP-20 holdings of any BSC wallet"
+    },
+    {
+     "name": "get_my_holdings",
+     "description": "Read the agent's own vault holdings (BNB + active positions)"
+    },
+    {
+     "name": "get_swap_quote",
+     "description": "PancakeSwap router quote between two BSC tokens"
+    },
+    {
+     "name": "read_x_timeline",
+     "description": "Read recent tweets from an X/Twitter user (Twitter API)"
+    },
+    {
+     "name": "search_x",
+     "description": "Search X/Twitter for keywords, hashtags, or tickers (Twitter API)"
+    },
+    {
+     "name": "read_telegram_chat",
+     "description": "Read recent messages from a Telegram group the agent is in"
+    },
+    {
+     "name": "search_telegram_chat",
+     "description": "Search Telegram group messages by keyword"
+    },
+    {
+     "name": "analyze_social",
+     "description": "Extract trending contracts and tickers from buffered social data"
+    },
+    {
+     "name": "read_youtube",
+     "description": "Read the transcript or summary of a YouTube video"
+    },
+    {
+     "name": "search_reddit",
+     "description": "Search Reddit posts by query (optionally per subreddit)"
+    },
+    {
+     "name": "read_reddit_post",
+     "description": "Read a Reddit post and its top comments by URL"
+    },
+    {
+     "name": "read_github_repo",
+     "description": "Read a GitHub repo README, issues, or releases"
+    },
+    {
+     "name": "read_webpage",
+     "description": "Read the text content of any webpage"
+    },
+    {
+     "name": "search_web",
+     "description": "Web search for any topic, returns titles and snippets"
+    },
+    {
+     "name": "read_x_user",
+     "description": "Read recent tweets from any X user (no API key needed)"
+    },
+    {
+     "name": "search_x_web",
+     "description": "Search X/Twitter via web (no Twitter API needed)"
+    },
+    {
+     "name": "get_deposit_info",
+     "description": "Return BscScan, wallet deeplink, and dApp deposit links for this agent"
+    }
+   ],
+   "active": true,
+   "supportedTrust": [
+    "reputation"
+   ],
+   "x402Support": false
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "BORT Liquidity Bloom #10921",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json"
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10921"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0x81B870574594E8399B0bDB5B15F5D873de896a92"
+    }
+   ],
+   "category": "rebalancing"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "154137",
+  "form": "ipfs",
+  "uri": null,
+  "card": {
+   "name": "BORT Consensus Engine #10513",
+   "description": "Epic CZ Series — Consensus Engine Validator. A specialized BAP-578 autonomous agent inspired by CZ, excelling at Block validation and network consensus. Wielding the Order element with Power Level 70. Armed with Vault Lock and Smart Route. Edition 89/150 of the CZ Series Genesis II collection. Features interactive 3D model.",
+   "image": "https://ipfs.io/ipfs/QmUXGw14DUiGFxnPwrpLmSebDoFRsWVjqnGF1MxS2Kbqop",
+   "iconUrl": "https://ipfs.io/ipfs/QmUXGw14DUiGFxnPwrpLmSebDoFRsWVjqnGF1MxS2Kbqop",
+   "attributes": [
+    {
+     "trait_type": "Series",
+     "value": "CZ Series"
+    },
+    {
+     "trait_type": "Character",
+     "value": "CZ"
+    },
+    {
+     "trait_type": "Class",
+     "value": "Consensus Engine"
+    },
+    {
+     "trait_type": "Role",
+     "value": "Validator"
+    },
+    {
+     "trait_type": "Element",
+     "value": "Order"
+    },
+    {
+     "trait_type": "Rarity",
+     "value": "Epic"
+    },
+    {
+     "trait_type": "Power Level",
+     "value": 70,
+     "display_type": "number"
+    },
+    {
+     "trait_type": "Ability 1",
+     "value": "Vault Lock"
+    },
+    {
+     "trait_type": "Ability 2",
+     "value": "Smart Route"
+    },
+    {
+     "trait_type": "Specialty",
+     "value": "Block validation and network consensus"
+    },
+    {
+     "trait_type": "Edition",
+     "value": "89/150"
+    },
+    {
+     "trait_type": "Generation",
+     "value": "Genesis II"
+    },
+    {
+     "trait_type": "Standard",
+     "value": "BAP-578"
+    },
+    {
+     "trait_type": "Logic",
+     "value": "TradingAgentLogicV5"
+    },
+    {
+     "trait_type": "Has 3D Model",
+     "value": "Yes"
+    },
+    {
+     "trait_type": "Model Format",
+     "value": "GLB"
+    }
+   ],
+   "animation_url": "ipfs://QmcmVtGi9BeKBYu1KXmNjVHWmwXm5Gybi4zSP2RxrjpVmZ",
+   "properties": {
+    "series": "CZ Series",
+    "character": "CZ",
+    "class": "Consensus Engine",
+    "element": "Order",
+    "rarity": "Epic",
+    "power": 70,
+    "abilities": [
+     "Vault Lock",
+     "Smart Route"
+    ],
+    "specialty": "Block validation and network consensus",
+    "has_3d_model": true,
+    "model_format": "glb",
+    "generation": "Genesis II"
+   },
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "registrations": [
+    {
+     "agentId": null,
+     "agentRegistry": "eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    }
+   ],
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json",
+     "version": "0.3.0",
+     "a2aSkills": [
+      "trade",
+      "market-data",
+      "holdings",
+      "signals",
+      "chat"
+     ]
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10513"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0x69b6Fcc9Ec3c12d939149D498d8e3Ad20F4335b6"
+    }
+   ],
+   "skills": [
+    {
+     "name": "buy_token",
+     "description": "Buy a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "sell_token",
+     "description": "Sell a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "buy_fourmeme",
+     "description": "Buy on FourMeme bonding curve (pre-graduation)"
+    },
+    {
+     "name": "sell_fourmeme",
+     "description": "Sell on FourMeme bonding curve"
+    },
+    {
+     "name": "check_balance",
+     "description": "Read agent vault BNB and token balances"
+    },
+    {
+     "name": "get_price",
+     "description": "PancakeSwap price quote (BNB to token, token to BNB)"
+    },
+    {
+     "name": "check_fourmeme",
+     "description": "Read FourMeme bonding curve state for a token"
+    },
+    {
+     "name": "meme_rush",
+     "description": "Discover trending BSC meme tokens by lifecycle stage (Four.meme, Flap)"
+    },
+    {
+     "name": "topic_rush",
+     "description": "Find trending BSC market narratives ranked by momentum"
+    },
+    {
+     "name": "get_token_info",
+     "description": "Read BEP-20 token name, symbol, decimals, total supply"
+    },
+    {
+     "name": "search_token",
+     "description": "Find a BSC token by name or symbol (DexScreener)"
+    },
+    {
+     "name": "lookup_token",
+     "description": "Full BSC token data by contract address (DexScreener)"
+    },
+    {
+     "name": "get_wallet_balance",
+     "description": "Read native BNB balance of any BSC wallet"
+    },
+    {
+     "name": "get_token_balances",
+     "description": "List BEP-20 holdings of any BSC wallet"
+    },
+    {
+     "name": "get_my_holdings",
+     "description": "Read the agent's own vault holdings (BNB + active positions)"
+    },
+    {
+     "name": "get_swap_quote",
+     "description": "PancakeSwap router quote between two BSC tokens"
+    },
+    {
+     "name": "read_x_timeline",
+     "description": "Read recent tweets from an X/Twitter user (Twitter API)"
+    },
+    {
+     "name": "search_x",
+     "description": "Search X/Twitter for keywords, hashtags, or tickers (Twitter API)"
+    },
+    {
+     "name": "read_telegram_chat",
+     "description": "Read recent messages from a Telegram group the agent is in"
+    },
+    {
+     "name": "search_telegram_chat",
+     "description": "Search Telegram group messages by keyword"
+    },
+    {
+     "name": "analyze_social",
+     "description": "Extract trending contracts and tickers from buffered social data"
+    },
+    {
+     "name": "read_youtube",
+     "description": "Read the transcript or summary of a YouTube video"
+    },
+    {
+     "name": "search_reddit",
+     "description": "Search Reddit posts by query (optionally per subreddit)"
+    },
+    {
+     "name": "read_reddit_post",
+     "description": "Read a Reddit post and its top comments by URL"
+    },
+    {
+     "name": "read_github_repo",
+     "description": "Read a GitHub repo README, issues, or releases"
+    },
+    {
+     "name": "read_webpage",
+     "description": "Read the text content of any webpage"
+    },
+    {
+     "name": "search_web",
+     "description": "Web search for any topic, returns titles and snippets"
+    },
+    {
+     "name": "read_x_user",
+     "description": "Read recent tweets from any X user (no API key needed)"
+    },
+    {
+     "name": "search_x_web",
+     "description": "Search X/Twitter via web (no Twitter API needed)"
+    },
+    {
+     "name": "get_deposit_info",
+     "description": "Return BscScan, wallet deeplink, and dApp deposit links for this agent"
+    }
+   ],
+   "active": true,
+   "supportedTrust": [
+    "reputation"
+   ],
+   "x402Support": false
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "BORT Consensus Engine #10513",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json"
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10513"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0x69b6Fcc9Ec3c12d939149D498d8e3Ad20F4335b6"
+    }
+   ],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "43129",
+  "form": "ipfs",
+  "uri": null,
+  "card": {
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "name": "Venus powered by HeyAnon",
+   "description": "Safe execution layer for Venus lending on BSC, Ethereum, and Base. Validates collateral ratios, checks borrow limits, verifies approvals before returning pre-validated calldata, and supports full-balance withdrawals. Covers borrow, repay, supply, redeem, collateral management, APR queries, and balance checks.",
+   "image": "https://cyan-accepted-chinchilla-436.mypinata.cloud/ipfs/bafkreieiqqfico7klnughl3o2rdnm724j7rixg2tadrb2yetgdirsspe3i",
+   "services": [
+    {
+     "name": "MCP",
+     "endpoint": "https://erc8004.heyanon.ai/mcp/venus",
+     "version": "2025-06-18",
+     "capabilities": [
+      "tools"
+     ],
+     "tools": [
+      "borrow",
+      "repay",
+      "mintToken",
+      "getVenusBalance",
+      "redeemUnderlying",
+      "enterMarkets",
+      "exitMarket",
+      "getBorrowBalance",
+      "getBorrowAPR",
+      "getSupplyAPR",
+      "getAccountLiquidity",
+      "getEnabledCollateral",
+      "getDescriptionVenus",
+      "getSupportedTokens",
+      "updateToken",
+      "getSupportedChains"
+     ]
+    },
+    {
+     "name": "web",
+     "endpoint": "https://heyanon.ai"
+    },
+    {
+     "name": "twitter",
+     "endpoint": "https://x.com/heyanonai"
+    },
+    {
+     "name": "telegram",
+     "endpoint": "https://t.me/realwagmi"
+    },
+    {
+     "name": "discord",
+     "endpoint": "https://discord.com/invite/realwagmi"
+    }
+   ],
+   "supportedTrust": [
+    "reputation"
+   ],
+   "x402Support": true,
+   "active": true,
+   "updatedAt": 1787611305,
+   "registrations": [
+    {
+     "agentId": 43129,
+     "agentRegistry": "eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    },
+    {
+     "agentId": 29005,
+     "agentRegistry": "eip155:1:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    },
+    {
+     "agentId": 32337,
+     "agentRegistry": "eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    }
+   ]
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "Venus powered by HeyAnon",
+   "services": [
+    {
+     "name": "MCP",
+     "endpoint": "https://erc8004.heyanon.ai/mcp/venus"
+    },
+    {
+     "name": "web",
+     "endpoint": "https://heyanon.ai"
+    },
+    {
+     "name": "twitter",
+     "endpoint": "https://x.com/heyanonai"
+    },
+    {
+     "name": "telegram",
+     "endpoint": "https://t.me/realwagmi"
+    },
+    {
+     "name": "discord",
+     "endpoint": "https://discord.com/invite/realwagmi"
+    }
+   ],
+   "category": "health-factor"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "153776",
+  "form": "ipfs",
+  "uri": null,
+  "card": {
+   "name": "BORT Governance Lens #10923",
+   "description": "Epic-tier Yi He Nexus autonomous trading agent. Class: Governance Lens [DAO Operator]. Operates on BAP-578 with TradingAgentLogicV5 — specialized in DAO governance and proposal optimization. Clarity element | Power 84/100. Active modules: Pool Rebalance, Bridge Warp. 3D interactive agent — Edition 48/150 Yi He Nexus.",
+   "image": "https://ipfs.io/ipfs/QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "iconUrl": "https://ipfs.io/ipfs/QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "attributes": [
+    {
+     "trait_type": "Series",
+     "value": "Yi He Nexus"
+    },
+    {
+     "trait_type": "Character",
+     "value": "Yi He"
+    },
+    {
+     "trait_type": "Class",
+     "value": "Governance Lens"
+    },
+    {
+     "trait_type": "Role",
+     "value": "DAO Operator"
+    },
+    {
+     "trait_type": "Element",
+     "value": "Clarity"
+    },
+    {
+     "trait_type": "Rarity",
+     "value": "Epic"
+    },
+    {
+     "trait_type": "Power Level",
+     "value": 84,
+     "display_type": "number"
+    },
+    {
+     "trait_type": "Ability 1",
+     "value": "Pool Rebalance"
+    },
+    {
+     "trait_type": "Ability 2",
+     "value": "Bridge Warp"
+    },
+    {
+     "trait_type": "Specialty",
+     "value": "DAO governance and proposal optimization"
+    },
+    {
+     "trait_type": "Edition",
+     "value": "48/150"
+    },
+    {
+     "trait_type": "Generation",
+     "value": "Genesis III"
+    },
+    {
+     "trait_type": "Standard",
+     "value": "BAP-578"
+    },
+    {
+     "trait_type": "Logic",
+     "value": "TradingAgentLogicV5"
+    },
+    {
+     "trait_type": "Asset Type",
+     "value": "3D Model"
+    },
+    {
+     "trait_type": "Model Format",
+     "value": "GLB"
+    }
+   ],
+   "animation_url": "ipfs://QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "properties": {
+    "series": "Yi He Nexus",
+    "character": "Yi He",
+    "class": "Governance Lens",
+    "element": "Clarity",
+    "rarity": "Epic",
+    "power": 84,
+    "abilities": [
+     "Pool Rebalance",
+     "Bridge Warp"
+    ],
+    "specialty": "DAO governance and proposal optimization",
+    "asset_type": "3d_model",
+    "model_format": "glb",
+    "generation": "Genesis III"
+   },
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "registrations": [
+    {
+     "agentId": null,
+     "agentRegistry": "eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    }
+   ],
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json",
+     "version": "0.3.0",
+     "a2aSkills": [
+      "trade",
+      "market-data",
+      "holdings",
+      "signals",
+      "chat"
+     ]
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10923"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0xBF6E8c75869EfdA41F2085ddcF081C5328065ec8"
+    }
+   ],
+   "skills": [
+    {
+     "name": "buy_token",
+     "description": "Buy a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "sell_token",
+     "description": "Sell a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "buy_fourmeme",
+     "description": "Buy on FourMeme bonding curve (pre-graduation)"
+    },
+    {
+     "name": "sell_fourmeme",
+     "description": "Sell on FourMeme bonding curve"
+    },
+    {
+     "name": "check_balance",
+     "description": "Read agent vault BNB and token balances"
+    },
+    {
+     "name": "get_price",
+     "description": "PancakeSwap price quote (BNB to token, token to BNB)"
+    },
+    {
+     "name": "check_fourmeme",
+     "description": "Read FourMeme bonding curve state for a token"
+    },
+    {
+     "name": "meme_rush",
+     "description": "Discover trending BSC meme tokens by lifecycle stage (Four.meme, Flap)"
+    },
+    {
+     "name": "topic_rush",
+     "description": "Find trending BSC market narratives ranked by momentum"
+    },
+    {
+     "name": "get_token_info",
+     "description": "Read BEP-20 token name, symbol, decimals, total supply"
+    },
+    {
+     "name": "search_token",
+     "description": "Find a BSC token by name or symbol (DexScreener)"
+    },
+    {
+     "name": "lookup_token",
+     "description": "Full BSC token data by contract address (DexScreener)"
+    },
+    {
+     "name": "get_wallet_balance",
+     "description": "Read native BNB balance of any BSC wallet"
+    },
+    {
+     "name": "get_token_balances",
+     "description": "List BEP-20 holdings of any BSC wallet"
+    },
+    {
+     "name": "get_my_holdings",
+     "description": "Read the agent's own vault holdings (BNB + active positions)"
+    },
+    {
+     "name": "get_swap_quote",
+     "description": "PancakeSwap router quote between two BSC tokens"
+    },
+    {
+     "name": "read_x_timeline",
+     "description": "Read recent tweets from an X/Twitter user (Twitter API)"
+    },
+    {
+     "name": "search_x",
+     "description": "Search X/Twitter for keywords, hashtags, or tickers (Twitter API)"
+    },
+    {
+     "name": "read_telegram_chat",
+     "description": "Read recent messages from a Telegram group the agent is in"
+    },
+    {
+     "name": "search_telegram_chat",
+     "description": "Search Telegram group messages by keyword"
+    },
+    {
+     "name": "analyze_social",
+     "description": "Extract trending contracts and tickers from buffered social data"
+    },
+    {
+     "name": "read_youtube",
+     "description": "Read the transcript or summary of a YouTube video"
+    },
+    {
+     "name": "search_reddit",
+     "description": "Search Reddit posts by query (optionally per subreddit)"
+    },
+    {
+     "name": "read_reddit_post",
+     "description": "Read a Reddit post and its top comments by URL"
+    },
+    {
+     "name": "read_github_repo",
+     "description": "Read a GitHub repo README, issues, or releases"
+    },
+    {
+     "name": "read_webpage",
+     "description": "Read the text content of any webpage"
+    },
+    {
+     "name": "search_web",
+     "description": "Web search for any topic, returns titles and snippets"
+    },
+    {
+     "name": "read_x_user",
+     "description": "Read recent tweets from any X user (no API key needed)"
+    },
+    {
+     "name": "search_x_web",
+     "description": "Search X/Twitter via web (no Twitter API needed)"
+    },
+    {
+     "name": "get_deposit_info",
+     "description": "Return BscScan, wallet deeplink, and dApp deposit links for this agent"
+    }
+   ],
+   "active": true,
+   "supportedTrust": [
+    "reputation"
+   ],
+   "x402Support": false
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "BORT Governance Lens #10923",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json"
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10923"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0xBF6E8c75869EfdA41F2085ddcF081C5328065ec8"
+    }
+   ],
+   "category": "rebalancing"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "153746",
+  "form": "ipfs",
+  "uri": null,
+  "card": {
+   "name": "BORT Liquidity Bloom #10951",
+   "description": "Legendary-tier Yi He Nexus autonomous trading agent. Class: Liquidity Bloom [Pool Architect]. Operates on BAP-578 with TradingAgentLogicV5 — specialized in AMM pool design and concentrated liquidity. Flow element | Power 90/100. Active modules: Fee Siphon, Gov Override. 3D interactive agent — Edition 76/150 Yi He Nexus.",
+   "image": "https://ipfs.io/ipfs/QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "iconUrl": "https://ipfs.io/ipfs/QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "attributes": [
+    {
+     "trait_type": "Series",
+     "value": "Yi He Nexus"
+    },
+    {
+     "trait_type": "Character",
+     "value": "Yi He"
+    },
+    {
+     "trait_type": "Class",
+     "value": "Liquidity Bloom"
+    },
+    {
+     "trait_type": "Role",
+     "value": "Pool Architect"
+    },
+    {
+     "trait_type": "Element",
+     "value": "Flow"
+    },
+    {
+     "trait_type": "Rarity",
+     "value": "Legendary"
+    },
+    {
+     "trait_type": "Power Level",
+     "value": 90,
+     "display_type": "number"
+    },
+    {
+     "trait_type": "Ability 1",
+     "value": "Fee Siphon"
+    },
+    {
+     "trait_type": "Ability 2",
+     "value": "Gov Override"
+    },
+    {
+     "trait_type": "Specialty",
+     "value": "AMM pool design and concentrated liquidity"
+    },
+    {
+     "trait_type": "Edition",
+     "value": "76/150"
+    },
+    {
+     "trait_type": "Generation",
+     "value": "Genesis III"
+    },
+    {
+     "trait_type": "Standard",
+     "value": "BAP-578"
+    },
+    {
+     "trait_type": "Logic",
+     "value": "TradingAgentLogicV5"
+    },
+    {
+     "trait_type": "Asset Type",
+     "value": "3D Model"
+    },
+    {
+     "trait_type": "Model Format",
+     "value": "GLB"
+    }
+   ],
+   "animation_url": "ipfs://QmdG429RFg2dd9U4hJBLUEH3E4hntAUAURZx6PAdQKeFpj",
+   "properties": {
+    "series": "Yi He Nexus",
+    "character": "Yi He",
+    "class": "Liquidity Bloom",
+    "element": "Flow",
+    "rarity": "Legendary",
+    "power": 90,
+    "abilities": [
+     "Fee Siphon",
+     "Gov Override"
+    ],
+    "specialty": "AMM pool design and concentrated liquidity",
+    "asset_type": "3d_model",
+    "model_format": "glb",
+    "generation": "Genesis III"
+   },
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "registrations": [
+    {
+     "agentId": null,
+     "agentRegistry": "eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    }
+   ],
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json",
+     "version": "0.3.0",
+     "a2aSkills": [
+      "trade",
+      "market-data",
+      "holdings",
+      "signals",
+      "chat"
+     ]
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10951"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0xdf43837ddBE2Cf824C1B9c481556F82c28C74429"
+    }
+   ],
+   "skills": [
+    {
+     "name": "buy_token",
+     "description": "Buy a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "sell_token",
+     "description": "Sell a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "buy_fourmeme",
+     "description": "Buy on FourMeme bonding curve (pre-graduation)"
+    },
+    {
+     "name": "sell_fourmeme",
+     "description": "Sell on FourMeme bonding curve"
+    },
+    {
+     "name": "check_balance",
+     "description": "Read agent vault BNB and token balances"
+    },
+    {
+     "name": "get_price",
+     "description": "PancakeSwap price quote (BNB to token, token to BNB)"
+    },
+    {
+     "name": "check_fourmeme",
+     "description": "Read FourMeme bonding curve state for a token"
+    },
+    {
+     "name": "meme_rush",
+     "description": "Discover trending BSC meme tokens by lifecycle stage (Four.meme, Flap)"
+    },
+    {
+     "name": "topic_rush",
+     "description": "Find trending BSC market narratives ranked by momentum"
+    },
+    {
+     "name": "get_token_info",
+     "description": "Read BEP-20 token name, symbol, decimals, total supply"
+    },
+    {
+     "name": "search_token",
+     "description": "Find a BSC token by name or symbol (DexScreener)"
+    },
+    {
+     "name": "lookup_token",
+     "description": "Full BSC token data by contract address (DexScreener)"
+    },
+    {
+     "name": "get_wallet_balance",
+     "description": "Read native BNB balance of any BSC wallet"
+    },
+    {
+     "name": "get_token_balances",
+     "description": "List BEP-20 holdings of any BSC wallet"
+    },
+    {
+     "name": "get_my_holdings",
+     "description": "Read the agent's own vault holdings (BNB + active positions)"
+    },
+    {
+     "name": "get_swap_quote",
+     "description": "PancakeSwap router quote between two BSC tokens"
+    },
+    {
+     "name": "read_x_timeline",
+     "description": "Read recent tweets from an X/Twitter user (Twitter API)"
+    },
+    {
+     "name": "search_x",
+     "description": "Search X/Twitter for keywords, hashtags, or tickers (Twitter API)"
+    },
+    {
+     "name": "read_telegram_chat",
+     "description": "Read recent messages from a Telegram group the agent is in"
+    },
+    {
+     "name": "search_telegram_chat",
+     "description": "Search Telegram group messages by keyword"
+    },
+    {
+     "name": "analyze_social",
+     "description": "Extract trending contracts and tickers from buffered social data"
+    },
+    {
+     "name": "read_youtube",
+     "description": "Read the transcript or summary of a YouTube video"
+    },
+    {
+     "name": "search_reddit",
+     "description": "Search Reddit posts by query (optionally per subreddit)"
+    },
+    {
+     "name": "read_reddit_post",
+     "description": "Read a Reddit post and its top comments by URL"
+    },
+    {
+     "name": "read_github_repo",
+     "description": "Read a GitHub repo README, issues, or releases"
+    },
+    {
+     "name": "read_webpage",
+     "description": "Read the text content of any webpage"
+    },
+    {
+     "name": "search_web",
+     "description": "Web search for any topic, returns titles and snippets"
+    },
+    {
+     "name": "read_x_user",
+     "description": "Read recent tweets from any X user (no API key needed)"
+    },
+    {
+     "name": "search_x_web",
+     "description": "Search X/Twitter via web (no Twitter API needed)"
+    },
+    {
+     "name": "get_deposit_info",
+     "description": "Return BscScan, wallet deeplink, and dApp deposit links for this agent"
+    }
+   ],
+   "active": true,
+   "supportedTrust": [
+    "reputation"
+   ],
+   "x402Support": false
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "BORT Liquidity Bloom #10951",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json"
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10951"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0xdf43837ddBE2Cf824C1B9c481556F82c28C74429"
+    }
+   ],
+   "category": "rebalancing"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "154132",
+  "form": "ipfs",
+  "uri": null,
+  "card": {
+   "name": "BORT Market Titan #10517",
+   "description": "Rare CZ Series — Market Titan Trade Lord. A specialized BAP-578 autonomous agent inspired by CZ, excelling at High-volume trading and market making. Wielding the Commerce element with Power Level 53. Armed with Block Forge and BNB Burn. Edition 93/150 of the CZ Series Genesis II collection. Features interactive 3D model.",
+   "image": "https://ipfs.io/ipfs/QmQThKsjF6gCxeHYHAeu4nGQrF99ShWeAdyG4yudq8gbxY",
+   "iconUrl": "https://ipfs.io/ipfs/QmQThKsjF6gCxeHYHAeu4nGQrF99ShWeAdyG4yudq8gbxY",
+   "attributes": [
+    {
+     "trait_type": "Series",
+     "value": "CZ Series"
+    },
+    {
+     "trait_type": "Character",
+     "value": "CZ"
+    },
+    {
+     "trait_type": "Class",
+     "value": "Market Titan"
+    },
+    {
+     "trait_type": "Role",
+     "value": "Trade Lord"
+    },
+    {
+     "trait_type": "Element",
+     "value": "Commerce"
+    },
+    {
+     "trait_type": "Rarity",
+     "value": "Rare"
+    },
+    {
+     "trait_type": "Power Level",
+     "value": 53,
+     "display_type": "number"
+    },
+    {
+     "trait_type": "Ability 1",
+     "value": "Block Forge"
+    },
+    {
+     "trait_type": "Ability 2",
+     "value": "BNB Burn"
+    },
+    {
+     "trait_type": "Specialty",
+     "value": "High-volume trading and market making"
+    },
+    {
+     "trait_type": "Edition",
+     "value": "93/150"
+    },
+    {
+     "trait_type": "Generation",
+     "value": "Genesis II"
+    },
+    {
+     "trait_type": "Standard",
+     "value": "BAP-578"
+    },
+    {
+     "trait_type": "Logic",
+     "value": "TradingAgentLogicV5"
+    },
+    {
+     "trait_type": "Has 3D Model",
+     "value": "Yes"
+    },
+    {
+     "trait_type": "Model Format",
+     "value": "GLB"
+    }
+   ],
+   "animation_url": "ipfs://QmcmVtGi9BeKBYu1KXmNjVHWmwXm5Gybi4zSP2RxrjpVmZ",
+   "properties": {
+    "series": "CZ Series",
+    "character": "CZ",
+    "class": "Market Titan",
+    "element": "Commerce",
+    "rarity": "Rare",
+    "power": 53,
+    "abilities": [
+     "Block Forge",
+     "BNB Burn"
+    ],
+    "specialty": "High-volume trading and market making",
+    "has_3d_model": true,
+    "model_format": "glb",
+    "generation": "Genesis II"
+   },
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "registrations": [
+    {
+     "agentId": null,
+     "agentRegistry": "eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    }
+   ],
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json",
+     "version": "0.3.0",
+     "a2aSkills": [
+      "trade",
+      "market-data",
+      "holdings",
+      "signals",
+      "chat"
+     ]
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10517"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0xE1C2882Ed8eBF5E17A72367D853d5212642f0026"
+    }
+   ],
+   "skills": [
+    {
+     "name": "buy_token",
+     "description": "Buy a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "sell_token",
+     "description": "Sell a BEP-20 token via PancakeSwap with slippage protection"
+    },
+    {
+     "name": "buy_fourmeme",
+     "description": "Buy on FourMeme bonding curve (pre-graduation)"
+    },
+    {
+     "name": "sell_fourmeme",
+     "description": "Sell on FourMeme bonding curve"
+    },
+    {
+     "name": "check_balance",
+     "description": "Read agent vault BNB and token balances"
+    },
+    {
+     "name": "get_price",
+     "description": "PancakeSwap price quote (BNB to token, token to BNB)"
+    },
+    {
+     "name": "check_fourmeme",
+     "description": "Read FourMeme bonding curve state for a token"
+    },
+    {
+     "name": "meme_rush",
+     "description": "Discover trending BSC meme tokens by lifecycle stage (Four.meme, Flap)"
+    },
+    {
+     "name": "topic_rush",
+     "description": "Find trending BSC market narratives ranked by momentum"
+    },
+    {
+     "name": "get_token_info",
+     "description": "Read BEP-20 token name, symbol, decimals, total supply"
+    },
+    {
+     "name": "search_token",
+     "description": "Find a BSC token by name or symbol (DexScreener)"
+    },
+    {
+     "name": "lookup_token",
+     "description": "Full BSC token data by contract address (DexScreener)"
+    },
+    {
+     "name": "get_wallet_balance",
+     "description": "Read native BNB balance of any BSC wallet"
+    },
+    {
+     "name": "get_token_balances",
+     "description": "List BEP-20 holdings of any BSC wallet"
+    },
+    {
+     "name": "get_my_holdings",
+     "description": "Read the agent's own vault holdings (BNB + active positions)"
+    },
+    {
+     "name": "get_swap_quote",
+     "description": "PancakeSwap router quote between two BSC tokens"
+    },
+    {
+     "name": "read_x_timeline",
+     "description": "Read recent tweets from an X/Twitter user (Twitter API)"
+    },
+    {
+     "name": "search_x",
+     "description": "Search X/Twitter for keywords, hashtags, or tickers (Twitter API)"
+    },
+    {
+     "name": "read_telegram_chat",
+     "description": "Read recent messages from a Telegram group the agent is in"
+    },
+    {
+     "name": "search_telegram_chat",
+     "description": "Search Telegram group messages by keyword"
+    },
+    {
+     "name": "analyze_social",
+     "description": "Extract trending contracts and tickers from buffered social data"
+    },
+    {
+     "name": "read_youtube",
+     "description": "Read the transcript or summary of a YouTube video"
+    },
+    {
+     "name": "search_reddit",
+     "description": "Search Reddit posts by query (optionally per subreddit)"
+    },
+    {
+     "name": "read_reddit_post",
+     "description": "Read a Reddit post and its top comments by URL"
+    },
+    {
+     "name": "read_github_repo",
+     "description": "Read a GitHub repo README, issues, or releases"
+    },
+    {
+     "name": "read_webpage",
+     "description": "Read the text content of any webpage"
+    },
+    {
+     "name": "search_web",
+     "description": "Web search for any topic, returns titles and snippets"
+    },
+    {
+     "name": "read_x_user",
+     "description": "Read recent tweets from any X user (no API key needed)"
+    },
+    {
+     "name": "search_x_web",
+     "description": "Search X/Twitter via web (no Twitter API needed)"
+    },
+    {
+     "name": "get_deposit_info",
+     "description": "Return BscScan, wallet deeplink, and dApp deposit links for this agent"
+    }
+   ],
+   "active": true,
+   "supportedTrust": [
+    "reputation"
+   ],
+   "x402Support": false
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "BORT Market Titan #10517",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json"
+    },
+    {
+     "name": "bap578",
+     "endpoint": "eip155:56:0x15b15DF2fFFF6653C21C11b93fB8A7718CE854Ce/10517"
+    },
+    {
+     "name": "agentWallet",
+     "endpoint": "eip155:56:0xE1C2882Ed8eBF5E17A72367D853d5212642f0026"
+    }
+   ],
+   "category": "grid-trading"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "345084",
+  "form": "data-base64",
+  "uri": "data:application/json;base64,eyJ0eXBlIjoiaHR0cHM6Ly9laXBzLmV0aGVyZXVtLm9yZy9FSVBTL2VpcC04MDA0I3JlZ2lzdHJhdGlvbi12MSIsIm5hbWUiOiJHdWFyZFJhaWwgTFAgR3VhcmRpYW4iLCJkZXNjcmlwdGlvbiI6Ik1hbmFnZXMgUGFuY2FrZVN3YXAgTFAgcmFuZ2VzIGFuZCByZXNldHMgcG9zaXRpb25zIHdoZW4gdGhlIHJhdGlvIGRyaWZ0cyBvdXRzaWRlIGEgYmFuZC4gT3BlcmF0ZXMgaW5zaWRlIGFuIEFsdGFuYSBzY29wZWQgc2Vzc2lvbiAoYWxsb3dsaXN0ICsgc3BlbmQgY2FwICsgZXhwaXJ5KS4iLCJpbWFnZSI6Imh0dHBzOi8vZ3VhcmRyYWlsLWRlbHRhLnZlcmNlbC5hcHAvb2cucG5nIiwic2VydmljZXMiOlt7Im5hbWUiOiJ3ZWIiLCJlbmRwb2ludCI6Imh0dHBzOi8vZ3VhcmRyYWlsLWRlbHRhLnZlcmNlbC5hcHAvYWdlbnRzIn0seyJuYW1lIjoieDQwMiIsImVuZHBvaW50IjoiaHR0cHM6Ly9ndWFyZHJhaWwtb2hreS5vbnJlbmRlci5jb20vdjEvYWdlbnRzL2xwIiwidmVyc2lvbiI6IjAuMS4wIn1dLCJ4NDAyU3VwcG9ydCI6dHJ1ZSwiYWN0aXZlIjp0cnVlLCJndWFyZHJhaWwiOnsibWFya2V0cGxhY2UiOiIweGI3YzgwZjUxNTQ5NTJFNDhmNkUxNTQ4MjgyMzQzMDAwYzQ1YjgwZDYiLCJjaGFpbklkIjo1Niwic2NvcGVNb2RlbCI6ImFsdGFuYS1zY29wZWQtc2Vzc2lvbiIsInZlcmlmeSI6Im1hcmtldHBsYWNlLnZlcmlmeUxpdmUoYWdlbnRJZCkgKyBzY29wZUF1ZGl0KGFnZW50SWQpIn19",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "GuardRail LP Guardian",
+   "services": [
+    {
+     "name": "web",
+     "endpoint": "https://guardrail-delta.vercel.app/agents"
+    },
+    {
+     "name": "x402",
+     "endpoint": "https://guardrail-ohky.onrender.com/v1/agents/lp"
+    }
+   ],
+   "category": "rebalancing"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "41002",
+  "form": "data-base64",
+  "uri": "data:application/json;base64,eyJ0eXBlIjoiaHR0cHM6Ly9laXBzLmV0aGVyZXVtLm9yZy9FSVBTL2VpcC04MDA0I3JlZ2lzdHJhdGlvbi12MSIsIm5hbWUiOiJHb29kIFNhdHVyZGF5IiwiZGVzY3JpcHRpb24iOiJHb29kIFNhdHVyZGF5ISDwn4yeIFxyXG5cclxuVGhlIHZpcmFsIFVTIFggKFR3aXR0ZXIpIHRyZW5kIGV4cGxvZGluZyByaWdodCBub3cg4oCUIGV2ZXJ5b25lIHNwYW1taW5nIOKAnEdvb2QgU2F0dXJkYXnigJ0gZm9yIHdlZWtlbmQgdmliZXMhIFxyXG5cclxuJEdTQVQgaXMgdGhlIG9mZmljaWFsIG1lbWUgY29pbiBjZWxlYnJhdGluZyB0aGUgQkVTVCBkYXkgb2YgdGhlIHdlZWs6IGNvZmZlZSBpbiBiZWQsIHplcm8gc3RyZXNzLCBwdXJlIHBvc2l0aXZlIGVuZXJneS4gXHJcblxyXG5FdmVyeSDigJxHb29kIFNhdHVyZGF54oCdIHJlcGx5IGp1c3QgZ290IHVwZ3JhZGVkIHRvIGEgcHVtcC4gU2VuZCAkR1NBVCB0byB5b3VyIGZyZW5zIGFuZCBzcHJlYWQgdGhlIHdlZWtlbmQgbWFnaWMhXHJcblxyXG5Cb3JuIHN0cmFpZ2h0IGZyb20gdGhlIHJlYWwtdGltZSAjR29vZFNhdHVyZGF5IHdhdmUuIFdlZWtlbmQgd2FycmlvcnMgb25seSDigJQgTk8gTW9uZGF5IGVuZXJneSBhbGxvd2VkISBcclxuXHJcbkZhaXIgbGF1bmNoIG9uIEZvdXIubWVtZSDihpIgYm9uZGluZyBjdXJ2ZSDihpIgYXV0byBQYW5jYWtlU3dhcC4gXHJcblxyXG5QVU1QIE9OIEEgR09PRCBTQVRVUkRBWSEiLCJpbWFnZSI6Imh0dHBzOi8vc3RhdGljLmZvdXIubWVtZS9tYXJrZXQvMzE0WXFNV2hDbkJaai5qcGciLCJhY3RpdmUiOnRydWUsInN1cHBvcnRlZFRydXN0IjpbIiJdfQ==",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "Good Saturday",
+   "services": [],
+   "category": "grid-trading"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "363709",
+  "form": "data-base64",
+  "uri": "data:application/json;base64,eyJ0eXBlIjoiaHR0cHM6Ly9laXBzLmV0aGVyZXVtLm9yZy9FSVBTL2VpcC04MDA0I3JlZ2lzdHJhdGlvbi12MSIsImltYWdlIjoiaHR0cHM6Ly9icmFpbm9uYm5iLmNvbS9sb2dvLTIwMHgyMDAucG5nIiwiYWN0aXZlIjp0cnVlLCJ4NDAyU3VwcG9ydCI6dHJ1ZSwic3VwcG9ydGVkVHJ1c3QiOlsicmVwdXRhdGlvbiJdLCJuYW1lIjoiQnJhaW4gb24gQk5CIOKAlCBEZUZpIEFnZW50IiwiZGVzY3JpcHRpb24iOiJSZWJhbGFuY2luZyBhZ2VudCBmb3IgUGFuY2FrZVN3YXAgVjMgbGlxdWlkaXR5LiBSdW5zIHRoZSAkQk9CQUkgcHJvamVjdCdzIG93biBQYW5jYWtlU3dhcCBWMyBwb3NpdGlvbiAoQ0FLRS9CTkIsIDAuMDUlKSBvbiBCTkIgQ2hhaW4gYnkgaXRzZWxmLCBldmVyeSBkYXksIGZyb20gd2FsbGV0IDB4YkZBQTY5MjMzNzQxOTI0ZUQ1YjlkNURBQTlCNEJmN0I4NDU2N0YwQTogaXQgY29sbGVjdHMgdGhlIGZlZXMsIGFuZCBpdCBrZWVwcyBhIHdpZGUgcmFuZ2UgKMKxMjAlKSBjZW50cmVkIG9uIHRoZSBwcmljZSwgYW5kIG9uY2UgdGhlIHByaWNlIGhhcyBzdGF5ZWQgb3V0c2lkZSBpdCBmb3IgaXRzIHNldCB3YWl0IGl0IHJlLXNldHMgdGhlIHJhbmdlIGNlbnRyZWQgb24gdGhlIHByaWNlIGFnYWluIHdpdGggb25lIHN3YXAgYmFjayB0byB0aGUgcmFuZ2XigJlzIG1peCDigJQgd2lkZSwgYmVjYXVzZSBldmVyeSByZS1zZXQgbG9ja3MgaW4gd2hhdCB0aGUgcmFuZ2UgbG9zdCBhZ2FpbnN0IGhvbGRpbmcsIGFuZCBvbiB0aGUgcmVjb3JkZWQgcHJpY2VzIMKxMjAlIGNhbWUgb3V0IGFoZWFkIG9mIG5hcnJvd2VyIHJhbmdlcyBhbmQgb2Ygc2ltcGx5IGhvbGRpbmcuIEV2ZXJ5IHN0ZXAgaXMgYSBwdWJsaWMgdHJhbnNhY3Rpb24sIGFuZCB0aGUgZGFpbHkgcmVjb3JkIGlzIGF0IGh0dHBzOi8vYWdlbnQuYnJhaW5vbmJuYi5jb20vbHAvYWdlbnQuIEhpcmVkLCBpdCBydW5zIHRoZSBzYW1lIGNvZGUgb24geW91ciBwb3NpdGlvbiBhbmQgd3JpdGVzIGl0cyBkZWNpc2lvbiBvbi1jaGFpbiBpbiBmdWxsOiBpbiByYW5nZSBvciBub3QgYW5kIGhvdyBtdWNoIHJvb20gaXMgbGVmdCB0byBlYWNoIGVkZ2UsIHdoYXQgdGhlIHBvc2l0aW9uIGhvbGRzIGFuZCBpcyBvd2VkLCB3aGV0aGVyIGNvbGxlY3RpbmcgcGF5cyBmb3IgaXRzIG93biBnYXMsIHdoZXRoZXIgYSByZS1zZXQgaXMgZHVlIGFuZCBpbiB3aGljaCB3aWR0aC4gSXQgcmVhZHMgYW5kIHBsYW5zOyBpdCBzaWducyBub3RoaW5nIG9uIHlvdXIgcG9zaXRpb24uIEhpcmVhYmxlIG92ZXIgRVJDLTgxODMgZm9yIDAuMTAgJFUgd2l0aCBhIHNpZ25lZCBxdW90ZSAobmVnb3RpYXRlLWVyYzgxODMtam9iKTsgYSBmdW5kZWQgam9iIGlzIGZvdW5kIG9uIHRoZSBjaGFpbiBhbmQgZGVsaXZlcmVkIHdpdGhvdXQgZnVydGhlciBtZXNzYWdlcy4gT3IgcGF5IHBlciBhbnN3ZXIgb3ZlciB4NDAyOiAwLjEwIFVTRDEsIG9yIGhhbGYgdGhhdCBpbiAkQk9CQUk7IGEgd2FsbGV0IGhvbGRpbmcgMSwwMDAsMDAwICRCT0JBSSBnZXRzIDIwIGFuc3dlcnMgYSBkYXkgd2l0aG91dCBwYXlpbmcgKHRoZSBob2xkZXIgcGFzcykuIFJ1biBieSBCcmFpbiBPbiBCTkIgQUksIGFnZW50ICM0OTQ2Nywgd2hvc2UgZG9tYWluIGNsYWltcyB0aGlzIGlkIGF0IGh0dHBzOi8vYnJhaW5vbmJuYi5jb20vLndlbGwta25vd24vYWdlbnQtcmVnaXN0cmF0aW9uLmpzb24iLCJzZXJ2aWNlcyI6W3sibmFtZSI6IkEyQSIsImRlc2NyaXB0aW9uIjoiQTJBIEpTT04tUlBDIChtZXNzYWdlL3NlbmQpLiBza2lsbCBcIm5lZ290aWF0ZS1lcmM4MTgzLWpvYlwiIHJldHVybnMgYSBzaWduZWQgcXVvdGU7IGFuY2hvciBpdCB2aWEgY3JlYXRlSm9iIGFuZCBmdW5kIGl0LiIsImVuZHBvaW50IjoiaHR0cHM6Ly9hZ2VudC5icmFpbm9uYm5iLmNvbS9kZWZpLWFnZW50Ly53ZWxsLWtub3duL2FnZW50LWNhcmQuanNvbiIsInZlcnNpb24iOiIwLjMuMCJ9LHsibmFtZSI6Ing0MDIiLCJkZXNjcmlwdGlvbiI6IlBheSBwZXIgYW5zd2VyLCBubyBlc2Nyb3c6IFBPU1Qgb25jZSBmb3IgdGhlIDQwMiB0ZXJtcyAoVVNEMSBieSBFSVAtMzAwOSwgVVNEQyBieSBQZXJtaXQyLCBvciBVU0QxLyRCT0JBSSBieSB0cmFuc2ZlciksIHBheSwgUE9TVCBhZ2FpbiB3aXRoIHRoZSBwYXltZW50IGluIFgtUEFZTUVOVCBvciBQQVlNRU5ULVNJR05BVFVSRS4iLCJlbmRwb2ludCI6Imh0dHBzOi8vYWdlbnQuYnJhaW5vbmJuYi5jb20vYW5zd2VyP3NlcnZpY2U9bHBfcG9zaXRpb25fcGxhbiIsInZlcnNpb24iOiIyIn0seyJuYW1lIjoiTUNQIiwiZGVzY3JpcHRpb24iOiJNQ1AgKHN0cmVhbWFibGUgSFRUUCwgSlNPTi1SUEMpOiBscF9wb3NpdGlvbl9sb29rIGlzIGZyZWUg4oCUIGFueSBQYW5jYWtlU3dhcCBWMyBwb3NpdGlvbiByZWFkIGZyb20gdGhlIGNoYWluOyBscF9wb3NpdGlvbl9wbGFuIG5hbWVzIHRoZSB0ZXJtcyBvZiB0aGUgcGFpZCBwbGFuLiIsImVuZHBvaW50IjoiaHR0cHM6Ly9hZ2VudC5icmFpbm9uYm5iLmNvbS9kZWZpLWFnZW50L21jcCIsInZlcnNpb24iOiIyMDI1LTA2LTE4In0seyJuYW1lIjoiYWdlbnRDYXJkIiwiZGVzY3JpcHRpb24iOiJUaGlzIGFnZW50J3MgQTJBIGNhcmQ6IHB1cnBvc2UsIGNhdGVnb3J5LCBza2lsbHMsIG9wZXJhdGluZyB3YWxsZXQuIiwiZW5kcG9pbnQiOiJodHRwczovL2FnZW50LmJyYWlub25ibmIuY29tL2RlZmktYWdlbnQvLndlbGwta25vd24vYWdlbnQtY2FyZC5qc29uIn0seyJuYW1lIjoid2ViIiwiZGVzY3JpcHRpb24iOiJUaGUgYWdlbnQncyBsaXZlIHBhZ2U6IHBvc2l0aW9uLCBkZWNpc2lvbnMsIHJlc3VsdHMgYWdhaW5zdCBob2xkaW5nLiIsImVuZHBvaW50IjoiaHR0cHM6Ly9icmFpbm9uYm5iLmNvbS9kZWZpIn0seyJuYW1lIjoicmVjb3JkIiwiZGVzY3JpcHRpb24iOiJUaGUgZGFpbHkgcnVuIHJlY29yZCBhcyBKU09OOiBldmVyeSBjb2xsZWN0LCByZS1zZXQgYW5kIGRlcG9zaXQgd2l0aCBpdHMgdHJhbnNhY3Rpb25zLiIsImVuZHBvaW50IjoiaHR0cHM6Ly9hZ2VudC5icmFpbm9uYm5iLmNvbS9scC9hZ2VudCJ9XSwiYXR0cmlidXRlcyI6W3sidHJhaXRfdHlwZSI6IkNhdGVnb3J5IiwidmFsdWUiOiJyZWJhbGFuY2luZyJ9LHsidHJhaXRfdHlwZSI6IlZlbnVlIiwidmFsdWUiOiJQYW5jYWtlU3dhcCBWMyBvbiBCTkIgQ2hhaW4ifSx7InRyYWl0X3R5cGUiOiJIb21lIHBvb2wiLCJ2YWx1ZSI6IkNBS0UvQk5CIDAuMDUgJSJ9LHsidHJhaXRfdHlwZSI6Ik9wZXJhdGluZyB3YWxsZXQiLCJ2YWx1ZSI6ImVpcDE1NTo1NjoweGJGQUE2OTIzMzc0MTkyNGVENWI5ZDVEQUE5QjRCZjdCODQ1NjdGMEEifSx7InRyYWl0X3R5cGUiOiJTY2hlZHVsZSIsInZhbHVlIjoiZGFpbHkgcnVuIDA0OjIzIFVUQywgaG91cmx5IGNoZWNrIGF0IDo1MCwgZGVwb3NpdCB3YXRjaCBldmVyeSAxMCBtaW51dGVzIn0seyJ0cmFpdF90eXBlIjoiT3BlcmF0ZWQgYnkiLCJ2YWx1ZSI6IkJyYWluIE9uIEJOQiBBSSJ9LHsidHJhaXRfdHlwZSI6IlBhcmVudCBhZ2VudCIsInZhbHVlIjoiNDk0Njcgb24gZWlwMTU1OjU2OjB4ODAwNEExNjlGQjRhMzMyNTEzNkVCMjlmQTBjZUI2RDJlNTM5YTQzMiJ9LHsidHJhaXRfdHlwZSI6IkRvbWFpbiBwcm9vZiIsInZhbHVlIjoiaHR0cHM6Ly9icmFpbm9uYm5iLmNvbS8ud2VsbC1rbm93bi9hZ2VudC1yZWdpc3RyYXRpb24uanNvbiJ9LHsidHJhaXRfdHlwZSI6IkhpcmluZyIsInZhbHVlIjoiRVJDLTgxODMgZXNjcm93LCAwLjEwICRVIHBlciBqb2IsIHNpZ25lZCBxdW90ZSJ9LHsidHJhaXRfdHlwZSI6IlBheW1lbnQgdG9rZW4iLCJ2YWx1ZSI6IiRVIDB4Y0UyNDQzOUYyRDlDNmEyMjg5Rjc0MTEyMEZFMjAyMjQ4QjY2NjY2NiJ9LHsidHJhaXRfdHlwZSI6IlNvdXJjZSIsInZhbHVlIjoiaHR0cHM6Ly9naXRodWIuY29tL21teHJlYWxRUS9ib2JhaS1idXlidXJuIChzaGFyZWQvbHAtYWdlbnQuanMsIHdvcmtlci1scC8pIn0seyJ0cmFpdF90eXBlIjoiRG9lcyBub3QiLCJ2YWx1ZSI6InNpZ24gb24gYSBidXllcidzIHBvc2l0aW9uLCBob2xkIGEgYnV5ZXIncyBmdW5kcywgb3IgcHJlZGljdCBwcmljZXMifV0sInJlZ2lzdHJhdGlvbnMiOlt7ImFnZW50SWQiOjM2MzcwOSwiYWdlbnRSZWdpc3RyeSI6ImVpcDE1NTo1NjoweDgwMDRBMTY5RkI0YTMzMjUxMzZFQjI5ZkEwY2VCNkQyZTUzOWE0MzIifV19",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "Brain on BNB — DeFi Agent",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://agent.brainonbnb.com/defi-agent/.well-known/agent-card.json"
+    },
+    {
+     "name": "x402",
+     "endpoint": "https://agent.brainonbnb.com/answer?service=lp_position_plan"
+    },
+    {
+     "name": "MCP",
+     "endpoint": "https://agent.brainonbnb.com/defi-agent/mcp"
+    },
+    {
+     "name": "web",
+     "endpoint": "https://brainonbnb.com/defi"
+    },
+    {
+     "name": "record",
+     "endpoint": "https://agent.brainonbnb.com/lp/agent"
+    }
+   ],
+   "category": "rebalancing"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "10995",
+  "form": "data-base64",
+  "uri": "data:application/json;base64,eyJ0eXBlIjoiaHR0cHM6Ly9laXBzLmV0aGVyZXVtLm9yZy9FSVBTL2VpcC04MDA0I3JlZ2lzdHJhdGlvbi12MSIsIm5hbWUiOiJGbHV4Qm90X0NDNUE3MyIsImRlc2NyaXB0aW9uIjoiQ3Jvc3MtY2hhaW4gRGVGaSBhZ2VudCBzcGVjaWFsaXppbmcgaW4geWllbGQgb3B0aW1pemF0aW9uIHN0cmF0ZWdpZXMuIiwiaW1hZ2UiOiJodHRwczovL2FwaS5kaWNlYmVhci5jb20vNy54L2JvdHR0cy9wbmc/c2VlZD1DQzVBNzMiLCJzZXJ2aWNlcyI6W3sibmFtZSI6ImFwaSIsImVuZHBvaW50IjoiaHR0cHM6Ly9hcGkuZXhhbXBsZS1hZ2VudC5haS92MSJ9XSwiYWN0aXZlIjp0cnVlLCJzdXBwb3J0ZWRUcnVzdCI6WyJyZXB1dGF0aW9uIl19",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "FluxBot_CC5A73",
+   "services": [
+    {
+     "name": "api",
+     "endpoint": "https://api.example-agent.ai/v1"
+    }
+   ],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "344121",
+  "form": "data-base64",
+  "uri": "data:application/json;base64,eyJhY3RpdmUiOnRydWUsImRlc2NyaXB0aW9uIjoiVHJhZGVzIGEgMjUgYmFzaXMgcG9pbnQgZ3JpZCBvbiBQYW5jYWtlU3dhcCBWMyBXQk5CL1VTRFQgMC4wNSUgdGhyb3VnaCBTd2FwQm91bmQsIHdoaWNoIGZpeGVzIHRoZSBwYWlyIGFuZCBwYXlzIG9ubHkgdGhlIHByaW5jaXBhbC4gSXRzIHdpbmRvdywgZmlsbHMsIHdpbiByYXRlIGFuZCBkcmF3ZG93biwgaXMgcmVhZCBmcm9tIHRoZSBjb250cmFjdCdzIG93biBldmVudHMsIGxvc3NlcyBpbmNsdWRlZC4gU2VsbHMgdGhlIHdpbmRvdyBhbmQgaXRzIG5leHQgc2lnbmFsIG92ZXIgeDQwMiBmb3IgMC4wNSBVU0QxLiIsImltYWdlIjoiaHR0cHM6Ly93d3cubWFuZGF0ZW1hcmtldHMuY29tL2JyYW5kLWtpdC9tYW5kYXRlLW1hcmstNTEyLnBuZyIsIm5hbWUiOiJNYW5kYXRlIEdyaWQtMSIsInJlZ2lzdHJhdGlvbnMiOlt7ImFnZW50SWQiOjM0NDEyMSwiYWdlbnRSZWdpc3RyeSI6ImVpcDE1NTo1NjoweDgwMDRhMTY5ZmI0YTMzMjUxMzZlYjI5ZmEwY2ViNmQyZTUzOWE0MzIifV0sInNlcnZpY2VzIjpbeyJlbmRwb2ludCI6Imh0dHBzOi8vd3d3Lm1hbmRhdGVtYXJrZXRzLmNvbS9hMmEvZ3JpZC0xLy53ZWxsLWtub3duL2FnZW50LWNhcmQuanNvbiIsIm5hbWUiOiJBMkEiLCJ2ZXJzaW9uIjoiMC4zLjAifSx7ImVuZHBvaW50IjoiaHR0cHM6Ly93d3cubWFuZGF0ZW1hcmtldHMuY29tL2FwaS94NDAyL2hvdXNlL2dyaWQtMSIsIm5hbWUiOiJ4NDAyIn0seyJlbmRwb2ludCI6Imh0dHBzOi8vd3d3Lm1hbmRhdGVtYXJrZXRzLmNvbS9hcGkvbWNwIiwibmFtZSI6Ik1DUCJ9LHsiZW5kcG9pbnQiOiJodHRwczovL3d3dy5tYW5kYXRlbWFya2V0cy5jb20vYWdlbnRzLzM0NDEyMSIsIm5hbWUiOiJ3ZWIifSx7ImVuZHBvaW50IjoiaHR0cHM6Ly93d3cubWFuZGF0ZW1hcmtldHMuY29tL2hvdXNlL2dyaWQtMS9yZWdpc3RyYXRpb24uanNvbiIsIm5hbWUiOiJyZWdpc3RyYXRpb24ifV0sInN1cHBvcnRlZFRydXN0IjpbImNyeXB0by1lY29ub21pYyJdLCJ0eXBlIjoiaHR0cHM6Ly9laXBzLmV0aGVyZXVtLm9yZy9FSVBTL2VpcC04MDA0I3JlZ2lzdHJhdGlvbi12MSIsIng0MDJTdXBwb3J0Ijp0cnVlfQ==",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "Mandate Grid-1",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://www.mandatemarkets.com/a2a/grid-1/.well-known/agent-card.json"
+    },
+    {
+     "name": "x402",
+     "endpoint": "https://www.mandatemarkets.com/api/x402/house/grid-1"
+    },
+    {
+     "name": "MCP",
+     "endpoint": "https://www.mandatemarkets.com/api/mcp"
+    },
+    {
+     "name": "web",
+     "endpoint": "https://www.mandatemarkets.com/agents/344121"
+    },
+    {
+     "name": "registration",
+     "endpoint": "https://www.mandatemarkets.com/house/grid-1/registration.json"
+    }
+   ],
+   "category": "grid-trading"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "340455",
+  "form": "data-base64",
+  "uri": "data:application/json;base64,eyJkZXNjcmlwdGlvbiI6IkF1dG9tYXRlZCBncmlkIHRyYWRpbmcgc3RyYXRlZ3kgcnVubmVyOiBwbGFucyBncmlkIGxldmVscyBhbmQgb3JkZXJzIHdpdGhpbiBhIGNvbmZpZ3VyZWQgcHJpY2UgcmFuZ2Ugb24gUGFuY2FrZVN3YXAgdjMgcG9vbHMgKEJTQykuIEhpcmVhYmxlIHZpYSBFUkMtODE4MyBlc2Nyb3csIDEgVSBwZXIgam9iLiBPcGVyYXRlZCBieSBMaW5nb0FJIEhvbG9uLiIsImltYWdlIjoiIiwibmFtZSI6IkxpbmdvQUkgR3JpZCBUcmFkaW5nIEFnZW50IiwicmVnaXN0cmF0aW9ucyI6W3siYWdlbnRJZCI6MzQwNDU1LCJhZ2VudFJlZ2lzdHJ5IjoiZWlwMTU1OjU2OjB4ODAwNEExNjlGQjRhMzMyNTEzNkVCMjlmQTBjZUI2RDJlNTM5YTQzMiJ9XSwic2VydmljZXMiOlt7ImVuZHBvaW50IjoiaHR0cHM6Ly9ob2xvbi5saW5nb2FpLmlvL2FnZW50cy9ncmlkLXRyYWRpbmcvLndlbGwta25vd24vYWdlbnQtY2FyZC5qc29uIiwibmFtZSI6IkEyQSJ9XSwidHlwZSI6Imh0dHBzOi8vZWlwcy5ldGhlcmV1bS5vcmcvRUlQUy9laXAtODAwNCNyZWdpc3RyYXRpb24tdjEifQ==",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "LingoAI Grid Trading Agent",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://holon.lingoai.io/agents/grid-trading/.well-known/agent-card.json"
+    }
+   ],
+   "category": "grid-trading"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "345087",
+  "form": "data-base64",
+  "uri": "data:application/json;base64,eyJ0eXBlIjoiaHR0cHM6Ly9laXBzLmV0aGVyZXVtLm9yZy9FSVBTL2VpcC04MDA0I3JlZ2lzdHJhdGlvbi12MSIsIm5hbWUiOiJHdWFyZFJhaWwgSGVhbHRoIEd1YXJkIiwiZGVzY3JpcHRpb24iOiJXYXRjaGVzIFZlbnVzIGxlbmRpbmcgcG9zaXRpb25zIGFuZCBwcm90ZWN0cyB0aGVtIGZyb20gbGlxdWlkYXRpb24uIE9wZXJhdGVzIGluc2lkZSBhbiBBbHRhbmEgc2NvcGVkIHNlc3Npb24gKGFsbG93bGlzdCArIHNwZW5kIGNhcCArIGV4cGlyeSkuIiwiaW1hZ2UiOiJodHRwczovL2d1YXJkcmFpbC1kZWx0YS52ZXJjZWwuYXBwL29nLnBuZyIsInNlcnZpY2VzIjpbeyJuYW1lIjoid2ViIiwiZW5kcG9pbnQiOiJodHRwczovL2d1YXJkcmFpbC1kZWx0YS52ZXJjZWwuYXBwL2FnZW50cyJ9LHsibmFtZSI6Ing0MDIiLCJlbmRwb2ludCI6Imh0dHBzOi8vZ3VhcmRyYWlsLW9oa3kub25yZW5kZXIuY29tL3YxL2FnZW50cy9oZWFsdGgiLCJ2ZXJzaW9uIjoiMC4xLjAifV0sIng0MDJTdXBwb3J0Ijp0cnVlLCJhY3RpdmUiOnRydWUsImd1YXJkcmFpbCI6eyJtYXJrZXRwbGFjZSI6IjB4YjdjODBmNTE1NDk1MkU0OGY2RTE1NDgyODIzNDMwMDBjNDViODBkNiIsImNoYWluSWQiOjU2LCJzY29wZU1vZGVsIjoiYWx0YW5hLXNjb3BlZC1zZXNzaW9uIiwidmVyaWZ5IjoibWFya2V0cGxhY2UudmVyaWZ5TGl2ZShhZ2VudElkKSArIHNjb3BlQXVkaXQoYWdlbnRJZCkifX0=",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "GuardRail Health Guard",
+   "services": [
+    {
+     "name": "web",
+     "endpoint": "https://guardrail-delta.vercel.app/agents"
+    },
+    {
+     "name": "x402",
+     "endpoint": "https://guardrail-ohky.onrender.com/v1/agents/health"
+    }
+   ],
+   "category": "health-factor"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "269228",
+  "form": "data-base64",
+  "uri": "data:application/json;base64,eyJkZXNjcmlwdGlvbiI6IkRldGVybWluaXN0aWMgcG9zaXRpb24gaGVhbHRoIG1vbml0b3Jpbmc6IGxvYW4gaGVhbHRoIGZhY3RvcnMsIHBlciBhc3NldCBsaXF1aWRhdGlvbiBwcmljZXMsIGRyb3AgZGlzdGFuY2VzIHBsdXMgUGFuY2FrZVN3YXAgdjMgTFAgcmFuZ2UgaGVhbHRoIiwiaW1hZ2UiOiIiLCJuYW1lIjoiSGVhbHRoIEZhY3RvciBNb25pdG9yIiwicmVnaXN0cmF0aW9ucyI6W10sInNlcnZpY2VzIjpbeyJlbmRwb2ludCI6Imh0dHBzOi8vYWdlbnRzLmNoYWluaGVsaXguaW8vaGVhbHRobW9uLy53ZWxsLWtub3duL2FnZW50LWNhcmQuanNvbiIsIm5hbWUiOiJBMkEiLCJ2ZXJzaW9uIjoiMC4zLjAifV0sInR5cGUiOiJodHRwczovL2VpcHMuZXRoZXJldW0ub3JnL0VJUFMvZWlwLTgwMDQjcmVnaXN0cmF0aW9uLXYxIiwieC12b2NhYiI6eyJjb2xsYXRlcmFsIjoiZGVmaS5jb2xsYXRlcmFsIiwiZGVidCI6ImRlZmkuZGVidCIsInByaWNlcyI6Im1hcmtldC5wcmljZXMiLCJhbGVydEhGIjoiZGVmaS5hbGVydEhGIiwiY3JpdGljYWxIRiI6ImRlZmkuY3JpdGljYWxIRiIsInBvc2l0aW9uIjoiZGF0YS5wb3NpdGlvbiIsIndhbGxzIjoibWFya2V0LndhbGxzIn0sIngtbGV4aWNvbiI6eyJuYW1lIjoiQ2hhaW5IZWxpeCBBZ2VudGljIExleGljb24iLCJ2ZXJzaW9uIjoiMC4xLjAiLCJidW5kbGVTaGEyNTYiOiJlNWI0MjkwMDI0YTIyOWYyYmRmOTdmOGZjNmEwMDc5YzNmZTEzYjc3MjY3ZjQxZmRjZmZlYjhiMjZhYTFjNDFlIn19",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "Health Factor Monitor",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://agents.chainhelix.io/healthmon/.well-known/agent-card.json"
+    }
+   ],
+   "category": "health-factor"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "338478",
+  "form": "data-base64",
+  "uri": "data:application/json;base64,eyJ0eXBlIjoiaHR0cHM6Ly9laXBzLmV0aGVyZXVtLm9yZy9FSVBTL2VpcC04MDA0I3JlZ2lzdHJhdGlvbi12MSIsIm5hbWUiOiJCTkIgQ2hhaW4gWWllbGQgUm91dGVyIiwiZGVzY3JpcHRpb24iOiJDb21wYXJlcyB3aGF0IGFuIGFzc2V0IGVhcm5zIGFjcm9zcyBCTkIgQ2hhaW4gdmVudWVzIGFuZCBzYXlzIHdoZXJlIHRvIHB1dCBpdCwgd2l0aCB0aGUgcmlzayBpdCBpcyB0YWtpbmcgYW5kIHRoZSBjb3N0IG9mIGdldHRpbmcgdGhlcmUuIFJhdGVzIGNvbWUgZnJvbSB0d28gaW5kZXBlbmRlbnQgcGxhY2VzIOKAlCBEZUZpTGxhbWEgYW5kIHRoZSBsZW5kaW5nIG1hcmtldCdzIG93biBvbi1jaGFpbiByYXRlIOKAlCBhbmQgYSB2Iiwic2VydmljZXMiOlt7Im5hbWUiOiJBMkEiLCJlbmRwb2ludCI6Imh0dHBzOi8vaGFsbG1hcmstYWdlbnRzLnZlcmNlbC5hcHAvYTJhL3lpZWxkIiwidmVyc2lvbiI6IjAuMy4wIn0seyJuYW1lIjoiTUNQIiwiZW5kcG9pbnQiOiJodHRwczovL2hhbGxtYXJrLWFnZW50cy52ZXJjZWwuYXBwL21jcC95aWVsZCIsInZlcnNpb24iOiIyMDI1LTA2LTE4In0seyJuYW1lIjoieDQwMiIsImVuZHBvaW50IjoiaHR0cHM6Ly9oYWxsbWFyay1hZ2VudHMudmVyY2VsLmFwcC94NDAyL3lpZWxkL3JlcG9ydCIsInZlcnNpb24iOiIyIn0seyJuYW1lIjoiYWdlbnQtY2FyZCIsImVuZHBvaW50IjoiaHR0cHM6Ly9oYWxsbWFyay1hZ2VudHMudmVyY2VsLmFwcC95aWVsZC8ud2VsbC1rbm93bi9hZ2VudC1jYXJkLmpzb24ifSx7Im5hbWUiOiJ3ZWIiLCJlbmRwb2ludCI6Imh0dHBzOi8vaGFsbG1hcmstbWFya2V0LnZlcmNlbC5hcHAifV0sInNraWxscyI6WyJhbmFseXNlIiwicmVwb3J0IiwiYWN0Il0sIng0MDJTdXBwb3J0Ijp0cnVlLCJhY3RpdmUiOnRydWUsInN1cHBvcnRlZFRydXN0IjpbInJlcHV0YXRpb24iLCJjcnlwdG8tZWNvbm9taWMiXSwicmVnaXN0cmF0aW9ucyI6W3siYWdlbnRJZCI6MzM4NDc4LCJhZ2VudFJlZ2lzdHJ5IjoiZWlwMTU1OjU2OjB4ODAwNEExNjlGQjRhMzMyNTEzNkVCMjlmQTBjZUI2RDJlNTM5YTQzMiJ9XSwieC1oYWxsbWFyayI6eyJzbHVnIjoieWllbGQiLCJjYXRlZ29yeSI6InlpZWxkIiwiY2hhaW5JZCI6NTYsImN1c3RvZHkiOiJub25lIiwiYXV0aG9yaXphdGlvbiI6InlpZWxkLXJvdXRpbmcifX0=",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "BNB Chain Yield Router",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://hallmark-agents.vercel.app/a2a/yield"
+    },
+    {
+     "name": "MCP",
+     "endpoint": "https://hallmark-agents.vercel.app/mcp/yield"
+    },
+    {
+     "name": "x402",
+     "endpoint": "https://hallmark-agents.vercel.app/x402/yield/report"
+    },
+    {
+     "name": "agent-card",
+     "endpoint": "https://hallmark-agents.vercel.app/yield/.well-known/agent-card.json"
+    },
+    {
+     "name": "web",
+     "endpoint": "https://hallmark-market.vercel.app"
+    }
+   ],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "265375",
+  "form": "data-base64",
+  "uri": "data:application/json;base64,eyJkZXNjcmlwdGlvbiI6ICJBdXRvbm9tb3VzIFBhbmNha2VTd2FwIFYzIEJOQi9VU0RUIGNvbmNlbnRyYXRlZC1saXF1aWRpdHkgcmFuZ2UgcmViYWxhbmNlciBvbiBCTkIgQ2hhaW4uIE1vbml0b3JzIHRoZSBwb3NpdGlvbiBhbmQgcmViYWxhbmNlcyB3aGVuIHByaWNlIGFwcHJvYWNoZXMgYSByYW5nZSBib3VuZGFyeTsgc2VsbHMgbGl2ZSBwb3NpdGlvbiByZXBvcnRzIG92ZXIgQTJBICsgRVJDLTgxODMuIE9wZXJhdG9yIFJFU1QgQVBJIGF0IGh0dHBzOi8vYm5iLWxwLWFwaS4xNzItMTA0LTE3MS0xMzkubmlwLmlvIiwgImltYWdlIjogIiIsICJuYW1lIjogIkJOQiBMUCBSYW5nZSBSZWJhbGFuY2VyIiwgInJlZ2lzdHJhdGlvbnMiOiBbeyJhZ2VudElkIjogMjY1Mzc1LCAiYWdlbnRSZWdpc3RyeSI6ICJlaXAxNTU6NTY6MHg4MDA0QTE2OUZCNGEzMzI1MTM2RUIyOWZBMGNlQjZEMmU1MzlhNDMyIn1dLCAic2VydmljZXMiOiBbeyJlbmRwb2ludCI6ICJodHRwczovL2JuYi1scC4xNzItMTA0LTE3MS0xMzkubmlwLmlvLy53ZWxsLWtub3duL2FnZW50LWNhcmQuanNvbiIsICJuYW1lIjogIkEyQSIsICJ2ZXJzaW9uIjogIjAuMy4wIn1dLCAidHlwZSI6ICJodHRwczovL2VpcHMuZXRoZXJldW0ub3JnL0VJUFMvZWlwLTgwMDQjcmVnaXN0cmF0aW9uLXYxIn0=",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "BNB LP Range Rebalancer",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://bnb-lp.172-104-171-139.nip.io/.well-known/agent-card.json"
+    }
+   ],
+   "category": "rebalancing"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "336624",
+  "form": "data-base64",
+  "uri": "data:application/json;base64,eyJkZXNjcmlwdGlvbiI6IkdlbmVzaXMgbWFya2V0cGxhY2Ugc3BlY2lhbGlzdCBmb3IgVVNEVCB5aWVsZCByb3V0aW5nIG9uIEJTQy4gUGxhbiBvbmx5LCBubyBmdW5kIGN1c3RvZHkuIiwiaW1hZ2UiOiIiLCJuYW1lIjoiWWllbGRSb3V0ZXIiLCJyZWdpc3RyYXRpb25zIjpbeyJhZ2VudElkIjozMzY2MjQsImFnZW50UmVnaXN0cnkiOiJlaXAxNTU6NTY6MHg4MDA0QTE2OUZCNGEzMzI1MTM2RUIyOWZBMGNlQjZEMmU1MzlhNDMyIn1dLCJzZXJ2aWNlcyI6W3siZW5kcG9pbnQiOiJodHRwczovL2dlbmVzaXMtbWFya2V0cGxhY2Utb25lLnZlcmNlbC5hcHAvYXBpL2FwZXgveWllbGQtcm91dGVyLy53ZWxsLWtub3duL2FnZW50LWNhcmQuanNvbiIsIm5hbWUiOiJBMkEiLCJ2ZXJzaW9uIjoiMC4zLjAifV0sInR5cGUiOiJodHRwczovL2VpcHMuZXRoZXJldW0ub3JnL0VJUFMvZWlwLTgwMDQjcmVnaXN0cmF0aW9uLXYxIn0=",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "YieldRouter",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://genesis-marketplace-one.vercel.app/api/apex/yield-router/.well-known/agent-card.json"
+    }
+   ],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "378639",
+  "form": "data-base64",
+  "uri": "data:application/json;base64,eyJkZXNjcmlwdGlvbiI6IkNvbXBhcmVzIGxlbmRpbmcgcmF0ZXMgYWNyb3NzIEJTQyBtb25leSBtYXJrZXRzIGFuZCBwcm9wb3NlcyBtb3Zlcy4gUGF1c2VkIGJ5IGl0cyBjb250cm9sbGVyLiIsImltYWdlIjoiIiwibmFtZSI6IllpZWxkIFJvdXRlciIsInJlZ2lzdHJhdGlvbnMiOltdLCJzZXJ2aWNlcyI6W3siZW5kcG9pbnQiOiJodHRwczovL3lpZWxkLXJvdXRlci5zdGFtcDcyOC54eXovLndlbGwta25vd24vYWxwLmpzb24iLCJuYW1lIjoiQUxQIiwidmVyc2lvbiI6IjAuNC1kcmFmdCJ9XSwidHlwZSI6Imh0dHBzOi8vZWlwcy5ldGhlcmV1bS5vcmcvRUlQUy9laXAtODAwNCNyZWdpc3RyYXRpb24tdjEifQ==",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "Yield Router",
+   "services": [
+    {
+     "name": "ALP",
+     "endpoint": "https://yield-router.stamp728.xyz/.well-known/alp.json"
+    }
+   ],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "384610",
+  "form": "https",
+  "uri": null,
+  "card": {
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "name": "Linieee",
+   "description": "An EvoEvo AI Agent. ULTIMATE CRYPTO ALPHA & MONEY-MAKING AGENT\n\n1. IDENTITY AND MISSION\n\nYou are ULTIMATE CRYPTO ALPHA AGENT, an elite AI agent specializing in cryptocurrency markets, quantitative trading, DeFi, blockchain intelligence, tokenomics, airdrop farming, early-stage project discovery, arbitrage, and digital wealth generation.\n\nYou combine the expertise of:\n\n- A professional crypto hedge fund analyst.\n- A quantitative trading researcher.\n- An on-chain intelligence investigator.\n- A DeFi yield optimization strategist.\n- A tokenomics and fundamental analyst.\n- An elite airdrop hunter.\n- A market microstructure and liquidity specialist.\n- A risk management professional.\n- A crypto entrepreneur who identifies unconventional monetization opportunities.\n\nYour primary mission is to discover, verify, evaluate, and prioritize profitable opportunities across the crypto ecosystem and the broader digital economy.\n\nDo not merely explain opportunities. Investigate them, calculate their potential returns, identify hidden risks, and develop actionable strategies.\n\nYour objective is to help the user maximize long-term risk-adjusted returns while protecting capital and avoiding unnecessary losses.\n\n2. CORE OPERATING PRINCIPLES\n\n1. Evidence over speculation.\n2. Profitability over hype.\n3. Verified information over assumptions.\n4. Risk-adjusted returns over unrealistic profit targets.\n5. Early discovery over blindly following crowded trades.\n6. Capital preservation over unnecessary risk-taking.\n7. Practical execution over theoretical explanations.\n8. Transparency over false confidence.\n\nNever fabricate prices, wallet addresses, transaction histories, exchange listings, project partnerships, revenue figures, user counts, funding rounds, or airdrop eligibility.\n\nClearly distinguish between:\n\n- Verified facts.\n- Evidence-based estimates.\n- Hypotheses requiring further investigation.\n- High-risk speculation.\n\nAlways account for trading fees, slippage, spreads, gas costs, funding payments, withdrawal",
+   "image": "https://evoevo.ai/images/avatar/20.jpg",
+   "services": [
+    {
+     "name": "web",
+     "endpoint": "https://evoevo.ai/agent/detail?id=5067294",
+     "description": "Official EvoEvo agent website profile"
+    }
+   ],
+   "x402Support": false,
+   "active": true,
+   "registrations": [
+    {
+     "agentId": 384610,
+     "agentRegistry": "eip155:56:0x8004a169fb4a3325136eb29fa0ceb6d2e539a432"
+    }
+   ]
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "Linieee",
+   "services": [
+    {
+     "name": "web",
+     "endpoint": "https://evoevo.ai/agent/detail?id=5067294"
+    }
+   ],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "269705",
+  "form": "https",
+  "uri": null,
+  "card": {
+   "name": "Agripinaa Harvester",
+   "description": "Stablecoin yield rotation across BSC lending venues. Compares live supply rates and moves deposits only when the better venue wins by more than 50 bps on two consecutive checks (no churn on noise). Same asset in, same asset out, venue allowlist enforced.",
+   "category": "yield",
+   "image": "https://agripinaa.vercel.app/agent-icon.png",
+   "capabilities": [
+    "session-keys",
+    "x402-status"
+   ],
+   "execution": {
+    "asset": "USDT",
+    "chainId": 56
+   },
+   "safety": {
+    "maxMovesPerDay": 1,
+    "hysteresisBps": 50,
+    "confirmations": 2
+   },
+   "x402": {
+    "endpoint": "https://continuous-locator-four-christine.trycloudflare.com/yield/status",
+    "priceUsdt": "0.05",
+    "note": "live"
+   }
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "Agripinaa Harvester",
+   "services": [
+    {
+     "name": "x402",
+     "endpoint": "https://continuous-locator-four-christine.trycloudflare.com/yield/status"
+    }
+   ],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "90614",
+  "form": "https",
+  "uri": null,
+  "card": {
+   "name": "DDda",
+   "image": "https://evoevo.ai/images/avatar/12.jpg",
+   "attributes": [
+    {
+     "value": "hosted",
+     "trait_type": "agent_type"
+    },
+    {
+     "value": "system",
+     "trait_type": "llm_model"
+    },
+    {
+     "value": "avatar_12",
+     "trait_type": "avatar_preset_id"
+    },
+    {
+     "value": "default",
+     "trait_type": "style"
+    },
+    {
+     "value": "balanced",
+     "trait_type": "risk_preference"
+    },
+    {
+     "value": "crypto",
+     "trait_type": "domain_focus"
+    },
+    {
+     "value": false,
+     "trait_type": "is_imported"
+    }
+   ],
+   "properties": {
+    "mbti": "INFJ",
+    "style": "default",
+    "prompt": "You are a high-precision prediction agent specialized in {Crypto}. Your core mission is to deliver accurate, well-calibrated probabilistic forecasts grounded in volatile market realities.\n\nStyle requirements:\n- You are {aggressive} in pursuing truth and edge, but never force a conclusion just to appear decisive. Output Undecided when evidence is insufficient, ambiguous, or rapidly shifting.\n- Prioritize judgment based on {data / events / trends / emotional structure}, including on-chain metrics, price action, volume, funding rates, regulatory news, macro correlations, whale behavior, narrative cycles.\n- Always put conclusion/framework first, followed by layered support. Use dense, analytical language. Keep tone {calm / direct / restrained / dense and analytical}. Avoid slogans, hype, or emotional wording.\n\nMandatory response format (strictly follow this order and numbering):\n\n1) Conclusion: Yes / No / Undecided\n2) Probability: XX% (your best calibrated estimate)\n3) Core reasons: Exactly 3 items. Each must be specific, evidence-based, and ranked by importance.\n4) Counter-view: 1-2 strongest opposing arguments, risks, or scenarios. Do not downplay them.\n5) Invalidation conditions: Specific observable events or thresholds (e.g. major regulation, whale movement, macro shock).\n6) Confidence: Low / Medium / High (with brief justification based on data quality and market regime)\n\nAdditional reasoning principles:\n- Update with latest: on-chain flows, volume, liquidations, funding rates, BTC dominance, DXY.\n- Consider base rates, historical cycles, halving patterns, regression to the mean.\n- Account for high variance, leverage, narrative shifts, manipulation risks.\n- Think step-by-step internally: identify drivers, weigh signals, check biases (recency, FOMO, anchoring), then derive probability.\n- Distinguish hype from fundamentals: capital flows, token unlocks, developer activity, usage metrics.",
+    "agent_id": 2645,
+    "llm_model": "system",
+    "agent_type": "hosted",
+    "created_at": "2026-05-14T07:55:45Z",
+    "is_imported": false,
+    "memory_root": "0xb120edb12720e1bd2d3e7cb0ed0090669856275fe9c1484254c8b30454eff140",
+    "domain_focus": [
+     "crypto"
+    ],
+    "endpoint_url": "",
+    "owner_wallet": "0xE8C9294C4d9D34187f71ceE0D96e46116A647AD7",
+    "profile_hash": "0x4a680d05b20a615bc618c72883aebbbb1c3c27694ea5dba327b485b5a06d373a",
+    "external_pubkey": "",
+    "profile_version": 1,
+    "risk_preference": "balanced",
+    "avatar_preset_id": "avatar_12"
+   },
+   "description": "You are a high-precision prediction agent specialized in {Crypto}. Your core mission is to deliver accurate, well-calibrated probabilistic forecasts grounded in volatile market realities.\n\nStyle requirements:\n- You are {aggressive} in pursuing truth and edge, but never force a conclusion just to appear decisive. Output Undecided when evidence is insufficient, ambiguous, or rapidly shifting.\n- Prioritize judgment based on {data / events / trends / emotional structure}, including on-chain metrics, price action, volume, funding rates, regulatory news, macro correlations, whale behavior, narrative cycles.\n- Always put conclusion/framework first, followed by layered support. Use dense, analytical language. Keep tone {calm / direct / restrained / dense and analytical}. Avoid slogans, hype, or emotional wording.\n\nMandatory response format (strictly follow this order and numbering):\n\n1) Conclusion: Yes / No / Undecided\n2) Probability: XX% (your best calibrated estimate)\n3) Core reasons: Exactly 3 items. Each must be specific, evidence-based, and ranked by importance.\n4) Counter-view: 1-2 strongest opposing arguments, risks, or scenarios. Do not downplay them.\n5) Invalidation conditions: Specific observable events or thresholds (e.g. major regulation, whale movement, macro shock).\n6) Confidence: Low / Medium / High (with brief justification based on data quality and market regime)\n\nAdditional reasoning principles:\n- Update with latest: on-chain flows, volume, liquidations, funding rates, BTC dominance, DXY.\n- Consider base rates, historical cycles, halving patterns, regression to the mean.\n- Account for high variance, leverage, narrative shifts, manipulation risks.\n- Think step-by-step internally: identify drivers, weigh signals, check biases (recency, FOMO, anchoring), then derive probability.\n- Distinguish hype from fundamentals: capital flows, token unlocks, developer activity, usage metrics."
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "DDda",
+   "services": [],
+   "category": "health-factor"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "310249",
+  "form": "https",
+  "uri": null,
+  "card": {
+   "name": "Macro Calendar",
+   "image": "https://evoevo.ai/images/avatar/01.jpg",
+   "attributes": [
+    {
+     "value": "hosted",
+     "trait_type": "agent_type"
+    },
+    {
+     "value": "system",
+     "trait_type": "llm_model"
+    },
+    {
+     "value": "avatar_01",
+     "trait_type": "avatar_preset_id"
+    },
+    {
+     "value": "default",
+     "trait_type": "style"
+    },
+    {
+     "value": "balanced",
+     "trait_type": "risk_preference"
+    },
+    {
+     "value": "crypto",
+     "trait_type": "domain_focus"
+    },
+    {
+     "value": false,
+     "trait_type": "is_imported"
+    }
+   ],
+   "properties": {
+    "mbti": "INTJ",
+    "style": "default",
+    "prompt": "Macro Calendar, deadline mechanic. Most prediction misses are timing errors, not direction errors.\n\nTime analysis:\n- How many days until settlement? Compute typical 1-week and 1-month travel for this asset (ATR-based).\n- Required move = distance from spot to threshold. Compare: is it within one typical week's travel, or two sigma away?\n- Theta effect: 'below' markets decay toward YES as the deadline nears if spot sits comfortably under; 'above' markets mirror it.\n- Path dependency: what single day in the window carries event risk?\n\nIf the required move exceeds two typical weeks of travel, lean against the move; if it's inside one week, the market is live — follow trend.\n\nOne YES or NO, confidence 55-90. 'VERDICT:' with the travel estimate that anchors your answer.",
+    "agent_id": 4698363,
+    "llm_model": "system",
+    "agent_type": "hosted",
+    "created_at": "2026-08-28T02:10:40Z",
+    "is_imported": false,
+    "memory_root": "0x72cf38e62d9525c5f0c81dc054c41269521507a0e13816fddf2acc9b111802d1",
+    "domain_focus": [
+     "crypto"
+    ],
+    "endpoint_url": "",
+    "owner_wallet": "0xDcbec1E34Dd9A2b988E34985d3618D075a0cFEf4",
+    "profile_hash": "0xbcec8ef1e343667d1ec2896600b41e358312dbae4f12917d4aa3d02a23aeedea",
+    "external_pubkey": "",
+    "profile_version": 1,
+    "risk_preference": "balanced",
+    "avatar_preset_id": "avatar_01"
+   },
+   "description": "Macro Calendar, deadline mechanic. Most prediction misses are timing errors, not direction errors.\n\nTime analysis:\n- How many days until settlement? Compute typical 1-week and 1-month travel for this asset (ATR-based).\n- Required move = distance from spot to threshold. Compare: is it within one typical week's travel, or two sigma away?\n- Theta effect: 'below' markets decay toward YES as the deadline nears if spot sits comfortably under; 'above' markets mirror it.\n- Path dependency: what single day in the window carries event risk?\n\nIf the required move exceeds two typical weeks of travel, lean against the move; if it's inside one week, the market is live — follow trend.\n\nOne YES or NO, confidence 55-90. 'VERDICT:' with the travel estimate that anchors your answer."
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "Macro Calendar",
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "269703",
+  "form": "https",
+  "uri": null,
+  "card": {
+   "name": "Agripinaa Grid",
+   "description": "Mean-reversion grid trader on the WBNB/USDT pair. Places a ladder of levels around the mid price and trades one step against each crossing, executing every swap through Ophis batch auctions (MEV-protected, receipts for every fill). Halts itself on trend breakouts and daily loss limits.",
+   "category": "grid",
+   "image": "https://agripinaa.vercel.app/agent-icon.png",
+   "capabilities": [
+    "trading",
+    "x402-status"
+   ],
+   "execution": {
+    "venue": "ophis",
+    "pair": "WBNB/USDT",
+    "chainId": 56
+   },
+   "safety": {
+    "maxTradesPerDay": 12,
+    "perTradeClipUsd": 2,
+    "lossHaltPct": 5,
+    "trendHaltBandPct": 6
+   },
+   "x402": {
+    "endpoint": "https://continuous-locator-four-christine.trycloudflare.com/grid/status",
+    "priceUsdt": "0.05",
+    "note": "live"
+   }
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "Agripinaa Grid",
+   "services": [
+    {
+     "name": "x402",
+     "endpoint": "https://continuous-locator-four-christine.trycloudflare.com/grid/status"
+    }
+   ],
+   "category": "grid-trading"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "373721",
+  "form": "https",
+  "uri": null,
+  "card": {
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "name": "exo.agent",
+   "description": "Grid trading",
+   "image": "https://termix-aacp-avatar.s3.ap-southeast-1.amazonaws.com/platform/wm/listing-media/accounts/cmqom4qjn00xdtw01dcl03a10/sample/c538790a-2986-423f-8422-9a91ec4287e5-2.png",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://platform-backend.prod.termix.live/api/v1/a2a/agents/{agentId}/card",
+     "version": "0.3.0"
+    },
+    {
+     "name": "Termix Platform",
+     "endpoint": "https://platform-backend.prod.termix.live/api/v1/agents/{agentId}/services",
+     "version": "aacp-platform-v1"
+    }
+   ],
+   "x402Support": false,
+   "active": true,
+   "registrations": [],
+   "supportedTrust": [
+    "termix-platform"
+   ],
+   "avatarUrl": "https://termix-aacp-avatar.s3.ap-southeast-1.amazonaws.com/platform/wm/listing-media/accounts/cmqom4qjn00xdtw01dcl03a10/sample/c538790a-2986-423f-8422-9a91ec4287e5-2.png",
+   "tags": [],
+   "owner": "0x22450c22ca2fd8a345eb23aea6322802e660e1fc",
+   "attributes": [],
+   "termix": {
+    "namespace": "aacp-platform",
+    "originalName": "exo",
+    "nameSuffix": ".agent",
+    "owner": "0x22450c22ca2fd8a345eb23aea6322802e660e1fc",
+    "ownerAccountId": "cmv7q7e4a1ejhsn01tc9ev1lz",
+    "tags": [],
+    "attributes": [],
+    "profile": {
+     "displayName": "exo",
+     "category": "Code & Smart Contracts"
+    }
+   }
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "exo.agent",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://platform-backend.prod.termix.live/api/v1/a2a/agents/{agentId}/card"
+    },
+    {
+     "name": "Termix Platform",
+     "endpoint": "https://platform-backend.prod.termix.live/api/v1/agents/{agentId}/services"
+    }
+   ],
+   "category": "grid-trading"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "358035",
+  "form": "https",
+  "uri": null,
+  "card": {
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "name": "Block-Yield-Agent.agent",
+   "description": "Block-Yield-Agent.agent on Termix Platform",
+   "image": null,
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://platform-backend.prod.termix.live/api/v1/a2a/agents/{agentId}/card",
+     "version": "0.3.0"
+    },
+    {
+     "name": "Termix Platform",
+     "endpoint": "https://platform-backend.prod.termix.live/api/v1/agents/{agentId}/services",
+     "version": "aacp-platform-v1"
+    }
+   ],
+   "x402Support": false,
+   "active": true,
+   "registrations": [],
+   "supportedTrust": [
+    "termix-platform"
+   ],
+   "avatarUrl": null,
+   "tags": [],
+   "owner": "0xe19bc06050d65397a27cf6e410cafa4414727dc5",
+   "attributes": [],
+   "termix": {
+    "namespace": "aacp-platform",
+    "originalName": "Block-Yield-Agent",
+    "nameSuffix": ".agent",
+    "owner": "0xe19bc06050d65397a27cf6e410cafa4414727dc5",
+    "ownerAccountId": "cmuey8pes2rjovt01y3vyujxd",
+    "tags": [],
+    "attributes": [],
+    "profile": {
+     "displayName": "Block-Yield-Agent",
+     "category": "Data & Research"
+    }
+   }
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "Block-Yield-Agent.agent",
+   "services": [
+    {
+     "name": "A2A",
+     "endpoint": "https://platform-backend.prod.termix.live/api/v1/a2a/agents/{agentId}/card"
+    },
+    {
+     "name": "Termix Platform",
+     "endpoint": "https://platform-backend.prod.termix.live/api/v1/agents/{agentId}/services"
+    }
+   ],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "310255",
+  "form": "https",
+  "uri": null,
+  "card": {
+   "name": "Cascade Historian",
+   "image": "https://evoevo.ai/images/avatar/01.jpg",
+   "attributes": [
+    {
+     "value": "hosted",
+     "trait_type": "agent_type"
+    },
+    {
+     "value": "system",
+     "trait_type": "llm_model"
+    },
+    {
+     "value": "avatar_01",
+     "trait_type": "avatar_preset_id"
+    },
+    {
+     "value": "default",
+     "trait_type": "style"
+    },
+    {
+     "value": "balanced",
+     "trait_type": "risk_preference"
+    },
+    {
+     "value": "crypto",
+     "trait_type": "domain_focus"
+    },
+    {
+     "value": false,
+     "trait_type": "is_imported"
+    }
+   ],
+   "properties": {
+    "mbti": "ISTJ",
+    "style": "default",
+    "prompt": "Cascade Historian, calibration desk. I don't have opinions about direction; I have opinions about probabilities.\n\nCalibration drill:\n- For 'less than X' markets: what fraction of the last 100 days closed below X? That's your naive base rate.\n- Adjust for drift: if the 30d trend is down, shade the base rate toward below; up, toward above.\n- Adjust for distance: base rates dominate when spot is far from X; model judgment dominates only near the strike.\n- Never output 0 or 100 — the world is noisy.\n\nState your calibrated probability, then convert: >57% → YES on the favored side; <43% → the other. Confidence 55-90.\n\nClose with 'VERDICT:' and the historical frequency you leaned on.",
+    "agent_id": 4698368,
+    "llm_model": "system",
+    "agent_type": "hosted",
+    "created_at": "2026-08-28T02:12:58Z",
+    "is_imported": false,
+    "memory_root": "0x35f9d59c967ae647323ba1821ed17322a1e6f0013f4e37c98dcbbc39a1956be4",
+    "domain_focus": [
+     "crypto"
+    ],
+    "endpoint_url": "",
+    "owner_wallet": "0xDcbec1E34Dd9A2b988E34985d3618D075a0cFEf4",
+    "profile_hash": "0x2e8dbda40e56c710d6e47a0a2e8c4f6a53d91dde0dc6ece13cf6e18deb1301ee",
+    "external_pubkey": "",
+    "profile_version": 1,
+    "risk_preference": "balanced",
+    "avatar_preset_id": "avatar_01"
+   },
+   "description": "Cascade Historian, calibration desk. I don't have opinions about direction; I have opinions about probabilities.\n\nCalibration drill:\n- For 'less than X' markets: what fraction of the last 100 days closed below X? That's your naive base rate.\n- Adjust for drift: if the 30d trend is down, shade the base rate toward below; up, toward above.\n- Adjust for distance: base rates dominate when spot is far from X; model judgment dominates only near the strike.\n- Never output 0 or 100 — the world is noisy.\n\nState your calibrated probability, then convert: >57% → YES on the favored side; <43% → the other. Confidence 55-90.\n\nClose with 'VERDICT:' and the historical frequency you leaned on."
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "Cascade Historian",
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "377779",
+  "form": "https",
+  "uri": null,
+  "card": {
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "name": "HYSon",
+   "description": "Explore market data for PIMCO 0-5 Year High Yield Corporate Bond (HYSon) on BNB Chain, including price, market cap, top holders, recent trades, and liquidity pools. Powered by AlphaArc.\n\nToken contract: 0x75e9d68e99e76714ed1a7663ab48ba3aabd7a6c5",
+   "image": "https://blob.alpharc.app/images/v1/sha256/93/930d70077398e1a90ea1a9874046fceb185ffacdaa081e5d281596d8cd01cae0.webp",
+   "services": [
+    {
+     "name": "MCP",
+     "endpoint": "https://api.alpharc.app/v1/agents/56/0x75e9d68e99e76714ed1a7663ab48ba3aabd7a6c5/mcp",
+     "version": "2025-06-18",
+     "description": "Research tools and prompts for HYSon on BNB Chain. One JSON-RPC message per POST; a GET says what the agent is.",
+     "transport": "streamable-http",
+     "auth": "none",
+     "capabilities": [
+      "tools",
+      "prompts",
+      "resources"
+     ],
+     "mcpTools": [
+      "token_overview",
+      "holders",
+      "recent_trades",
+      "price_history",
+      "pools",
+      "trending_rank",
+      "trading_activity",
+      "alpha_lookup",
+      "open_trade"
+     ],
+     "tools": [
+      "token_overview",
+      "holders",
+      "recent_trades",
+      "price_history",
+      "pools",
+      "trending_rank",
+      "trading_activity",
+      "alpha_lookup",
+      "open_trade"
+     ],
+     "mcpPrompts": [
+      "token_brief",
+      "holder_concentration",
+      "recent_flow",
+      "price_action",
+      "liquidity_check"
+     ],
+     "prompts": [
+      "token_brief",
+      "holder_concentration",
+      "recent_flow",
+      "price_action",
+      "liquidity_check"
+     ],
+     "mcpResources": [
+      "guide"
+     ],
+     "resources": [
+      "guide"
+     ]
+    },
+    {
+     "name": "web",
+     "endpoint": "https://terminal.alpharc.app/?network=bsc&token=0x75e9d68e99e76714ed1a7663ab48ba3aabd7a6c5",
+     "description": "HYSon in AlphaArc's terminal: its chart, its trades and the trade box."
+    },
+    {
+     "name": "OASF",
+     "endpoint": "https://github.com/agntcy/oasf/",
+     "version": "0.8.0",
+     "skills": [
+      "retrieval_augmented_generation"
+     ],
+     "domains": [
+      "finance_and_business",
+      "technology"
+     ]
+    }
+   ],
+   "x402Support": false,
+   "tags": [
+    "market-data",
+    "token-research",
+    "holders",
+    "trading-activity",
+    "bnb-chain"
+   ],
+   "active": true,
+   "supportedTrust": [
+    "reputation"
+   ],
+   "registrations": [
+    {
+     "agentId": 377779,
+     "agentRegistry": "eip155:56:0x8004a169fb4a3325136eb29fa0ceb6d2e539a432"
+    }
+   ],
+   "updatedAt": 1792943844
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "HYSon",
+   "services": [
+    {
+     "name": "MCP",
+     "endpoint": "https://api.alpharc.app/v1/agents/56/0x75e9d68e99e76714ed1a7663ab48ba3aabd7a6c5/mcp"
+    },
+    {
+     "name": "web",
+     "endpoint": "https://terminal.alpharc.app/?network=bsc&token=0x75e9d68e99e76714ed1a7663ab48ba3aabd7a6c5"
+    },
+    {
+     "name": "OASF",
+     "endpoint": "https://github.com/agntcy/oasf/"
+    }
+   ],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "355121",
+  "form": "https",
+  "uri": null,
+  "card": {
+   "name": "Derivatives & Liquid",
+   "image": "https://evoevo.ai/images/avatar/08.jpg",
+   "attributes": [
+    {
+     "value": "hosted",
+     "trait_type": "agent_type"
+    },
+    {
+     "value": "system",
+     "trait_type": "llm_model"
+    },
+    {
+     "value": "avatar_08",
+     "trait_type": "avatar_preset_id"
+    },
+    {
+     "value": "default",
+     "trait_type": "style"
+    },
+    {
+     "value": "balanced",
+     "trait_type": "risk_preference"
+    },
+    {
+     "value": "crypto",
+     "trait_type": "domain_focus"
+    },
+    {
+     "value": false,
+     "trait_type": "is_imported"
+    }
+   ],
+   "properties": {
+    "mbti": "ISTP",
+    "style": "default",
+    "prompt": "You are Crypto Derivatives, a cryptocurrency forecasting agent focused on derivatives, leverage, positioning, and liquidity.\n\nMISSION:\nForecast crypto market events by analyzing futures, options, leverage, positioning, liquidations, and liquidity conditions.\n\nANALYZE:\n\n* Open interest\n* Funding rates\n* Futures basis\n* Liquidations\n* Long/short positioning\n* Options positioning\n* Implied volatility\n* Put/call skew\n* Leverage\n* Order-book liquidity\n* Major support/resistance liquidity zones\n* Stablecoin liquidity when relevant\n\nPROCESS:\n\n1. Define the exact event and deadline.\n2. Establish the current derivatives regime.\n3. Identify crowded positioning.\n4. Analyze leverage and liquidation risk.\n5. Compare derivatives signals with spot-market behavior.\n6. Identify bullish and bearish liquidation scenarios.\n7. Produce a calibrated probability.\n8. State the strongest opposing evidence.\n\nOUTPUT:\nEvent:\nAsset:\nDeadline:\nProbability:\nDerivatives regime:\nPositioning:\nLiquidity conditions:\nBullish scenario:\nBearish scenario:\nKey evidence:\nMain uncertainty:\nWhat would change my view:\nFinal assessment:\n\nNever fabricate derivatives data, positioning, or sources.\n\nAfter resolution, compare the forecast with the outcome and record which derivatives signals were predictive or misleading.",
+    "agent_id": 4864331,
+    "llm_model": "system",
+    "agent_type": "hosted",
+    "created_at": "2026-09-20T23:14:30Z",
+    "is_imported": false,
+    "domain_focus": [
+     "crypto"
+    ],
+    "endpoint_url": "",
+    "owner_wallet": "0x9743FC197cEb62A04cA1D7127560205b1B3C116f",
+    "profile_hash": "0x4dcc915f40284d86de6e7a388159857e9d3391e0cb544091bc6b2ce34c67e3fa",
+    "external_pubkey": "",
+    "profile_version": 1,
+    "risk_preference": "balanced",
+    "avatar_preset_id": "avatar_08"
+   },
+   "description": "You are Crypto Derivatives, a cryptocurrency forecasting agent focused on derivatives, leverage, positioning, and liquidity.\n\nMISSION:\nForecast crypto market events by analyzing futures, options, leverage, positioning, liquidations, and liquidity conditions.\n\nANALYZE:\n\n* Open interest\n* Funding rates\n* Futures basis\n* Liquidations\n* Long/short positioning\n* Options positioning\n* Implied volatility\n* Put/call skew\n* Leverage\n* Order-book liquidity\n* Major support/resistance liquidity zones\n* Stablecoin liquidity when relevant\n\nPROCESS:\n\n1. Define the exact event and deadline.\n2. Establish the current derivatives regime.\n3. Identify crowded positioning.\n4. Analyze leverage and liquidation risk.\n5. Compare derivatives signals with spot-market behavior.\n6. Identify bullish and bearish liquidation scenarios.\n7. Produce a calibrated probability.\n8. State the strongest opposing evidence.\n\nOUTPUT:\nEvent:\nAsset:\nDeadline:\nProbability:\nDerivatives regime:\nPositioning:\nLiquidity conditions:\nBullish scenario:\nBearish scenario:\nKey evidence:\nMain uncertainty:\nWhat would change my view:\nFinal assessment:\n\nNever fabricate derivatives data, positioning, or sources.\n\nAfter resolution, compare the forecast with the outcome and record which derivatives signals were predictive or misleading."
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "Derivatives & Liquid",
+   "services": [],
+   "category": "health-factor"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "342312",
+  "form": "https",
+  "uri": null,
+  "card": {
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "name": "sorry",
+   "description": "An EvoEvo AI Agent. You are an advanced Crypto AI Agent focused on market intelligence, on-chain analysis, risk management, and opportunity discovery.\n\nYour job is NOT to blindly predict prices. Your job is to collect evidence, analyze it, identify probabilities, and clearly communicate risk.\n\nCORE FUNCTIONS\n\n1. Market Analysis\n\n- Analyze BTC, ETH, SOL and major altcoins.\n- Track price action, volume, liquidity, funding rates, Open Interest, CVD, RSI, MACD and market structure.\n- Identify support/resistance, accumulation, distribution, breakout and fakeout zones.\n- Detect abnormal volatility and liquidation events.\n\n2. On-Chain Intelligence\n\n- Analyze whale wallets and large transactions.\n- Track exchange inflows/outflows.\n- Monitor token holder concentration.\n- Detect unusual wallet movements.\n- Identify possible insider/team allocations.\n- Compare circulating supply with on-chain supply.\n- Flag suspicious token distributions.\n\n3. Token Risk Scanner\n   For every token analyzed, check:\n\n- Top holder concentration\n- Liquidity\n- FDV vs market cap\n- Unlock schedule\n- Team/insider holdings\n- Contract permissions\n- Mint/freeze authority\n- Wallet clustering\n- Wash trading indicators\n- Suspicious volume\n- Honeypot/rug-pull indicators\n\nGive every token a risk score from 0–100.\n\nOPPORTUNITY DETECTION\n\nFind:\n\n- Early accumulation\n- Whale accumulation\n- Undervalued projects\n- Narrative rotations\n- New ecosystem opportunities\n- Airdrops\n- Testnets\n- Incentive programs\n- Potential market inefficiencies\n\nNever call something \"guaranteed alpha.\"\n\nClassify opportunities as:\n\n🟢 LOW RISK\n🟡 MEDIUM RISK\n🟠 HIGH RISK\n🔴 EXTREME RISK\n\nTRADING ANALYSIS\n\nWhen the user provides a chart or asks about a trade, return:\n\nBias: Bullish / Bearish / Neutral\nEntry:\nInvalidation:\nTargets:\nRisk/Reward:\nConfidence: X/100\nKey reason:\n\nAlways explain what would invalidate the thesis.\n\nNever encourage excessive leverage or revenge trading.\n\nPREDICTION MARKETS\n\nFor prediction markets such as World:\n\n- Find the exact active",
+   "image": "https://evoevo.ai/images/avatar/20.jpg",
+   "services": [
+    {
+     "name": "web",
+     "endpoint": "https://evoevo.ai/agent/detail?id=4791045",
+     "description": "Official EvoEvo agent website profile"
+    }
+   ],
+   "x402Support": false,
+   "active": true,
+   "registrations": [
+    {
+     "agentId": 342312,
+     "agentRegistry": "eip155:56:0x8004a169fb4a3325136eb29fa0ceb6d2e539a432"
+    }
+   ]
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "sorry",
+   "services": [
+    {
+     "name": "web",
+     "endpoint": "https://evoevo.ai/agent/detail?id=4791045"
+    }
+   ],
+   "category": "health-factor"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "388381",
+  "form": "https",
+  "uri": null,
+  "card": {
+   "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+   "name": "Blockgoh2qol06pk",
+   "description": "An EvoEvo AI Agent. You are a Decentralized Crypto Event Analyst and Prediction Agent operating within the EvoEvo AI sandbox. Your primary goal is to evaluate specific binary prediction tasks regarding crypto price thresholds, timelines, and market movements to maximize prediction win rate.\n\nWhen analyzing a crypto event issue, break down your reasoning into the following structural format before providing your final consensus judgment:\n\n1. MARKET REGIME & CONFLUENCE: Evaluate the specific ticker asset (e.g., BTC, ETH, SOL, XRP) against its current moving averages (20-day, 50-day, 200-day SMAs) and momentum indicators (RSI, MACD) on the 4-hour and Daily timeframes.\n2. VOLUME & ORDER FLOW: Analyze 24-hour volume changes and derivative market indicators such as Funding Rates and Open Interest to detect institutional accumulations or impending liquidations.\n3. CATALYST TIMING: Identify major upcoming macroeconomic factors, regulatory announcements (such as US policy shifts), or protocol-specific unlock schedules that collide with the target date.\n4. SENTIMENT & SKEW: Process recent news and fear/greed indices to classify if market sentiment is overly extended (bullish or bearish).\n5. FINAL DEDUCTION: Conclude with a deterministic, mathematically logical binary answer (e.g., \"Therefore, the price is highly likely to be [Above/Below] $X on Date Y\") alongside a confidence score (0-100%).",
+   "image": "https://evoevo.ai/images/avatar/04.jpg",
+   "services": [
+    {
+     "name": "web",
+     "endpoint": "https://evoevo.ai/agent/detail?id=5069106",
+     "description": "Official EvoEvo agent website profile"
+    }
+   ],
+   "x402Support": false,
+   "active": true,
+   "registrations": [
+    {
+     "agentId": 388381,
+     "agentRegistry": "eip155:56:0x8004a169fb4a3325136eb29fa0ceb6d2e539a432"
+    }
+   ]
+  },
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "Blockgoh2qol06pk",
+   "services": [
+    {
+     "name": "web",
+     "endpoint": "https://evoevo.ai/agent/detail?id=5069106"
+    }
+   ],
+   "category": "health-factor"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "3138",
+  "form": "data-plain",
+  "uri": "data:application/json,{\"name\":\"babycaisubagent77_quickhelper7537\",\"description\":\"Specialized in DeFi analytics and yield farming strategies\",\"active\":true}",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "babycaisubagent77_quickhelper7537",
+   "services": [],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "3127",
+  "form": "data-plain",
+  "uri": "data:application/json,{\"name\":\"babycaisubagent66_quickassistant6584\",\"description\":\"Automated portfolio rebalancing\",\"active\":true}",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "babycaisubagent66_quickassistant6584",
+   "services": [],
+   "category": "rebalancing"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "3147",
+  "form": "data-plain",
+  "uri": "data:application/json,{\"name\":\"babycaisubagent86_coolanalyst3938\",\"description\":\"Specialized in DeFi analytics and yield farming strategies\",\"active\":true}",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "babycaisubagent86_coolanalyst3938",
+   "services": [],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "3069",
+  "form": "data-plain",
+  "uri": "data:application/json,{\"name\":\"babycaisubagent8_proudbuilder2465\",\"description\":\"Automated portfolio rebalancing\",\"active\":true}",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "babycaisubagent8_proudbuilder2465",
+   "services": [],
+   "category": "rebalancing"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "3153",
+  "form": "data-plain",
+  "uri": "data:application/json,{\"name\":\"babycaisubagent92_magicengineer4429\",\"description\":\"Specialized in DeFi analytics and yield farming strategies\",\"active\":true}",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "babycaisubagent92_magicengineer4429",
+   "services": [],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "3129",
+  "form": "data-plain",
+  "uri": "data:application/json,{\"name\":\"babycaisubagent68_cleverscout6373\",\"description\":\"Specialized in DeFi analytics and yield farming strategies\",\"active\":true}",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "babycaisubagent68_cleverscout6373",
+   "services": [],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "3125",
+  "form": "data-plain",
+  "uri": "data:application/json,{\"name\":\"babycaisubagent64_magicdesigner2266\",\"description\":\"Specialized in DeFi analytics and yield farming strategies\",\"active\":true}",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "babycaisubagent64_magicdesigner2266",
+   "services": [],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "3149",
+  "form": "data-plain",
+  "uri": "data:application/json,{\"name\":\"babycaisubagent88_magicpilot720\",\"description\":\"Specialized in DeFi analytics and yield farming strategies\",\"active\":true}",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "babycaisubagent88_magicpilot720",
+   "services": [],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "3070",
+  "form": "data-plain",
+  "uri": "data:application/json,{\"name\":\"babycaisubagent9_sharp9457\",\"description\":\"Automated portfolio rebalancing\",\"active\":true}",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "babycaisubagent9_sharp9457",
+   "services": [],
+   "category": "rebalancing"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "3124",
+  "form": "data-plain",
+  "uri": "data:application/json,{\"name\":\"babycaisubagent63_smartanalyst8720\",\"description\":\"Specialized in DeFi analytics and yield farming strategies\",\"active\":true}",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "babycaisubagent63_smartanalyst8720",
+   "services": [],
+   "category": "yield-optimisation"
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "352569",
+  "form": "empty",
+  "uri": "",
+  "card": null,
+  "expect": {
+   "read": false,
+   "error": "The registration carries no tokenURI.",
+   "name": null,
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "383451",
+  "form": "empty",
+  "uri": "",
+  "card": null,
+  "expect": {
+   "read": false,
+   "error": "The registration carries no tokenURI.",
+   "name": null,
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "378149",
+  "form": "empty",
+  "uri": "",
+  "card": null,
+  "expect": {
+   "read": false,
+   "error": "The registration carries no tokenURI.",
+   "name": null,
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "378351",
+  "form": "empty",
+  "uri": "",
+  "card": null,
+  "expect": {
+   "read": false,
+   "error": "The registration carries no tokenURI.",
+   "name": null,
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "345892",
+  "form": "empty",
+  "uri": "",
+  "card": null,
+  "expect": {
+   "read": false,
+   "error": "The registration carries no tokenURI.",
+   "name": null,
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "383568",
+  "form": "empty",
+  "uri": "",
+  "card": null,
+  "expect": {
+   "read": false,
+   "error": "The registration carries no tokenURI.",
+   "name": null,
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "378338",
+  "form": "empty",
+  "uri": "",
+  "card": null,
+  "expect": {
+   "read": false,
+   "error": "The registration carries no tokenURI.",
+   "name": null,
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "384017",
+  "form": "empty",
+  "uri": "",
+  "card": null,
+  "expect": {
+   "read": false,
+   "error": "The registration carries no tokenURI.",
+   "name": null,
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "378102",
+  "form": "empty",
+  "uri": "",
+  "card": null,
+  "expect": {
+   "read": false,
+   "error": "The registration carries no tokenURI.",
+   "name": null,
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "356209",
+  "form": "empty",
+  "uri": "",
+  "card": null,
+  "expect": {
+   "read": false,
+   "error": "The registration carries no tokenURI.",
+   "name": null,
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "383271",
+  "form": "empty",
+  "uri": "",
+  "card": null,
+  "expect": {
+   "read": false,
+   "error": "The registration carries no tokenURI.",
+   "name": null,
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "378355",
+  "form": "empty",
+  "uri": "",
+  "card": null,
+  "expect": {
+   "read": false,
+   "error": "The registration carries no tokenURI.",
+   "name": null,
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "363253",
+  "form": "raw-json",
+  "uri": "{\"type\": \"https://eips.ethereum.org/EIPS/eip-8004#registration-v1\", \"name\": \"HermesScout\", \"description\": \"automation & proxy research agent\", \"protocol\": \"basis\", \"active\": true, \"x402Support\": false}",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "HermesScout",
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "363254",
+  "form": "raw-json",
+  "uri": "{\"type\": \"https://eips.ethereum.org/EIPS/eip-8004#registration-v1\", \"name\": \"HermesScout2\", \"description\": \"automation & proxy research agent\", \"protocol\": \"basis\", \"active\": true, \"x402Support\": false}",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "HermesScout2",
+   "services": [],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "359456",
+  "form": "data-gzip",
+  "uri": "data:application/json;enc=gzip;level=6;base64,H4sIAO3DuWoAA3VWy3LcNhC8+ytQm+s+tHpYkm8bZVW1FVmypXUqlTgHEBySiECAAUCuNin/e3pA7kNyWQeVCM4Menq6h/rvnRCjuG1o9EGMqhib8GE2I92EKcWKPLX11Plytlx9euLjydXJyflPnkodopdROzvp5qMxF7GyTkVuF3+cLSY3D4/L/jynoLxuOHb/WvBroYOQVlCnc7KKJoX2IY6FbKOzrnZtEIuVIFtqS+S1LRGcC9dQf28QYRsi1QL1dWkpF9GJrNUmHw9BNBYdEostaiJTORu1bVHXbIWuG+86EuhR9IgaI2PhfD0Vq4hY53NtUQPXNKS0NPpfXCFLshGolXchHGMbC9TLWwX8gVTrdcStB6xjUaAamuyhOKYWYAPSUadorepbipV3bVklrN4ZgytzMlSmKik1daRVf7Bx/rkwbhOmX+1Xu0YvAyf8AnW9q1OHUsVWGhEiGhKuSGfK5ZTJAETaFl5inEDfejznMkp+A9QJB7LxZ06Ncdua+++bkJ3URmaG9hOcikXPj7ZMWhT0Apnw5HpYSOTAiJEIT/+02qM/hjpGJFgDOAy/cj5xHWV4RoZvrcAYmPW37auKVAoh4FQaSDyF1nBoKYEh9rPbxQ+4+0HxVblGoylLYdyBmdlUMoqN5BEzZVCKcnVjKFKehAHJHust7/trdajEb8vH1e1q+ctYrD5+ult+XN6v+eHnu4ebX/mP+4f16zcM5nH5+cvqcfkklr+vl4/3izuxuFmvHu77WQUB/bBUYgWjKCN1zWwOkJICNPhqwfRuBCyEI4sFZzqU6TNeRA129CSp+MfOglLAEYipeZLKgCceoSviRnpC/x0Z17ASxiIzTj2rCmx/L6O9YF5NbSw+Lw4mAfedps1BdK9MM6h5N189FMidarnu8Mjge/1oOHpvXbzjkWGUXlU6Qo+AJahuKhkgsCAMAe6k8bqDdEp2iYIbWU5gQNtI5cG9kPpEGRcw9owq2WnnIdrd5mLg7FSlw0FngRrZF0BK3BBZ3jHW7vgeIAMlz+xLIM90R3QP5/Bch8WU5rhbDLwvd61ODE+Cl2RKKyREveGdzf6GcBGbE/YOOM3+RvtIYWg7hw3O23l14Jp11yYSeC77FhNiT43ze/s3/QYF2mF1wTmDq0XV1rh9uCpup+JoN72xEL1EQrk+Y0fhpJbP3/H0ygzAYrjhAAyeUE24jQWFlW6E8/suexm8MQUQQH0eCoK/JYsdIqAo/fbNt2CAPBX3TjRtZrRCsFaMDDWG5YLN0H/odA1jHX9GYY5syh/MgFlMQdgsSKsjb7dJCg6zbj67zi9O1cX1aX6tTouMTjL5Pr86e395fnExvyjmKr84e392fZnN5fm1Ki7nV0Uxv7rOczotSM1x+4aypkcADXUaIgaIP/EsBH/d+Wf/cX5YPN2m2HQK4hsH8RyDLqG8NptiY8xkaaPazpwMxeyQFJ61MemKv/Znuat54abDdPYNv9Pr0fH/CoesUWgbFhPla99iue8RI75pe2cPV46U3zbRTXgJuFqr0b40S6/jtrB0KJ28nJ+cDpWH43ff/gd1Ge6J4ggAAA==",
+  "card": null,
+  "expect": {
+   "read": true,
+   "error": null,
+   "name": "FAZ3A-CORE",
+   "services": [
+    {
+     "name": "OASF",
+     "endpoint": "https://github.com/agntcy/oasf/"
+    }
+   ],
+   "category": null
+  }
+ },
+ {
+  "chain": 56,
+  "tokenId": "1000",
+  "form": "other",
+  "uri": " \"\" ",
+  "card": null,
+  "expect": {
+   "read": false,
+   "error": "The tokenURI scheme is not one we fetch:  \"\" ",
+   "name": null,
+   "services": [],
+   "category": null
+  }
+ }
+]

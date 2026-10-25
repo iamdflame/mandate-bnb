@@ -30,6 +30,8 @@ import { listings } from "@/lib/market/listing";
 import { hirePath } from "@/lib/market/hire-law";
 import { hireCounts } from "@/lib/market/hires";
 import { CATEGORIES, type Category } from "@/lib/config";
+import { latestSelfCheck } from "@/lib/ops/self-check";
+import { warm } from "@/lib/data/snapshots";
 
 /** Fewer agents a buyer can hire in a job than this, and the job is thin: one failure from none. */
 export const THIN_BELOW = 3;
@@ -184,6 +186,18 @@ export async function judgePathChecks(): Promise<Check[]> {
           ` deliveries of gas left; the demo account ${demoLeft.toLocaleString("en-GB")} leashed actions` +
           (low.length ? `; below ${MIN_DELIVERIES}: ${low.map((w) => w.name).join(", ")}` : "") +
           (demoLow ? `; the demo account is below ${MIN_DEMO_ACTIONS} actions` : ""),
+      };
+    }),
+    timed(8, "The self-check finds nothing of ours failing", async () => {
+      await warm(["self-check"]);
+      const c = latestSelfCheck();
+      if (!c) return { ok: false, detail: "the self-check has not run yet" };
+      const age = Date.now() - Date.parse(c.at);
+      if (age > 3 * 3_600_000) return { ok: false, detail: `the self-check last ran ${Math.round(age / 3_600_000)} h ago; it runs hourly` };
+      const up = c.dependencies.filter((d) => d.ok).length;
+      return {
+        ok: c.flags.length === 0,
+        detail: c.flags.length ? c.flags.map((f) => f.what).join("; ").slice(0, 600) : `${up} of ${c.dependencies.length} outside services answering; nothing flagged, ${Math.round(age / 60_000)} min ago`,
       };
     }),
   ]);
