@@ -84,6 +84,17 @@ export function checkHealth(answer: unknown, ref: { hf: number | null }, opts: {
   const data = asData(answer);
   if (data === null || typeof data !== "object") return { verdict: "unreadable", checks: [], note: "the answer is not data we can read" };
   const theirs = firstNumber(data, /health.?factor|^hf$/i);
+  /*
+    An answer taken more than an hour before our reading, about an account
+    that has since opened or closed a loan, answered a different account. It
+    is not comparable, not wrong: #382582 answered "no shortfall, healthy"
+    about the test account at block 129673406, when it held no loan, and was
+    marked failed hours later once our own agent had borrowed on it.
+  */
+  const theirsSawLoan = theirs !== null && theirs <= 1e6;
+  if (opts.aged && (ref.hf === null) === theirsSawLoan) {
+    return { verdict: "not-comparable", checks: [], note: `the test account ${ref.hf === null ? "repaid its loan" : "took a loan"} after this answer was given, so it answered a different position` };
+  }
   if (ref.hf === null) {
     const pass = theirs === null || theirs > 1e6;
     return { verdict: pass ? "pass" : "fail", checks: [{ field: "health factor", ours: "no loan", theirs: fmt(theirs), pass }], note: null };

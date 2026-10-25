@@ -21,6 +21,16 @@ describe("MANDATE conformance checks", () => {
     expect(checkHealth('{"status":"ok"}', { hf: 3.1 }).checks[0]?.theirs).toBe("none given");
   });
 
+  it("leaves an hour-old answer uncompared when the account opened or closed a loan since, and still grades a fresh one", () => {
+    // #382582 on 25 Oct: "healthy, no shortfall" about the test account before it borrowed, re-read after.
+    const noLoan = '{"venus":{"shortfall":"0","healthy":true,"note":"No Venus shortfall reported"}}';
+    expect(checkHealth(noLoan, { hf: 38.5 }, { aged: true }).verdict).toBe("not-comparable");
+    expect(checkHealth(KEEL, { hf: null }, { aged: true }).verdict).toBe("not-comparable");
+    expect(checkHealth(noLoan, { hf: 38.5 }).verdict).toBe("fail");
+    expect(checkHealth(KEEL, { hf: 6.66 }, { aged: true }).verdict).toBe("pass");
+    expect(checkHealth(noLoan, { hf: null }, { aged: true }).verdict).toBe("pass");
+  });
+
   it("checks range status and the pool's tick, and says when there is nothing to compare", () => {
     expect(checkRange(BOUND, { positions: [{ tokenId: "1", inRange: false, tick: -66540 }] }).verdict).toBe("pass");
     expect(checkRange(BOUND, { positions: [{ tokenId: "1", inRange: true, tick: -66560 }] }).verdict).toBe("fail");

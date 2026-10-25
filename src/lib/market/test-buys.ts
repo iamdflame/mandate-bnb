@@ -56,7 +56,13 @@ export function retestWait(calls: PaidCallRecord[], tokenId: string): number | n
   return tookAndFailed > 0 || streak >= 3 ? RETRY_SLOW_MS : RETRY_AFTER_MS;
 }
 
-export async function testBuys(opts: { budgetMs: number }): Promise<string> {
+/**
+ * `only`: these sellers now, whatever their wait, under the same caps and
+ * recorded the same way. For a builder who fixed what made a paid call fail
+ * (#382582 on 25 Oct required ?wallet= before settling) and asks to be
+ * checked again rather than wait out the two days.
+ */
+export async function testBuys(opts: { budgetMs: number; only?: string[] }): Promise<string> {
   const raw = process.env.AGENT_A_KEY;
   if (!raw) return "no trial pool key on this deployment";
   const key = (raw.startsWith("0x") ? raw : `0x${raw}`) as Hex;
@@ -68,6 +74,7 @@ export async function testBuys(opts: { budgetMs: number }): Promise<string> {
   const past = outcomes(calls);
   const due = listings(counts?.byTokenId, counts?.settled).filter((l) => {
     if (isOurs(l) || !l.quote?.payable) return false;
+    if (opts.only) return opts.only.includes(l.tokenId);
     const last = calls.find((c) => c.tokenId === l.tokenId);
     const v = hirePath(l);
     if (v.ok && v.rails.some((r) => r.kind === "x402")) return !last || Date.now() - Date.parse(last.at) > EVERY_MS;
