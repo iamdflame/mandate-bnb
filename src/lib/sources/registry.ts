@@ -27,6 +27,7 @@
  * here.
  */
 
+import { gunzipSync } from "node:zlib";
 import { createPublicClient, http, type Address } from "viem";
 import { bsc } from "viem/chains";
 import { CHAIN_ID, IDENTITY_REGISTRY, RPC_FALLBACKS, RPC_URL } from "@/lib/config";
@@ -113,7 +114,7 @@ async function anyClient<T>(fn: (c: (typeof clients)[number]) => Promise<T>): Pr
  * failure is recorded rather than swallowed: an agent whose card is a dead
  * link and an agent with no card are different findings.
  */
-async function readCard(
+export async function readCard(
   uri: string,
 ): Promise<{ card: Record<string, unknown> | null; source: RegistryEntry["cardSource"]; error: string | null }> {
   if (!uri) return { card: null, source: "unresolved", error: "The registration carries no tokenURI." };
@@ -123,12 +124,21 @@ async function readCard(
       const comma = uri.indexOf(",");
       const meta = uri.slice(5, comma);
       const payload = uri.slice(comma + 1);
-      const json = meta.includes("base64")
-        ? Buffer.from(payload, "base64").toString("utf8")
-        : decodeURIComponent(payload);
+      const bytes = meta.includes("base64") ? Buffer.from(payload, "base64") : Buffer.from(decodeURIComponent(payload), "utf8");
+      // Some registrants compress the card (`;enc=gzip`): the bytes say so whatever the label does.
+      const json = (bytes[0] === 0x1f && bytes[1] === 0x8b ? gunzipSync(bytes) : bytes).toString("utf8");
       return { card: JSON.parse(json) as Record<string, unknown>, source: "data-uri", error: null };
     } catch {
       return { card: null, source: "unresolved", error: "The inline card is not parseable JSON." };
+    }
+  }
+
+  // The card written straight into the tokenURI, with no data: prefix. It is the card all the same.
+  if (/^\s*\{/.test(uri)) {
+    try {
+      return { card: JSON.parse(uri) as Record<string, unknown>, source: "data-uri", error: null };
+    } catch {
+      return { card: null, source: "unresolved", error: "The tokenURI is written as JSON that does not parse." };
     }
   }
 
@@ -141,14 +151,18 @@ async function readCard(
     scheme. Publishing that as a finding about those agents would have been the
     precise failure this product exists to catch, committed by us.
 
-    Two gateways, tried in order, because one refusing is not the card being
-    absent either.
+    Several gateways, tried in order, because one refusing is not the card
+    being absent either. A bare CID is an IPFS address too, and ar:// is
+    Arweave's.
   */
-  const urls = uri.startsWith("ipfs://")
-    ? IPFS_GATEWAYS.map((g) => g + uri.slice("ipfs://".length).replace(/^ipfs\//, ""))
-    : /^https?:\/\//i.test(uri)
-      ? [uri]
-      : [];
+  const cid = uri.startsWith("ipfs://") ? uri.slice("ipfs://".length).replace(/^ipfs\//, "") : /^(Qm[1-9A-HJ-NP-Za-km-z]{44}|baf[a-z2-7]{50,})(\/.*)?$/.test(uri.trim()) ? uri.trim() : null;
+  const urls = cid
+    ? IPFS_GATEWAYS.map((g) => g + cid)
+    : uri.startsWith("ar://")
+      ? [`https://arweave.net/${uri.slice("ar://".length)}`]
+      : /^https?:\/\//i.test(uri)
+        ? [uri]
+        : [];
 
   if (urls.length === 0) {
     return { card: null, source: "unresolved", error: `The tokenURI scheme is not one we fetch: ${uri.slice(0, 32)}` };
@@ -174,12 +188,17 @@ async function readCard(
 /**
  * Gateways for `ipfs://` cards.
  *
- * Two, so that one gateway being slow is not recorded as an agent having no
- * card. Both are public and neither is ours, which is the point: a reader
+ * Several, so that one gateway being slow is not recorded as an agent having
+ * no card. All are public and none is ours, which is the point: a reader
  * checking this can use any gateway they like and get the same bytes, because
  * the CID is in the registration.
+ *
+ * By 25 Oct ipfs.io, dweb.link and w3s.link answered programs 429 ("switching
+ * to a service worker gateway") and cloudflare-ipfs.com was gone, so every
+ * IPFS card read as unanswered: 71 agents were waiting on that alone. These
+ * three served the same CIDs; ipfs.io stays last in case it serves again.
  */
-const IPFS_GATEWAYS = ["https://ipfs.io/ipfs/", "https://cloudflare-ipfs.com/ipfs/"];
+const IPFS_GATEWAYS = ["https://ipfs.filebase.io/ipfs/", "https://gw.ipfs-lens.dev/ipfs/", "https://gateway.pinata.cloud/ipfs/", "https://ipfs.io/ipfs/"];
 
 const str = (v: unknown): string | null =>
   typeof v === "string" && v.trim() ? v.trim() : null;

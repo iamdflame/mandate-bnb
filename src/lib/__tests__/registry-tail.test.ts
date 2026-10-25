@@ -8,7 +8,10 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { TRANSFER_TOPIC, agentFrom, cardUnread, decodeMints, protocolsOf, readAgain, retryAt } from "../registry/tail";
+import { gzipSync } from "node:zlib";
+import { keccak256, toHex } from "viem";
+import { TRANSFER_TOPIC, URI_UPDATED_TOPIC, agentFrom, cardUnread, decodeMints, decodeUriUpdates, protocolsOf, readAgain, retryAt } from "../registry/tail";
+import { readCard } from "../sources/registry";
 import { getAgentIndex } from "../data/agents";
 import { putRegistryExtra } from "../registry/extras";
 import type { RegistryEntry } from "../sources/registry";
@@ -68,6 +71,34 @@ describe("filing an agent", () => {
   it("reads only the protocols it knows, in the crawl's spelling", () => {
     expect(protocolsOf({ services: [{ name: "a2a", endpoint: "" }, { name: "Web", endpoint: "" }, { name: "telegram", endpoint: "" }] })).toEqual(["A2A", "Web"]);
     expect(protocolsOf(null)).toEqual([]);
+  });
+});
+
+describe("an owner setting a new card", () => {
+  it("is the registry's URIUpdated event, and names the agent", () => {
+    expect(URI_UPDATED_TOPIC).toBe(keccak256(toHex("URIUpdated(uint256,string,address)")));
+    const upd = { topics: [URI_UPDATED_TOPIC, word((382582).toString(16)), word("7751be7b2ba4141d5e32ef14e9e5cc73e9d7bf0c")] };
+    // A transfer in the same read is not a card update, and one agent updated twice is read again once.
+    expect(decodeUriUpdates([upd, upd, { topics: [TRANSFER_TOPIC, ZERO, word("aa"), word("1")] }])).toEqual(["382582"]);
+  });
+});
+
+describe("cards written in the forms registrants use", () => {
+  const card = { type: "https://eips.ethereum.org/EIPS/eip-8004#registration-v1", name: "HermesScout", description: "Scouts yield." };
+
+  it("reads a card written straight into the tokenURI", async () => {
+    expect(await readCard(JSON.stringify(card))).toMatchObject({ card: { name: "HermesScout" }, source: "data-uri", error: null });
+  });
+
+  it("reads a gzip-compressed data: card", async () => {
+    const uri = `data:application/json;enc=gzip;level=6;base64,${gzipSync(Buffer.from(JSON.stringify(card))).toString("base64")}`;
+    expect(await readCard(uri)).toMatchObject({ card: { name: "HermesScout" }, source: "data-uri" });
+  });
+
+  it("still says so when there is no card to read", async () => {
+    expect((await readCard("")).error).toBe("The registration carries no tokenURI.");
+    expect((await readCard("{ not json")).source).toBe("unresolved");
+    expect((await readCard('""')).source).toBe("unresolved");
   });
 });
 

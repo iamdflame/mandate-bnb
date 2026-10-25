@@ -33,6 +33,12 @@ import { putRegistryExtra, registryExtras, setRegistryExtras } from "./extras";
 
 /** keccak256("Transfer(address,address,uint256)"), the ERC-721 mint and move event. */
 export const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+/*
+  URIUpdated(uint256 indexed agentId, string newURI, address indexed updatedBy):
+  an owner pointing their agent at a new card. A card is read once, so
+  without this a builder who fixed their card kept the old one here.
+*/
+export const URI_UPDATED_TOPIC = "0x3a2c7fffc2cba7582c690e3b82c453ea02a308326a98a3ad7576c606336409fb";
 const ZERO_TOPIC = `0x${"0".repeat(64)}`;
 /** The block after the committed crawl's newest agent (Guard-1, #344123, minted at 121,195,867). */
 export const TAIL_START = 121_195_868;
@@ -62,6 +68,11 @@ interface TailState {
 const hex = (n: number) => `0x${n.toString(16)}`;
 const scrub = (e: unknown) => ((e as Error)?.message ?? String(e)).split("\n")[0]!.replace(/https?:\/\/\S+/g, "<rpc>").slice(0, 160);
 
+/** The agents whose owner set a new card in a block range. Pure, for tests. */
+export function decodeUriUpdates(logs: { topics: string[] }[]): string[] {
+  return [...new Set(logs.filter((l) => l.topics[0] === URI_UPDATED_TOPIC && l.topics[1]).map((l) => BigInt(l.topics[1]!).toString()))];
+}
+
 /** Mint events in a block range, decoded. Pure, for tests. */
 export function decodeMints(logs: { topics: string[]; blockNumber: string; transactionHash: string }[]): Mint[] {
   return logs
@@ -74,29 +85,38 @@ export function decodeMints(logs: { topics: string[]; blockNumber: string; trans
     }));
 }
 
-async function mintLogs(from: number, to: number): Promise<Mint[]> {
+async function logsFor(from: number, to: number, topics: (string | string[])[]): Promise<{ topics: string[]; blockNumber: string; transactionHash: string }[]> {
   let last = "no log provider is configured";
   for (const url of LOG_RPCS) {
     try {
       const res = await fetch(url, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "eth_getLogs",
-          params: [{ address: IDENTITY_REGISTRY, fromBlock: hex(from), toBlock: hex(to), topics: [TRANSFER_TOPIC, ZERO_TOPIC] }],
-        }),
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getLogs", params: [{ address: IDENTITY_REGISTRY, fromBlock: hex(from), toBlock: hex(to), topics }] }),
         signal: AbortSignal.timeout(15_000),
       });
       const body = (await res.json()) as { result?: { topics: string[]; blockNumber: string; transactionHash: string }[]; error?: { message?: string } };
-      if (Array.isArray(body.result)) return decodeMints(body.result);
+      if (Array.isArray(body.result)) return body.result;
       last = body.error?.message ?? `answered ${res.status}`;
     } catch (e) {
       last = scrub(e);
     }
   }
-  throw new Error(`no provider served the registry's mints for blocks ${from} to ${to}: ${last.slice(0, 120)}`);
+  throw new Error(`no provider served the registry's logs for blocks ${from} to ${to}: ${last.slice(0, 120)}`);
+}
+
+/**
+ * Mints and card updates in one read. A provider that will not take the
+ * two-topic filter still serves the mints alone, so the scan never stalls
+ * on the newer question; that range's card updates are then reported unread.
+ */
+async function registryLogs(from: number, to: number): Promise<{ mints: Mint[]; updated: string[] | null }> {
+  try {
+    const logs = await logsFor(from, to, [[TRANSFER_TOPIC, URI_UPDATED_TOPIC]]);
+    return { mints: decodeMints(logs), updated: decodeUriUpdates(logs) };
+  } catch {
+    return { mints: decodeMints(await logsFor(from, to, [TRANSFER_TOPIC, ZERO_TOPIC])), updated: null };
+  }
 }
 
 /** The protocols an agent's card offers, in the crawl's own spelling. */
@@ -203,19 +223,21 @@ export function mintIn(logs: readonly { address: string; topics: readonly (strin
 }
 
 /** Scan: store every mint in the next ranges of blocks, cheaply, and move the cursor. */
-export async function scanMints(opts: { budgetMs: number; maxChunks?: number }): Promise<{ cursor: number; head: number; minted: number }> {
+export async function scanMints(opts: { budgetMs: number; maxChunks?: number }): Promise<{ cursor: number; head: number; minted: number; changed: number; missedUpdates: number }> {
   await ensureTables();
   await warm(["registry-tail"]).catch(() => undefined);
-  if (!(await loadedLive("registry-tail"))) return { cursor: -1, head: -1, minted: 0 };
+  if (!(await loadedLive("registry-tail"))) return { cursor: -1, head: -1, minted: 0, changed: 0, missedUpdates: 0 };
   const state = snapshot<TailState>("registry-tail")?.payload ?? { cursor: TAIL_START, head: 0, minted: 0, at: new Date(0).toISOString() };
   const head = Number(await marketClient.getBlockNumber());
   const started = Date.now();
   let cursor = state.cursor;
   let minted = 0;
   let chunks = 0;
+  let changed = 0;
+  let missedUpdates = 0;
   while (cursor <= head && Date.now() - started < opts.budgetMs && chunks < (opts.maxChunks ?? 1e9)) {
     const to = Math.min(head, cursor + SPAN - 1);
-    const mints = await mintLogs(cursor, to);
+    const { mints, updated } = await registryLogs(cursor, to);
     if (mints.length) {
       // Stored unresolved, in one statement however large the burst: the card is read by the resolve pass.
       await pg!`
@@ -237,12 +259,21 @@ export async function scanMints(opts: { budgetMs: number; maxChunks?: number }):
           indexed_at = case when registry_agents.tx is null then now() else registry_agents.indexed_at end
       `;
     }
+    if (updated === null) missedUpdates += 1;
+    if (updated?.length) {
+      // A new card: read it again, first in line, whatever was read before.
+      await pg!`
+        update registry_agents set record = (record - 'nextTryAt') || jsonb_build_object('resolved', false, 'attempts', 0), indexed_at = now()
+        where token_id = any(${pg!.array(updated)}::text[])
+      `;
+      changed += updated.length;
+    }
     minted += mints.length;
     chunks += 1;
     cursor = to + 1;
     await store("registry-tail", { cursor, head, minted: state.minted + minted, at: new Date().toISOString() } satisfies TailState);
   }
-  return { cursor, head, minted };
+  return { cursor, head, minted, changed, missedUpdates };
 }
 
 /** Resolve: read the cards of stored agents that have not been read yet, as many as time allows. */
@@ -374,7 +405,7 @@ export async function tailRegistry(opts: { budgetMs: number }): Promise<string> 
     const left = Math.max(0, opts.budgetMs - (Date.now() - started) - 3_000);
     const res = left > 4_000 ? await resolvePending({ budgetMs: left }) : null;
     const refiled = await refileOld().catch(() => null);
-    const s = "error" in scan ? `scan failed: ${scan.error}` : `scanned to block ${scan.cursor - 1} of ${scan.head}, ${scan.minted} new mints`;
+    const s = "error" in scan ? `scan failed: ${scan.error}` : `scanned to block ${scan.cursor - 1} of ${scan.head}, ${scan.minted} new mints, ${scan.changed} new cards${scan.missedUpdates ? ` (card updates unread in ${scan.missedUpdates} ranges)` : ""}`;
     return `${s}; ${res ? `resolved ${res.resolved} (${res.classified} filed under a job), ${res.left} still to read` : "no time left to resolve"}${refiled?.looked ? `; filed again ${refiled.looked}, ${refiled.filed} now under a job` : ""}`;
   });
   return out ?? "another slice holds the lease";
