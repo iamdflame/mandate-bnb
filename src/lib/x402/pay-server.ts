@@ -150,8 +150,8 @@ export async function payAndCall(opts: {
   }
 
   const offers = readRequirements(parseMaybe(first.text), first.res.headers.get("payment-required"));
-  const usable = offers.find((o) => !whyUnpayable(o) && o.amount <= opts.maxAmount);
-  if (!usable) {
+  const payable = offers.filter((o) => !whyUnpayable(o) && o.amount <= opts.maxAmount);
+  if (!payable.length) {
     const reasons = offers.map((o) => whyUnpayable(o) ?? `it asks ${o.amount}, above the ${opts.maxAmount} this call may spend`);
     return out({ refused: reasons.join("; ") || "its 402 names no requirement this client can read" });
   }
@@ -161,8 +161,22 @@ export async function payAndCall(opts: {
     The next five Agripinaa payments were signed anyway, failed at the
     transfer (TRANSFER_FROM_FAILED), and were held against the sellers. A
     payer that cannot cover the price signs nothing.
+
+    A seller that takes USD1 or USDT is paid in whichever the wallet holds:
+    taking the first it listed left sellers untested on 25 Oct while the pool
+    held the other token.
   */
-  const held = await heldBy(account.address, usable.asset).catch(() => null);
+  let usable = payable[0]!;
+  let held: bigint | null = null;
+  for (const o of payable) {
+    const h = await heldBy(account.address, o.asset).catch(() => null);
+    if (o === payable[0]) held = h;
+    if (h === null || h >= o.amount) {
+      usable = o;
+      held = h;
+      break;
+    }
+  }
   if (held !== null && held < usable.amount) {
     return out({
       payerShort: true,

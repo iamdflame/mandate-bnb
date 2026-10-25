@@ -24,8 +24,17 @@ const VAULT = vi.hoisted(() => ({
   ],
 }));
 const sent = vi.hoisted(() => [] as { method?: string; body?: string; headers?: Record<string, string> }[]);
-const sells = vi.hoisted(() => ({ tools: false }));
-const held = vi.hoisted(() => ({ amount: 0n }));
+const sells = vi.hoisted(() => ({ tools: false, both: false }));
+const held = vi.hoisted(() => ({ amount: 0n, by: {} as Record<string, bigint> }));
+const USD1_ACCEPT = vi.hoisted(() => ({
+  scheme: "exact",
+  network: "eip155:56",
+  amount: "10000000000000000",
+  asset: "0x8d0D000Ee44948FC98c9B98A4FA4921476f08B0d",
+  payTo: "0xA06Db692d7e28356f80199Ff77E22a0Ef02A3518",
+  maxTimeoutSeconds: 600,
+  extra: { assetTransferMethod: "eip3009", decimals: 18, name: "World Liberty Financial USD", version: "1" },
+}));
 const chain = vi.hoisted(() => ({ readContract: vi.fn(), getBlockNumber: vi.fn(async () => 1n), getLogs: vi.fn(async () => []) }));
 
 vi.mock("@/lib/chain/market", () => ({ marketClient: chain, logClients: [], walletFor: vi.fn() }));
@@ -37,7 +46,9 @@ vi.mock("@/lib/net/safe-fetch", () => ({
     return {
       status: paidFor ? 200 : 402,
       headers: new Headers(),
-      text: paidFor ? '{"ok":true}' : JSON.stringify(sells.tools ? { ...VAULT, tools: [{ tool: "list_vaults", amount: "10000000000000000" }] } : VAULT),
+      text: paidFor
+        ? '{"ok":true}'
+        : JSON.stringify(sells.tools ? { ...VAULT, tools: [{ tool: "list_vaults", amount: "10000000000000000" }] } : sells.both ? { ...VAULT, accepts: [...VAULT.accepts, USD1_ACCEPT] } : VAULT),
       truncated: false,
       bytes: 0,
       finalUrl: url,
@@ -55,9 +66,14 @@ const U = VAULT.accepts[0]!.asset as Address;
 beforeEach(() => {
   sent.length = 0;
   sells.tools = false;
-  chain.readContract.mockImplementation(async ({ functionName }: { functionName: string }) => {
-    if (functionName === "balanceOf") return held.amount;
-    if (functionName === "DOMAIN_SEPARATOR") return domainSeparator({ domain: { name: "United Stables", version: "1", chainId: 56, verifyingContract: U } });
+  sells.both = false;
+  held.by = {};
+  chain.readContract.mockImplementation(async ({ functionName, address }: { functionName: string; address: Address }) => {
+    if (functionName === "balanceOf") return held.by[address.toLowerCase()] ?? held.amount;
+    if (functionName === "DOMAIN_SEPARATOR") {
+      const name = address.toLowerCase() === U.toLowerCase() ? "United Stables" : "World Liberty Financial USD";
+      return domainSeparator({ domain: { name, version: "1", chainId: 56, verifyingContract: address } });
+    }
     throw new Error(`unexpected read ${functionName}`);
   });
 });
@@ -79,6 +95,25 @@ describe("a payer short of the price", () => {
     expect(call.payerShort).toBeUndefined();
     expect(sent).toHaveLength(2);
     expect(toRecord(call, { tokenId: "338253", name: "Vault", category: "yield-optimisation", sponsored: true, subject: null, evidence: null }).fault).toBeUndefined();
+  });
+});
+
+describe("a seller that takes two tokens", () => {
+  it("is paid in the one the wallet holds, not refused for the one it lacks", async () => {
+    sells.both = true;
+    held.by = { [U.toLowerCase()]: 0n, [USD1_ACCEPT.asset.toLowerCase()]: 10n ** 18n };
+    const call = await payAndCall({ url: "https://seller.test/x402", key: KEY, maxAmount: 10n ** 17n, settleWaitMs: 0 });
+    expect(call.payerShort).toBeUndefined();
+    expect(sent).toHaveLength(2);
+    expect(JSON.stringify(call.requirement)).toContain(USD1_ACCEPT.asset);
+  });
+
+  it("is still reported short when the wallet holds neither", async () => {
+    sells.both = true;
+    held.amount = 0n;
+    const call = await payAndCall({ url: "https://seller.test/x402", key: KEY, maxAmount: 10n ** 17n, settleWaitMs: 0 });
+    expect(call.payerShort).toBe(true);
+    expect(sent).toHaveLength(1);
   });
 });
 
