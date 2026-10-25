@@ -2,7 +2,7 @@
  * The free testnet pack on /quest, driven in a real browser with a stand-in
  * wallet that signs with the test wallet on BNB Smart Chain testnet.
  *
- *   npx tsx --env-file=.env --env-file-if-exists=.env.local src/scripts/testnet-pack-ui.ts [--base https://www.mandatemarkets.com]
+ *   npx tsx --env-file=.env --env-file-if-exists=.env.local src/scripts/testnet-pack-ui.ts [--base https://www.mandatemarkets.com] [--candidate <url>] [--agent <testnet id>]
  *
  * The stand-in is an EIP-1193 provider in the page whose every request is
  * answered here: accounts and the chain it says it is on, a switch of network,
@@ -98,6 +98,30 @@ async function main() {
   `);
 
   await page.goto(`${BASE}/quest`, { waitUntil: "networkidle" });
+
+  // --agent <testnet id>: one other builder's agent hired from its card in the quest's testnet section, instead of the pack.
+  const agentIdx = process.argv.indexOf("--agent");
+  if (agentIdx > -1) {
+    const id = process.argv[agentIdx + 1]!;
+    const card = page.locator("section#testnet li", { hasText: `testnet #${id}` });
+    await card.waitFor();
+    console.log(`found testnet #${id}: ${(await card.locator(".bd-tnet__name").textContent())?.trim()}`);
+    await card.getByRole("button", { name: /Hire free/ }).click();
+    await card.getByRole("button", { name: /Connect your campaign wallet/ }).click();
+    await card.getByRole("button", { name: /Switch to BNB Smart Chain testnet/ }).click();
+    const go = card.getByRole("button", { name: /^Hire for/ });
+    await go.waitFor({ timeout: 30_000 });
+    console.log(`button: "${(await go.textContent())?.trim()}"`);
+    await go.click();
+    await card.locator(".bd-tnhire__job").waitFor({ timeout: 240_000 });
+    console.log(`funded after ${sent.length} signatures: ${(await card.locator(".bd-tnhire__job").textContent())?.replace(/\s+/g, " ").trim()}`);
+    await card.locator(".bd-tnhire__job", { hasText: /delivered/ }).waitFor({ timeout: 300_000 });
+    console.log(`delivered: ${(await card.locator(".bd-tnhire__job").textContent())?.replace(/\s+/g, " ").trim()}`);
+    await page.screenshot({ path: process.env.SHOT ?? "/tmp/testnet-hire.png", clip: (await card.boundingBox()) ?? undefined });
+    await browser.close();
+    process.exit(0);
+  }
+
   const pack = page.locator("section.bd-pack--testnet");
   await pack.waitFor();
   console.log("found the testnet pack");

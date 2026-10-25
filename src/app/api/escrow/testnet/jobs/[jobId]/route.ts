@@ -8,6 +8,7 @@
 import { NextResponse } from "next/server";
 import { readTestnetJob, testnetDeliverableUrl, testnetJobRow } from "@/lib/escrow/testnet-jobs";
 import { TESTNET_TX } from "@/lib/chain/testnet";
+import { testnetOutsideRow } from "@/lib/testnet/outside-jobs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +17,19 @@ export async function GET(_request: Request, { params }: { params: Promise<{ job
   const { jobId } = await params;
   if (!/^\d{1,12}$/.test(jobId)) return NextResponse.json({ error: "jobId must be the testnet kernel's job number." }, { status: 400 });
   const row = await testnetJobRow(jobId);
-  if (!row) return NextResponse.json({ error: "That job is not one of ours on testnet, or not yet seen." }, { status: 404 });
+  if (!row) {
+    // Another builder's agent, hired here: its own submission is read from the kernel.
+    const o = await testnetOutsideRow(jobId);
+    if (!o) return NextResponse.json({ error: "That job was not opened here on testnet, or is not yet seen." }, { status: 404 });
+    const chain = await readTestnetJob(BigInt(jobId)).catch(() => null);
+    return NextResponse.json(
+      {
+        ok: true,
+        data: { jobId, network: "bsc-testnet", tokenId: o.tokenId, name: o.name, outside: true, status: chain?.status ?? o.status, here: o.here, note: o.note, settleTx: o.settleTx ? TESTNET_TX(o.settleTx) : null },
+      },
+      { headers: { "cache-control": "no-store" } },
+    );
+  }
   const chain = await readTestnetJob(BigInt(jobId)).catch(() => null);
   const status = chain?.status ?? row.status;
   return NextResponse.json(

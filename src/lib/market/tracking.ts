@@ -25,6 +25,7 @@ import { ESCROW } from "@/lib/escrow/contracts";
 import type { PaidCallRecord } from "@/lib/market/paid-calls";
 import { CAMPAIGN_ENDS, CAMPAIGN_STARTS } from "@/lib/campaign/rules";
 import { TESTNET_EXPLORER } from "@/lib/campaign/testnet";
+import { testnetOutsideOfClient } from "@/lib/testnet/outside-jobs";
 import { testnetJobsOfClient } from "@/lib/escrow/testnet-jobs";
 import { escrowQuoteMap } from "@/lib/data/probes";
 import { warm } from "@/lib/data/snapshots";
@@ -346,7 +347,8 @@ async function elsewhereJobsOf(wallet: string): Promise<ElsewhereJob[]> {
     // Testnet jobs opened here with our own agents are hires here, counted separately; the rest are elsewhere.
     pg`select t.job_id, t.provider, t.tx, t.at from testnet_jobs t
        where t.client = ${w} and t.at >= ${CAMPAIGN_STARTS} and t.at <= ${CAMPAIGN_ENDS}
-       and not exists (select 1 from testnet_escrow_jobs e where e.job_id = t.job_id and e.here)`.catch(() => []) as Promise<Row[]>,
+       and not exists (select 1 from testnet_escrow_jobs e where e.job_id = t.job_id and e.here)
+       and not exists (select 1 from testnet_outside_jobs o where o.job_id = t.job_id and o.here)`.catch(() => []) as Promise<Row[]>,
   ]);
   const iso = (v: Date | string) => (v instanceof Date ? v.toISOString() : new Date(v).toISOString());
   return [
@@ -361,8 +363,15 @@ async function elsewhereJobsOf(wallet: string): Promise<ElsewhereJob[]> {
  * agent is its own ERC-8004 identity, so it counts apart from its mainnet twin.
  */
 async function testnetHiresHere(wallet: string): Promise<CountedHire[]> {
-  const jobs = await testnetJobsOfClient(wallet).catch(() => []);
+  const [jobs, outside] = await Promise.all([testnetJobsOfClient(wallet).catch(() => []), testnetOutsideOfClient(wallet).catch(() => [])]);
   const byAgent = new Map<string, CountedHire>();
+  // Other builders' agents hired here on testnet, each its own testnet identity.
+  for (const j of outside) {
+    if (!j.here || !["FUNDED", "SUBMITTED", "COMPLETED"].includes(j.status) || j.createdAt < CAMPAIGN_STARTS) continue;
+    const id = `97:${j.tokenId}`;
+    if (byAgent.has(id)) continue;
+    byAgent.set(id, { agentId: id, agentName: `${j.name} (testnet)`, category: (j.category as CountedHire["category"]) ?? null, kind: "escrow-job", tx: j.fundedTx ?? j.submitTx, at: j.createdAt, network: "testnet" });
+  }
   for (const j of [...jobs].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
     if (!j.here || !["FUNDED", "SUBMITTED", "COMPLETED"].includes(j.status) || j.createdAt < CAMPAIGN_STARTS) continue;
     const id = `97:${j.tokenId}`;

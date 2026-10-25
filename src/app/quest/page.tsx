@@ -26,6 +26,9 @@ import type { TestnetPackAgent } from "@/components/x/TestnetPack";
 import { testnetProviderFor } from "@/lib/escrow/testnet-jobs";
 import { HOUSE_BUDGET } from "@/lib/escrow/contracts";
 import { hirePauseForSlug } from "@/lib/market/paused";
+import TestnetAgents from "@/components/x/TestnetAgents";
+import { testnetListings, testnetSellers } from "@/lib/testnet/sellers";
+import { warm } from "@/lib/data/snapshots";
 
 /*
   The pack's two agents: ours, so a delivery within the escrow policy's
@@ -66,7 +69,7 @@ const priceOf = (o: ReturnType<typeof offerFor>, label: string | null): string |
  */
 export default async function QuestPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await countArrival("/quest", await searchParams);
-  await live();
+  await Promise.all([live(), warm(["testnet-sellers"])]);
   const picks = await questPicks();
   const pack: PackAgent[] = listings()
     .map((l) => ({ l, slug: houseSlug(l.tokenId) }))
@@ -175,6 +178,7 @@ export default async function QuestPage({ searchParams }: { searchParams: Promis
         <section className="k-section k-section--tight bd-qbody">
           <div className="k-wrap">
             <QuestBoard cards={cards} campaign={CAMPAIGN} pack={pack} testnetPack={testnetPack} ended={ended} />
+            {ended ? null : <TestnetAgents agents={testnetListings()} checkedAt={testnetSellers().at} />}
           </div>
         </section>
       </div>

@@ -614,6 +614,14 @@
 .bd-qjob__alt:hover { color: var(--c-text); }
 .bd-qjob__none { margin: auto 0 0; font-size: 0.9375rem; color: var(--c-text-3); }
 .bd-quest__fine { margin-top: -20px; }
+/* Other builders' agents on testnet, in the quest's own card. */
+.bd-tnet { margin-top: 8px; }
+.bd-tnet__name { font: 600 1.0625rem/1.25 var(--f-display); letter-spacing: -0.015em; color: var(--c-text); }
+.bd-tnet__what { margin: 0; font-size: 0.875rem; line-height: 1.45; color: var(--c-text-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.bd-tnhire { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+.bd-tnhire__note { margin: 0; font-size: 0.8125rem; line-height: 1.5; color: var(--c-text-2); }
+.bd-tnhire__job { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 8px; margin: 0; font-size: 0.875rem; line-height: 1.45; color: var(--c-text-2); }
+.bd-questpage .bd-tnhire .x-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 14px; border: 0; border-radius: 10px; font: 600 0.875rem/1 var(--f-sans); color: var(--c-text); text-decoration: none; background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1px var(--k-hair-strong), var(--k-top-light); cursor: pointer; }
 
 @media (max-width: 1180px) { .bd-qjobs__list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 1023px) { .bd-qsteps { grid-template-columns: minmax(0, 1fr); } .bd-qprog { grid-template-columns: minmax(0, 1fr); } }

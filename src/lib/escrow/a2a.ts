@@ -23,7 +23,7 @@
 
 import { getAddress, isAddress, type Address } from "viem";
 import { safeFetch } from "@/lib/net/safe-fetch";
-import { ESCROW } from "./contracts";
+import { ESCROW, ESCROW_TESTNET } from "./contracts";
 import { checkSdkQuote, isSdkQuote, type SdkQuote } from "./sdk";
 
 export interface EscrowQuote {
@@ -114,11 +114,21 @@ export async function escrowSeller(services: { name?: string; endpoint?: string 
   const a2a = services.find((s) => /^a2a$/i.test(s.name ?? "") && /^https:/i.test(s.endpoint ?? ""))?.endpoint;
   if (!a2a) return null;
   const listed = services.find((s) => /agent.?card/i.test(s.name ?? "") && /^https:/i.test(s.endpoint ?? ""))?.endpoint;
-  const origin = new URL(a2a).origin;
+  const at = new URL(a2a);
+  const origin = at.origin;
+  /*
+    A query on the registered endpoint chooses something, usually the network
+    (our testnet identities register /a2a/<agent>?chain=97). The card is read
+    from the path without it, and the query is kept on the endpoint the card
+    names: it used to land mid-path, and the card's own URL then dropped it,
+    so a testnet seller was asked for a mainnet price.
+  */
+  const query = at.search;
+  const bare = query ? a2a.slice(0, a2a.length - query.length) : a2a;
   // Some cards list the agent card itself as the A2A service.
-  const isCard = /\/\.well-known\/agent(-card)?\.json$/i.test(a2a);
+  const isCard = /\/\.well-known\/agent(-card)?\.json$/i.test(bare);
   // The agent's own card before its host's: one host can serve several agents, each under its own path.
-  const tries = [listed, isCard ? a2a : null, `${a2a.replace(/\/$/, "")}/.well-known/agent-card.json`, `${origin}/.well-known/agent-card.json`].filter(Boolean) as string[];
+  const tries = [listed, isCard ? a2a : null, `${bare.replace(/\/$/, "")}/.well-known/agent-card.json`, `${origin}/.well-known/agent-card.json`].filter(Boolean) as string[];
   let read = false;
   for (const url of tries) {
     const res = await safeFetch(url, { timeoutMs: TIMEOUT, headers: { accept: "application/json" } }).catch(() => null);
@@ -139,7 +149,8 @@ export async function escrowSeller(services: { name?: string; endpoint?: string 
     }
     // The card names its own endpoint; it must be https, and the one the registration lists wins a tie.
     const named = [card.url, ...(card.supportedInterfaces ?? []).map((i) => i.url)].find((u) => typeof u === "string" && /^https:/i.test(u));
-    const endpoint = named ?? (isCard ? null : a2a);
+    const keepsQuery = named && query && !new URL(named).search && new URL(named).origin === origin;
+    const endpoint = named ? (keepsQuery ? `${named}${query}` : named) : isCard ? null : a2a;
     /*
       The card's own task examples, from its work skills (not the protocol
       ones). Several sellers read only a structured task, and say so: "send
@@ -164,12 +175,12 @@ export async function escrowSeller(services: { name?: string; endpoint?: string 
  * other wallet is refused, so a card pointed at someone else's server cannot
  * sell their work under its own name.
  */
-export async function negotiate(a2a: string, ask: string, opts: { signers: string[]; notify?: boolean; skill?: string } = { signers: [] }): Promise<EscrowQuote> {
+export async function negotiate(a2a: string, ask: string, opts: { signers: string[]; notify?: boolean; skill?: string; chainId?: 56 | 97 } = { signers: [] }): Promise<EscrowQuote> {
   return (await negotiateFull(a2a, ask, opts)).quote;
 }
 
 /** The quote, and for an SDK seller the signed answer itself, which the job's description must carry. */
-export async function negotiateFull(a2a: string, ask: string, opts: { signers: string[]; notify?: boolean; skill?: string }): Promise<{ quote: EscrowQuote; sdk: SdkQuote | null }> {
+export async function negotiateFull(a2a: string, ask: string, opts: { signers: string[]; notify?: boolean; skill?: string; chainId?: 56 | 97 }): Promise<{ quote: EscrowQuote; sdk: SdkQuote | null }> {
   const result = await rpc(a2a, { skill: opts.skill ?? "negotiate", task_description: ask, description: ask, terms: { deliverables: ask, quality_standards: QUALITY } });
   const sdk = findData(result, (o) => isSdkQuote(o) && ("negotiation_hash" in o || (o.response as { accepted?: boolean })?.accepted === false)) as SdkQuote | null;
   if (!sdk) {
@@ -181,7 +192,9 @@ export async function negotiateFull(a2a: string, ask: string, opts: { signers: s
     }
     return { quote: { ...quoteFrom(result, a2a), kind: "simple", notify: opts.notify ?? true }, sdk: null };
   }
-  const checked = await checkSdkQuote(sdk, { chainId: 56, commerce: ESCROW.commerce, token: ESCROW.paymentToken, signers: opts.signers });
+  // A testnet seller quotes for BNB's testnet kernel in test $U; each network's quote is checked against its own kernel and token.
+  const kernel = opts.chainId === 97 ? ESCROW_TESTNET : ESCROW;
+  const checked = await checkSdkQuote(sdk, { chainId: opts.chainId ?? 56, commerce: kernel.commerce, token: kernel.paymentToken, signers: opts.signers });
   const at = new Date().toISOString();
   if ("refused" in checked) {
     return { quote: { a2a, provider: NOBODY, price: "0", service: null, serviceName: null, needs: null, etaSeconds: null, at, unpayable: checked.refused, kind: "sdk", notify: opts.notify ?? false }, sdk };
@@ -266,14 +279,14 @@ export async function tryFree(a2a: string, task: string): Promise<unknown> {
 export async function quoteWith(
   seller: { url: string; notify: boolean; skill: string; examples: string[] },
   forms: { structured: string; plain: string; mark: (task: string) => string },
-  opts: { signers: string[] },
+  opts: { signers: string[]; chainId?: 56 | 97 },
 ): Promise<EscrowQuote> {
   const example = seller.examples[0] ? forms.mark(seller.examples[0]) : undefined;
   const asks = [...new Set([example, forms.structured, forms.plain].filter((x): x is string => Boolean(x && x.trim())))];
   let reason = "";
   for (const ask of asks) {
     try {
-      const q = await negotiate(seller.url, ask, { signers: opts.signers, notify: seller.notify, skill: seller.skill });
+      const q = await negotiate(seller.url, ask, { signers: opts.signers, notify: seller.notify, skill: seller.skill, chainId: opts.chainId });
       // The card's own example, kept unmarked: a hire marks it again on the way out.
       return { ...q, ...(seller.skill !== "negotiate" ? { skill: seller.skill } : {}), task: ask === example ? seller.examples[0]! : null, declined: null, askedAt: new Date().toISOString() };
     } catch (e) {

@@ -10,7 +10,9 @@
 
 import { parseAbi, type Address } from "viem";
 import { marketClient } from "@/lib/chain/market";
+import { testnetPublic } from "@/lib/chain/testnet";
 import { IDENTITY_REGISTRY } from "@/lib/config";
+import { ESCROW_TESTNET } from "@/lib/escrow/contracts";
 
 const REGISTRY = parseAbi(["function getAgentWallet(uint256) view returns (address)"]);
 const ZERO = /^0x0{40}$/i;
@@ -22,9 +24,9 @@ export function namedWallets(...wallets: (string | null | undefined)[]): string[
   return [...out.values()];
 }
 
-export async function quoteSigners(tokenId: string, entry: { owner?: string | null; card?: { agentWallet?: unknown } | null } | null | undefined): Promise<string[]> {
-  const onChain = await marketClient
-    .readContract({ address: IDENTITY_REGISTRY as Address, abi: REGISTRY, functionName: "getAgentWallet", args: [BigInt(tokenId)] })
-    .catch(() => null);
+/** On testnet (chain 97) the token is read from the testnet registry, where its own agent wallet is named. */
+export async function quoteSigners(tokenId: string, entry: { owner?: string | null; card?: { agentWallet?: unknown } | null } | null | undefined, chainId = 56): Promise<string[]> {
+  const read = { address: (chainId === 97 ? ESCROW_TESTNET.identity : IDENTITY_REGISTRY) as Address, abi: REGISTRY, functionName: "getAgentWallet", args: [BigInt(tokenId)] } as const;
+  const onChain = await (chainId === 97 ? testnetPublic() : marketClient).readContract(read).catch(() => null);
   return namedWallets(entry?.owner, typeof entry?.card?.agentWallet === "string" ? entry.card.agentWallet : null, onChain as string | null);
 }

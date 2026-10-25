@@ -28,7 +28,7 @@ export interface TestnetPackAgent {
 }
 
 /** BNB Chain's own faucets: its Telegram bot gives both test tokens; the web faucets one each. */
-const FAUCET = {
+export const FAUCET = {
   bot: "https://t.me/bnbchain_official_bot",
   botHandle: "@bnbchain_official_bot",
   u: "https://united-coin-u.github.io/u-faucet/",
@@ -43,7 +43,7 @@ type Eth = { request: (a: { method: string; params?: unknown[] }) => Promise<unk
 const eth = (): Eth | null => (typeof window === "undefined" ? null : ((window.ethereum as unknown as Eth | undefined) ?? null));
 
 /** Asks the wallet for BNB Smart Chain testnet, adding it first when the wallet does not know it. */
-async function toTestnet(): Promise<void> {
+export async function toTestnet(): Promise<void> {
   const e = eth();
   if (!e) throw new Error("No wallet in this browser.");
   try {

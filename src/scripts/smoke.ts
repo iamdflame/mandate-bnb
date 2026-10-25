@@ -245,6 +245,19 @@ async function main() {
     record("/api/proof/rerun", false, `expected JSON, got ${rerun.status}`);
   }
 
+  // Other builders' agents, free on testnet: a list with live signed prices, and the quest offers them.
+  {
+    const r = await get("/api/v1/testnet/agents");
+    try {
+      const j = JSON.parse(r.text) as { data: { hireable: number; agents: { ours: boolean; hireable: boolean }[] } };
+      const outside = j.data.agents.filter((a) => a.hireable && !a.ours).length;
+      record("/api/v1/testnet/agents: other builders' agents are hireable on testnet", outside >= 5, `${outside} outside, ${j.data.hireable} in all`);
+    } catch {
+      record("/api/v1/testnet/agents", false, `expected JSON, got ${r.status}`);
+    }
+  }
+  await page("/quest", [{ name: "other builders' testnet agents are offered", test: (h) => (h.includes('id="testnet"') && /more agents, free on testnet/.test(h)) || "no testnet section" }]);
+
   // The seller's door: a real token placed on the ladder, with the next step named.
   await page("/list?id=342379", [
     { name: "a token is placed on the ladder", test: (h) => /Rung \d\s*of 5/.test(h.replace(/<[^>]+>/g, "").replace(/\s+/g, " ")) || "no rung on the page" },

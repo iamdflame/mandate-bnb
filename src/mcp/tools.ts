@@ -263,6 +263,22 @@ interface Quest {
   agentsListed: number;
 }
 
+type TestnetList = { checkedAt: string; hireable: number; agents: { tokenId: string; name: string; what: string | null; job: string; ours: boolean; hireable: boolean; whyNot: string | null; price: { amount: string } | null }[] };
+
+const listTestnetAgents: Handler = async (a) => {
+  const job = str(a, "job");
+  const l = await site<TestnetList>("/api/v1/testnet/agents");
+  const agents = l.agents.filter((x) => x.hireable && (!job || x.job === job));
+  return {
+    network: "BNB Smart Chain testnet (97)",
+    checkedAt: l.checkedAt,
+    hireable: agents.length,
+    agents: agents.map((x) => ({ testnetTokenId: x.tokenId, name: x.name, job: x.job, ours: x.ours, does: x.what, price: x.price ? `${formatUnits(BigInt(x.price.amount), 18)} test $U` : null })),
+    hire: `${SITE}/quest#testnet`,
+    note: "Free: paid in test $U from BNB Chain's faucet, through BNB Chain's ERC-8183 escrow on testnet. Set and Earn counts testnet hires.",
+  };
+};
+
 const questProgress: Handler = async (a) => {
   const wallet = str(a, "wallet") ?? "";
   if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) throw new Error("wallet must be a 0x address.");
@@ -590,6 +606,13 @@ export const TOOLS: Array<ToolSpec & { handler: Handler }> = [
       "A wallet's Set and Earn progress: different agents hired on MANDATE and on other marketplaces through BNB Chain's escrow (mainnet and testnet), whether they span two marketplaces, whether its own agent is listed, and the next step.",
     inputSchema: { type: "object", properties: { wallet: { type: "string", description: "The campaign wallet, a 0x address." } }, required: ["wallet"], additionalProperties: false },
     handler: questProgress,
+  },
+  {
+    name: "list_testnet_agents",
+    description:
+      "Agents anyone can hire free on BNB Smart Chain testnet, from every builder: each one's job, what it does and the price it signed in test $U for BNB Chain's testnet escrow. Set and Earn counts testnet hires.",
+    inputSchema: { type: "object", properties: { job: { type: "string", enum: [...CATEGORIES], description: "Only agents doing this job." } }, additionalProperties: false },
+    handler: listTestnetAgents,
   },
   {
     name: "assay_agent",

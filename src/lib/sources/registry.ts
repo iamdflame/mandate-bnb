@@ -28,11 +28,13 @@
  */
 
 import { gunzipSync } from "node:zlib";
-import { createPublicClient, http, type Address } from "viem";
+import { createPublicClient, http, type Address, type PublicClient } from "viem";
 import { bsc } from "viem/chains";
 import { CHAIN_ID, IDENTITY_REGISTRY, RPC_FALLBACKS, RPC_URL } from "@/lib/config";
 import { memo } from "@/lib/cache";
 import { safeFetch } from "@/lib/net/safe-fetch";
+import { testnetPublic } from "@/lib/chain/testnet";
+import { ESCROW_TESTNET } from "@/lib/escrow/contracts";
 
 const ERC721 = [
   {
@@ -103,6 +105,16 @@ async function anyClient<T>(fn: (c: (typeof clients)[number]) => Promise<T>): Pr
     }
   }
   return null;
+}
+
+/**
+ * Which registry a chain's agents are on, and how to read it: mainnet's
+ * providers in turn, or testnet's own client (BNB Smart Chain testnet holds a
+ * second ERC-8004 registry, where Set and Earn's free hires are made).
+ */
+function registryOn(chainId: number): { address: Address; read: <T>(fn: (c: PublicClient) => Promise<T>) => Promise<T | null> } {
+  if (chainId === 97) return { address: ESCROW_TESTNET.identity, read: (fn) => fn(testnetPublic()).catch(() => null) };
+  return { address: IDENTITY_REGISTRY as Address, read: (fn) => anyClient((c) => fn(c as unknown as PublicClient)) };
 }
 
 /**
@@ -254,10 +266,11 @@ export function readServices(card: Record<string, unknown> | null): CardService[
 async function readEntryUncached(chainId: number, tokenId: string): Promise<RegistryEntry | null> {
   if (!/^\d{1,20}$/.test(tokenId)) return null;
   const id = BigInt(tokenId);
+  const reg = registryOn(chainId);
 
-  const owner = await anyClient((c) =>
+  const owner = await reg.read((c) =>
     c.readContract({
-      address: IDENTITY_REGISTRY as Address,
+      address: reg.address,
       abi: ERC721,
       functionName: "ownerOf",
       args: [id],
@@ -269,15 +282,15 @@ async function readEntryUncached(chainId: number, tokenId: string): Promise<Regi
   if (!owner) return null;
 
   const [uri, blockNumber] = await Promise.all([
-    anyClient((c) =>
+    reg.read((c) =>
       c.readContract({
-        address: IDENTITY_REGISTRY as Address,
+        address: reg.address,
         abi: ERC721,
         functionName: "tokenURI",
         args: [id],
       }),
     ),
-    anyClient((c) => c.getBlockNumber()),
+    reg.read((c) => c.getBlockNumber()),
   ]);
 
   const { card, source, error } = await readCard(uri ?? "");

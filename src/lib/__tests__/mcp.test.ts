@@ -24,6 +24,7 @@ const READ_TOOLS = [
   "check_agent",
   "build_prompt",
   "quest_progress",
+  "list_testnet_agents",
   "assay_agent",
   "check_duplication",
   "read_receipt",

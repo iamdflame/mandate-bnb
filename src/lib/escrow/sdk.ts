@@ -131,7 +131,7 @@ export async function checkSdkQuote(
   }
   const hash = keccak256(stringToHex(pyJson(content)));
   if (hash.toLowerCase() !== q.negotiation_hash.toLowerCase()) return { refused: "its quote's hash does not match its terms" };
-  if (q.chain_id !== undefined && Number(q.chain_id) !== want.chainId) return { refused: `it settles on chain ${q.chain_id}, not BNB Smart Chain` };
+  if (q.chain_id !== undefined && Number(q.chain_id) !== want.chainId) return { refused: `it settles on chain ${q.chain_id}, not ${want.chainId === 97 ? "BNB Smart Chain testnet" : "BNB Smart Chain"}` };
   if (q.verifying_contract && (!isAddress(q.verifying_contract) || getAddress(q.verifying_contract) !== getAddress(want.commerce))) {
     return { refused: "its escrow is a different contract from the ERC-8183 kernel we use" };
   }

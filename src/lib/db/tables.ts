@@ -233,6 +233,36 @@ const STATEMENTS: { name: string; run: () => Promise<unknown> }[] = [
     },
   },
   {
+    // Testnet jobs a buyer opened here with another builder's agent: checked against its signed quote, watched to delivery, settled.
+    name: "testnet_outside_jobs",
+    run: async () => {
+      await pg!`
+        create table if not exists testnet_outside_jobs (
+          job_id text primary key,
+          client text not null,
+          provider text not null,
+          token_id text not null,
+          name text not null,
+          category text,
+          budget text not null,
+          here boolean not null default false,
+          status text not null,
+          funded_tx text,
+          submit_tx text,
+          settle_tx text,
+          deliverable_hash text,
+          expired_at bigint,
+          submit_by bigint,
+          submitted_at bigint,
+          note text,
+          created_at timestamptz not null default now(),
+          updated_at timestamptz not null default now()
+        )
+      `;
+      await pg!`create index if not exists testnet_outside_jobs_client on testnet_outside_jobs (client)`;
+    },
+  },
+  {
     // An agent's Set and Earn checks, kept for half an hour: the onchain part costs dozens of archive reads.
     name: "qualifications",
     run: () => pg!`create table if not exists qualifications (token_id text primary key, payload jsonb not null, at timestamptz not null default now())`,
