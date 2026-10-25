@@ -47,8 +47,9 @@ export const checkable = (r: PaidCallRecord): boolean =>
 /** Another recorded call already claims this transaction. */
 async function claimed(tx: string, id: string): Promise<boolean> {
   if (!pg) return false;
-  const rows = (await pg`select 1 from paid_calls where lower(tx) = ${tx.toLowerCase()} and id <> ${id} limit 1`.catch(() => [])) as unknown[];
-  return rows.length > 0;
+  // Unread counts as claimed: one payment is never credited to two calls because the record could not be asked.
+  const rows = (await pg`select 1 from paid_calls where lower(tx) = ${tx.toLowerCase()} and id <> ${id} limit 1`.catch(() => null)) as unknown[] | null;
+  return rows === null || rows.length > 0;
 }
 
 async function recentTransfers(p: Payment): Promise<{ tx: string; block: number; value: bigint }[]> {

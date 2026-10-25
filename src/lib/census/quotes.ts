@@ -59,7 +59,13 @@ export async function refreshEscrowQuotes(opts: { budgetMs: number }): Promise<s
           delete quotes[a.tokenId];
           continue;
         }
-        const signers = await quoteSigners(a.tokenId, e);
+        const signers = await quoteSigners(a.tokenId, e).catch(() => null);
+        if (!signers) {
+          // Its wallets could not be read: the last price stands, and it waits its turn again.
+          failed += 1;
+          if (quotes[a.tokenId]) quotes[a.tokenId] = { ...quotes[a.tokenId]!, askedAt: new Date().toISOString() };
+          continue;
+        }
         const structured = taskFor(a.category ?? null, a.name ?? `Agent ${a.tokenId}`, { wallet: DEMO_ADDRESS });
         asked += 1;
         const q = await withTimeout(

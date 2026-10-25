@@ -19,5 +19,8 @@ export async function trackingAnswer<T>(request: Request, address: string, read:
   if (!isAddress(wallet)) return fail(400, "Give a wallet address: 0x followed by 40 hex characters.", CHAIN_ID, g.headers);
   await live();
   const [data, block] = await Promise.all([read(wallet), withTimeout(marketClient.getBlockNumber().catch(() => null), 5_000)]);
+  // A count read in part is not a count: whoever reads this (BNB Chain among them) is told to ask again, not handed a smaller number.
+  const unread = (data as { unread?: string[] } | null)?.unread;
+  if (unread?.length) return fail(503, `Some records could not be read just now (${unread.join(", ")}), so this answer would be short. Try again in a minute.`, CHAIN_ID, { ...g.headers, "retry-after": "30" });
   return ok(data, { chainId: CHAIN_ID, blockNumber: block ?? null }, g.headers);
 }

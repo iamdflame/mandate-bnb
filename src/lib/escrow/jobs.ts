@@ -37,7 +37,7 @@ import { isManifest, manifestFor, manifestHash, pyJson, readSignedDescription } 
 import { subjectOfTask } from "./seller";
 import { safeFetch } from "@/lib/net/safe-fetch";
 import { quoteSigners } from "./signers";
-import { readRegistryEntry } from "@/lib/sources/registry";
+import { readRegistryEntry, RegistryUnreadable } from "@/lib/sources/registry";
 
 export interface EscrowJob {
   jobId: string;
@@ -318,8 +318,11 @@ async function recordOutside(jobId: bigint, fundTx: Hash, job: OnChainJob, o: { 
   const signed = await readSignedDescription(job.description);
   if (signed && "refused" in signed) return { refused: `That job's description fails its own check: ${signed.refused}.`, status: 400 };
   if (signed) {
-    const entry = await readRegistryEntry(o.tokenId).catch(() => null);
-    const names = (await quoteSigners(o.tokenId, entry)).map((w) => w.toLowerCase());
+    const entry = await readRegistryEntry(o.tokenId).catch((e: unknown) => (e instanceof RegistryUnreadable ? e : null));
+    const signerList = entry instanceof RegistryUnreadable ? null : await quoteSigners(o.tokenId, entry).catch(() => null);
+    // The registry could not be asked: not a finding about the job, which is read again on the next pass.
+    if (!signerList) return { refused: "The identity registry did not answer just now, so this job's quote cannot be checked yet. It is checked again shortly.", status: 503 };
+    const names = signerList.map((w) => w.toLowerCase());
     if (!names.includes(signed.signer.toLowerCase())) return { refused: "That job's quote is signed by a wallet this agent's registration does not name.", status: 400 };
     if (signed.signer.toLowerCase() !== job.provider.toLowerCase()) return { refused: "That job names a different provider from the wallet that signed its quote.", status: 400 };
     if (job.budget < signed.price) return { refused: "That job holds less than the signed price.", status: 400 };
@@ -477,8 +480,8 @@ export async function missedEscrowJobs(): Promise<Map<string, { jobId: string; a
     select distinct on (token_id) token_id, job_id, status, submitted_at, expired_at, note
     from escrow_jobs where slug = '' order by token_id, created_at desc
   `) as { token_id: string; job_id: string; status: string; submitted_at: string | number | null; expired_at: string | number | null; note: string | null }[];
-  const window = await disputeWindow().catch(() => null);
-  if (window === null) return new Map();
+  // Without the window no deadline can be told; an empty answer here would put every seller that missed one back on sale.
+  const window = await disputeWindow();
   const now = BigInt(Math.floor(Date.now() / 1000));
   const out = new Map<string, { jobId: string; at: string }>();
   for (const r of rows) {
@@ -487,8 +490,9 @@ export async function missedEscrowJobs(): Promise<Map<string, { jobId: string; a
     const deadline = submitBy(Number(r.expired_at), window);
     // Two minutes' grace for a submission still being mined.
     if (now <= deadline + 120n) continue;
+    // Only a reading that shows it delivered clears it: a job the chain could not be asked about stays missed, as our record has it.
     const job = await readJob(BigInt(r.job_id)).catch(() => null);
-    if (!job || (job.status !== "FUNDED" && job.status !== "EXPIRED")) continue;
+    if (job && job.status !== "FUNDED" && job.status !== "EXPIRED") continue;
     out.set(r.token_id, { jobId: r.job_id, at: new Date(Number(deadline) * 1000).toISOString() });
   }
   return out;

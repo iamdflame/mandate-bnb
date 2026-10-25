@@ -52,7 +52,8 @@ export async function POST(request: Request) {
   const s = testnetSellers().agents[tokenId];
   if (!s || s.ours) return fail(404, "That agent is not another builder's testnet seller on our list.", TESTNET, g.headers);
   const entry = await readRegistryEntry(tokenId, TESTNET).catch(() => null);
-  const signers = await quoteSigners(tokenId, entry, TESTNET);
+  const signers = await quoteSigners(tokenId, entry, TESTNET).catch(() => null);
+  if (!signers) return fail(503, "The identity registry did not answer just now, so the agent's quote cannot be checked. Try again in a minute.", TESTNET, g.headers);
   // The form this seller priced before: its card's example, or our task for its job about the buyer's wallet.
   const bnbUsd = s.category === "grid-trading" ? await poolNow().then((p) => p.usdtPerBnb, () => null) : null;
   const task = s.quote?.task ? attributed(s.quote.task) : taskFor(s.category, s.name, { wallet }, { bnbUsd });

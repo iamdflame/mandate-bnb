@@ -26,7 +26,7 @@ import { CATEGORY_LABEL, IDENTITY_REGISTRY, PROTOCOLS, type Category } from "@/l
 import { findAgent } from "@/lib/data/agents";
 import { listings } from "@/lib/market/listing";
 import { listPaidCalls } from "@/lib/market/paid-calls";
-import { readRegistryEntry } from "@/lib/sources/registry";
+import { readRegistryEntry, RegistryUnreadable } from "@/lib/sources/registry";
 import { readJob } from "@/lib/escrow/jobs";
 import { isTeam } from "@/lib/team";
 import { withTimeout } from "@/lib/cache";
@@ -61,6 +61,8 @@ export interface Qualification {
   checks: Check[];
   actions: Action[];
   hirers: { wallet: string; via: string; team: boolean }[];
+  /** Some record behind a check could not be read: shown, and read again, never kept. */
+  incomplete?: boolean;
   at: string;
   /** Its onchain actions are still being read; the first four checks stand. */
   reading?: boolean;
@@ -252,7 +254,13 @@ async function findTx(c: PublicClient, wallet: Address, nonce: number, from: big
 
 /* --------------------------------------------------------- the checks */
 
-async function hirersOf(tokenId: string, wallets: string[], owner: string | null): Promise<Qualification["hirers"]> {
+/** The hirers found, and whether every record they come from was read: a partial count is not a count. */
+async function hirersOf(tokenId: string, wallets: string[], owner: string | null): Promise<{ hirers: Qualification["hirers"]; complete: boolean }> {
+  let complete = true;
+  const unread = <T,>(fallback: T) => () => {
+    complete = false;
+    return fallback;
+  };
   const mine = new Set([...wallets, owner ?? ""].map((w) => w.toLowerCase()));
   // MANDATE's own agents: every declared MANDATE wallet is theirs too, so none of them counts as an outside hirer.
   const ours = isTeam(owner);
@@ -261,19 +269,19 @@ async function hirersOf(tokenId: string, wallets: string[], owner: string | null
     const k = (w ?? "").toLowerCase();
     if (k && !mine.has(k) && !(ours && isTeam(k)) && !found.has(k)) found.set(k, via);
   };
-  for (const c of await listPaidCalls().catch(() => [])) if (c.tokenId === tokenId && c.paid && c.delivered) add(c.payer, "a paid call on MANDATE");
+  for (const c of await listPaidCalls().catch(unread([]))) if (c.tokenId === tokenId && c.paid && c.delivered) add(c.payer, "a paid call on MANDATE");
   if (pg) {
     await ensureTables();
-    const here = (await pg`select client from escrow_jobs where token_id = ${tokenId} and status in ('SUBMITTED', 'COMPLETED')`.catch(() => [])) as { client: string }[];
+    const here = (await pg`select client from escrow_jobs where token_id = ${tokenId} and status in ('SUBMITTED', 'COMPLETED')`.catch(unread([]))) as { client: string }[];
     for (const r of here) add(r.client, "an escrowed job on MANDATE");
     // Jobs funded to its wallets on the shared ERC-8183 kernel, from any marketplace; completed is what the kernel says now.
-    const kernel = (await pg`select job_id, client from kernel_jobs where provider in ${pg(wallets.map((w) => w.toLowerCase()))} order by block desc limit 40`.catch(() => [])) as { job_id: string; client: string }[];
-    const states = await pool(kernel, 6, (k) => readJob(BigInt(k.job_id)).then((j) => j.status, () => null));
+    const kernel = (await pg`select job_id, client from kernel_jobs where provider in ${pg(wallets.map((w) => w.toLowerCase()))} order by block desc limit 40`.catch(unread([]))) as { job_id: string; client: string }[];
+    const states = await pool(kernel, 6, (k) => readJob(BigInt(k.job_id)).then((j) => j.status, unread(null)));
     kernel.forEach((k, i) => {
       if (states[i] === "SUBMITTED" || states[i] === "COMPLETED") add(k.client, `escrowed job #${k.job_id} on the ERC-8183 kernel`);
     });
   }
-  return [...found.entries()].map(([wallet, via]) => ({ wallet, via, team: isTeam(wallet) }));
+  return { hirers: [...found.entries()].map(([wallet, via]) => ({ wallet, via, team: isTeam(wallet) })), complete };
 }
 
 /** The kept result, when it is younger than half an hour. */
@@ -293,7 +301,8 @@ export async function qualify(tokenId: string, opts: { fresh?: boolean } = {}): 
     if (kept) return kept;
   }
   const out = await compute(tokenId, true);
-  if (pg) await pg`insert into qualifications (token_id, payload, at) values (${tokenId}, ${JSON.stringify(out)}::jsonb, now()) on conflict (token_id) do update set payload = excluded.payload, at = now()`.catch(() => undefined);
+  // A result read in part is shown, never kept: the next visitor gets a fresh reading.
+  if (pg && !out.incomplete) await pg`insert into qualifications (token_id, payload, at) values (${tokenId}, ${JSON.stringify(out)}::jsonb, now()) on conflict (token_id) do update set payload = excluded.payload, at = now()`.catch(() => undefined);
   return out;
 }
 
@@ -302,7 +311,20 @@ async function compute(tokenId: string, onchain: boolean): Promise<Qualification
   const push = (id: CheckId, state: CheckState, detail: string) => checks.push({ id, label: LABEL[id], state, detail });
   const agent = findAgent(tokenId);
   const listing = listings().find((l) => l.tokenId === tokenId) ?? null;
-  const entry = await withTimeout(readRegistryEntry(tokenId).catch(() => null), 12_000);
+  let incomplete = false;
+  // Wrapped, so a read that ran out of time is told apart from a token the registry denies.
+  const got = await withTimeout(
+    readRegistryEntry(tokenId).then(
+      (e) => ({ e }),
+      (err: unknown) => {
+        if (err instanceof RegistryUnreadable) incomplete = true;
+        return { e: null };
+      },
+    ),
+    12_000,
+  );
+  if (got === null) incomplete = true;
+  const entry = got?.e ?? null;
   const c = archive();
   const onChainWallet = c ? await marketClient.readContract({ address: IDENTITY_REGISTRY as Address, abi: REGISTRY, functionName: "getAgentWallet", args: [BigInt(tokenId)] }).catch(() => null) : null;
   const owner = entry?.owner ?? agent?.owner ?? null;
@@ -328,7 +350,8 @@ async function compute(tokenId: string, onchain: boolean): Promise<Qualification
     );
 
   // 2. Discoverable.
-  if (!agent?.name && !entry) push("discoverable", "fail", "Its registration does not resolve to a card we can read.");
+  if (!agent?.name && !entry && incomplete) push("discoverable", "unknown", "The registry did not answer just now, so its card could not be read. Check again in a minute.");
+  else if (!agent?.name && !entry) push("discoverable", "fail", "Its registration does not resolve to a card we can read.");
   else if (!category) push("discoverable", "fail", "Its card does not say which job it does in words we can file: say yield, grid trading, rebalancing or health factor.");
   else push("discoverable", "pass", `Its card resolves and files it under ${CATEGORY_LABEL[category]}.`);
 
@@ -339,11 +362,13 @@ async function compute(tokenId: string, onchain: boolean): Promise<Qualification
   else push("live", "fail", answered ? `It last answered ${new Date(answered).toUTCString().slice(5, 22)} UTC, more than a day ago.` : "It did not answer our last call as an agent.");
 
   // 4. Hired by others.
-  const hirers = wallets.length ? await withTimeout(hirersOf(tokenId, wallets, owner), 20_000) ?? [] : [];
+  const read = wallets.length ? ((await withTimeout(hirersOf(tokenId, wallets, owner), 20_000)) ?? { hirers: [], complete: false }) : { hirers: [], complete: true };
+  const hirers = read.hirers;
+  if (!read.complete) incomplete = true;
   push(
     "hired",
-    hirers.length >= 3 ? "pass" : "pending",
-    `${hirers.length} different wallet${hirers.length === 1 ? "" : "s"} that ${hirers.length === 1 ? "is" : "are"} not its own ${hirers.length === 1 ? "has" : "have"} completed a hire (3 needed)${hirers.length ? `: ${hirers.map((h) => `${h.wallet.slice(0, 8)}… (${h.via}${h.team ? ", MANDATE's own wallet" : ""})`).join("; ")}` : ""}. Counted from hires through MANDATE and escrowed jobs on the shared kernel; per-call hires on other marketplaces are not seen here. BNB Chain also excludes wallets you fund.`,
+    hirers.length >= 3 ? "pass" : read.complete ? "pending" : "unknown",
+    `${hirers.length} different wallet${hirers.length === 1 ? "" : "s"} that ${hirers.length === 1 ? "is" : "are"} not its own ${hirers.length === 1 ? "has" : "have"} completed a hire (3 needed)${hirers.length ? `: ${hirers.map((h) => `${h.wallet.slice(0, 8)}… (${h.via}${h.team ? ", MANDATE's own wallet" : ""})`).join("; ")}` : ""}. Counted from hires through MANDATE and escrowed jobs on the shared kernel; per-call hires on other marketplaces are not seen here. BNB Chain also excludes wallets you fund.${read.complete ? "" : " Some records could not be read just now, so this may be short of the full count. Check again in a minute."}`,
   );
 
   // 5 and 6. Its own onchain actions, and whether they fit its job.
@@ -420,5 +445,5 @@ async function compute(tokenId: string, onchain: boolean): Promise<Qualification
     }
   }
 
-  return { tokenId, name: agent?.name ?? entry?.name ?? null, category, owner, wallets, checks, actions, hirers, at: new Date().toISOString(), ...(onchain ? {} : { reading: true }) };
+  return { tokenId, name: agent?.name ?? entry?.name ?? null, category, owner, wallets, checks, actions, hirers, at: new Date().toISOString(), ...(onchain ? {} : { reading: true }), ...(incomplete ? { incomplete: true } : {}) };
 }

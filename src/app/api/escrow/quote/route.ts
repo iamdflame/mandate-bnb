@@ -59,7 +59,8 @@ export async function POST(request: Request) {
   if (!known) return fail(404, "That agent has no escrow seller on record here.", CHAIN_ID, g.headers);
   const agent = findAgent(tokenId);
   const entry = await readRegistryEntry(tokenId).catch(() => null);
-  const signers = await quoteSigners(tokenId, entry);
+  const signers = await quoteSigners(tokenId, entry).catch(() => null);
+  if (!signers) return fail(503, "The identity registry did not answer just now, so the agent's quote cannot be checked. Try again in a minute.", CHAIN_ID, g.headers);
   // A grid's blank bounds are set around the price now, so the agent gets a band it can plan inside.
   const bnbUsd = agent?.category === "grid-trading" ? await poolNow().then((p) => p.usdtPerBnb, () => null) : null;
   // A seller priced on its card's own example reads only that form: the buyer's edit of it, or the example itself.

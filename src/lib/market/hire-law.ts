@@ -72,7 +72,14 @@ export async function warmOutcomes(): Promise<void> {
 
 /** What happened when we last paid each agent: the database's record when warm, the committed file otherwise. */
 function history(): Map<string, Outcome> {
-  if (fromDb && Date.now() - fromDb.at < 5 * 60_000) return fromDb.map;
+  /*
+    The database's record, however long ago it was read: a failed refresh
+    keeps it, and it is newer than the copy committed with the code. Falling
+    back to that copy after five minutes put back every seller pulled since
+    the commit and took off every one fixed since, which is the committed-
+    copy mistake of 19 Oct in another place.
+  */
+  if (fromDb) return fromDb.map;
   if (!cached || Date.now() - cached.at > 60_000) {
     cached = { at: Date.now(), map: outcomes(paidCallsFromFile()) };
   }

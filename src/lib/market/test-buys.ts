@@ -67,7 +67,9 @@ export async function testBuys(opts: { budgetMs: number; only?: string[] }): Pro
   if (!raw) return "no trial pool key on this deployment";
   const key = (raw.startsWith("0x") ? raw : `0x${raw}`) as Hex;
   const started = Date.now();
-  const calls = await listPaidCalls().catch(() => []);
+  // Spent today and who was tested when, read before anything is spent: without them the caps and the waits mean nothing.
+  const calls = await listPaidCalls().catch(() => null);
+  if (!calls) return "the paid-call record could not be read; nothing spent without it";
   const since = Date.now() - 24 * 3_600_000;
   let spent = calls.filter((c) => c.note?.startsWith("Daily test purchase") && Date.parse(c.at) > since).reduce((s, c) => s + BigInt(c.amount ?? "0"), 0n);
   const counts = await hireCounts().catch(() => null);

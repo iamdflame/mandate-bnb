@@ -32,6 +32,7 @@ import { STATE_WORD, trustOf, type ProofState } from "@/lib/market/trust";
 import { houseSlug, performanceOf } from "@/lib/market/performance";
 import { houseActivity } from "@/lib/house/runs";
 import { indexToken, readAgain } from "@/lib/registry/tail";
+import { RegistryUnreadable } from "@/lib/sources/registry";
 import { listPaidCalls } from "@/lib/market/paid-calls";
 import { buriedFor, graveAnchor, graveyard } from "@/lib/market/graveyard";
 import { HOUSE_LEASHES } from "@/lib/chain/house";
@@ -125,7 +126,10 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
   */
   const known = findAgent(tokenId);
   // A row kept without its card is read again, at most once an hour.
-  const agent = known && !readAgain(known) ? known : ((/^\d{1,20}$/.test(tokenId) ? await indexToken(tokenId, "view").catch(() => null) : null) ?? known);
+  // A registry that did not answer is a page to try again, never a 404 for an agent that exists.
+  const read = known && !readAgain(known) ? null : /^\d{1,20}$/.test(tokenId) ? await indexToken(tokenId, "view").catch((e: unknown) => (e instanceof RegistryUnreadable ? e : null)) : null;
+  if (read instanceof RegistryUnreadable && !known) throw read;
+  const agent = known && !readAgain(known) ? known : ((read instanceof RegistryUnreadable ? null : read) ?? known);
   if (!agent) notFound();
 
   const hc = await hireCounts();

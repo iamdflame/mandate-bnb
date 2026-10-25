@@ -11,7 +11,7 @@
 
 import { CHAIN_ID, type Category } from "@/lib/config";
 import { withTimeout } from "@/lib/cache";
-import { readRegistryEntry } from "@/lib/sources/registry";
+import { readRegistryEntry, RegistryUnreadable } from "@/lib/sources/registry";
 import { endpointFor } from "@/lib/census/run";
 import { probe, type ProbeResult } from "@/lib/probe";
 import { readQuote, type Quote } from "@/lib/x402/quote";
@@ -60,7 +60,10 @@ export class ChainUnread extends Error {}
  */
 export async function checkListing(tokenId: string, opts: { liveAssay?: boolean } = {}): Promise<ListCheck> {
   const at = new Date().toISOString();
-  const entry = await readRegistryEntry(tokenId).catch(() => null);
+  const entry = await readRegistryEntry(tokenId).catch((e: unknown) => {
+    if (e instanceof RegistryUnreadable) throw new ChainUnread("BNB Smart Chain's identity registry did not answer just now, so we cannot tell whether this token exists. Try again in a minute.");
+    return null;
+  });
 
   if (!entry) {
     // `ownerOf` failing means either no such token or no chain. Ask the chain something it always answers.

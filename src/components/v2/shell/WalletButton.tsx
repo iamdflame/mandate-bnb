@@ -32,7 +32,8 @@ export default function WalletButton() {
     if (!address) return;
     fetch(`/api/v1/quest/${address}`, { cache: "no-store" })
       .then((r) => r.json())
-      .then((j) => setQuest({ hires: Number(j?.data?.across?.agents ?? j?.data?.here?.hires ?? 0), of: Number(j?.data?.campaign?.hires ?? 3) }))
+      // A partial answer (503) keeps the last count rather than showing none.
+      .then((j) => (j?.ok ? setQuest({ hires: Number(j?.data?.across?.agents ?? j?.data?.here?.hires ?? 0), of: Number(j?.data?.campaign?.hires ?? 3) }) : undefined))
       .catch(() => undefined);
   };
 

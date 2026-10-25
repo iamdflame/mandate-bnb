@@ -109,7 +109,13 @@ export async function testHires(opts: { budgetMs: number; dry?: boolean }): Prom
 
   // Spent in the last day: our escrowed checks and the daily test purchases, together.
   const [row] = (await pg`select coalesce(sum(budget::numeric), 0)::text as spent from escrow_jobs where client = ${me.toLowerCase()} and created_at > now() - interval '24 hours'`) as { spent: string }[];
-  const calls = await listPaidCalls().catch(() => []);
+  /*
+    What was spent today is read before anything is spent. A record that
+    could not be read used to count as nothing bought, and the daily cap
+    would then have been checked against too little.
+  */
+  const calls = await listPaidCalls().catch(() => null);
+  if (!calls) return "the paid-call record could not be read; nothing spent without it";
   const bought = calls.filter((c) => c.note?.startsWith("Daily test purchase") && Date.parse(c.at) > Date.now() - 86_400_000).reduce((s, c) => s + BigInt(c.amount ?? "0"), 0n);
   let spent = BigInt(row?.spent ?? "0") + bought;
 
@@ -161,7 +167,11 @@ export async function testHires(opts: { budgetMs: number; dry?: boolean }): Prom
     }
     const task = taskFor(c.category, c.name, inputs, { bnbUsd: pool?.usdtPerBnb ?? null });
     const entry = await readRegistryEntry(c.tokenId).catch(() => null);
-    const signers = await quoteSigners(c.tokenId, entry);
+    const signers = await quoteSigners(c.tokenId, entry).catch(() => null);
+    if (!signers) {
+      out.push(`#${c.tokenId}: the registry did not answer, so its quote could not be checked; tried again next pass`);
+      continue;
+    }
     const live = await negotiateFull(c.quote.a2a, task, { signers, notify: c.quote.notify, skill: c.quote.skill }).catch((e: Error) => ({ error: e.message }));
     if ("error" in live) {
       out.push(`#${c.tokenId}: no quote just now (${live.error.slice(0, 60)})`);

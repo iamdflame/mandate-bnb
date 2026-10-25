@@ -28,7 +28,7 @@
  */
 
 import { gunzipSync } from "node:zlib";
-import { createPublicClient, http, type Address, type PublicClient } from "viem";
+import { BaseError, ContractFunctionRevertedError, createPublicClient, http, type Address, type PublicClient } from "viem";
 import { bsc } from "viem/chains";
 import { CHAIN_ID, IDENTITY_REGISTRY, RPC_FALLBACKS, RPC_URL } from "@/lib/config";
 import { memo } from "@/lib/cache";
@@ -115,6 +115,39 @@ async function anyClient<T>(fn: (c: (typeof clients)[number]) => Promise<T>): Pr
 function registryOn(chainId: number): { address: Address; read: <T>(fn: (c: PublicClient) => Promise<T>) => Promise<T | null> } {
   if (chainId === 97) return { address: ESCROW_TESTNET.identity, read: (fn) => fn(testnetPublic()).catch(() => null) };
   return { address: IDENTITY_REGISTRY as Address, read: (fn) => anyClient((c) => fn(c as unknown as PublicClient)) };
+}
+
+/** No provider could be asked: not the same finding as a token that does not exist. */
+export class RegistryUnreadable extends Error {
+  constructor(chainId: number) {
+    super(`The ERC-8004 registry on chain ${chainId} could not be read just now.`);
+    this.name = "RegistryUnreadable";
+  }
+}
+
+const reverted = (e: unknown) => e instanceof BaseError && Boolean(e.walk((x) => x instanceof ContractFunctionRevertedError));
+
+/**
+ * A token's owner, or null when the registry says it was never minted.
+ *
+ * A provider that could not be reached is not the registry saying no: every
+ * read failing that way used to come back as null, so an RPC outage told a
+ * builder their agent was not registered and served its page as a 404. Only a
+ * revert is an answer; when no provider answers at all, this throws.
+ */
+async function ownerOf(chainId: number, id: bigint): Promise<Address | null> {
+  const readers = chainId === 97 ? [testnetPublic()] : (clients as unknown as PublicClient[]);
+  const address = registryOn(chainId).address;
+  let said = false;
+  for (const c of readers) {
+    try {
+      return (await c.readContract({ address, abi: ERC721, functionName: "ownerOf", args: [id] })) as Address;
+    } catch (e) {
+      if (reverted(e)) said = true;
+    }
+  }
+  if (said) return null;
+  throw new RegistryUnreadable(chainId);
 }
 
 /**
@@ -210,7 +243,7 @@ export async function readCard(
  * IPFS card read as unanswered: 71 agents were waiting on that alone. These
  * three served the same CIDs; ipfs.io stays last in case it serves again.
  */
-const IPFS_GATEWAYS = ["https://ipfs.filebase.io/ipfs/", "https://gw.ipfs-lens.dev/ipfs/", "https://gateway.pinata.cloud/ipfs/", "https://ipfs.io/ipfs/"];
+export const IPFS_GATEWAYS = ["https://ipfs.filebase.io/ipfs/", "https://gw.ipfs-lens.dev/ipfs/", "https://gateway.pinata.cloud/ipfs/", "https://ipfs.io/ipfs/"];
 
 const str = (v: unknown): string | null =>
   typeof v === "string" && v.trim() ? v.trim() : null;
@@ -268,17 +301,9 @@ async function readEntryUncached(chainId: number, tokenId: string): Promise<Regi
   const id = BigInt(tokenId);
   const reg = registryOn(chainId);
 
-  const owner = await reg.read((c) =>
-    c.readContract({
-      address: reg.address,
-      abi: ERC721,
-      functionName: "ownerOf",
-      args: [id],
-    }),
-  );
-
   // `ownerOf` reverts for a token that was never minted. That is the whole
   // existence test, and it is the registry's own answer rather than an index's.
+  const owner = await ownerOf(chainId, id);
   if (!owner) return null;
 
   const [uri, blockNumber] = await Promise.all([

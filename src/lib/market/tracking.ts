@@ -191,12 +191,21 @@ export interface WalletHires {
   ratings: RatingRow[];
 }
 
-export async function hiresOf(wallet: string): Promise<WalletHires> {
+/**
+ * `unread` collects each record that could not be read, so a caller can say
+ * the count is partial rather than serve a smaller number as the answer: an
+ * empty list used to stand in for a failed read here, and BNB reads this.
+ */
+export async function hiresOf(wallet: string, unread?: string[]): Promise<WalletHires> {
+  const miss = <T,>(what: string, fallback: T) => () => {
+    unread?.push(what);
+    return fallback;
+  };
   const [calls, jobs, escrow, ratings] = await Promise.all([
-    paidCallsOf(wallet).catch(() => []),
-    marketJobsOf(wallet).catch(() => []),
-    jobsOfClient(wallet).catch(() => []),
-    ratingsOf(wallet).catch(() => []),
+    paidCallsOf(wallet).catch(miss("paid calls", [])),
+    marketJobsOf(wallet).catch(miss("MandateMarket jobs", [])),
+    jobsOfClient(wallet).catch(miss("escrowed jobs", [])),
+    ratingsOf(wallet).catch(miss("ratings", [])),
   ]);
   const hires = [...paidCallHires(calls, wallet), ...escrowHires(escrow), ...jobs];
   return { wallet: wallet.toLowerCase(), team: isTeam(wallet), hires, byCategory: jobsCovered(hires), ratings };
@@ -336,19 +345,27 @@ export function acrossMarketplaces(
 }
 
 /** Jobs this wallet funded during the campaign that MANDATE did not open, on mainnet and on testnet. */
-async function elsewhereJobsOf(wallet: string): Promise<ElsewhereJob[]> {
-  if (!pg || !(await ensureTables().catch(() => false))) return [];
+async function elsewhereJobsOf(wallet: string, unread?: string[]): Promise<ElsewhereJob[]> {
+  if (!pg) return [];
+  if (!(await ensureTables().catch(() => false))) {
+    unread?.push("jobs on other marketplaces");
+    return [];
+  }
+  const miss = () => {
+    unread?.push("jobs on other marketplaces");
+    return [];
+  };
   const w = wallet.toLowerCase();
   type Row = { job_id: string; provider: string; tx: string; at: Date | string };
   const [main, test] = await Promise.all([
     pg`select k.job_id, k.provider, k.tx, k.at from kernel_jobs k
        where k.client = ${w} and k.at >= ${CAMPAIGN_STARTS} and k.at <= ${CAMPAIGN_ENDS}
-       and not exists (select 1 from escrow_jobs e where e.job_id = k.job_id)`.catch(() => []) as Promise<Row[]>,
+       and not exists (select 1 from escrow_jobs e where e.job_id = k.job_id)`.catch(miss) as Promise<Row[]>,
     // Testnet jobs opened here with our own agents are hires here, counted separately; the rest are elsewhere.
     pg`select t.job_id, t.provider, t.tx, t.at from testnet_jobs t
        where t.client = ${w} and t.at >= ${CAMPAIGN_STARTS} and t.at <= ${CAMPAIGN_ENDS}
        and not exists (select 1 from testnet_escrow_jobs e where e.job_id = t.job_id and e.here)
-       and not exists (select 1 from testnet_outside_jobs o where o.job_id = t.job_id and o.here)`.catch(() => []) as Promise<Row[]>,
+       and not exists (select 1 from testnet_outside_jobs o where o.job_id = t.job_id and o.here)`.catch(miss) as Promise<Row[]>,
   ]);
   const iso = (v: Date | string) => (v instanceof Date ? v.toISOString() : new Date(v).toISOString());
   return [
@@ -362,8 +379,12 @@ async function elsewhereJobsOf(wallet: string): Promise<ElsewhereJob[]> {
  * agents, opened through MANDATE, funded or further, one per agent. A testnet
  * agent is its own ERC-8004 identity, so it counts apart from its mainnet twin.
  */
-async function testnetHiresHere(wallet: string): Promise<CountedHire[]> {
-  const [jobs, outside] = await Promise.all([testnetJobsOfClient(wallet).catch(() => []), testnetOutsideOfClient(wallet).catch(() => [])]);
+async function testnetHiresHere(wallet: string, unread?: string[]): Promise<CountedHire[]> {
+  const miss = () => {
+    unread?.push("testnet hires");
+    return [];
+  };
+  const [jobs, outside] = await Promise.all([testnetJobsOfClient(wallet).catch(miss), testnetOutsideOfClient(wallet).catch(miss)]);
   const byAgent = new Map<string, CountedHire>();
   // Other builders' agents hired here on testnet, each its own testnet identity.
   for (const j of outside) {
@@ -402,6 +423,8 @@ async function providerDirectory(): Promise<(provider: string) => { tokenId: str
 }
 
 export interface QuestProgress {
+  /** Records that could not be read on this answer: present only when the counts are partial. */
+  unread?: string[];
   wallet: string;
   team: boolean;
   /** Different agents this wallet hired here with its own money, confirmed on chain, its own agents left out. */
@@ -436,7 +459,8 @@ export interface QuestProgress {
 }
 
 export async function questOf(wallet: string): Promise<QuestProgress> {
-  const [h, owned, jobs, directory, testnetHere] = await Promise.all([hiresOf(wallet), agentsOf(wallet), elsewhereJobsOf(wallet), providerDirectory(), testnetHiresHere(wallet)]);
+  const unread: string[] = [];
+  const [h, owned, jobs, directory, testnetHere] = await Promise.all([hiresOf(wallet, unread), agentsOf(wallet), elsewhereJobsOf(wallet, unread), providerDirectory(), testnetHiresHere(wallet, unread)]);
   const agentsHired = [...countedHires(h.hires, owned.map((a) => a.agentId)), ...(h.team ? [] : testnetHere)];
   const across = h.team
     ? { elsewhere: [], agents: 0, twoMarketplaces: false }
@@ -446,6 +470,7 @@ export async function questOf(wallet: string): Promise<QuestProgress> {
   const listed = owned.filter((a) => a.rung >= 1);
   const best = [...owned].sort((a, b) => b.rung - a.rung)[0] ?? null;
   return {
+    ...(unread.length ? { unread: [...new Set(unread)] } : {}),
     wallet: h.wallet,
     team: h.team,
     agentsHired,

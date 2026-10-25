@@ -420,7 +420,8 @@ export async function tailRegistry(opts: { budgetMs: number }): Promise<string> 
  * again instead of keeping a nameless row for good (#382582 on 24 Oct).
  */
 export async function indexToken(tokenId: string, source: "list" | "view", read?: RegistryEntry): Promise<IndexedAgent | null> {
-  const entry = read ?? (await readRegistryEntry(tokenId).catch(() => null));
+  // A registry that did not answer is the caller's to report; only a token the registry denies is null.
+  const entry = read ?? (await readRegistryEntry(tokenId));
   if (!entry) return null;
   const known = registryExtras().rows.get(tokenId);
   if (cardUnread(entry) && known?.name) return known;

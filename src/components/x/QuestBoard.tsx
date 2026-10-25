@@ -92,7 +92,10 @@ export default function QuestBoard({
       return;
     }
     try {
-      const q = await fetch(`/api/v1/quest/${address}`, { cache: "no-store" }).then((r) => r.json());
+      const r = await fetch(`/api/v1/quest/${address}`, { cache: "no-store" });
+      const q = await r.json();
+      // An answer that could not read every record is not progress of zero: the last reading stands, and the next read tries again.
+      if (!r.ok || !q?.ok) return;
       setP({
         team: Boolean(q?.data?.team),
         hired: (q?.data?.agentsHired ?? []) as Counted[],

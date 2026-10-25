@@ -8,11 +8,12 @@
  * itself would accept.
  */
 
-import { parseAbi, type Address } from "viem";
+import { BaseError, ContractFunctionRevertedError, parseAbi, type Address } from "viem";
 import { marketClient } from "@/lib/chain/market";
 import { testnetPublic } from "@/lib/chain/testnet";
 import { IDENTITY_REGISTRY } from "@/lib/config";
 import { ESCROW_TESTNET } from "@/lib/escrow/contracts";
+import { RegistryUnreadable } from "@/lib/sources/registry";
 
 const REGISTRY = parseAbi(["function getAgentWallet(uint256) view returns (address)"]);
 const ZERO = /^0x0{40}$/i;
@@ -27,6 +28,15 @@ export function namedWallets(...wallets: (string | null | undefined)[]): string[
 /** On testnet (chain 97) the token is read from the testnet registry, where its own agent wallet is named. */
 export async function quoteSigners(tokenId: string, entry: { owner?: string | null; card?: { agentWallet?: unknown } | null } | null | undefined, chainId = 56): Promise<string[]> {
   const read = { address: (chainId === 97 ? ESCROW_TESTNET.identity : IDENTITY_REGISTRY) as Address, abi: REGISTRY, functionName: "getAgentWallet", args: [BigInt(tokenId)] } as const;
-  const onChain = await (chainId === 97 ? testnetPublic() : marketClient).readContract(read).catch(() => null);
+  /*
+    A revert says the registry names no agent wallet; a provider that could
+    not be reached says nothing. Read as "none", it dropped the very wallet
+    BNB's SDK checks a quote against, and a valid quote was refused and kept
+    as unpayable until the next ask.
+  */
+  const onChain = await (chainId === 97 ? testnetPublic() : marketClient).readContract(read).catch((e: unknown) => {
+    if (e instanceof BaseError && e.walk((x) => x instanceof ContractFunctionRevertedError)) return null;
+    throw new RegistryUnreadable(chainId);
+  });
   return namedWallets(entry?.owner, typeof entry?.card?.agentWallet === "string" ? entry.card.agentWallet : null, onChain as string | null);
 }
