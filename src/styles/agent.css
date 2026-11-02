@@ -49,6 +49,8 @@
   /* Each label over its value: a long one (eth_getTransactionCount) in its own column pushed the page sideways. */
   .x-proof__ev { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .x-proof__ev dt { margin-top: 8px; overflow-wrap: anywhere; }
+  /* Everything an opened proof shows, older evidence blocks included, stays inside the screen. */
+  .x-proof__body, .x-proof__body * { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
 }
 
 /* --- the agent page ----------------------------------------------------------- */
