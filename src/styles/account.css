@@ -305,6 +305,7 @@
 .ac-lh__side { display: flex; flex-direction: column; gap: 10px; padding-bottom: 6px; }
 .ac-lh__wiz { padding-bottom: clamp(24px, 4vw, 48px); }
 .ac-gap { margin-left: 14px; }
+@media (max-width: 640px) { .ac-gap { margin-left: 0; display: inline-block; } }
 @media (max-width: 860px) { .ac-lh__in { grid-template-columns: minmax(0, 1fr); } }
 
 /* the wizard: what you are granting on the left, the steps on the right */

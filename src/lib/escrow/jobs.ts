@@ -315,7 +315,7 @@ async function recordOutside(jobId: bigint, fundTx: Hash, job: OnChainJob, o: { 
     registration names, the provider that signer, and the budget the signed
     price. Any other job is checked against the price the census holds.
   */
-  const signed = await readSignedDescription(job.description);
+  const signed = await readSignedDescription(job.description, job.provider);
   if (signed && "refused" in signed) return { refused: `That job's description fails its own check: ${signed.refused}.`, status: 400 };
   if (signed) {
     const entry = await readRegistryEntry(o.tokenId).catch((e: unknown) => (e instanceof RegistryUnreadable ? e : null));
@@ -551,7 +551,7 @@ export async function deliver(jobId: string): Promise<string> {
     if (!p || !key) return "no key for this provider on this deployment";
 
     // The answer is kept before it is committed to, so the hash on chain always has a body behind it.
-    const signed = await readSignedDescription(job.description);
+    const signed = await readSignedDescription(job.description, job.provider);
     const a = row.deliverableHash && row.deliverable ? { text: row.deliverable, hash: row.deliverableHash as Hex } : await answerFor(row, Boolean(signed && "signer" in signed));
     if (!row.deliverableHash) {
       await pg!`update escrow_jobs set deliverable = ${a.text}, deliverable_hash = ${a.hash}, updated_at = now() where job_id = ${jobId}`;
@@ -634,7 +634,7 @@ export async function recordFound(jobId: bigint, fundTx: Hash | null): Promise<s
   if (!p) return "not one of ours";
   if (job.status !== "FUNDED" && job.status !== "SUBMITTED" && job.status !== "COMPLETED") return `it is ${job.status.toLowerCase()}`;
   if (job.evaluator.toLowerCase() !== ESCROW.router.toLowerCase() || job.hook.toLowerCase() !== ESCROW.router.toLowerCase()) return "not bound to the dispute policy, so it could not be settled";
-  const signed = await readSignedDescription(job.description);
+  const signed = await readSignedDescription(job.description, job.provider);
   if (signed && "refused" in signed) return `its quote fails its own check: ${signed.refused}`;
   let task = job.description;
   if (signed) {

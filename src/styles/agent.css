@@ -46,6 +46,9 @@
   .x-proof > summary, .x-proof--flat { grid-template-columns: 20px minmax(0, 1fr) auto; }
   .x-proof__head { grid-column: 2 / -1; grid-row: 2; }
   .x-proof__body { padding-left: 4px; }
+  /* Each label over its value: a long one (eth_getTransactionCount) in its own column pushed the page sideways. */
+  .x-proof__ev { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .x-proof__ev dt { margin-top: 8px; overflow-wrap: anywhere; }
 }
 
 /* --- the agent page ----------------------------------------------------------- */
@@ -113,6 +116,21 @@
 .mk-perf__title--none { color: var(--c-text-2); font-weight: 400; }
 .mk-perf__src { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .mk-tl { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.mk-tlw { display: flex; flex-direction: column; }
+.mk-tlw__all { display: none; }
+@media (max-width: 640px) {
+  /* Thirty-odd jobs made the page ten thousand pixels on a phone: six, and one tap for the rest. */
+  .mk-tlw:has(> .mk-tlw__all:not([open])) .mk-tl > li:nth-child(n + 7) { display: none; }
+  .mk-tlw__all { display: block; order: 1; margin-top: 12px; }
+  .mk-tlw__all > summary { display: flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 12px; font-size: 0.9375rem; font-weight: 600; color: var(--c-text); background: rgba(255, 255, 255, 0.05); box-shadow: inset 0 0 0 1px var(--k-hair); cursor: pointer; list-style: none; }
+  .mk-tlw__all > summary::-webkit-details-marker { display: none; }
+  .mk-tlw__all[open] > summary { display: none; }
+  /* The on-chain table: each label over its value, so a 42-character address has the full width to wrap in. */
+  .mk-onchain .k-facts { display: block; }
+  .mk-onchain .k-facts > div { display: block; padding-block: 2px; }
+  .mk-onchain .k-facts dt { margin-bottom: 2px; }
+  .mk-onchain .k-facts dd { overflow-wrap: anywhere; min-width: 0; text-align: left; }
+}
 .mk-tl__row { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--k-hair); }
 .mk-tl__dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c-text-3); }
 .mk-tl__row[data-tone="ok"] .mk-tl__dot { background: var(--c-accent-hi); box-shadow: 0 0 0 3px rgba(45, 212, 164, 0.16); }

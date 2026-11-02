@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowDownUp, Check, HelpCircle, Search, SlidersHorizontal, X } from "lucide-react";
+import { testnetListings } from "@/lib/testnet/sellers";
+import { warm } from "@/lib/data/snapshots";
 import AppShell from "@/components/v2/shell/AppShell";
 import AgentCard from "@/components/k/AgentCard";
 import Agent from "@/components/characters/Agent";
@@ -86,7 +88,9 @@ export default async function AgentsPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await live();
+  await Promise.all([live(), warm(["testnet-sellers"]).catch(() => undefined)]);
+  // Other networks' agents are their own tokens, hired where they sell: this tab goes to the quest's list of them.
+  const testnetReady = testnetListings().filter((a) => a.hireable).length;
   const sp = await searchParams;
   const q = parseQuery(sp);
   const hc = await hireCounts();
@@ -278,6 +282,12 @@ export default async function AgentsPage({
                   <span className="k-tab__n">{(fixtureDir() ? (v.id === q.view ? total : "") : tabCount[v.id]).toLocaleString("en-US")}</span>
                 </Link>
               ))}
+              {testnetReady ? (
+                <Link rel="nofollow" prefetch={false} href="/quest#testnet" className="k-tab">
+                  Free on testnet
+                  <span className="k-tab__n">{testnetReady}</span>
+                </Link>
+              ) : null}
             </nav>
             <div className="mk-bar__ctl">
               <details className="mk-pop mk-pop--sheet">

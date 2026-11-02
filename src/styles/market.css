@@ -79,11 +79,20 @@
   .mk-groups { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
-  .mk-grid { grid-template-columns: minmax(0, 1fr); }
-  .mk-search { flex-wrap: wrap; padding: 6px; }
+  .mk-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  /* Face beside words: twenty-four full-height cards came to ten thousand pixels of scrolling. */
+  .mk-grid .k-agent { flex-direction: row; align-items: stretch; }
+  .mk-grid .k-agent__art { flex: 0 0 92px; height: auto; min-height: 100%; }
+  .mk-grid .k-agent__art .k-char { width: 76px !important; height: 76px !important; }
+  .mk-grid .k-agent__body { padding: 12px 14px; gap: 5px; }
+  .mk-grid .k-agent__what { -webkit-line-clamp: 2; font-size: 0.8125rem; line-height: 1.4; }
+  .mk-grid .k-agent__facts { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 10px; padding-top: 8px; margin-top: 4px; }
+  .mk-grid .k-agent__price { font-size: 1rem; }
+  .mk-grid .k-agent__meta { gap: 4px 10px; font-size: 0.75rem; }
+  .mk-search { flex-wrap: nowrap; padding: 6px; }
   .mk-search > svg { display: none; }
-  .mk-search input { padding: 0 12px; }
-  .mk-search .k-btn { width: 100%; }
+  .mk-search input { padding: 0 10px; min-width: 0; }
+  .mk-search .k-btn { flex: none; width: auto; padding-inline: 16px; }
   .mk-bar .k-tabs { width: 100%; }
   .mk-why__t { display: none; }
   /* Filters open as a bottom sheet on a phone. */

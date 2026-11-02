@@ -575,6 +575,12 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
               </h2>
             </div>
             {calls.length || paidJobs.length || siteJobs.length ? (
+              <div className="mk-tlw">
+              {calls.length + paidJobs.length + siteJobs.length > 6 ? (
+                <details className="mk-tlw__all">
+                  <summary>Show all {calls.length + paidJobs.length + siteJobs.length}</summary>
+                </details>
+              ) : null}
               <ol className="mk-tl">
                 {calls.map((c) => (
                   <li key={c.id} className="mk-tl__row" data-tone={c.delivered ? "ok" : "err"}>
@@ -639,6 +645,7 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
                   </li>
                 ))}
               </ol>
+              </div>
             ) : (
               <p className="k-body">No paid calls or escrowed jobs through this marketplace yet.</p>
             )}

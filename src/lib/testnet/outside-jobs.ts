@@ -142,7 +142,7 @@ export async function recordTestnetOutside(jobId: bigint, tokenId: string, fundT
   const seller = testnetSellers().agents[tokenId];
   if (!seller || seller.ours) return "not another builder's agent on our testnet list";
   const job = await readTestnetJob(jobId);
-  const [signed, entry] = await Promise.all([readSignedDescription(job.description), readRegistryEntry(tokenId, 97).catch((e: unknown) => (e instanceof RegistryUnreadable ? e : null))]);
+  const [signed, entry] = await Promise.all([readSignedDescription(job.description, job.provider), readRegistryEntry(tokenId, 97).catch((e: unknown) => (e instanceof RegistryUnreadable ? e : null))]);
   const signers = entry instanceof RegistryUnreadable ? null : await quoteSigners(tokenId, entry, 97).catch(() => null);
   // The registry could not be asked: "failed" makes the page try again, rather than a refusal it would show the buyer.
   if (!signers) return "failed: the testnet registry did not answer just now";

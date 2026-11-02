@@ -522,7 +522,7 @@
 .tr-graves .tr-grave + .tr-grave { padding-top: 16px; border-top: 1px solid var(--k-hair); }
 .tr-grave[data-target] { border-radius: 12px; box-shadow: 0 0 0 2px var(--c-accent-line); padding: 14px; }
 .tr-grave__top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 14px; }
-.tr-grave__what { margin: 0; font-size: 1rem; font-weight: 500; color: var(--c-text); }
+.tr-grave__what { margin: 0; font-size: 1rem; font-weight: 500; color: var(--c-text); overflow-wrap: anywhere; }
 .tr-grave__note { margin: 0; font-size: 0.875rem; line-height: 1.5; color: var(--c-text-2); max-width: 74ch; }
 .tr-grave__foot { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; font-size: 0.8125rem; color: var(--c-text-3); }
 .tr-grave__foot a { color: var(--c-text-2); text-decoration: underline; text-decoration-color: var(--k-hair-strong); text-underline-offset: 3px; }

@@ -31,6 +31,7 @@
 /* --- the stage -------------------------------------------------------- */
 .h-stage { position: relative; }
 .h-stage__box { position: relative; width: 100%; aspect-ratio: 640 / 560; max-width: 100%; }
+.h-stage__cast { position: absolute; inset: 0; }
 .h-stage__floor { position: absolute; left: 4%; right: 2%; top: 46%; bottom: 0; border-radius: 50%; background: radial-gradient(50% 50% at 50% 50%, rgba(19, 185, 138, 0.14), rgba(19, 185, 138, 0.03) 55%, transparent 72%); animation: k-fade 1.2s var(--k-ease) both; }
 .h-stage__floor::before { content: ""; position: absolute; inset: 22% 10%; border-radius: 50%; background: radial-gradient(50% 50% at 50% 50%, rgba(255, 255, 255, 0.05), transparent 70%); }
 .h-founder { position: absolute; margin: 0; display: flex; flex-direction: column; align-items: center; animation: h-drop 900ms var(--k-ease) both; animation-delay: calc(240ms + var(--i) * 110ms); }
@@ -189,8 +190,14 @@
   .h-ask__field input { min-width: 0; }
   .h-ask__field .k-btn { padding: 0 16px; }
   .h-jobs, .h-cards, .h-flow { grid-template-columns: minmax(0, 1fr); }
-  .h-receipt { left: 0; width: 62%; padding: 12px 14px; gap: 8px; }
-  .h-receipt__note { display: none; }
+  /*
+    The receipt sat on top of the cast at this width, over Grid-1's head and
+    with the leash across its hash. It now leads the stage at full width, and
+    the cast's empty top slides under it, so the leash still starts at its edge.
+  */
+  .h-stage__box { aspect-ratio: auto; display: flex; flex-direction: column; }
+  .h-receipt { position: static; order: -1; width: 100%; padding: 12px 14px; gap: 8px; z-index: 4; }
+  .h-stage__cast { position: relative; inset: auto; width: 100%; aspect-ratio: 640 / 560; margin-top: -27%; }
   .h-founder__state { display: none; }
   .h-step { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 16px 0; }
   .h-step__n { text-align: left; }

@@ -11,7 +11,8 @@ import { warm } from "@/lib/data/snapshots";
 import { testnetListings, testnetSellers } from "@/lib/testnet/sellers";
 
 export const runtime = "nodejs";
-export const revalidate = 300;
+// Read for every request and cached by the CDN below: left to Next's own cache, it kept serving the copy made at build, eight days old on 2 Nov.
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   await warm(["testnet-sellers"]);

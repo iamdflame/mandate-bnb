@@ -113,6 +113,25 @@ export interface CheckedQuote {
 }
 
 /**
+ * Who signed a quote's hash.
+ *
+ * BNB's SDK signs the hash's hex text with EIP-191. Several sellers sign its
+ * 32 bytes instead (Pokter's four and blacktoshi on 2 Nov), which proves just
+ * as much: read that way their signature recovers the wallet their
+ * registration names, on every fresh quote, where the text reading gives a
+ * different random address each time. Read only as text, they were refused
+ * as signed by a stranger. The bytes reading counts only when it lands on a
+ * wallet we expect; otherwise a signature means what the SDK says it means.
+ */
+export async function signerOf(hash: string, signature: string, expected: string[]): Promise<Address> {
+  const asText = await recoverMessageAddress({ message: hash, signature: signature as Hex });
+  const named = (w: string) => expected.some((e) => e.toLowerCase() === w.toLowerCase());
+  if (!expected.length || named(asText)) return asText;
+  const asBytes = await recoverMessageAddress({ message: { raw: hash as Hex }, signature: signature as Hex }).catch(() => null);
+  return asBytes && named(asBytes) ? asBytes : asText;
+}
+
+/**
  * A quote a buyer here can fund as it stands: accepted, for BNB Smart Chain and
  * the kernel we use, in the token we pay in, unexpired, its hash our own
  * recomputation, and signed by a wallet the agent's registration names.
@@ -141,8 +160,7 @@ export async function checkSdkQuote(
   if (expiresAt !== null && expiresAt <= (want.now ?? Math.floor(Date.now() / 1000))) return { refused: "its quote has expired" };
   let signer: Address;
   try {
-    // The SDK signs the hash's hex text with EIP-191.
-    signer = await recoverMessageAddress({ message: q.negotiation_hash, signature: q.provider_sig as Hex });
+    signer = await signerOf(q.negotiation_hash, q.provider_sig, want.signers);
   } catch {
     return { refused: "its quote's signature cannot be read" };
   }
@@ -186,7 +204,7 @@ export function manifestFor(jobId: bigint, chainId: number, contracts: { commerc
  * content hashes to the hash it carries, and the signature recovers a wallet.
  * Returns null when the description is not in that form at all.
  */
-export async function readSignedDescription(description: string): Promise<{ signer: Address; price: bigint; currency: string; task: string } | { refused: string } | null> {
+export async function readSignedDescription(description: string, provider?: string): Promise<{ signer: Address; price: bigint; currency: string; task: string } | { refused: string } | null> {
   let d: Record<string, unknown>;
   try {
     d = JSON.parse(description) as Record<string, unknown>;
@@ -197,7 +215,7 @@ export async function readSignedDescription(description: string): Promise<{ sign
   const { negotiation_hash: hash, provider_sig: sig, ...content } = d;
   if (keccak256(stringToHex(pyJson(content))).toLowerCase() !== String(hash).toLowerCase()) return { refused: "its description does not hash to the quote it carries" };
   try {
-    const signer = await recoverMessageAddress({ message: String(hash), signature: sig as Hex });
+    const signer = await signerOf(String(hash), sig as string, provider ? [provider] : []);
     return { signer, price: BigInt(String(content.price)), currency: String(content.currency), task: String(content.task ?? "") };
   } catch {
     return { refused: "its quote's signature cannot be read" };

@@ -10,6 +10,8 @@ import AgentCard from "@/components/k/AgentCard";
 import { CATEGORY_LABEL, type Category } from "@/lib/config";
 import { LEASH_POLICIES, LIMITS } from "@/lib/leash/policy";
 import { viewHome } from "@/lib/view/home";
+import { warm } from "@/lib/data/snapshots";
+import { testnetListings } from "@/lib/testnet/sellers";
 import { viewJobs, viewMarket } from "@/lib/view/market";
 import { viewGraveCounts } from "@/lib/view/trust";
 import { answeredAgo, poseOf } from "@/lib/view/state";
@@ -59,6 +61,9 @@ export default async function Home() {
   const byId = new Map(ready.map((a) => [a.tokenId, a]));
   const registered = home.stages.find((s) => s.key === "registered");
   const hireable = home.stages.find((s) => s.key === "hireable")?.n ?? market.ready;
+  // Testnet identities are their own ERC-8004 tokens, hired in test $U; Set and Earn counts them, and the line under this names each network.
+  await warm(["testnet-sellers"]).catch(() => undefined);
+  const testnetReady = testnetListings().filter((a) => a.hireable).length;
   const r = home.receipt;
   const hiredId = r?.tokenId ?? "344119";
 
@@ -88,8 +93,13 @@ export default async function Home() {
             <p className="h-live k-rise" style={{ ["--i" as string]: 0 }}>
               <span className="k-dot k-dot--live" aria-hidden="true" />
               <span>
-                <strong className="k-num">{hireable}</strong> agents ready to hire now
+                <strong className="k-num">{hireable + testnetReady}</strong> agents ready to hire now
               </span>
+              {testnetReady ? (
+                <span className="h-live__age">
+                  {hireable} on mainnet, {testnetReady} free on testnet
+                </span>
+              ) : null}
               {home.censusMinutes !== null ? <span className="h-live__age">we called every agent {home.censusMinutes < 60 ? `${Math.max(1, home.censusMinutes)} min` : `${Math.round(home.censusMinutes / 60)} h`} ago</span> : null}
             </p>
             <h1 className="k-mega h-hero__h k-rise" id="h-hero" style={{ ["--i" as string]: 1 }}>
@@ -133,6 +143,7 @@ export default async function Home() {
           {/* The stage */}
           <div className="h-stage" aria-label="Mandate's four agents, and the latest hire">
             <div className="h-stage__box">
+              <div className="h-stage__cast">
               <div className="h-stage__floor" aria-hidden="true" />
               <svg className="h-stage__leash" viewBox="0 0 640 560" aria-hidden="true" focusable="false">
                 <path className="h-stage__case" d={leash} pathLength={1} />
@@ -158,6 +169,7 @@ export default async function Home() {
                   </figure>
                 );
               })}
+              </div>
 
               {r ? (
                 <article className="h-receipt k-panel k-panel--float" aria-label="The latest hire">

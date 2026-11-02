@@ -25,7 +25,7 @@ import { quoteSigners } from "@/lib/escrow/signers";
 
 const CONCURRENCY = 8;
 
-export async function refreshEscrowQuotes(opts: { budgetMs: number }): Promise<string> {
+export async function refreshEscrowQuotes(opts: { budgetMs: number; only?: string[] }): Promise<string> {
   const started = Date.now();
   await Promise.all([warm(["probe", "escrow-quotes", "escrow-asked"]), warmRegistry().catch(() => undefined)]);
   // This run merges into the stored prices and saves them whole: only on top of the live ones.
@@ -37,7 +37,8 @@ export async function refreshEscrowQuotes(opts: { budgetMs: number }): Promise<s
   // Agents under a job whose card names an A2A service: the only ones that can sell an escrowed job.
   const sellers = getAgentIndex().agents.filter((a) => a.category && a.protocols.some((p) => /^a2a$/i.test(p)));
   const askedAt = (id: string) => lastAsked[id] ?? quotes[id]?.askedAt ?? known[id]?.askedAt ?? "";
-  const queue = [...sellers].sort((a, b) => askedAt(a.tokenId).localeCompare(askedAt(b.tokenId)));
+  // `only`: these sellers now, whatever their turn, after a change that alters how their quotes read.
+  const queue = [...sellers].filter((a) => !opts.only || opts.only.includes(a.tokenId)).sort((a, b) => askedAt(a.tokenId).localeCompare(askedAt(b.tokenId)));
 
   let asked = 0;
   let priced = 0;

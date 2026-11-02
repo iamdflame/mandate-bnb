@@ -177,8 +177,7 @@ export default async function QuestPage({ searchParams }: { searchParams: Promis
         </header>
         <section className="k-section k-section--tight bd-qbody">
           <div className="k-wrap">
-            <QuestBoard cards={cards} campaign={CAMPAIGN} pack={pack} testnetPack={testnetPack} ended={ended} />
-            {ended ? null : <TestnetAgents agents={testnetListings()} checkedAt={testnetSellers().at} />}
+            <QuestBoard cards={cards} campaign={CAMPAIGN} pack={pack} testnetPack={testnetPack} ended={ended} testnetAgents={ended ? null : <TestnetAgents agents={testnetListings()} checkedAt={testnetSellers().at} />} />
           </div>
         </section>
       </div>

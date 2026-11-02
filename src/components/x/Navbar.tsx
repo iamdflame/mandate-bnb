@@ -50,6 +50,9 @@ export default function Navbar() {
   useEffect(() => setOpen(false), [path]);
   useEffect(() => {
     if (!open) return;
+    // The sheet starts where the nav ends: lower while the Set and Earn strip is on screen above it.
+    const bottom = sheet.current?.closest(".k-nav")?.getBoundingClientRect().bottom;
+    if (bottom !== undefined) sheet.current?.style.setProperty("--k-sheet-top", `${Math.round(bottom)}px`);
     const prev = document.documentElement.style.overflow;
     document.documentElement.style.overflow = "hidden";
     const first = sheet.current?.querySelector<HTMLElement>("a, button");

@@ -91,6 +91,18 @@ function shortDate(iso: string): string {
   return `${d.getUTCDate()} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getUTCMonth()]}`;
 }
 
+/** The short reason a seller's escrow quote cannot be funded, in the words of what is actually wrong with it. */
+export function quoteTrouble(unpayable: string): string {
+  if (/signed by a wallet/.test(unpayable)) return "Quote signed by an unnamed wallet";
+  if (/not signed/.test(unpayable)) return "Its quote is not signed";
+  if (/signature cannot be read|does not match its terms/.test(unpayable)) return "Its quote does not check out";
+  if (/settles on chain|different contract/.test(unpayable)) return "It sells on another network";
+  if (/expired/.test(unpayable)) return "Its quote had expired";
+  if (/no price/.test(unpayable)) return "It quoted no price";
+  if (/declined/.test(unpayable)) return "It declined our sample task";
+  return "Its price is in a token we cannot pay";
+}
+
 export type Rail =
   | {
       kind: "x402";
@@ -244,7 +256,7 @@ export function hirePath(
       );
     }
     if (eq?.declined) return refuse(`It sells escrowed jobs, but turned down every sample task we could form: ${eq.declined}`, "Needs a task format it does not publish");
-    if (eq?.unpayable) return refuse(`It prices escrowed jobs, but ${eq.unpayable}.`, "Its price is in a token we cannot pay");
+    if (eq?.unpayable) return refuse(`It prices escrowed jobs, but ${eq.unpayable}.`, quoteTrouble(eq.unpayable));
     return refuse(
       l.quote
         ? `It quoted a price we cannot pay: ${l.quote.unpayable}.`

@@ -25,7 +25,7 @@ const { hireableOnTestnet, listingsOf } = await import("../testnet/sellers");
 const { outsideJobProblem } = await import("../testnet/outside-jobs");
 const { escrowSeller } = await import("../escrow/a2a");
 const { quoteAsSeller } = await import("../escrow/seller");
-const { jobDescription, readSignedDescription } = await import("../escrow/sdk");
+const { jobDescription, readSignedDescription, signerOf } = await import("../escrow/sdk");
 const { ESCROW_TESTNET, ESCROW } = await import("../escrow/contracts");
 type Seller = import("../testnet/sellers").TestnetSeller;
 
@@ -108,6 +108,31 @@ describe("a testnet job opened here with another builder's agent", () => {
     const m = await signed(56);
     expect(outsideJobProblem(job(m), await readSignedDescription(m), [agent.address])).not.toBeNull();
     expect(outsideJobProblem(job("guard my loan"), null, [agent.address])).toContain("no signed quote");
+  });
+});
+
+describe("who signed a quote", () => {
+  const agent = privateKeyToAccount(keccak256(stringToHex("a seller that signs the hash's bytes")));
+  const hash = keccak256(stringToHex("a quote's content"));
+
+  it("accepts a signature over the hash's 32 bytes from a wallet the registration names", async () => {
+    // Pokter's agents and blacktoshi on 2 Nov: their own registered wallet, refused as a stranger when read only as text.
+    const sig = await agent.signMessage({ message: { raw: hash } });
+    expect(await signerOf(hash, sig, [agent.address])).toBe(agent.address);
+  });
+
+  it("reads the SDK's own form, a signature over the hash's text, as before", async () => {
+    const sig = await agent.signMessage({ message: hash });
+    expect(await signerOf(hash, sig, [agent.address])).toBe(agent.address);
+    expect(await signerOf(hash, sig, [])).toBe(agent.address);
+  });
+
+  it("never turns a stranger's signature into a named wallet, whichever way it is read", async () => {
+    const stranger = privateKeyToAccount(keccak256(stringToHex("not this agent")));
+    for (const message of [hash, { raw: hash }] as const) {
+      const sig = await stranger.signMessage({ message });
+      expect((await signerOf(hash, sig, [agent.address])).toLowerCase()).not.toBe(agent.address.toLowerCase());
+    }
   });
 });
 

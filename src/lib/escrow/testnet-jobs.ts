@@ -185,7 +185,7 @@ export async function recordTestnetFound(jobId: bigint, fundTx: Hash | null): Pr
   if (job.evaluator.toLowerCase() !== ESCROW_TESTNET.router.toLowerCase() || job.hook.toLowerCase() !== ESCROW_TESTNET.router.toLowerCase()) {
     return "not bound to the testnet dispute policy, so it could not be settled";
   }
-  const signed = await readSignedDescription(job.description);
+  const signed = await readSignedDescription(job.description, job.provider);
   if (signed && "refused" in signed) return `its quote fails its own check: ${signed.refused}`;
   let task = job.description;
   if (signed) {

@@ -73,6 +73,7 @@ export default function QuestBoard({
   campaign,
   pack,
   testnetPack,
+  testnetAgents,
   ended = false,
 }: {
   cards: QuestCard[];
@@ -80,6 +81,8 @@ export default function QuestBoard({
   pack?: PackAgent[] | null;
   /** The same two agents under their testnet identities, hired free in test $U. */
   testnetPack?: TestnetPackAgent[] | null;
+  /** Other builders' agents, free on testnet: rendered by the page, shown ahead of the help. */
+  testnetAgents?: ReactNode;
   /** Past CAMPAIGN_ENDS: the wallet's record stays readable; nothing new counts, so nothing is offered as if it would. */
   ended?: boolean;
 }) {
@@ -329,6 +332,8 @@ export default function QuestBoard({
           })}
         </ol>
       </section>
+
+      {testnetAgents}
 
       <div className="bd-help">
         <NeedHelp />
