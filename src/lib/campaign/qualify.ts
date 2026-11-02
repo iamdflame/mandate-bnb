@@ -133,7 +133,7 @@ export function fitsJob(category: Category | null, kind: Kind): boolean {
  * default; QUALIFY_RPC_URL names a better one. Blocks themselves are read from
  * our usual nodes, so the archive is asked only what only it can answer.
  */
-function archive(): PublicClient | null {
+export function archive(): PublicClient | null {
   // With our thirdweb key, sent as thirdweb asks a server to send it; without one, its anonymous, rate-limited endpoint.
   const secret = process.env.THIRDWEB_SECRET_KEY || process.env.thirdweb_secret;
   const url = process.env.QUALIFY_RPC_URL || process.env.ARCHIVE_RPC_URL || "https://56.rpc.thirdweb.com";
@@ -413,17 +413,28 @@ async function compute(tokenId: string, onchain: boolean): Promise<Qualification
         .sort((x, y) => Number(y.w.to - x.w.to) || y.nonce - x.nonce)
         .slice(0, SAMPLE);
       const looked = Date.now();
-      const found =
-        (await withTimeout(
-          pool(wanted, 2, (x) =>
-            findTx(c, x.wallet, x.nonce, x.w.from, x.w.to).catch((e: Error) => {
+      /*
+        Each is kept as it is found. The whole sample used to be thrown away
+        when the time ran out, so a wallet whose fifth transaction was slow to
+        find read as "could not be looked up", and that was kept for half an
+        hour (every agent we tried on 2 Nov, ours included).
+      */
+      const found: (Awaited<ReturnType<typeof findTx>> | undefined)[] = new Array(wanted.length);
+      await withTimeout(
+        pool(wanted.map((x, i) => ({ x, i })), 3, ({ x, i }) =>
+          findTx(c, x.wallet, x.nonce, x.w.from, x.w.to).then(
+            (t) => {
+              found[i] = t;
+            },
+            (e: Error) => {
               console.warn(`qualify #${tokenId}: finding nonce ${x.nonce} of ${x.wallet} failed: ${e.message.split("\n")[0]!.slice(0, 160)}`);
-              return null;
-            }),
+            },
           ),
-          24_000,
-        )) ?? [];
-      if (!found.length && wanted.length) console.warn(`qualify #${tokenId}: looking up ${wanted.length} transactions took over 24 s (${Date.now() - looked} ms)`);
+        ),
+        24_000,
+      );
+      const seen = found.filter(Boolean).length;
+      if (seen < wanted.length) console.warn(`qualify #${tokenId}: found ${seen} of ${wanted.length} transactions in ${Date.now() - looked} ms`);
       found.forEach((t, i) => {
         if (!t) return;
         const kind = kindOf(t.to, t.input);
@@ -434,7 +445,9 @@ async function compute(tokenId: string, onchain: boolean): Promise<Qualification
       const unknownTo = [...new Set(actions.filter((a) => a.kind === "other").map((a) => a.to ?? "contract creation"))];
       const deliveries = actions.filter((a) => a.kind === "delivery").length;
       const fitting = counted.filter((a) => a.fits).length;
-      if (!actions.length) push("fits", sent ? "unknown" : "pending", sent ? "Its transactions could not be looked up just now." : "It has no transactions of its own yet.");
+      // Sent but none read: not a finding about the agent, so it is shown and read again, never kept.
+      if (!actions.length && sent) incomplete = true;
+      if (!actions.length) push("fits", sent ? "unknown" : "pending", sent ? "Its transactions could not be looked up just now. Check again in a minute." : "It has no transactions of its own yet.");
       else if (!category) push("fits", "fail", "Its job is not stated, so nothing can fit it.");
       else
         push(

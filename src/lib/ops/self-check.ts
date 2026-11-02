@@ -38,9 +38,12 @@ import { latestConformance } from "@/lib/conformance/run";
 import { testnetListings } from "@/lib/testnet/sellers";
 import { warmRegistry } from "@/lib/registry/tail";
 import { alertsOn, send } from "@/lib/alerts/telegram";
+import { archive } from "@/lib/campaign/qualify";
+import { DEMO_ADDRESS } from "@/lib/demo";
+import type { Address } from "viem";
 
 export interface Dependency {
-  group: "mainnet RPC" | "log provider" | "testnet RPC" | "IPFS gateway";
+  group: "mainnet RPC" | "log provider" | "testnet RPC" | "IPFS gateway" | "archive node";
   name: string;
   ok: boolean;
   detail: string;
@@ -150,6 +153,18 @@ export async function checkDependencies(): Promise<Dependency[]> {
     ),
   );
   await probe("testnet RPC", "testnet reader", async () => `block ${await testnetPublic().getBlockNumber()}`);
+  // The read behind the Set and Earn checks a builder runs on /check: an old block, which only an archive node answers.
+  await probe(
+    "archive node",
+    "the /check archive",
+    async () => {
+      const c = archive();
+      if (!c || head === null) throw new Error("no archive client");
+      const n = await c.getTransactionCount({ address: DEMO_ADDRESS as Address, blockNumber: head - 2_000_000n });
+      return `read an old block: nonce ${n}`;
+    },
+    true,
+  );
   await Promise.all(
     IPFS_GATEWAYS.map((g) =>
       probe("IPFS gateway", label(g), async () => {
