@@ -84,6 +84,8 @@ const MAX_DAYS = 45;
 /** Recent transactions looked up one by one for what they called. */
 const SAMPLE = 5;
 const CACHE_MS = 30 * 60_000;
+/** A result read in part is kept only long enough for the page waiting on it to collect it. */
+const PARTIAL_MS = 90_000;
 
 /* ------------------------------------------------------- what a call was */
 
@@ -224,32 +226,39 @@ async function activity(c: PublicClient, wallet: Address, since: number): Promis
   return { wallet, sent: nonces[nonces.length - 1]! - nonces[0]!, days: windows.map((w) => w.day), windows };
 }
 
-/** The transaction a wallet sent with a given nonce, found by searching its day for the block where the nonce moved past it. */
-async function findTx(c: PublicClient, wallet: Address, nonce: number, from: bigint, to: bigint): Promise<{ hash: Hash; to: string | null; input: string; at: number } | null> {
-  // Seven points a round, asked at once: a day of blocks narrows to one in about six rounds. With our thirdweb key the archive answers 32 reads at once (2 Oct); three points a round took over 18 s for five transactions.
-  let lo = from;
-  let hi = to;
-  while (hi - lo > 1n) {
-    const step = (hi - lo) / 8n || 1n;
-    const points = Array.from({ length: 7 }, (_, i) => lo + step * BigInt(i + 1)).filter((b) => b > lo && b < hi);
-    if (!points.length) break;
-    const counts = await Promise.all(points.map((b) => nonceAt(c, wallet, b)));
-    const first = counts.findIndex((n) => n > nonce);
-    if (first === -1) lo = points[points.length - 1]!;
-    else {
-      hi = points[first]!;
-      if (first > 0) lo = points[first - 1]!;
+type FoundTx = { hash: Hash; to: string | null; input: string; at: number };
+
+/**
+ * The transactions a wallet sent with the given nonces inside one window of
+ * blocks, found by halving the window for the block where its nonce moved
+ * past each. Nonces in one window share every read until their halves part.
+ * Searched one by one with seven points a round, five transactions cost over
+ * 200 archive reads, past the burst the archive allows (2 Nov); halved
+ * together they cost a few dozen.
+ */
+async function findTxs(c: PublicClient, wallet: Address, nonces: number[], from: bigint, to: bigint, found: (nonce: number, tx: FoundTx | null) => Promise<void>): Promise<void> {
+  const search = async (want: number[], lo: bigint, hi: bigint): Promise<void> => {
+    if (hi - lo > 1n) {
+      const mid = lo + (hi - lo) / 2n;
+      const k = await nonceAt(c, wallet, mid);
+      const left = want.filter((n) => n < k);
+      const right = want.filter((n) => n >= k);
+      await Promise.all([left.length ? search(left, lo, mid) : null, right.length ? search(right, mid, hi) : null]);
+      return;
     }
-  }
-  // A whole block, transactions and all: our everyday node refuses some of these in production, so the archive is asked when it does.
-  const block = await marketClient
-    .getBlock({ blockNumber: hi, includeTransactions: true })
-    .catch(() => gated(() => c.getBlock({ blockNumber: hi, includeTransactions: true })))
-    .catch((e: Error) => {
-      throw new Error(`reading block ${hi}: ${e.message.split("\n")[0]}`);
-    });
-  const tx = block.transactions.find((t) => typeof t !== "string" && t.from.toLowerCase() === wallet.toLowerCase() && Number(t.nonce) === nonce);
-  return tx && typeof tx !== "string" ? { hash: tx.hash, to: tx.to ?? null, input: tx.input, at: Number(block.timestamp) } : null;
+    // A whole block, transactions and all: our everyday node refuses some of these in production, so the archive is asked when it does.
+    const block = await marketClient
+      .getBlock({ blockNumber: hi, includeTransactions: true })
+      .catch(() => gated(() => c.getBlock({ blockNumber: hi, includeTransactions: true })))
+      .catch((e: Error) => {
+        throw new Error(`reading block ${hi}: ${e.message.split("\n")[0]}`);
+      });
+    for (const nonce of want) {
+      const tx = block.transactions.find((t) => typeof t !== "string" && t.from.toLowerCase() === wallet.toLowerCase() && Number(t.nonce) === nonce);
+      await found(nonce, tx && typeof tx !== "string" ? { hash: tx.hash, to: tx.to ?? null, input: tx.input, at: Number(block.timestamp) } : null);
+    }
+  };
+  await search(nonces, from, to);
 }
 
 /* --------------------------------------------------------- the checks */
@@ -289,7 +298,7 @@ export async function cachedQualification(tokenId: string): Promise<Qualificatio
   if (!pg) return null;
   await ensureTables();
   const [row] = (await pg`select payload, at from qualifications where token_id = ${tokenId}`.catch(() => [])) as { payload: Qualification; at: Date }[];
-  return row && Date.now() - new Date(row.at).getTime() < CACHE_MS ? row.payload : null;
+  return row && Date.now() - new Date(row.at).getTime() < (row.payload.incomplete ? PARTIAL_MS : CACHE_MS) ? row.payload : null;
 }
 
 /** The first four checks, which need no archive: seconds, for a page to show while the rest is read. */
@@ -301,8 +310,13 @@ export async function qualify(tokenId: string, opts: { fresh?: boolean } = {}): 
     if (kept) return kept;
   }
   const out = await compute(tokenId, true);
-  // A result read in part is shown, never kept: the next visitor gets a fresh reading.
-  if (pg && !out.incomplete) await pg`insert into qualifications (token_id, payload, at) values (${tokenId}, ${JSON.stringify(out)}::jsonb, now()) on conflict (token_id) do update set payload = excluded.payload, at = now()`.catch(() => undefined);
+  /*
+    A result read in part is kept for a minute and a half, never half an hour:
+    the page waiting on it can only collect a kept result, and one never kept
+    left it reading until it gave up (every check on 2 Nov, when the archive
+    rate-limited our transaction lookups). The next visitor after that reads afresh.
+  */
+  if (pg) await pg`insert into qualifications (token_id, payload, at) values (${tokenId}, ${JSON.stringify(out)}::jsonb, now()) on conflict (token_id) do update set payload = excluded.payload, at = now()`.catch(() => undefined);
   return out;
 }
 
@@ -396,8 +410,10 @@ async function compute(tokenId: string, onchain: boolean): Promise<Qualification
     );
     if (acts === null) console.warn(`qualify #${tokenId}: reading its wallets took over 30 s (${Date.now() - started} ms)`);
     const read = (acts ?? []).filter((a): a is WalletActivity => Boolean(a));
+    // A wallet unread is a count short, not a count.
+    if (read.length < wallets.length) incomplete = true;
     if (!read.length) {
-      push("executes", "unknown", "Its wallets' history could not be read just now: the archive node we read it from limits how often it answers. It is read again on the next check, within half an hour.");
+      push("executes", "unknown", "Its wallets' history could not be read just now: the archive node we read it from limits how often it answers. Check again in a minute.");
       push("fits", "unknown", "Read with its transactions, on the next check.");
     } else {
       const sent = read.reduce((s, a) => s + a.sent, 0);
@@ -419,22 +435,44 @@ async function compute(tokenId: string, onchain: boolean): Promise<Qualification
         find read as "could not be looked up", and that was kept for half an
         hour (every agent we tried on 2 Nov, ours included).
       */
-      const found: (Awaited<ReturnType<typeof findTx>> | undefined)[] = new Array(wanted.length);
+      const found: (FoundTx | null | undefined)[] = new Array(wanted.length);
+      /*
+        And kept for good: a wallet's transaction at a nonce never changes, and
+        finding it costs archive reads, which allow a burst of about 60 and
+        then 5 a second (2 Nov). Each check looks only for those still missing.
+      */
+      const before = (pg && wanted.length
+        ? await pg`select wallet, nonce, hash, to_addr, selector, at from qualify_txs where wallet = any(${pg.array([...new Set(wanted.map((x) => x.wallet.toLowerCase()))])}::text[]) and nonce = any(${pg.array(wanted.map((x) => x.nonce))}::int[])`.catch(() => [])
+        : []) as { wallet: string; nonce: number; hash: string; to_addr: string | null; selector: string; at: string | number }[];
+      for (const r of before) {
+        const i = wanted.findIndex((x) => x.wallet.toLowerCase() === r.wallet && x.nonce === r.nonce);
+        if (i >= 0) found[i] = { hash: r.hash as Hash, to: r.to_addr, input: r.selector, at: Number(r.at) };
+      }
+      // The ones still missing, searched together where they share a wallet and a day.
+      const groups = new Map<string, { wallet: Address; w: (typeof wanted)[number]["w"]; at: Map<number, number> }>();
+      wanted.forEach((x, i) => {
+        if (found[i]) return;
+        const k = `${x.wallet}:${x.w.from}`;
+        const g = groups.get(k) ?? { wallet: x.wallet, w: x.w, at: new Map<number, number>() };
+        g.at.set(x.nonce, i);
+        groups.set(k, g);
+      });
       await withTimeout(
-        pool(wanted.map((x, i) => ({ x, i })), 3, ({ x, i }) =>
-          findTx(c, x.wallet, x.nonce, x.w.from, x.w.to).then(
-            (t) => {
-              found[i] = t;
-            },
-            (e: Error) => {
-              console.warn(`qualify #${tokenId}: finding nonce ${x.nonce} of ${x.wallet} failed: ${e.message.split("\n")[0]!.slice(0, 160)}`);
-            },
-          ),
+        pool([...groups.values()], 3, (g) =>
+          findTxs(c, g.wallet, [...g.at.keys()], g.w.from, g.w.to, async (nonce, t) => {
+            found[g.at.get(nonce)!] = t;
+            if (t && pg) await pg`insert into qualify_txs (wallet, nonce, hash, to_addr, selector, at) values (${g.wallet.toLowerCase()}, ${nonce}, ${t.hash}, ${t.to?.toLowerCase() ?? null}, ${t.input.slice(0, 10)}, ${t.at}) on conflict do nothing`.catch(() => undefined);
+          }).catch((e: Error) => {
+            console.warn(`qualify #${tokenId}: finding ${g.at.size} transaction(s) of ${g.wallet} failed: ${e.message.split("\n")[0]!.slice(0, 160)}`);
+          }),
         ),
         24_000,
       );
-      const seen = found.filter(Boolean).length;
+      // A nonce can move without a transaction of its own (a 7702 authorisation), so searched and not there is still searched.
+      const seen = found.filter((t) => t !== undefined).length;
       if (seen < wanted.length) console.warn(`qualify #${tokenId}: found ${seen} of ${wanted.length} transactions in ${Date.now() - looked} ms`);
+      // Part of the sample is no verdict on the rest: shown, and read again on the next check.
+      if (seen < wanted.length) incomplete = true;
       found.forEach((t, i) => {
         if (!t) return;
         const kind = kindOf(t.to, t.input);

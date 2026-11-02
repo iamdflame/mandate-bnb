@@ -268,6 +268,11 @@ const STATEMENTS: { name: string; run: () => Promise<unknown> }[] = [
     run: () => pg!`create table if not exists qualifications (token_id text primary key, payload jsonb not null, at timestamptz not null default now())`,
   },
   {
+    // The transaction a wallet sent with each nonce, once found: it never changes, and finding it costs dozens of archive reads.
+    name: "qualify_txs",
+    run: () => pg!`create table if not exists qualify_txs (wallet text not null, nonce integer not null, hash text not null, to_addr text, selector text not null, at bigint not null, primary key (wallet, nonce))`,
+  },
+  {
     // Arrivals at the campaign pages per day, by where they came from (an ad's utm tags, the referring site, or direct). Counts only: no cookie, no address, nothing about the visitor.
     name: "arrivals",
     run: () => pg!`create table if not exists arrivals (day date not null, path text not null, source text not null, n integer not null default 0, primary key (day, path, source))`,
