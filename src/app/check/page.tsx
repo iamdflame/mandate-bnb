@@ -29,7 +29,7 @@ import { poseOf } from "@/lib/view/state";
 import type { CharacterState } from "@/components/characters/Agent";
 
 const TITLE = "Does your agent qualify for Set and Earn?";
-const BLURB = "BNB Chain checks every Set and Earn agent after the campaign closes on 5 November. Check yours now against the same six things, read from the chain, while there is still time to fix it.";
+const BLURB = "BNB Chain's six Set and Earn checks on any agent, read from the chain.";
 
 export const metadata: Metadata = {
   title: `${TITLE} | MANDATE`,
