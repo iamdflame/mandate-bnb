@@ -111,9 +111,10 @@ export const JOBS: Job[] = [
     // MANDATE's conformance checks: each hireable agent's answer against our own chain reading, oldest first.
     name: "conformance",
     everyMinutes: 60,
-    budgetMs: 25_000,
+    // Starts nothing new after 23 s; the rest is room for a call already out to answer, which read as a failure (5 Nov) though its check landed.
+    budgetMs: 55_000,
     afterResponse: true,
-    run: (budgetMs = 23_000) => runConformance({ budgetMs }),
+    run: (budgetMs = 23_000) => runConformance({ budgetMs: Math.min(budgetMs, 23_000) }),
   },
   {
     // BNB's Phase 2 requirements, each worked out from what the site can read, for /status and /api/requirements.
@@ -160,7 +161,7 @@ export const JOBS: Job[] = [
       return { dry, checked: r.checked, actions: r.actions };
     },
   },
-  { name: "yield-1", everyMinutes: HOUSE_CADENCE_MIN["yield-1"], budgetMs: 15_000, run: () => runHouse("yield-1") },
+  { name: "yield-1", everyMinutes: HOUSE_CADENCE_MIN["yield-1"], budgetMs: 25_000, run: () => runHouse("yield-1") },
   {
     /*
       A session expires, and nothing used to notice. Guard-1, Yield-1 and
@@ -346,9 +347,10 @@ export const JOBS: Job[] = [
   {
     name: "test-buys",
     everyMinutes: 60,
-    budgetMs: 30_000,
+    // Starts no new purchase after 28 s; a paid call can take 24 s to answer (5 Nov), and it was paid for either way.
+    budgetMs: 55_000,
     afterResponse: true,
-    run: (budgetMs = 28_000) => testBuys({ budgetMs }),
+    run: (budgetMs = 28_000) => testBuys({ budgetMs: Math.min(budgetMs, 28_000) }),
   },
 ];
 
