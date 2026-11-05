@@ -54,6 +54,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ addr
       blockNumber: d.blockNumber,
       findings: d.findings,
       needed: d.needed,
+      unread: d.unread,
       positions: d.positions.map((p) => ({ ...p, liquidity: p.liquidity.toString() })),
       venus: d.venus ? { ...d.venus, error: d.venus.error.toString() } : null,
       idle: d.idle,

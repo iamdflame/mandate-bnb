@@ -72,3 +72,54 @@ describe("quest progress, which BNB Chain reads", () => {
     expect(r.status).toBe(200);
   });
 });
+
+describe("a wallet's diagnosis", () => {
+  it("says what it could not read, and reads it again first", async () => {
+    vi.resetModules();
+    const venus = vi.fn(async () => null);
+    vi.doMock("../diagnose/positions", async (orig) => ({
+      ...(await orig<typeof import("../diagnose/positions")>()),
+      positionIdsOf: vi.fn(async () => []),
+      readPositions: vi.fn(async () => []),
+      readVenus: venus,
+      readIdle: vi.fn(async () => ({ holdings: [], totalUsd: 0, bnbUsd: 600 })),
+      currentBlock: vi.fn(async () => 1n),
+    }));
+    const { diagnose } = await import("../diagnose");
+    const d = await diagnose(OWNER);
+    expect(venus).toHaveBeenCalledTimes(2);
+    expect(d?.unread).toEqual(["Venus borrowing"]);
+    vi.doUnmock("../diagnose/positions");
+  });
+
+  it("throws when nothing could be read, rather than calling the wallet empty", async () => {
+    vi.resetModules();
+    vi.doMock("../diagnose/positions", async (orig) => ({
+      ...(await orig<typeof import("../diagnose/positions")>()),
+      positionIdsOf: vi.fn(async () => {
+        throw new Error("node down");
+      }),
+      readPositions: vi.fn(async () => []),
+      readVenus: vi.fn(async () => null),
+      readIdle: vi.fn(async () => null),
+      currentBlock: vi.fn(async () => 1n),
+    }));
+    const { diagnose } = await import("../diagnose");
+    await expect(diagnose(OWNER)).rejects.toThrow("did not answer");
+    vi.doUnmock("../diagnose/positions");
+  });
+
+  it("does not call a position unrecognised when the read itself failed", async () => {
+    vi.resetModules();
+    vi.doMock("../diagnose/positions", async (orig) => ({
+      ...(await orig<typeof import("../diagnose/positions")>()),
+      readPositions: vi.fn(async () => {
+        throw new Error("node down");
+      }),
+      currentBlock: vi.fn(async () => 1n),
+    }));
+    const { diagnose } = await import("../diagnose");
+    await expect(diagnose("12345")).rejects.toThrow("node down");
+    vi.doUnmock("../diagnose/positions");
+  });
+});

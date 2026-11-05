@@ -189,7 +189,7 @@ export default async function DiagnosePage({
                 {where === "wallet" ? <Wallet size={14} aria-hidden="true" /> : null}
                 <span className="k-mono">{result.kind === "wallet" ? `${result.input.slice(0, 6)}…${result.input.slice(-4)}` : `#${result.input}`}</span>
               </p>
-              <h2 className="k-h2">{bad.length === 0 ? "Nothing needs doing" : bad.length === 1 ? "One thing needs doing" : `${bad.length} things need doing`}</h2>
+              <h2 className="k-h2">{bad.length === 0 ? (result.unread.length ? "Nothing so far, but this is only part of it" : "Nothing needs doing") : bad.length === 1 ? "One thing needs doing" : `${bad.length} things need doing`}</h2>
               <p className="k-src">Read from BNB Smart Chain at block {Number(result.blockNumber).toLocaleString("en-GB")}.</p>
             </div>
             {result.findings.length ? (
@@ -207,7 +207,18 @@ export default async function DiagnosePage({
             ) : null}
           </header>
 
-          {result.findings.length === 0 ? (
+          {result.unread.length ? (
+            <div className="k-note k-note--warn" role="status">
+              <span>
+                The chain did not answer for its {result.unread.join(" and ")} just now, so those are not checked here.{" "}
+                <Link className="k-link" href={`/diagnose?q=${encodeURIComponent(q)}`}>
+                  Read it again
+                </Link>
+              </span>
+            </div>
+          ) : null}
+
+          {result.findings.length === 0 && result.unread.length ? null : result.findings.length === 0 ? (
             <Empty title={`No PancakeSwap V3 positions and no Venus borrowing on that ${where}`} job="yield-optimisation" pose="ready" action={<Link className="k-btn" href="/agents">Browse the marketplace</Link>}>
               That is not a failure: most addresses hold neither. If you expected positions here, they may be staked in a farm, which this page does not read yet.
             </Empty>
@@ -312,7 +323,7 @@ export default async function DiagnosePage({
             </p>
           ) : null}
 
-          {bad.length === 0 && result.findings.length > 0 ? (
+          {bad.length === 0 && result.findings.length > 0 && !result.unread.length ? (
             <div className="k-note k-note--ok ac-dx__ok">
               <span>Nothing here needs an agent right now.</span>
               <Link className="k-link" href="/agents">

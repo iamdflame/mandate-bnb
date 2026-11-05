@@ -1,0 +1,934 @@
+{
+  "readAt": "2026-11-05T16:08:55.832Z",
+  "closedAt": "2026-11-05T12:00:00.000Z",
+  "mainnet": {
+    "contract": "0xEa4DAa3100A767e86FDed867729ae7446476EBA6",
+    "fromBlock": "125000755",
+    "toBlock": "131813017",
+    "jobs": 74,
+    "wallets": 19,
+    "delivered": 74,
+    "refunded": 0,
+    "teamExcluded": 46,
+    "list": [
+      {
+        "id": "56860",
+        "tx": "0xecdabdcfaf59ec11afede904b8bcd06240f97e33ecebe3b51ab66ab86a0691b1",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xbf8cd5db56570b20cab0acb0c42f1831fe464789",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56899",
+        "tx": "0xf68dcd361871a2bf153f27d9d3fb2bea84bd3ee438175e913546aadae345a088",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0x5f68f040ce9c7e4980b3a4d3a5dde17ea9db9fb6",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56900",
+        "tx": "0xf68dcd361871a2bf153f27d9d3fb2bea84bd3ee438175e913546aadae345a088",
+        "tokenId": "344122",
+        "name": "Mandate Yield-1",
+        "category": "yield-optimisation",
+        "ours": true,
+        "buyer": "0x5f68f040ce9c7e4980b3a4d3a5dde17ea9db9fb6",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56901",
+        "tx": "0xc213291f4c98d33accf0408d03f95ac4b480c7beaf110837a59a329fe7267b83",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xbfaa69233741924ed5b9d5daa9b4bf7b84567f0a",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56902",
+        "tx": "0x3bffcb74d19c220d0c1ee8bf04cc92686392240c6040d32a395c3acb3d0c5dd9",
+        "tokenId": "344121",
+        "name": "Mandate Grid-1",
+        "category": "grid-trading",
+        "ours": true,
+        "buyer": "0xbfaa69233741924ed5b9d5daa9b4bf7b84567f0a",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56907",
+        "tx": "0x270730674647c25853b1202445d37567163d0f72b2f26072b6dd74a92ba8b021",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0x26c6be753ae99d6982aa06ae40c325dfe65e9edf",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56908",
+        "tx": "0x08cbc7d7ae64a3a806c9a0b170a84758e58d35f5983a7f61f9434e698ebc7687",
+        "tokenId": "344122",
+        "name": "Mandate Yield-1",
+        "category": "yield-optimisation",
+        "ours": true,
+        "buyer": "0x26c6be753ae99d6982aa06ae40c325dfe65e9edf",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56914",
+        "tx": "0xc5ba752e75a96bae4792c70bd14c3ec803e45fdfb7164dcb963994c29d0d5f73",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0x15a97307caa68c24e4b5a0b83d331a6aa1ea195f",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56915",
+        "tx": "0x525bd9a3bbe6edc9c0d570f688d8eed5cd7ed131ef93cc4fb07cbc67082c1e9b",
+        "tokenId": "344122",
+        "name": "Mandate Yield-1",
+        "category": "yield-optimisation",
+        "ours": true,
+        "buyer": "0x15a97307caa68c24e4b5a0b83d331a6aa1ea195f",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56952",
+        "tx": "0x9563e6ae2558c68a37600203836f7065acdcc6102f5bc9ad95c61d16212d4c21",
+        "tokenId": "302257",
+        "name": "Brain on BNB — Venus Health Factor Monitor",
+        "category": "health-factor",
+        "ours": false,
+        "buyer": "0xfceafec082f9e8b17cdb51f33c3d5c9759a25e03",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56953",
+        "tx": "0xca0a8d0e8d8bf2386c2230dcb0efc00ecd667ae9220596e2c5826f650b3c2db4",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xfceafec082f9e8b17cdb51f33c3d5c9759a25e03",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56954",
+        "tx": "0x4d01181d7e5047899ea7ce416b6596c12731d7fb4b597fcf2252dc74c8e948b2",
+        "tokenId": "344122",
+        "name": "Mandate Yield-1",
+        "category": "yield-optimisation",
+        "ours": true,
+        "buyer": "0xfceafec082f9e8b17cdb51f33c3d5c9759a25e03",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56955",
+        "tx": "0x2299380d25ae68820db9fb3a32a25aff99858b9f700917098df8cb8256977f42",
+        "tokenId": "302258",
+        "name": "Brain on BNB — BSC Grid Planner",
+        "category": "grid-trading",
+        "ours": false,
+        "buyer": "0xfceafec082f9e8b17cdb51f33c3d5c9759a25e03",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56958",
+        "tx": "0x73a7f55a9d289e75df7bda1c500c3e1146158c469d6e83e3cb0612924b27e73a",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0xfceafec082f9e8b17cdb51f33c3d5c9759a25e03",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56959",
+        "tx": "0x73a7f55a9d289e75df7bda1c500c3e1146158c469d6e83e3cb0612924b27e73a",
+        "tokenId": "344122",
+        "name": "Mandate Yield-1",
+        "category": "yield-optimisation",
+        "ours": true,
+        "buyer": "0xfceafec082f9e8b17cdb51f33c3d5c9759a25e03",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56986",
+        "tx": "0x2a76a16cfcd153d815eabc981dd6105cab4e12a86394649e844c2d6649074288",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xfceafec082f9e8b17cdb51f33c3d5c9759a25e03",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56987",
+        "tx": "0x5197ed433f29b85f5b0e2e3fe665a6e4982aebfd8a641b4ca36f59864e66689c",
+        "tokenId": "344122",
+        "name": "Mandate Yield-1",
+        "category": "yield-optimisation",
+        "ours": true,
+        "buyer": "0xfceafec082f9e8b17cdb51f33c3d5c9759a25e03",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56988",
+        "tx": "0xbebaf05b1e3fc8134cf3e39362d73a132bd3ccef3535f0a09bf6c329a5658193",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0xfceafec082f9e8b17cdb51f33c3d5c9759a25e03",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56990",
+        "tx": "0x52e843217bd4f423d2d3cf0d09e2807375fa891356e278f8e3895a96f8023856",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56991",
+        "tx": "0x9d09f360d30b583726d68bc171656fa91dd231728ef5daebc74c3cd887df85d6",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "56999",
+        "tx": "0xd42ffa66c19ce8a074bc113a9eda621b111b927c901c37ed493f8fc2a4c2deac",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57000",
+        "tx": "0x79fd0075074d2ad97ccfe80e68e88968da61313e7a3a639a88d12005d3b4d8b4",
+        "tokenId": "344122",
+        "name": "Mandate Yield-1",
+        "category": "yield-optimisation",
+        "ours": true,
+        "buyer": "0xdcf64cddc4a2b06f756f21a125ca393792dfa709",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57008",
+        "tx": "0xa16813e137779df9381cb109ffa63900e5f34879e4678241a55d7b4e2d9ced24",
+        "tokenId": "341555",
+        "name": "Sluicegate",
+        "category": "yield-optimisation",
+        "ours": false,
+        "buyer": "0x33feba76a9876629578489c37efef17edf44d016",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57009",
+        "tx": "0x7c1bbfeaece957032c1e6528d8950f866c55b60b82b56784002f152333b530ae",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0x33feba76a9876629578489c37efef17edf44d016",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57010",
+        "tx": "0x59074aec6554dc1e708adf1562941368e6cd1b29fdd5e5a96c90b0e571f9b990",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57013",
+        "tx": "0x58ec0866d6c90c80d8b9590159caaa13c11511204658b93ac15b4320e91dee50",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0xdcf64cddc4a2b06f756f21a125ca393792dfa709",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57018",
+        "tx": "0xd1a7fe9d3ce5617414a6a1bbe5d35166fe0e1e7e98d5347cbdbff8d245d029cf",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57021",
+        "tx": "0x123259aebb5e90442f04d5dee0f0361b491175076701d7b32610c4d2eb6a0bd7",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57022",
+        "tx": "0xa83d926d4b2d6dbb911740250e985de9a45aaad452bdccacf83c0273be5d0117",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57026",
+        "tx": "0x85967ce9e5b4b73f83f0a244eef3d84af1fa83a8869f9d1e53fd9c4036a2c174",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57029",
+        "tx": "0x80ad7bd8db5b1c303f6c4067b381801459d1b0d54b88664766962a62c2e1aa1b",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57038",
+        "tx": "0x2c9e2ccad4b1e05953db191bb8c09d87bd7d21342d6174dd4954d471da08c7f8",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57040",
+        "tx": "0x93feb6a4e18e2ff0afa2e0a48f956ba526a5b463884cb363006dbaf5d48d975e",
+        "tokenId": "363619",
+        "name": "Plinth keeper",
+        "category": "rebalancing",
+        "ours": false,
+        "buyer": "0x0d8c9ad8eebb6879fefa218f0799219bcaabe999",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57044",
+        "tx": "0x15927e8c1a3aca121d088d4cb252065ba8fadf9deeece63ef8297fe4d6a26454",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57053",
+        "tx": "0x16bc8a1983573f1856962663ad08fc57d9f07e3713203510c1845cce7f78677c",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57063",
+        "tx": "0x5a8e2ffde8bd66752eea984894fb3a0347a2727642f83832af274d5471172d7d",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57067",
+        "tx": "0x7d0561804647ca126e29c9d5f7301b42f72910eaf67326a31115616e458935fa",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0x7751be7b2ba4141d5e32ef14e9e5cc73e9d7bf0c",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57068",
+        "tx": "0xe4f6c85a55307b65000264d77e2ee7a096660e3667a0ba6cc749102cab394111",
+        "tokenId": "344122",
+        "name": "Mandate Yield-1",
+        "category": "yield-optimisation",
+        "ours": true,
+        "buyer": "0x7751be7b2ba4141d5e32ef14e9e5cc73e9d7bf0c",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57071",
+        "tx": "0xca1e48186fa7b62b3fb5882e0a2183e1236ce679078bea12efd6bc34e0cf5756",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0x93847647d7eb72a69e162117df6a8697df53edda",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57073",
+        "tx": "0x90f90a4816d74ef4a4bba9b444aeb3843dbc31b7ca07c9954f74db045dff8c2b",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0x893ce167aacef83f2b6cca8ba51d593d797c88bc",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57076",
+        "tx": "0x90779eb1a5c36448ad403a51268ab6c7eb96629754f4b8c53f5308c88f180d09",
+        "tokenId": "344121",
+        "name": "Mandate Grid-1",
+        "category": "grid-trading",
+        "ours": true,
+        "buyer": "0x0d8c9ad8eebb6879fefa218f0799219bcaabe999",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57077",
+        "tx": "0x76a168fff4c97369089a5cb1b33acc9a534be81d80996ad8216c6b338e339c36",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57081",
+        "tx": "0x9db79ded18e61cd1ebbe5403b9ff4d874d8c1cb7566aa986486e9d48ac51d767",
+        "tokenId": "382582",
+        "name": "cfo Venus health factor monitor",
+        "category": "health-factor",
+        "ours": false,
+        "buyer": "0x7b4d0426df20c3f19d9f97f5ad00b107945662ec",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57082",
+        "tx": "0xb5f2b00cc65feaf0043c3de3121dfd04ab0fae03c440987f8290eb40697705a0",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0x0d8c9ad8eebb6879fefa218f0799219bcaabe999",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57085",
+        "tx": "0xff5be2f016aa8f4695f5185e4e17c23fb4f1fe6c9e402dfd71428a0b51fd809e",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0xb833c2ee1d6cee3933a8ab525cc4a1c8f812a6e2",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57088",
+        "tx": "0xdb80530438e291472bd14eda3c8c17c2ac7af2ccdef280d4c25d13b13b096145",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57108",
+        "tx": "0x88e61336200eea4607246ff7c3ab16e81dfe9b2d8ec49c0d662e2f205280ad50",
+        "tokenId": "344122",
+        "name": "Mandate Yield-1",
+        "category": "yield-optimisation",
+        "ours": true,
+        "buyer": "0xc76ea6e8533c9fe1d25ff9fa3bd7d0edfdf46713",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57109",
+        "tx": "0x1323765810e668820c85140795436bd1357bbb98a504a389ecc71ec18de9b266",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0xc76ea6e8533c9fe1d25ff9fa3bd7d0edfdf46713",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57110",
+        "tx": "0x8f4e44d8fd117f26e6e5f57434d481e26122a7a542b80d116abed65739b01538",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57113",
+        "tx": "0xe1c1ee895cb2f7604833e90f17778859626195164486b2a984b8a3f4b91062f5",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57116",
+        "tx": "0xfcb37d76bcb19afbad391a8077f7185bd94420bb835153d56b1412308cdc3c68",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0xf5506b65e71601991895cd40bd2e875f29cca0da",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57122",
+        "tx": "0x3036a7f82c34225ceabf19d585991b88238de9aac9152518f4565ad93b42ac42",
+        "tokenId": "304494",
+        "name": "Brain on BNB — Portfolio Rebalance Pricer",
+        "category": "rebalancing",
+        "ours": false,
+        "buyer": "0xb833c2ee1d6cee3933a8ab525cc4a1c8f812a6e2",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57123",
+        "tx": "0x1331d236106e83d29c2da6230d9b2a2e5cb4a272e6ebe14f001c4f97fc8a7855",
+        "tokenId": "341554",
+        "name": "Lattice",
+        "category": "grid-trading",
+        "ours": false,
+        "buyer": "0xb833c2ee1d6cee3933a8ab525cc4a1c8f812a6e2",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57124",
+        "tx": "0x05f7fe4ded73af2d428e4f27650025a470b95036d893894010ebb142977295db",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xb833c2ee1d6cee3933a8ab525cc4a1c8f812a6e2",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57125",
+        "tx": "0x9b2b8880b40e563b42f10ba0cfb1192e8315e147bf8f97184dbf9244f78db3d3",
+        "tokenId": "344121",
+        "name": "Mandate Grid-1",
+        "category": "grid-trading",
+        "ours": true,
+        "buyer": "0xb833c2ee1d6cee3933a8ab525cc4a1c8f812a6e2",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57126",
+        "tx": "0xa44e433c99c2aed27d5cd1fe22720863ba3ae53bc038af9845f6221965fda37d",
+        "tokenId": "344122",
+        "name": "Mandate Yield-1",
+        "category": "yield-optimisation",
+        "ours": true,
+        "buyer": "0xb833c2ee1d6cee3933a8ab525cc4a1c8f812a6e2",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57127",
+        "tx": "0x97c053b57812017282699627ae568479ea6a197cd800e19a1d6db10cf18b4e07",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0xb833c2ee1d6cee3933a8ab525cc4a1c8f812a6e2",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57128",
+        "tx": "0x66e01037d6981d6f44a01ccb04bf6fe43a8914ece2469204c230a1385c58ae8f",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "57130",
+        "tx": "0x288f06e0453186b5dd0169cd00ee9d76e8f65ca826b56789f5cb8a06142d36bb",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "SUBMITTED"
+      },
+      {
+        "id": "57135",
+        "tx": "0x82e81a155359a1e24d93fe8f54b812d9a6cb9886c68ed1fc99d788d12ad8aa3a",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "SUBMITTED"
+      },
+      {
+        "id": "57147",
+        "tx": "0xdadcd5f61c69baec0adf39a5a56916ecb241d7ceaae9ab9d8c9554914f44d412",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "SUBMITTED"
+      },
+      {
+        "id": "57148",
+        "tx": "0xa234d53f36ceee9728794b98b16a0d19172e0048f0697fa975e12741dee1c532",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "SUBMITTED"
+      },
+      {
+        "id": "57152",
+        "tx": "0xa92257ee5b4fec0da70f6566d18fb1ce997ad5316ec16ad65f4d150dfa7cebf0",
+        "tokenId": "341554",
+        "name": "Lattice",
+        "category": "grid-trading",
+        "ours": false,
+        "buyer": "0x34d9bfa696b4775341f1b9167af578f5be292766",
+        "status": "SUBMITTED"
+      },
+      {
+        "id": "57157",
+        "tx": "0xe2512483a2708926bce77c657a3fad7dbb831b45374e4a575a57c2020c480b77",
+        "tokenId": "344122",
+        "name": "Mandate Yield-1",
+        "category": "yield-optimisation",
+        "ours": true,
+        "buyer": "0x34d9bfa696b4775341f1b9167af578f5be292766",
+        "status": "SUBMITTED"
+      },
+      {
+        "id": "57158",
+        "tx": "0x6916e45180bf27033413f07d0554c59f10f8a63b5bc5ba805ed63d5ad96a59b1",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "SUBMITTED"
+      },
+      {
+        "id": "57162",
+        "tx": "0x0a58522e4fc58e2188e0c411e75ce5c0c8f2ce85edcdf6dd7baaeca84fc3faad",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0x5f68f040ce9c7e4980b3a4d3a5dde17ea9db9fb6",
+        "status": "SUBMITTED"
+      },
+      {
+        "id": "57163",
+        "tx": "0x0a58522e4fc58e2188e0c411e75ce5c0c8f2ce85edcdf6dd7baaeca84fc3faad",
+        "tokenId": "344122",
+        "name": "Mandate Yield-1",
+        "category": "yield-optimisation",
+        "ours": true,
+        "buyer": "0x5f68f040ce9c7e4980b3a4d3a5dde17ea9db9fb6",
+        "status": "SUBMITTED"
+      },
+      {
+        "id": "57164",
+        "tx": "0xb07edd0b5540cdabb8d3e6cc205f8d4e342650bf48a5b374738b5343d4713bde",
+        "tokenId": "344123",
+        "name": "Mandate Guard-1",
+        "category": "health-factor",
+        "ours": true,
+        "buyer": "0x5f68f040ce9c7e4980b3a4d3a5dde17ea9db9fb6",
+        "status": "SUBMITTED"
+      },
+      {
+        "id": "57165",
+        "tx": "0xb07edd0b5540cdabb8d3e6cc205f8d4e342650bf48a5b374738b5343d4713bde",
+        "tokenId": "344122",
+        "name": "Mandate Yield-1",
+        "category": "yield-optimisation",
+        "ours": true,
+        "buyer": "0x5f68f040ce9c7e4980b3a4d3a5dde17ea9db9fb6",
+        "status": "SUBMITTED"
+      },
+      {
+        "id": "57168",
+        "tx": "0x769c1da22c77dcdcb4d548c5affec29a5584a6b616735911f79df3b5652a784c",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "SUBMITTED"
+      },
+      {
+        "id": "57169",
+        "tx": "0xd43b3bf77d2966247c69b6ede6e4aeab0349249849b4efcf3db1c21bfb7b1fa4",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "SUBMITTED"
+      },
+      {
+        "id": "57175",
+        "tx": "0x6c62d66fc8197519e4c65c4e7ea0c0ad442a8ba1662defe41a5e2c8d32e32419",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "SUBMITTED"
+      },
+      {
+        "id": "57178",
+        "tx": "0x1ab3852e1f8c430e9c901a5effb22d865d152cd3937f8744034376446b0c1dc3",
+        "tokenId": "344122",
+        "name": "Mandate Yield-1",
+        "category": "yield-optimisation",
+        "ours": true,
+        "buyer": "0x7709271a7644b311ca21bb7a38a77be95c793f22",
+        "status": "SUBMITTED"
+      },
+      {
+        "id": "57182",
+        "tx": "0x55f4ca5d0f3b1b39c6521115fdcf357608b04d162a1d78394332c7972ce041b3",
+        "tokenId": "344119",
+        "name": "Mandate Range-1",
+        "category": "rebalancing",
+        "ours": true,
+        "buyer": "0xc5a17b5295fc50badb1f9f9c09b412fe5e84f7d3",
+        "status": "SUBMITTED"
+      }
+    ]
+  },
+  "testnet": {
+    "contract": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE",
+    "jobs": 21,
+    "wallets": 7,
+    "delivered": 20,
+    "refunded": 1,
+    "teamExcluded": 27,
+    "list": [
+      {
+        "id": "1519",
+        "tx": null,
+        "name": "Mandate Guard-1",
+        "ours": true,
+        "buyer": "0x93847647d7eb72a69e162117df6a8697df53edda",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1509",
+        "tx": null,
+        "name": "Mandate Grid-1",
+        "ours": true,
+        "buyer": "0x93847647d7eb72a69e162117df6a8697df53edda",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1517",
+        "tx": null,
+        "name": "Mandate Guard-1",
+        "ours": true,
+        "buyer": "0x93847647d7eb72a69e162117df6a8697df53edda",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1528",
+        "tx": null,
+        "name": "Mandate Yield-1",
+        "ours": true,
+        "buyer": "0x93847647d7eb72a69e162117df6a8697df53edda",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1508",
+        "tx": null,
+        "name": "Mandate Grid-1",
+        "ours": true,
+        "buyer": "0x93847647d7eb72a69e162117df6a8697df53edda",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1518",
+        "tx": null,
+        "name": "Mandate Guard-1",
+        "ours": true,
+        "buyer": "0x93847647d7eb72a69e162117df6a8697df53edda",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1529",
+        "tx": null,
+        "name": "Mandate Yield-1",
+        "ours": true,
+        "buyer": "0x93847647d7eb72a69e162117df6a8697df53edda",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1510",
+        "tx": null,
+        "name": "Mandate Grid-1",
+        "ours": true,
+        "buyer": "0x93847647d7eb72a69e162117df6a8697df53edda",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1530",
+        "tx": null,
+        "name": "Mandate Yield-1",
+        "ours": true,
+        "buyer": "0x93847647d7eb72a69e162117df6a8697df53edda",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1549",
+        "tx": "0xe81ef8e3b181f28a3b2e89d90ff3acc0dfbbf39a859be50bca7e4b1d6da90832",
+        "name": "Mandate Guard-1",
+        "ours": true,
+        "buyer": "0x004775b255fa1c33e9f3a2a0a035ce984192c5e2",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1550",
+        "tx": null,
+        "name": "Mandate Yield-1",
+        "ours": true,
+        "buyer": "0x004775b255fa1c33e9f3a2a0a035ce984192c5e2",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1642",
+        "tx": null,
+        "name": "Mandate Range-1",
+        "ours": true,
+        "buyer": "0x614e7ec9d6c72d411c1d9a5d1a6f683eb5d76030",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1643",
+        "tx": null,
+        "name": "Mandate Grid-1",
+        "ours": true,
+        "buyer": "0x614e7ec9d6c72d411c1d9a5d1a6f683eb5d76030",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1644",
+        "tx": null,
+        "name": "Mandate Range-1",
+        "ours": true,
+        "buyer": "0x3e8f9346cb2c142d7184e8d08a20934b1d477067",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1645",
+        "tx": null,
+        "name": "Mandate Grid-1",
+        "ours": true,
+        "buyer": "0x3e8f9346cb2c142d7184e8d08a20934b1d477067",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1650",
+        "tx": null,
+        "name": "Mandate Guard-1",
+        "ours": true,
+        "buyer": "0x8bc6ef7e61b0ffa4f97bb1d3e2600a6f6ada5428",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1651",
+        "tx": null,
+        "name": "Mandate Yield-1",
+        "ours": true,
+        "buyer": "0x8bc6ef7e61b0ffa4f97bb1d3e2600a6f6ada5428",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1689",
+        "tx": null,
+        "name": "Mandate Guard-1",
+        "ours": true,
+        "buyer": "0x34d9bfa696b4775341f1b9167af578f5be292766",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1694",
+        "tx": null,
+        "name": "Mandate Range-1",
+        "ours": true,
+        "buyer": "0x34d9bfa696b4775341f1b9167af578f5be292766",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1700",
+        "tx": null,
+        "name": "Cresthold by Pokter",
+        "ours": false,
+        "buyer": "0x7709271a7644b311ca21bb7a38a77be95c793f22",
+        "status": "COMPLETED"
+      },
+      {
+        "id": "1701",
+        "tx": null,
+        "name": "Halong Yield",
+        "ours": false,
+        "buyer": "0x7709271a7644b311ca21bb7a38a77be95c793f22",
+        "status": "EXPIRED"
+      }
+    ]
+  }
+}

@@ -103,6 +103,8 @@ export interface Diagnosis {
   findings: Finding[];
   /** Categories worth hiring for, most urgent first. */
   needed: Category[];
+  /** What could not be read this time, in words: findings are silent about these, not clear of them. */
+  unread: string[];
   /** Population context, from the committed report. */
   population: { outOfRange: number; live: number; share: number; anchorBlock: number } | null;
 }
@@ -251,15 +253,35 @@ export async function diagnose(input: string, hires?: Map<string, number>): Prom
   let venus: VenusReading | null = null;
   let idle: IdleReading | null = null;
 
+  /*
+    What could not be read is said, never left to look like an empty wallet. A
+    node that failed once made every read here come back blank, and the page
+    told the owner "Nothing needs doing" (status beat 1, 5 Nov). Each is asked
+    twice; the chain failing outright throws, which the page words as that.
+  */
+  const unread: string[] = [];
   if (isWallet) {
-    const ids = await positionIdsOf(trimmed as Address).catch(() => []);
-    [positions, venus, idle] = await Promise.all([
-      readPositions(ids).catch(() => []),
-      readVenus(trimmed as Address),
-      readIdle(trimmed as Address),
+    const read = async <T,>(what: string, fn: () => Promise<T | null>): Promise<T | null> => {
+      const first = await fn().catch(() => null);
+      if (first !== null) return first;
+      await new Promise((ok) => setTimeout(ok, 400));
+      const second = await fn().catch(() => null);
+      if (second === null) unread.push(what);
+      return second;
+    };
+    const wallet = trimmed as Address;
+    const [p, v, i] = await Promise.all([
+      read("PancakeSwap positions", async () => readPositions(await positionIdsOf(wallet))),
+      read("Venus borrowing", () => readVenus(wallet)),
+      read("wallet balances", () => readIdle(wallet)),
     ]);
+    if (unread.length === 3) throw new Error("the chain did not answer");
+    positions = p ?? [];
+    venus = v;
+    idle = i;
   } else {
-    positions = await readPositions([BigInt(trimmed)]).catch(() => []);
+    // A failed read throws here: only a position manager that answered and refused the id means "not recognised" below.
+    positions = await readPositions([BigInt(trimmed)]);
   }
 
   const findings: Finding[] = positions.map(positionFinding);
@@ -305,6 +327,7 @@ export async function diagnose(input: string, hires?: Map<string, number>): Prom
     idle,
     findings,
     needed,
+    unread,
     population: population(),
   };
 }

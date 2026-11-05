@@ -695,3 +695,13 @@
   .bd-beat__acts .k-btn { flex: 1 1 auto; }
 }
 @media (prefers-reduced-motion: reduce) { .bd-demo { animation: none; } }
+
+/* The final record of Set and Earn. */
+.bd-rec { display: grid; gap: clamp(32px, 5vw, 56px); padding-block: clamp(16px, 3vw, 32px) clamp(48px, 7vw, 88px); }
+.bd-rec section { display: grid; gap: 16px; min-width: 0; }
+.bd-rec .k-table td:last-child:not(:first-child) { text-align: right; }
+.bd-rec__state { display: block; margin-top: 2px; }
+@media (max-width: 560px) {
+  .bd-rec__jobs td, .bd-rec__jobs th { padding: 12px 10px; }
+  .bd-rec__jobs .k-table__main { overflow-wrap: anywhere; }
+}

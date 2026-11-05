@@ -151,8 +151,8 @@ export default async function QuestPage({ searchParams }: { searchParams: Promis
                   <Link className="k-btn k-btn--primary" href="/agents">
                     Find an agent <ArrowRight size={16} className="k-btn__go" aria-hidden="true" />
                   </Link>
-                  <Link className="k-btn" href="/check">
-                    Check your agent
+                  <Link className="k-btn" href="/quest/record">
+                    The final record
                   </Link>
                 </div>
               ) : null}
