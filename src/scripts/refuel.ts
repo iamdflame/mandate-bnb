@@ -61,17 +61,27 @@ async function main() {
   await show("demo account", DEMO_ADDRESS);
 
   const total = SWAPS.reduce((s, x) => s + parseUnits(x.amount, 18), 0n);
-  if (t.bnb < GAS_TO_DEMO + parseEther("0.0005")) throw new Error("the test wallet holds too little BNB to send 0.002 and pay its own gas");
-  if (p.usdt < total) throw new Error(`the trial pool holds less than the ${formatUnits(total, 18)} USDT to swap`);
+  // Each half runs when its wallet can pay for it: gas alone keeps the house agents acting while the pool waits for USDT.
+  const gas = t.bnb >= GAS_TO_DEMO + parseEther("0.0005");
+  const swaps = p.usdt >= total;
+  if (!gas) console.log(`\nNo gas sent: the test wallet holds less than the 0.0025 BNB to send 0.002 and pay its own fee. Send BNB to ${test.address}.`);
+  if (!swaps) console.log(`\nNo swaps: the trial pool holds less than the ${formatUnits(total, 18)} USDT to swap. Send at least ${formatUnits(total - p.usdt, 18)} USDT (BEP-20) to ${pool.address}, then run this again.`);
+  if (!gas && !swaps) return;
 
   console.log(`\n${send ? "Doing" : "Would do"}:`);
-  console.log(`  0.002 BNB from the test wallet to the demo account`);
-  for (const x of SWAPS) console.log(`  ${x.amount} USDT to ${x.sym} in the trial pool`);
+  if (gas) console.log(`  0.002 BNB from the test wallet to the demo account`);
+  if (swaps) for (const x of SWAPS) console.log(`  ${x.amount} USDT to ${x.sym} in the trial pool`);
   if (!send) return console.log("\nAdd --send to do it.");
 
-  const from = createWalletClient({ account: test, chain: bsc, transport });
-  const hash = await from.sendTransaction({ to: DEMO_ADDRESS, value: GAS_TO_DEMO });
-  console.log(`  gas: ${(await pub.waitForTransactionReceipt({ hash })).status}, https://bscscan.com/tx/${hash}`);
+  if (gas) {
+    const from = createWalletClient({ account: test, chain: bsc, transport });
+    const hash = await from.sendTransaction({ to: DEMO_ADDRESS, value: GAS_TO_DEMO });
+    console.log(`  gas: ${(await pub.waitForTransactionReceipt({ hash })).status}, https://bscscan.com/tx/${hash}`);
+  }
+  if (!swaps) {
+    await show("demo account", DEMO_ADDRESS);
+    return;
+  }
 
   const payer = createWalletClient({ account: pool, chain: bsc, transport });
   const ok = await payer.writeContract({ address: USDT as Address, abi: ERC20, functionName: "approve", args: [SWAP_ROUTER as Address, total] });
