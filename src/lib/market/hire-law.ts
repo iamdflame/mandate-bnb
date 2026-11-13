@@ -276,6 +276,7 @@ export function primaryRail(v: HireVerdict): Rail | null {
 export function hireHref(tokenId: string, v: HireVerdict, about?: string): string | null {
   const r = primaryRail(v);
   if (!r) return null;
-  if (r.kind === "x402" || r.kind === "escrow") return `/agents/${tokenId}#call`;
+  // What the hire is about (a wallet or a position someone just checked) rides along, so nobody types it twice.
+  if (r.kind === "x402" || r.kind === "escrow") return `/agents/${tokenId}${about ? `?about=${encodeURIComponent(about)}` : ""}#call`;
   return about ? `/hire/${tokenId}?about=${encodeURIComponent(about)}` : `/hire/${tokenId}`;
 }

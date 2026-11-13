@@ -11,7 +11,9 @@ import { CATEGORY_LABEL, type Category } from "@/lib/config";
 import { LEASH_POLICIES, LIMITS } from "@/lib/leash/policy";
 import { viewHome } from "@/lib/view/home";
 import { DEMO_ADDRESS } from "@/lib/demo";
-import { viewJobs, viewMarket } from "@/lib/view/market";
+import { viewAgent, viewJobs, viewMarket } from "@/lib/view/market";
+import { pauseForSlug } from "@/lib/market/paused";
+import { withTimeout } from "@/lib/cache";
 import { viewGraveCounts } from "@/lib/view/trust";
 import { answeredAgo, poseOf } from "@/lib/view/state";
 
@@ -39,7 +41,8 @@ const JOB_COPY: Record<Category, { want: string; line: string; ask: string }> = 
   "health-factor": { want: "Protect my Venus loan", line: "Before your loan can be liquidated, an agent repays a little of it from your own wallet.", ask: "Protect my Venus loan" },
 };
 
-const fmt = (n: number) => n.toLocaleString("en-US");
+// A founder whose work is paused says so on the stage, in place of when it last answered.
+const PAUSE: Record<string, string | undefined> = { "344121": pauseForSlug("grid-1") ? "trading paused, sells its report" : undefined };
 const short = (tx: string) => `${tx.slice(0, 6)}…${tx.slice(-4)}`;
 const since = (iso: string | null) => {
   if (!iso) return null;
@@ -48,16 +51,24 @@ const since = (iso: string | null) => {
 };
 
 /**
- * The front door. The agents themselves are on the stage: Mandate's four, each
- * posed by what the chain and our last call show, and the latest real hire
- * holding one of them on the green leash. Below: how 376,000 registrations
- * come down to the few you can hire, the four jobs, the agents ready now, how
- * a hire works with its own transactions, the leash, and what failed.
+ * The front door: paste a wallet and see what needs doing. Beside it, the
+ * agents themselves are on the stage: Mandate's four, each posed by what the
+ * chain and our last call show, and the latest buyer's hire holding one on the
+ * green leash. Below: the four jobs, the agents ready now, how a hire works
+ * with its own transactions, the leash, and what failed.
  */
 export default async function Home() {
-  const [home, market, jobs, graves] = await Promise.all([viewHome(), viewMarket({ view: "ready", limit: 50 }), viewJobs(), viewGraveCounts()]);
+  const [home, market, jobs, graves, founders] = await Promise.all([
+    viewHome(),
+    viewMarket({ view: "ready", limit: 50 }),
+    viewJobs(),
+    viewGraveCounts(),
+    // Each founder as the marketplace last read it. They used to be looked up in the first fifty ready agents, so one further down was drawn "not answering" while it answered.
+    Promise.all(FOUNDERS.map((f) => withTimeout(viewAgent(f.id).catch(() => null), 4_000))),
+  ]);
   const ready = market.agents;
-  const byId = new Map(ready.map((a) => [a.tokenId, a]));
+  const byReady = [...jobs].sort((a, b) => b.ready - a.ready);
+  const byId = new Map(FOUNDERS.map((f, i) => [f.id, founders[i] ?? ready.find((a) => a.tokenId === f.id)] as const));
   const hireable = home.stages.find((s) => s.key === "hireable")?.n ?? market.ready;
   const r = home.receipt;
   const hiredId = r?.tokenId ?? "344119";
@@ -111,7 +122,7 @@ export default async function Home() {
                 </button>
               </div>
               <ul className="h-ask__jobs" aria-label="Or hire for a job">
-                {jobs.map((j) => {
+                {byReady.map((j) => {
                   const f = FOUNDERS.find((x) => x.job === j.job)!;
                   return (
                     <li key={j.job}>
@@ -157,7 +168,7 @@ export default async function Home() {
                       <span className="h-founder__name">{f.name}</span>
                       <span className="h-founder__state">
                         <span className={`k-dot ${a && poseOf(a) === "awake" ? "k-dot--live" : a?.hireable ? "k-dot--ready" : ""}`} aria-hidden="true" />
-                        {f.id === hiredId ? "on a buyer's leash" : (answeredAgo(a?.answeredMinutesAgo) ?? "not answering")}
+                        {f.id === hiredId ? "on a buyer's leash" : PAUSE[f.id] ? PAUSE[f.id] : (answeredAgo(a?.answeredMinutesAgo) ?? "not answering")}
                       </span>
                     </figcaption>
                   </figure>
@@ -210,7 +221,7 @@ export default async function Home() {
             </Link>
           </div>
           <ul className="h-jobs">
-            {jobs.map((j) => {
+            {byReady.map((j) => {
               const f = FOUNDERS.find((x) => x.job === j.job)!;
               return (
                 <li key={j.job}>

@@ -845,3 +845,6 @@ a.ac-tape__who:hover { color: var(--c-accent-hi); }
   .ac-four li { flex: 0 0 78%; scroll-snap-align: start; }
 }
 @media (prefers-reduced-motion: reduce) { .ac-four li { animation: none; } }
+
+/* A finding's own hire, with the checked wallet carried along. */
+.ac-find__go { grid-column: 1 / -1; justify-self: start; margin-top: 8px; }

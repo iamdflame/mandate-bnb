@@ -83,14 +83,38 @@ async function main() {
     { name: "the KeyStore is read", test: (h) => h.includes("matches") || h.includes("registry says") || "no KeyStore verdict on the page" },
   ]);
   await page("/status", [{ name: "the checks render", test: (h) => h.includes("The checks") }]);
-  await page("/", [{ name: "home renders", test: (h) => h.includes("</html>") }]);
-  await page("/activity", [{ name: "activity renders", test: (h) => h.includes("</html>") }]);
+  await page("/", [
+    { name: "the front door is a wallet check", test: (h) => /<form[^>]*action="\/diagnose"/.test(h) && h.includes("Check my wallet") },
+    { name: "the nav leads with the check, and has the record", test: (h) => h.indexOf('href="/diagnose"') > -1 && h.indexOf('href="/diagnose"') < h.indexOf('href="/agents"') && h.includes('href="/record"') },
+  ]);
+  await page("/activity", [{ name: "our own tests are under their own filter", test: (h) => h.includes("/activity?kind=ours") }]);
+  await page("/record", [
+    { name: "buyers' jobs are listed with their transactions", test: (h) => (h.match(/bscscan\.com\/tx\/0x[0-9a-f]{64}/g) ?? []).length >= 10 || "fewer than ten job transactions" },
+    { name: "the wallets we operate are listed", test: (h) => h.includes("Wallets we operate") && h.toLowerCase().includes("0xd6d11aa5046dc5c7be8d63b9223b60d7ad94cbe9") },
+  ]);
+  await page("/adopt", [
+    { name: "costs, keys and what is not true yet", test: (h) => ["A figure you can report", "What it costs to run", "Every key, and what it can do", "What is not true yet", "Handing it over"].every((t) => h.includes(t)) },
+    { name: "the owner is read from the chain", test: (h) => h.includes("Owner of our market contract now") || "the market contract was not read" },
+  ]);
+  // The wallet someone just checked travels into the hire.
+  await page(`/agents/344123?about=${DEMO}`, [{ name: "the checked wallet is carried to the agent", test: (h) => h.includes("the one you just checked") }]);
+
+  const proof = await get("/api/v1/proof");
+  try {
+    const j = JSON.parse(proof.text) as { data: { mainnet: { weeks: { week: string; jobs: number; ours: number }[] }; teamWallets: unknown[] } };
+    const w = j.data.mainnet.weeks;
+    record("/api/v1/proof: outside jobs by week, with our wallets listed", w.length > 0 && j.data.teamWallets.length > 5 && w.some((x) => x.jobs > 0), `${w.length} weeks, ${w.reduce((n, x) => n + x.jobs, 0)} outside jobs, ${w.reduce((n, x) => n + x.ours, 0)} of ours apart`);
+  } catch {
+    record("/api/v1/proof", false, `expected JSON, got ${proof.status}`);
+  }
 
   const status = await get("/api/status");
   try {
-    const j = JSON.parse(status.text) as { ok: boolean; checks: { beat: number; name: string; ok: boolean; detail: string }[] };
-    const bad = j.checks.filter((c) => !c.ok);
-    record("/api/status: every beat's data read passes", j.ok, j.ok ? `ok in ${status.ms} ms` : bad.map((c) => `beat ${c.beat} ${c.name}: ${c.detail}`).join("; "));
+    const j = JSON.parse(status.text) as { ok: boolean; upkeep?: boolean; checks: { beat: number; name: string; ok: boolean; detail: string }[] };
+    // The site's six beats decide the status; our own upkeep (gas for our agents, the trial pool) is its own line.
+    const words = (from: number, to: number) => j.checks.filter((c) => !c.ok && c.beat >= from && c.beat <= to).map((c) => `beat ${c.beat} ${c.name}: ${c.detail}`).join("; ");
+    record("/api/status: the site's six beats pass", j.ok, j.ok ? `ok in ${status.ms} ms` : words(1, 6));
+    record("/api/status: our own upkeep is green", j.upkeep === true, j.upkeep === true ? "gas and the trial pool are funded" : words(7, 99) || "no upkeep field");
   } catch {
     record("/api/status", false, `expected JSON, got ${status.status}`);
   }

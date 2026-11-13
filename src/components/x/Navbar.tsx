@@ -18,7 +18,7 @@ export const PLACES = [
   { href: "/diagnose", label: "Check a wallet", note: "Paste any wallet: what is drifting, at risk or idle, and who can fix it", match: ["/diagnose", "/alerts", "/pool-gaps"] },
   { href: "/agents", label: "Agents", note: "Hire an agent for one of four jobs", match: ["/agents", "/categories", "/compare", "/hire"] },
   { href: "/leash", label: "On your wallet", note: "Let an agent act on your wallet, with limits you can revoke", match: ["/leash", "/desk"] },
-  { href: "/record", label: "Record", note: "Who paid, what was delivered, how agents are checked, what failed", match: ["/record", "/activity", "/jobs", "/receipts", "/mandate", "/ledger", "/trust", "/verify", "/standard", "/assay", "/bench", "/evidence", "/proof", "/graveyard", "/contracts", "/status"] },
+  { href: "/record", label: "Record", note: "Who paid, what was delivered, how agents are checked, what failed", match: ["/record", "/activity", "/jobs", "/receipts", "/mandate", "/ledger", "/trust", "/verify", "/standard", "/assay", "/bench", "/evidence", "/proof", "/graveyard", "/contracts", "/status", "/adopt"] },
   { href: "/build", label: "Builders", note: "List, check and build an agent; the API", match: ["/build", "/check", "/list", "/api", "/brand", "/quest"] },
 ] as const;
 

@@ -360,7 +360,9 @@ export default async function StatusPage() {
                         <a className="k-mono tr-addr" href={bscscanAddress(who.owner)} target="_blank" rel="noreferrer">
                           {short(who.owner)}
                         </a>
-                        <div className="k-small">an EOA; a Safe transfer is prepared and not run</div>
+                        <div className="k-small">
+                          one key; a Safe transfer is prepared and not run. Every key and what it can do: <Link href="/adopt">running Mandate</Link>
+                        </div>
                       </dd>
                     </div>
                     <div>

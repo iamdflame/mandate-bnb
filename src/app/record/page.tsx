@@ -12,6 +12,7 @@ import { ESCROW } from "@/lib/escrow/contracts";
 import { referenceRegistrations } from "@/lib/house";
 import { listingFor } from "@/lib/market/listing";
 import { listPaidCalls } from "@/lib/market/paid-calls";
+import { byWeek } from "@/lib/market/weekly";
 import { bscscanTx } from "@/lib/demo";
 import { isTeam, teamWallets } from "@/lib/team";
 
@@ -46,6 +47,7 @@ export default async function RecordPage() {
   const name = (id: string) => listingFor(id)?.name ?? findAgent(id)?.name ?? `Agent #${id}`;
   const job = (id: string) => (listingFor(id)?.category ?? findAgent(id)?.category ?? null) as Category | null;
   const team = Object.entries(teamWallets());
+  const weeks = byWeek(jobs.map((j) => ({ client: j.client, status: j.status, at: j.createdAt }))).slice(0, 8);
   // Who the buyers are, busiest first: one wallet's daily check is most of one agent's record, and is said so here rather than found.
   const groups = new Map<string, typeof theirs>();
   for (const j of theirs) groups.set(j.client.toLowerCase(), [...(groups.get(j.client.toLowerCase()) ?? []), j]);
@@ -126,6 +128,39 @@ export default async function RecordPage() {
               </tbody>
             </table>
           </div>
+        </section>
+
+        <section aria-labelledby="h-rec-weeks">
+          <h2 id="h-rec-weeks" className="k-h2">
+            By week
+          </h2>
+          <div className="k-table-wrap">
+            <table className="k-table tr-rec__weeks">
+              <thead>
+                <tr>
+                  <th scope="col">Week of</th>
+                  <th scope="col">Buyers&apos; jobs</th>
+                  <th scope="col">Delivered</th>
+                  <th scope="col">Buyers</th>
+                  <th scope="col">Our tests</th>
+                </tr>
+              </thead>
+              <tbody>
+                {weeks.map((w) => (
+                  <tr key={w.week}>
+                    <td className="k-table__main">{new Date(`${w.week}T00:00:00Z`).toUTCString().slice(5, 16)}</td>
+                    <td className="k-num">{w.jobs}</td>
+                    <td className="k-num">{w.delivered}</td>
+                    <td className="k-num">{w.buyers}</td>
+                    <td className="k-num">{w.ours}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="k-src">
+            Weeks start Monday, UTC. As data, with testnet: <a href="/api/v1/proof">/api/v1/proof</a>.
+          </p>
         </section>
 
         <section aria-labelledby="h-rec-jobs">
@@ -213,6 +248,9 @@ export default async function RecordPage() {
           </Link>
           <Link className="k-btn" href="/quest/record">
             Set and Earn, frozen at its close
+          </Link>
+          <Link className="k-btn" href="/adopt">
+            Running Mandate
           </Link>
           <Link className="k-btn k-btn--ghost" href="/graveyard">
             What failed

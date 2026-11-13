@@ -38,6 +38,7 @@ const GROUPS: { id: string; t: string; d: string; routes: Route[] }[] = [
     d: "The same reads /agents and every agent page make, in the same order and by the same hire law.",
     routes: [
       { method: "GET", path: "/api/v1/market?q=&job=&view=&limit=", limit: "30 / min", what: "Search: each agent with whether it can be hired now, how, at what price, and why not when it cannot. view is ready (default), free, checked or all.", open: "/api/v1/market?job=health-factor&limit=5" },
+      { method: "GET", path: "/api/v1/proof", limit: "30 / min", what: "Escrowed jobs paid for by wallets we do not operate, per week, on mainnet and testnet, with the wallets we operate listed.", open: "/api/v1/proof" },
       { method: "GET", path: "/api/v1/market/jobs", limit: "30 / min", what: "The four jobs: how many agents can be hired for each now, how many are listed, and the lowest price.", open: "/api/v1/market/jobs" },
       { method: "GET", path: "/api/v1/market/{tokenId}", limit: "30 / min", what: "One agent as its page states it: every way it can be hired, the price Hire charges, and why not.", open: "/api/v1/market/344119" },
       { method: "GET", path: "/api/v1/agents?rung=&category=&hireable=&all=&limit=&offset=", limit: "30 / min", what: "The register under the four jobs, filterable; all=1 adds every other registration read. Carries coverage, so a small answer is never mistaken for a small registry. An unknown category is refused, not ignored.", open: "/api/v1/agents?rung=2&limit=5" },

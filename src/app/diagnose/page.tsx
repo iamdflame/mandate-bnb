@@ -45,12 +45,19 @@ const SEVERITY: Record<Finding["severity"], { word: string; tag: string }> = {
   fine: { word: "Fine", tag: "k-tag" },
 };
 
-function FindingRow({ f }: { f: Finding }) {
+/** One problem, and for one that needs doing, the agent to hire for it with the wallet already filled in. */
+function FindingRow({ f, fix }: { f: Finding; fix?: { href: string; name: string; price: string | null } }) {
   return (
     <li className="ac-find" data-s={f.severity}>
       <span className={SEVERITY[f.severity].tag}>{SEVERITY[f.severity].word}</span>
       <p className="ac-find__t">{f.title}</p>
       <p className="ac-find__d">{f.detail}</p>
+      {fix && f.severity !== "fine" ? (
+        <Link className="k-btn k-btn--sm ac-find__go" href={fix.href}>
+          Hire {fix.name}
+          {fix.price ? ` for ${fix.price}` : ""} <ArrowRight size={14} className="k-btn__go" aria-hidden="true" />
+        </Link>
+      ) : null}
     </li>
   );
 }
@@ -226,6 +233,7 @@ export default async function DiagnosePage({
             <div className="ac-groups">
               {groups.map((g, gi) => {
                 const fx = fixers.find((f) => f.category === g.job);
+                const top = fx?.hireable[0];
                 return (
                   <section key={g.job} className="ac-group" data-job={g.job} data-needs={g.needs ? "1" : undefined} aria-labelledby={`ac-g-${g.job}`} style={{ ["--i" as string]: gi }}>
                     <div className="ac-group__found">
@@ -235,7 +243,7 @@ export default async function DiagnosePage({
                       </h3>
                       <ol className="ac-finds">
                         {(g.needs ? g.items.filter((f) => f.severity !== "fine") : g.items).map((f, i) => (
-                          <FindingRow key={`${f.kind}-${f.tokenId ?? i}`} f={f} />
+                          <FindingRow key={`${f.kind}-${f.tokenId ?? i}`} f={f} fix={top ? { href: `/agents/${top.tokenId}?about=${encodeURIComponent(result.input)}#call`, name: top.name, price: top.price } : undefined} />
                         ))}
                       </ol>
                       {g.needs && g.items.some((f) => f.severity === "fine") ? (
@@ -281,7 +289,7 @@ export default async function DiagnosePage({
                             {fx.hireable.map((a, i) => (
                               <li key={a.tokenId}>
                                 <AgentCard a={a} i={i} slot={`fx${g.job.slice(0, 3)}${i}`} />
-                                <Link className="k-btn k-btn--sm k-btn--block ac-fixers__go" href={`/agents/${a.tokenId}?about=${encodeURIComponent(result.input)}`}>
+                                <Link className="k-btn k-btn--sm k-btn--block ac-fixers__go" href={`/agents/${a.tokenId}?about=${encodeURIComponent(result.input)}${a.hireable ? "#call" : ""}`}>
                                   Hire for this {where}
                                 </Link>
                               </li>

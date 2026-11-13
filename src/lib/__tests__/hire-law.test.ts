@@ -263,3 +263,12 @@ describe("a failed paid call costs only what failed", () => {
     expect(v.short).toBe("Refused a correct payment");
   });
 });
+
+describe("what a hire is about", () => {
+  it("rides along to the agent's page on a paid rail", async () => {
+    const { hireHref } = await import("../market/hire-law");
+    const v = { ok: true, rails: [{ kind: "escrow", price: "0.01 $U" }] } as unknown as Parameters<typeof hireHref>[1];
+    expect(hireHref("7", v, "0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90")).toBe("/agents/7?about=0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90#call");
+    expect(hireHref("7", v)).toBe("/agents/7#call");
+  });
+});

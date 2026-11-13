@@ -146,3 +146,6 @@
   .x-cmpt th, .x-cmpt td { padding: 12px 12px; }
   .x-cmpt tbody th { position: sticky; left: 0; z-index: 1; background: var(--c-surface); }
 }
+
+/* The wallet or position the visitor came from checking. */
+.mk-agent-about { margin-top: 10px; overflow-wrap: anywhere; }

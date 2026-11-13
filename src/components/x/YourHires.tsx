@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { formatUnits, type Address } from "viem";
 import { Check, Clock } from "lucide-react";
-import { sendMarketTx, useWallet } from "@/lib/chain/wallet";
-import { COMMERCE_ABI, ESCROW } from "@/lib/escrow/contracts";
+import { useWallet } from "@/lib/chain/wallet";
+import { claimEscrowRefund } from "@/lib/escrow/refund";
 import RateAgent from "./RateAgent";
 import OpenInWallet from "./OpenInWallet";
 import Agent from "@/components/characters/Agent";
@@ -98,7 +98,7 @@ export default function YourHires() {
     setRefunding(jobId);
     setError(null);
     try {
-      await sendMarketTx(address as Address, "claimRefund", [BigInt(jobId)], undefined, undefined, { address: ESCROW.commerce, abi: COMMERCE_ABI });
+      await claimEscrowRefund(address as Address, jobId);
       await read();
     } catch (e) {
       setError((e as Error).message.slice(0, 160));

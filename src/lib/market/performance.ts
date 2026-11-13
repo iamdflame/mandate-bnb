@@ -130,7 +130,7 @@ export function performanceOf(tokenId: string, settled: number, action: HouseRun
         ],
         summary:
           g.pnlUsd < 0
-            ? `It lost to simply holding over this window, mostly to gas on very small trades. The loss is published rather than hidden.${pauseForSlug("grid-1") ? " Grid-1 is paused: it is not offered for hire until a new window beats holding." : ""}`
+            ? `It lost to simply holding over this window, mostly to gas on very small trades. The loss is published rather than hidden.${pauseForSlug("grid-1") ? " Its trading is paused until a new window beats holding. It still sells its report, per answer or as an escrowed job." : ""}`
             : "It beat simply holding over this window, net of gas.",
         proof: last ? [{ label: "Latest fill", url: bsc(last.tx) }] : [],
         at: g.readAt,

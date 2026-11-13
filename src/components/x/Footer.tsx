@@ -26,6 +26,8 @@ const COLUMNS: { h: string; links: { href: string; label: string; ext?: boolean 
       { href: "/evidence/restatement", label: "Where we were wrong" },
       { href: "/contracts", label: "Contracts" },
       { href: "/status", label: "Status" },
+      { href: "/record", label: "The record" },
+      { href: "/adopt", label: "Running Mandate" },
     ],
   },
   {

@@ -101,8 +101,12 @@ function jobWords(j: EscrowJob): string {
  * own call, a proof is a check that passed, and where there is no record the
  * page says so rather than drawing one.
  */
-export default async function AgentPage({ params }: { params: Promise<{ tokenId: string }> }) {
+export default async function AgentPage({ params, searchParams }: { params: Promise<{ tokenId: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { tokenId } = await params;
+  // The wallet or position the visitor just checked, carried from /diagnose into the hire.
+  const sp = await searchParams;
+  const raw = (Array.isArray(sp.about) ? sp.about[0] : sp.about) ?? "";
+  const about = /^0x[0-9a-fA-F]{40}$/.test(raw) || /^\d{1,12}$/.test(raw) ? raw : undefined;
   const paidJobs = (await strangerHiresLive().catch(() => [])).filter((h) => h.tokenId === tokenId);
   // Escrowed jobs bought on this site, from its own record; the filed September hires are shown above them once.
   const siteJobs = ((await withTimeout(jobsOfAgent(tokenId).catch(() => []), 6_000)) ?? []).filter((j) => !paidJobs.some((h) => h.jobId === j.jobId));
@@ -263,6 +267,14 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
             <p className="k-lede mk-agent-what k-rise" style={{ ["--i" as string]: 2 }}>
               {l.what ?? "It published no description of what it does."}
             </p>
+            {about ? (
+              <p className="k-small mk-agent-about">
+                For {about.startsWith("0x") ? "wallet" : "position"} <span className="k-mono">{about.startsWith("0x") ? `${about.slice(0, 6)}…${about.slice(-4)}` : `#${about}`}</span>, the one you just checked. It is filled in when you hire.{" "}
+                <Link className="k-link" href={`/diagnose?q=${about}`}>
+                  Back to the check
+                </Link>
+              </p>
+            ) : null}
 
             <div className="mk-agent-buy k-rise" style={{ ["--i" as string]: 3 }}>
               <Price l={l} size="lg" rail={rail} on={lead} />
@@ -273,6 +285,8 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
                   </span>
                 ) : null}
                 {stateLine ? <span>{stateLine}</span> : checkedAt ? <Ago iso={checkedAt} prefix="checked" /> : <span>Not checked yet</span>}
+                {/* An older answer is said, with what happens next: an escrowed job asks it for a fresh signed price before anything is signed. */}
+                {verdict.ok && escrowRail && (verdict.answeredMinutesAgo ?? 0) > 15 ? <span>we ask it again before you pay</span> : null}
               </p>
             </div>
 
@@ -890,7 +904,7 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
         </div>
       ) : null}
 
-      <HireDrawer offer={offer} />
+      <HireDrawer offer={offer} subject={about} />
     </AppShell>
   );
 }

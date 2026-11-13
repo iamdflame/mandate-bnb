@@ -30,7 +30,7 @@ export type Sort = "recommended" | "recent" | "fastest" | "price" | "activity" |
   call; "most activity" is paid work delivered, then reviews, then mandates.
 */
 export const SORTS: { id: Sort; label: string; how: string }[] = [
-  { id: "recommended", label: "Recommended", how: "Hireable now first, then passed MANDATE checks, then reachable, priced on a rail we can pay, how clearly it matches the job, and past hires. Agents whose last paid work failed come last." },
+  { id: "recommended", label: "Recommended", how: "Hireable now first, then passed MANDATE checks, then reachable, priced on a rail we can pay, how clearly it matches the job, and past hires. Agents whose last paid work failed come last. Our own agents never outrank an equal agent we do not run." },
   { id: "recent", label: "Recently active", how: "Answered our most recent check first." },
   { id: "fastest", label: "Fastest", how: "Quickest answer to our last call. Agents that did not answer come last." },
   { id: "price", label: "Lowest price", how: "Cheapest published price in dollar stablecoins. Unpriced agents come last." },

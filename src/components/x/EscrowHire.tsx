@@ -9,6 +9,7 @@ import OpenInWallet from "./OpenInWallet";
 import RateAgent from "./RateAgent";
 import { COMMERCE_ABI, DELIVERY_SECONDS, ESCROW, outsideDescription, POLICY_ABI, ROUTER_ABI, TOKEN_ABI, VIA } from "@/lib/escrow/contracts";
 import { canBatch, NotBatchable, sendBatch } from "@/lib/escrow/batch";
+import { claimEscrowRefund } from "@/lib/escrow/refund";
 import { planSwap, SWAP_ROUTER_ABI, type SwapPlan } from "@/lib/escrow/pay-with-bnb";
 import { PROTOCOLS } from "@/lib/config";
 import { track } from "@/lib/ops/funnel-client";
@@ -82,7 +83,8 @@ export default function EscrowHire({
     accepted: bigint | null;
   }>({ id: null, expiredAt: null, steps: new Set(), quote: null, accepted: null });
   const [error, setError] = useState<string | null>(null);
-  const [job, setJob] = useState<{ status: string; deliverableUrl: string | null; submitTx?: string | null; answer?: unknown; verified?: boolean | null } | null>(null);
+  const [job, setJob] = useState<{ status: string; deliverableUrl: string | null; submitTx?: string | null; settleTx?: string | null; expiredAt?: number | null; answer?: unknown; verified?: boolean | null } | null>(null);
+  const [refunding, setRefunding] = useState<"sending" | "failed" | null>(null);
   const [fundTx, setFundTx] = useState<Hash | null>(null);
   // This wallet sends the five steps as one atomic batch: one confirmation instead of five.
   const [batch, setBatch] = useState(false);
@@ -153,18 +155,23 @@ export default function EscrowHire({
   }, [offer.tokenId]);
 
   const poll = useCallback(async (id: bigint) => {
-    for (let i = 0; i < 60; i++) {
+    /*
+      Every five seconds for five minutes, then every half minute for two
+      hours: the receipt used to stop reading after five minutes, so a job
+      delivered or run out later showed "waiting" for as long as it stayed open.
+    */
+    for (let i = 0; i < 300; i++) {
       const r = await fetch(`/api/escrow/jobs/${id}`, { cache: "no-store" }).then((x) => x.json()).catch(() => null);
       const d = r?.data;
       // Still not on our books half a minute on: tell us again.
       if (d && !d.ours && i % 6 === 5) void record();
       if (d) {
-        setJob({ status: d.status, deliverableUrl: d.deliverableUrl, submitTx: d.record?.submitTx ?? null, answer: d.sellerAnswer ?? null, verified: d.sellerVerified ?? null });
+        setJob({ status: d.status, deliverableUrl: d.deliverableUrl, submitTx: d.record?.submitTx ?? null, settleTx: d.record?.settleTx ?? null, expiredAt: d.expiredAt ?? null, answer: d.sellerAnswer ?? null, verified: d.sellerVerified ?? null });
         // An outside seller can submit before its answer reaches us; wait for both.
         // An outside agent's answer counts once it is verified against its on-chain hash, or after two minutes of trying.
         if (d.status !== "FUNDED" && (!outside || d.sellerVerified || (d.sellerAnswer && i > 24))) return;
       }
-      await new Promise((ok) => setTimeout(ok, 5_000));
+      await new Promise((ok) => setTimeout(ok, i < 60 ? 5_000 : 30_000));
     }
   }, [outside, record]);
 
@@ -335,6 +342,9 @@ export default function EscrowHire({
   const who = offer.outside ? offer.name : "our agent";
   const eta = offer.outside?.etaSeconds ? `in about ${Math.max(1, Math.round(offer.outside.etaSeconds / 60))} minutes` : "within minutes";
   const delivered = job?.status === "SUBMITTED" || job?.status === "COMPLETED";
+  const refunded = job?.status === "EXPIRED" || job?.status === "REJECTED";
+  // Past its deadline and never delivered: the kernel lets the buyer take the money back.
+  const overdue = job?.status === "FUNDED" && Boolean(job.expiredAt) && Date.now() / 1000 > job.expiredAt!;
   if (!available)
     return (
       <div className="x-escrow">
@@ -357,9 +367,13 @@ export default function EscrowHire({
     );
   if (!ready)
     return (
-      <button type="button" className="x-btn x-btn--block" onClick={switchChain}>
-        Switch to BNB Smart Chain
-      </button>
+      <div className="x-escrow__gate">
+        <p className="x-hire__note">Your wallet is on another network. Nothing is signed until you switch.</p>
+        {/* A switch the wallet refuses or the person closes is not an error to report. */}
+        <button type="button" className="x-btn x-btn--block" onClick={() => void Promise.resolve(switchChain()).catch(() => undefined)}>
+          Switch to BNB Smart Chain
+        </button>
+      </div>
     );
 
   return (
@@ -470,9 +484,67 @@ export default function EscrowHire({
       {jobId !== null && at >= 5 ? (
         <div className="x-escrow__job" role="status">
           <p>
-            Job <span className="x-mono">#{jobId.toString()}</span>:{" "}
-            {delivered ? "delivered on chain." : `funded. Waiting for ${who} to deliver…`}
+            Job <span className="x-mono">#{jobId.toString()}</span>
           </p>
+          {/* The receipt: three lines that fill in as the chain records each one. */}
+          <ol className="x-escrow__lines">
+            <li data-done="1">
+              <Check size={13} strokeWidth={3} aria-hidden="true" /> Paid into escrow
+              {fundTx ? (
+                <a className="x-link x-mono" href={`https://bscscan.com/tx/${fundTx}`} target="_blank" rel="noreferrer">
+                  {fundTx.slice(0, 6)}…{fundTx.slice(-4)}
+                </a>
+              ) : null}
+            </li>
+            <li data-done={delivered ? "1" : undefined}>
+              {delivered ? <Check size={13} strokeWidth={3} aria-hidden="true" /> : refunded || overdue ? <X size={13} aria-hidden="true" /> : <Loader2 size={13} className="bd-spin" aria-hidden="true" />}{" "}
+              {delivered ? "Delivered on chain" : refunded || overdue ? "Not delivered" : `Waiting for ${who} to deliver`}
+              {delivered && job?.submitTx ? (
+                <a className="x-link x-mono" href={`https://bscscan.com/tx/${job.submitTx}`} target="_blank" rel="noreferrer">
+                  {job.submitTx.slice(0, 6)}…{job.submitTx.slice(-4)}
+                </a>
+              ) : null}
+            </li>
+            <li data-done={job?.status === "COMPLETED" || refunded ? "1" : undefined}>
+              {job?.status === "COMPLETED" || refunded ? <Check size={13} strokeWidth={3} aria-hidden="true" /> : <span className="x-escrow__dot" aria-hidden="true" />}{" "}
+              {job?.status === "COMPLETED"
+                ? `Paid to ${who}`
+                : refunded
+                  ? "Refunded to your wallet"
+                  : overdue
+                    ? "Your money is still in escrow. Take it back:"
+                    : delivered
+                      ? `Paid to ${who} once the dispute window closes`
+                      : `Held in escrow. You take it back if ${who} does not deliver`}
+              {job?.status === "COMPLETED" && job.settleTx ? (
+                <a className="x-link x-mono" href={`https://bscscan.com/tx/${job.settleTx}`} target="_blank" rel="noreferrer">
+                  {job.settleTx.slice(0, 6)}…{job.settleTx.slice(-4)}
+                </a>
+              ) : null}
+            </li>
+          </ol>
+          {overdue && address ? (
+            <>
+              <button
+                type="button"
+                className="x-btn x-btn--block"
+                disabled={refunding === "sending"}
+                onClick={() => {
+                  setRefunding("sending");
+                  claimEscrowRefund(address as Address, jobId).then(
+                    () => {
+                      setRefunding(null);
+                      void poll(jobId);
+                    },
+                    () => setRefunding("failed"),
+                  );
+                }}
+              >
+                {refunding === "sending" ? "Claiming your refund…" : "Claim your refund"}
+              </button>
+              {refunding === "failed" ? <p className="x-escrow__err">The refund was not sent. Nothing moved; try again, or claim it from My desk.</p> : null}
+            </>
+          ) : null}
           {job?.deliverableUrl ? (
             <p>
               <a className="x-link" href={job.deliverableUrl} target="_blank" rel="noreferrer">

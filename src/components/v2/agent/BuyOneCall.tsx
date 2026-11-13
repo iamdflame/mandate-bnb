@@ -408,9 +408,12 @@ export default function BuyOneCall({
           Connect wallet
         </button>
       ) : !ready ? (
-        <button className="x-btn x-btn--primary x-btn--block x-btn--lg" onClick={() => void switchChain()} type="button">
-          Switch to {marketChain.name}
-        </button>
+        <>
+          <p className="x-hire__note">Your wallet is on another network. Nothing is signed until you switch.</p>
+          <button className="x-btn x-btn--primary x-btn--block x-btn--lg" onClick={() => void Promise.resolve(switchChain()).catch(() => undefined)} type="button">
+            Switch to {marketChain.name}
+          </button>
+        </>
       ) : balance !== null && balance < req!.amount ? (
         <div className="x-pay__what">
           <p className="x-pay__err">

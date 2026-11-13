@@ -104,7 +104,20 @@ function Can({ items, no = false }: { items: string[]; no?: boolean }) {
  * leaves it unset and opens on #call; a page offering several agents gives
  * each drawer its own, so one link opens one drawer.
  */
-export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer; openOn?: string; onDone?: () => void }) {
+/** What a hire is about, placed in the input that takes it: a wallet into wallet inputs, a position number into a position input. */
+export function withSubject(inputs: HireOffer["inputs"], values: Record<string, string>, subject: string | undefined): Record<string, string> {
+  if (!subject) return values;
+  const wallet = /^0x[0-9a-fA-F]{40}$/.test(subject);
+  const next = { ...values };
+  for (const i of inputs) if (wallet ? i.kind === "wallet" : /^\d+$/.test(subject) && /position/i.test(i.name)) next[i.name] = subject;
+  return next;
+}
+
+/**
+ * `subject` is the wallet or position the buyer came from checking: it fills
+ * the matching input ahead of the connected wallet, which may be another one.
+ */
+export default function HireDrawer({ offer, openOn, onDone, subject }: { offer: HireOffer; openOn?: string; onDone?: () => void; subject?: string }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("review");
   const [tx, setTx] = useState<{ step: TxStep; failed: boolean } | null>(null);
@@ -112,7 +125,7 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
   const [lastPrice, setLastPrice] = useState<string | undefined>(undefined);
   const { address } = useWallet();
   // Starts from any example the agent's card gives, so a structured task arrives in the form it reads.
-  const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(offer.inputs.filter((i) => i.example).map((i) => [i.name, i.example!])));
+  const [values, setValues] = useState<Record<string, string>>(() => withSubject(offer.inputs, Object.fromEntries(offer.inputs.filter((i) => i.example).map((i) => [i.name, i.example!])), subject));
 
   // A wallet input starts as the connected wallet: the question is usually about your own account.
   useEffect(() => {

@@ -138,3 +138,14 @@
 @media (prefers-reduced-motion: reduce) {
   .x-drawer__panel, .x-drawer__scrim, .x-hire__done, .x-hire__hero, .x-tray { animation: none; }
 }
+
+/* The buyer's receipt inside the hire: paid, delivered, settled or refunded, each filling in as the chain records it. */
+.x-escrow__lines { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 8px; }
+.x-escrow__lines li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--c-text-2); font-size: 0.9375rem; }
+.x-escrow__lines li[data-done] { color: var(--c-text); }
+.x-escrow__lines li[data-done] svg { color: var(--c-accent, #13b98a); }
+.x-escrow__lines a { margin-left: auto; }
+.x-escrow__dot { width: 9px; height: 9px; margin: 0 2px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px currentColor; opacity: 0.6; }
+.x-escrow__gate { display: grid; gap: 10px; }
+.x-escrow__lines .bd-spin { animation: k-spin 0.9s linear infinite; }
+.x-hire__note { color: var(--c-text-2); font-size: 0.9375rem; line-height: 1.45; }
