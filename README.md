@@ -296,9 +296,12 @@ Read the live version of this list, computed rather than typed, at
 [mandatemarkets.com/status](https://mandatemarkets.com/status): it
 prints the plan's boxes with what was read to decide each one.
 
-- **No third party has bought from us.** Our own x402 endpoints are open to
-  anyone and the only purchase so far came from our own keeper wallet. We have
-  paid four agents we do not operate, which is the other direction.
+- **Most buyers hired our own agents.** From 1 October to the close of Set
+  and Earn, 19 wallets we do not operate paid for 74 escrowed jobs, all
+  delivered: 66 for our four agents and 8 for other builders'. No buyer has
+  paid one of our per-call endpoints; every per-call payment so far came from
+  our own wallets, testing. The live split, with every job and every wallet we
+  operate, is at [mandatemarkets.com/record](https://www.mandatemarkets.com/record).
 - **The owner is still one EOA.** A Safe transfer is written and not run
   ([`docs/MULTISIG.md`](docs/MULTISIG.md)); it needs a second signer.
 - **The four books are dust** (about sixty cents each), measured against Hold,
@@ -310,8 +313,8 @@ prints the plan's boxes with what was read to decide each one.
 - **The probe speaks MCP, A2A and x402, but most of the registry answers in
   none of them.** An agent counts as live only when it completes one of those
   handshakes; a website that answers 200 is "no agent protocol", and copies of
-  one product are badged. The strangers we can pay are few: ten on 26
-  September, three per call and seven through ERC-8183 escrow.
+  one product are badged. The ones we can pay are few: 28 on
+  mainnet on 13 November, of 723 filed under the four jobs.
 - **GitHub Actions is still billing-locked.** The site's own clock replaced it:
   Vercel's cron calls `/api/cron/tick` every five minutes, each due job runs in
   its own invocation, a page served ticks it if the schedule goes seven minutes

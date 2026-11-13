@@ -57,7 +57,6 @@ function what(g: Grave): string {
 
 /** One record, kept as it was written: our sentence, the seller's own words, our note, the transactions. */
 function Row({ g }: { g: Grave }) {
-  const long = (g.said?.length ?? 0) > 180;
   return (
     <li className="tr-grave" id={graveAnchor(g)} data-ours={g.ours ? "true" : undefined}>
       <div className="tr-grave__top">
@@ -65,21 +64,14 @@ function Row({ g }: { g: Grave }) {
         {g.ours ? <span className="k-tag k-tag--ours">Ours: our mistake, not theirs</span> : null}
       </div>
       {g.said ? (
-        long ? (
-          <details className="tr-said">
-            <summary>
-              <span className="tr-said__k">In its own words</span>
-              <span className="tr-said__clip k-mono">{g.said.slice(0, 180)}…</span>
-              <span className="tr-said__more">Show all of it</span>
-            </summary>
-            <blockquote className="tr-said__full k-mono">{g.said}</blockquote>
-          </details>
-        ) : (
-          <blockquote className="tr-said tr-said--short">
-            <span className="tr-said__k">In its own words</span>
-            <span className="k-mono">{g.said}</span>
-          </blockquote>
-        )
+        // Its own words, kept whole, one tap down: raw, they read as a crash dump before our sentence is read.
+        <details className="tr-said">
+          <summary>
+            <span className="tr-said__k">The server&apos;s words</span>
+            <span className="tr-said__more">Show</span>
+          </summary>
+          <blockquote className="tr-said__full k-mono">{g.said}</blockquote>
+        </details>
       ) : null}
       {g.note ? <p className="tr-grave__note">{g.note}</p> : null}
       <p className="tr-grave__foot">

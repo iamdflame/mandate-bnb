@@ -29,13 +29,15 @@ export interface Receipt {
 export async function latestReceipt(): Promise<Receipt | null> {
   if (!pg) return null;
   await ensureTables();
-  const [r] = (await pg`
+  const rows = (await pg`
     select job_id, token_id, client, budget, slug, funded_tx, submit_tx, submitted_at, created_at, seller_verified
     from escrow_jobs
     where status in ('SUBMITTED', 'COMPLETED') and submit_tx is not null and funded_tx is not null
     order by submitted_at desc nulls last
-    limit 1
+    limit 40
   `.catch(() => [])) as { job_id: string; token_id: string; client: string; budget: string; slug: string; funded_tx: string; submit_tx: string; submitted_at: string | number | null; created_at: Date; seller_verified: boolean | null }[];
+  // A buyer's hire leads; ours shows only when no buyer's is on record, and says whose it was.
+  const r = rows.find((x) => !isTeam(x.client)) ?? rows[0];
   if (!r) return null;
   const [rating] = (await pg`select tx from ratings where lower(hire_tx) = ${r.funded_tx.toLowerCase()} order by at desc limit 1`.catch(() => [])) as { tx: string }[];
   const a = findAgent(r.token_id);

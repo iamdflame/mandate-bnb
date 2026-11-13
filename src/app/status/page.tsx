@@ -224,11 +224,14 @@ export default async function StatusPage() {
             {up && up.samples > 0 ? (
               <figure className="tr-uptime k-panel">
                 <div className="k-fig">
-                  <span className="k-fig__n k-num">{(100 * (up.ratio ?? 0)).toFixed(1)}%</span>
+                  <span className="k-fig__n k-num">{(100 * (up.siteRatio ?? 0)).toFixed(1)}%</span>
                   <span className="k-fig__l">
-                    of {up.samples} samples had every beat green, since {up.since ? new Date(up.since).toISOString().slice(0, 16).replace("T", " ") : "unknown"} UTC
+                    of {up.samples} samples had the site and hiring working (beats 1 to 6), since {up.since ? new Date(up.since).toISOString().slice(0, 16).replace("T", " ") : "unknown"} UTC
                   </span>
                 </div>
+                <p className="k-small">
+                  With our own upkeep green too, gas for our agents and the trial pool that pays for our test purchases (beats 7 and 8): {(100 * (up.ratio ?? 0)).toFixed(1)}%. A short trial pool stops our tests, not anyone&apos;s hire.
+                </p>
                 <div className="tr-uptime__strip" role="img" aria-label={up.incidents.length ? `${up.incidents.length} incidents` : "No incidents"}>
                   {up.incidents.map((inc) => (
                     <span key={inc.from} className="tr-uptime__inc" style={{ left: `${at(inc.from)}%`, width: `${Math.max(0.6, at(inc.to) - at(inc.from))}%` }} />

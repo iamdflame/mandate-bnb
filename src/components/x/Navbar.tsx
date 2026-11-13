@@ -15,17 +15,17 @@ import NetworkBadge from "./NetworkBadge";
   of these, so nothing needs a "More" menu.
 */
 export const PLACES = [
+  { href: "/diagnose", label: "Check a wallet", note: "Paste any wallet: what is drifting, at risk or idle, and who can fix it", match: ["/diagnose", "/alerts", "/pool-gaps"] },
   { href: "/agents", label: "Agents", note: "Hire an agent for one of four jobs", match: ["/agents", "/categories", "/compare", "/hire"] },
-  { href: "/diagnose", label: "Check a wallet", note: "Paste any wallet: what is drifting, at risk or idle", match: ["/diagnose", "/alerts", "/pool-gaps"] },
-  { href: "/leash", label: "On your wallet", note: "An agent on a leash you can revoke", match: ["/leash"] },
-  { href: "/activity", label: "Live", note: "Payments, deliveries and checks as they land", match: ["/activity", "/jobs", "/receipts", "/mandate", "/ledger"] },
-  { href: "/trust", label: "Trust", note: "How every agent is checked, and what failed", match: ["/trust", "/verify", "/standard", "/assay", "/bench", "/evidence", "/proof", "/graveyard", "/contracts", "/status"] },
+  { href: "/leash", label: "On your wallet", note: "Let an agent act on your wallet, with limits you can revoke", match: ["/leash", "/desk"] },
+  { href: "/record", label: "Record", note: "Who paid, what was delivered, how agents are checked, what failed", match: ["/record", "/activity", "/jobs", "/receipts", "/mandate", "/ledger", "/trust", "/verify", "/standard", "/assay", "/bench", "/evidence", "/proof", "/graveyard", "/contracts", "/status"] },
   { href: "/build", label: "Builders", note: "List, check and build an agent; the API", match: ["/build", "/check", "/list", "/api", "/brand", "/quest"] },
 ] as const;
 
 const SECONDARY = [
   { href: "/desk", label: "My desk" },
-  { href: "/quest", label: "Set and Earn" },
+  { href: "/activity", label: "Live" },
+  { href: "/trust", label: "How we check" },
   { href: "/help", label: "Help" },
   { href: "/status", label: "Status" },
 ] as const;

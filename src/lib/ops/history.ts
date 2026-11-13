@@ -56,6 +56,8 @@ export interface Uptime {
   ok: number;
   /** Fraction of samples where every beat passed, or null when nothing is recorded. */
   ratio: number | null;
+  /** Fraction where the site and hiring worked (beats 1 to 6), apart from our own upkeep (7 and 8: gas for our agents, the trial pool). */
+  siteRatio: number | null;
   since: string | null;
   last: { at: string; ok: boolean } | null;
   /** Stretches where the judge path was failing, newest first. */
@@ -65,7 +67,7 @@ export interface Uptime {
 }
 
 export async function uptime(days = 14): Promise<Uptime> {
-  const empty: Uptime = { samples: 0, ok: 0, ratio: null, since: null, last: null, incidents: [] };
+  const empty: Uptime = { samples: 0, ok: 0, ratio: null, siteRatio: null, since: null, last: null, incidents: [] };
   if (!(await ensureTables())) return { ...empty, error: "no database is configured on this deployment" };
   try {
     /*
@@ -73,21 +75,28 @@ export async function uptime(days = 14): Promise<Uptime> {
       infer the type of an interval built from a parameter through the pooler.
     */
     const cutoff = new Date(Date.now() - days * 86_400_000).toISOString();
-    const raw = (await pg!`select at, ok from status_samples where at > ${cutoff}::timestamptz order by at asc`) as { at: string | Date; ok: boolean }[];
+    const raw = (await pg!`select at, ok, checks from status_samples where at > ${cutoff}::timestamptz order by at asc`) as { at: string | Date; ok: boolean; checks: unknown }[];
     /*
       The driver hands back a Date locally and a string over the pooled
       connection production uses, so the first row threw "toISOString is not a
       function" and the page reported no history while the table held a week of
       it. Both shapes are read as one here.
     */
-    const rows = raw.map((r) => ({ at: new Date(r.at), ok: r.ok }));
+    /*
+      A sample's site beats (1 to 6) apart from our upkeep (7 and 8): a short
+      trial pool turned every sample red for two weeks while the site served
+      every hire, and the page read as down (13 Nov). Incidents are the site's.
+    */
+    const site = (checks: unknown, ok: boolean) => (Array.isArray(checks) ? (checks as { beat?: number; ok?: boolean }[]).filter((c) => (c.beat ?? 0) <= 6).every((c) => c.ok) : ok);
+    const rows = raw.map((r) => ({ at: new Date(r.at), ok: r.ok, site: site(r.checks, r.ok) }));
     if (!rows.length) return empty;
 
     const ok = rows.filter((r) => r.ok).length;
+    const siteOk = rows.filter((r) => r.site).length;
     const incidents: Uptime["incidents"] = [];
     let open: { from: Date; to: Date; samples: number } | null = null;
     for (const r of rows) {
-      if (!r.ok) {
+      if (!r.site) {
         open = open ? { from: open.from, to: r.at, samples: open.samples + 1 } : { from: r.at, to: r.at, samples: 1 };
       } else if (open) {
         incidents.push({ from: open.from.toISOString(), to: open.to.toISOString(), samples: open.samples });
@@ -101,6 +110,7 @@ export async function uptime(days = 14): Promise<Uptime> {
       samples: rows.length,
       ok,
       ratio: ok / rows.length,
+      siteRatio: siteOk / rows.length,
       since: rows[0].at.toISOString(),
       last: { at: last.at.toISOString(), ok: last.ok },
       incidents: incidents.reverse().slice(0, 10),

@@ -821,3 +821,15 @@ details.tr-said[open] .tr-said__clip, details.tr-said[open] .tr-said__more { dis
 @media (prefers-reduced-motion: reduce) {
   .tr-pulse__ring::before, .tr-pulse__ring::after, .tr-pulse__beats span { animation: none; }
 }
+
+/* The record: buyers' jobs, and the wallets we operate. */
+.tr-rec { display: grid; gap: clamp(32px, 5vw, 56px); padding-block: clamp(16px, 3vw, 32px) clamp(48px, 7vw, 88px); }
+.tr-rec section { display: grid; gap: 16px; min-width: 0; }
+.tr-rec__sub { display: block; margin-top: 2px; }
+.tr-rec__team td:first-child { overflow-wrap: anywhere; }
+@media (max-width: 560px) {
+  .tr-rec__jobs td, .tr-rec__jobs th, .tr-rec__team td { padding: 12px 10px; }
+  .tr-rec__jobs .k-table__main { overflow-wrap: anywhere; }
+  .tr-rec__team td { display: block; border-bottom: 0; }
+  .tr-rec__team tr { display: block; border-bottom: 1px solid var(--k-hair); padding-block: 4px; }
+}

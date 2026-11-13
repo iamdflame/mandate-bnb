@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 
 export const revalidate = 30;
 
-const FILTERS: { id: string; label: string; kinds: EventKind[] | null }[] = [
+const FILTERS: { id: string; label: string; kinds: EventKind[] | null; ours?: boolean }[] = [
   { id: "all", label: "All", kinds: null },
   { id: "responses", label: "Responses", kinds: ["responded", "silent"] },
   { id: "payments", label: "Payments", kinds: ["paid", "failed"] },
@@ -33,6 +33,7 @@ const FILTERS: { id: string; label: string; kinds: EventKind[] | null }[] = [
   { id: "actions", label: "Agent actions", kinds: ["acted"] },
   { id: "permissions", label: "Permissions", kinds: ["granted", "revoked"] },
   { id: "agents", label: "New agents", kinds: ["listed"] },
+  { id: "ours", label: "Our own tests", kinds: ["paid", "failed", "job"], ours: true },
 ];
 
 const STATE = ["waiting for an agent", "running now", "finished its term", "cancelled before it started", "ended early"] as const;
@@ -63,7 +64,10 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
 
   // The census answers in bursts of hundreds; on All they are capped so the
   // market's other events are not buried under our own probe.
-  const shown = filter.kinds ? feed.events.filter((e) => filter.kinds!.includes(e.kind)).slice(0, 80) : mixed(feed.events, { responded: 5, silent: 2 }, 60);
+  // Payments and jobs from wallets we operate are our own tests: kept under their own filter, never on the market's tape.
+  const pool = feed.events.filter((e) => Boolean(e.ours) === Boolean(filter.ours));
+  const shown = filter.kinds ? pool.filter((e) => filter.kinds!.includes(e.kind)).slice(0, 80) : mixed(pool, { responded: 5, silent: 2 }, 60);
+  const ownTests = feed.events.filter((e) => e.ours).length;
   const days = byDay(shown);
   // Our own September tests are halted, not running; the clock leaves them as they stand.
   const running = book?.rows.filter((r) => r.state === 1 && r.deployment.status === "canonical" && Number(r.id) >= EPOCHS_FROM) ?? [];
@@ -102,7 +106,9 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
               Real events only: our checks, payments on chain, escrowed jobs, permissions and new agents.
             </p>
             <p className="k-small k-rise" style={{ ["--i" as string]: 3 }}>
-              Most of it is our own: the census calling every agent, and our daily test purchases.
+              {filter.ours
+                ? "Payments and jobs from wallets we operate: daily test purchases and probes. They prove an agent delivers; they are not demand."
+                : `Buyers' payments and jobs, and our calls to every agent. Our own ${ownTests} test payments and jobs are under "Our own tests", not here.`}
             </p>
           </div>
           {crowd.length ? (

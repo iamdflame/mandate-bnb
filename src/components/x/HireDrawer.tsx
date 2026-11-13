@@ -311,7 +311,7 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
           {viaEscrow ? (
             <div>
               <dt>Paid through</dt>
-              <dd>ERC-8183 escrow, released to {short(offer.escrow!.provider)} after it delivers</dd>
+              <dd>Held in BNB Chain&apos;s escrow until it delivers, then paid to {short(offer.escrow!.provider)}. You take it back if it doesn&apos;t.</dd>
             </div>
           ) : offer.x402 ? (
             <div>
@@ -547,7 +547,7 @@ export default function HireDrawer({ offer, openOn, onDone }: { offer: HireOffer
       const e = offer.escrow!;
       body = (
         <div className="x-hire">
-          <p className="x-hire__lede">Your $U waits in the ERC-8183 escrow contract, not with the agent or with us, until the work is on chain.</p>
+          <p className="x-hire__lede">Your {escrowPrice} is held in BNB Chain&apos;s escrow, not by the agent or by us, until it delivers. You take it back if it doesn&apos;t.</p>
           <h3 className="x-hire__h">It can</h3>
           <Can items={[`Receive exactly ${escrowPrice} from the escrow, once it delivers and the dispute window passes`, "Send you its answer"]} />
           <h3 className="x-hire__h">It cannot</h3>

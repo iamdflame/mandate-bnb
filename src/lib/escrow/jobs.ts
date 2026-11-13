@@ -238,6 +238,14 @@ export async function jobsOfAgent(tokenId: string): Promise<EscrowJob[]> {
  * funding, written moments after it, to the kernel's submission time. A job we
  * only learned of later reads as slow, so a negative or day-long gap is null.
  */
+/** The latest escrowed jobs opened here, any status past OPEN, newest first: the tape and the record read these. */
+export async function recentJobs(limit = 200): Promise<EscrowJob[]> {
+  if (!pg) return [];
+  await outsideColumns();
+  const rows = (await pg`select * from escrow_jobs where status <> 'OPEN' order by created_at desc limit ${limit}`) as Row[];
+  return rows.map(toJob);
+}
+
 export async function deliveredJobs(): Promise<{ tokenId: string; jobId: string; seconds: number | null }[]> {
   if (!pg) return [];
   await outsideColumns();

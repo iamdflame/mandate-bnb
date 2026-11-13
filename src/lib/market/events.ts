@@ -17,6 +17,8 @@ import { listSessions } from "@/lib/chain/session-store";
 import { assetSymbol } from "@/lib/market/listing";
 import { houseActions, type HouseRun } from "@/lib/house/runs";
 import { referenceRegistrations } from "@/lib/house";
+import { recentJobs } from "@/lib/escrow/jobs";
+import { isTeam } from "@/lib/team";
 
 export type EventKind = "responded" | "silent" | "paid" | "failed" | "job" | "granted" | "revoked" | "listed" | "acted";
 
@@ -38,6 +40,8 @@ export interface MarketEvent {
   proof?: string;
   /** A sentence of context: why a payment failed, whose mistake it was. */
   note?: string;
+  /** Paid by a wallet we operate: our own test or probe, kept on the record and never shown as demand. */
+  ours?: boolean;
 }
 
 const bsc = (tx: string) => `https://bscscan.com/tx/${tx}`;
@@ -177,6 +181,25 @@ export async function marketEvents(opts: { limit?: number; since?: number } = {}
       source: "chain",
       proof: c.tx ? bsc(c.tx) : undefined,
       note: c.fault === "ours" ? `Our mistake, not the seller's. ${c.note ?? ""}`.trim() : (c.note ?? c.refused ?? undefined)?.slice(0, 280),
+      ours: isTeam(c.payer) || c.sponsored,
+    });
+  }
+
+  // Escrowed jobs opened here, by buyers and by our own wallets alike; ours are marked, never counted as demand.
+  for (const j of await recentJobs(120).catch(() => [])) {
+    const done = j.status === "SUBMITTED" || j.status === "COMPLETED";
+    out.push({
+      id: `escrow:${j.jobId}`,
+      kind: "job",
+      at: j.createdAt,
+      actor: nameOf(j.tokenId),
+      tokenId: j.tokenId,
+      category: catOf(j.tokenId),
+      what: done ? "delivered an escrowed job" : j.status === "EXPIRED" || j.status === "REJECTED" ? "was refunded an escrowed job" : "was hired through escrow",
+      figure: `${amount(j.budget) ?? j.budget} $U`,
+      source: "chain",
+      proof: (j.submitTx ?? j.fundedTx) ? bsc((j.submitTx ?? j.fundedTx)!) : undefined,
+      ours: isTeam(j.client),
     });
   }
 

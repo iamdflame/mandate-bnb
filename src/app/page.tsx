@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { formatUnits } from "viem";
-import { ArrowRight, Check, Search } from "lucide-react";
+import { ArrowRight, Check, Wallet } from "lucide-react";
 import AppShell from "@/components/v2/shell/AppShell";
 import Agent from "@/components/characters/Agent";
 import { anchors } from "@/components/characters/engine";
@@ -10,8 +10,7 @@ import AgentCard from "@/components/k/AgentCard";
 import { CATEGORY_LABEL, type Category } from "@/lib/config";
 import { LEASH_POLICIES, LIMITS } from "@/lib/leash/policy";
 import { viewHome } from "@/lib/view/home";
-import { warm } from "@/lib/data/snapshots";
-import { testnetListings } from "@/lib/testnet/sellers";
+import { DEMO_ADDRESS } from "@/lib/demo";
 import { viewJobs, viewMarket } from "@/lib/view/market";
 import { viewGraveCounts } from "@/lib/view/trust";
 import { answeredAgo, poseOf } from "@/lib/view/state";
@@ -59,11 +58,7 @@ export default async function Home() {
   const [home, market, jobs, graves] = await Promise.all([viewHome(), viewMarket({ view: "ready", limit: 50 }), viewJobs(), viewGraveCounts()]);
   const ready = market.agents;
   const byId = new Map(ready.map((a) => [a.tokenId, a]));
-  const registered = home.stages.find((s) => s.key === "registered");
   const hireable = home.stages.find((s) => s.key === "hireable")?.n ?? market.ready;
-  // Testnet identities are their own ERC-8004 tokens, hired in test $U; Set and Earn counts them, and the line under this names each network.
-  await warm(["testnet-sellers"]).catch(() => undefined);
-  const testnetReady = testnetListings().filter((a) => a.hireable).length;
   const r = home.receipt;
   const hiredId = r?.tokenId ?? "344119";
 
@@ -93,34 +88,29 @@ export default async function Home() {
             <p className="h-live k-rise" style={{ ["--i" as string]: 0 }}>
               <span className="k-dot k-dot--live" aria-hidden="true" />
               <span>
-                <strong className="k-num">{hireable + testnetReady}</strong> agents ready to hire now
+                <strong className="k-num">{hireable}</strong> agents ready to hire on mainnet
               </span>
-              {testnetReady ? (
-                <span className="h-live__age">
-                  {hireable} on mainnet, {testnetReady} free on testnet
-                </span>
-              ) : null}
-              {home.censusMinutes !== null ? <span className="h-live__age">we called every agent {home.censusMinutes < 60 ? `${Math.max(1, home.censusMinutes)} min` : `${Math.round(home.censusMinutes / 60)} h`} ago</span> : null}
+              {home.censusMinutes !== null ? <span className="h-live__age">checked {home.censusMinutes < 60 ? `${Math.max(1, home.censusMinutes)} min` : `${Math.round(home.censusMinutes / 60)} h`} ago</span> : null}
             </p>
             <h1 className="k-mega h-hero__h k-rise" id="h-hero" style={{ ["--i" as string]: 1 }}>
               Hire an agent you can check.
             </h1>
             <p className="k-lede h-hero__lede k-rise" style={{ ["--i" as string]: 2 }}>
-              Every AI agent on BNB Chain is called, read and checked against the chain before you can hire it. It can only take what you sign, and you can take it back.
+              Paste a BNB Chain wallet. We tell you what is out of range, close to liquidation or sitting idle, and which checked agent can fix it. You sign nothing.
             </p>
 
-            <form className="h-ask k-rise" style={{ ["--i" as string]: 3 }} action="/agents" method="get" role="search">
+            <form className="h-ask k-rise" style={{ ["--i" as string]: 3 }} action="/diagnose" method="get" role="search">
               <label htmlFor="home-q" className="k-sr">
-                What do you need done?
+                Your BNB Chain wallet address
               </label>
               <div className="k-field h-ask__field">
-                <Search size={20} aria-hidden="true" />
-                <input id="home-q" name="q" placeholder="What do you need done?" autoComplete="off" />
+                <Wallet size={20} aria-hidden="true" />
+                <input id="home-q" name="q" placeholder="Paste a wallet address, 0x…" autoComplete="off" spellCheck={false} />
                 <button type="submit" className="k-btn k-btn--primary">
-                  Find an agent <ArrowRight size={16} className="k-btn__go" aria-hidden="true" />
+                  Check my wallet <ArrowRight size={16} className="k-btn__go" aria-hidden="true" />
                 </button>
               </div>
-              <ul className="h-ask__jobs" aria-label="Or start from a job">
+              <ul className="h-ask__jobs" aria-label="Or hire for a job">
                 {jobs.map((j) => {
                   const f = FOUNDERS.find((x) => x.job === j.job)!;
                   return (
@@ -136,7 +126,11 @@ export default async function Home() {
               </ul>
             </form>
             <p className="k-small h-hero__note k-rise" style={{ ["--i" as string]: 4 }}>
-              No wallet needed to look around. You only sign at the moment you hire.
+              No wallet to connect. See a real one first:{" "}
+              <Link className="k-link" href={`/diagnose?q=${DEMO_ADDRESS}`}>
+                our demo wallet
+              </Link>
+              , with three positions out of range right now.
             </p>
           </div>
 
@@ -195,52 +189,12 @@ export default async function Home() {
                   </ol>
                   <p className="h-receipt__note">
                     {r.deliveredInSeconds !== null ? `Delivered ${r.deliveredInSeconds} s after payment. ` : ""}
-                    {r.team ? "Paid from one of our own wallets: a real mainnet hire, not counted as a customer." : r.outside ? "Paid by a buyer from their own wallet." : ""}
+                    {r.team ? "Paid from one of our own wallets: a real mainnet hire, not counted as a customer." : "Paid by a buyer from their own wallet."}
                   </p>
                 </article>
               ) : null}
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ---------------------------------------------------------------- the descent */}
-      <section className="k-section h-descent" aria-labelledby="h-descent">
-        <div className="k-wrap">
-          <div className="h-head">
-            <h2 className="k-h2" id="h-descent">
-              {registered?.n ? fmt(registered.n) : "Hundreds of thousands of"} agents registered.
-              <br />
-              <span className="h-descent__few">{hireable} you can hire right now.</span>
-            </h2>
-            <p className="k-body">Anyone can register an agent for the price of gas, and almost none of them answer. We call every one, read what it does on chain, and only offer the ones that answer and can be paid. Every step is a count you can check.</p>
-          </div>
-          <InView as="ol" className="h-steps">
-            {home.stages.map((s, i) => {
-              const max = registered?.n ?? 1;
-              const w = s.n ? Math.max(1.2, (Math.log10(s.n + 1) / Math.log10(max + 1)) * 100) : 0;
-              return (
-                <li key={s.key} className="h-step" data-key={s.key} data-empty={s.n === null ? "1" : undefined} style={{ ["--w" as string]: `${w}%`, ["--i" as string]: i }}>
-                  <div className="h-step__n k-num">{s.n === null ? "not measured" : `${s.key === "readable" || s.key === "reachable" ? "≥" : ""}${fmt(s.n)}`}</div>
-                  <div className="h-step__bar" aria-hidden="true">
-                    <span />
-                  </div>
-                  <div className="h-step__t">
-                    <span className="h-step__label">{s.label}</span>
-                    <span className="k-src">{s.source}</span>
-                  </div>
-                  {s.key === "hireable" ? (
-                    <div className="h-step__crowd" aria-hidden="true">
-                      {ready.slice(0, 28).map((a, k) => (
-                        <Agent key={a.tokenId} job={a.job} seed={a.tokenId} size={28} state={poseOf(a)} house={a.ours} slot={`d${k}`} />
-                      ))}
-                    </div>
-                  ) : null}
-                </li>
-              );
-            })}
-          </InView>
-          <p className="k-small h-descent__note">Bars are on a log scale, or every bar after the first would be invisible. A step we do not measure is left empty, never drawn as zero.</p>
         </div>
       </section>
 

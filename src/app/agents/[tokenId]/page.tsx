@@ -27,6 +27,7 @@ const CONF_WORD: Record<string, string> = { pass: "Passed", fail: "Failed", "not
 import { hirePath, primaryRail } from "@/lib/market/hire-law";
 import { tryFreeKind } from "@/lib/market/catalogue";
 import { hireCounts } from "@/lib/market/hires";
+import { isTeam } from "@/lib/team";
 import { SPONSORED } from "@/lib/market/sponsored-targets";
 import { STATE_WORD, trustOf, type ProofState } from "@/lib/market/trust";
 import { houseSlug, performanceOf } from "@/lib/market/performance";
@@ -56,7 +57,7 @@ export async function generateMetadata({ params }: { params: Promise<{ tokenId: 
   };
 }
 
-const RAIL: Record<string, string> = { x402: "x402", escrow: "ERC-8183 escrow", mandate: "job with capital" };
+const RAIL: Record<string, string> = { x402: "paid per answer", escrow: "held in escrow until it delivers", mandate: "job with capital" };
 
 /** Its own words as separate sentences, untouched, for the "What it can do" list. */
 function sentences(text: string | null): string[] {
@@ -164,7 +165,7 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
   // It answers its task free before a job is paid for: one of ours, or an outside seller on BNB's SDK.
   const freeKind = tryFreeKind(l, verdict);
   const freeAnswer = !sponsor && (freeKind === "sdk" || freeKind === "house");
-  const rail = verdict.rails.map((r) => RAIL[r.kind]).find(Boolean) ?? (l.quote || l.declaresPayment ? "x402" : null);
+  const rail = verdict.rails.map((r) => RAIL[r.kind]).find(Boolean) ?? (l.quote || l.declaresPayment ? RAIL.x402 : null);
   const cat = l.category ? CATEGORY_LABEL[l.category] : null;
   const slug = slugOf;
   const leash = slug ? HOUSE_LEASHES.find((h) => h.slug === slug) : undefined;
@@ -192,15 +193,26 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
     (and the filed September hires) and paid calls. A job not yet delivered
     is paid but not delivered; one that ran out its deadline was refunded.
   */
+  /*
+    Buyers' work only in the figures: our own tests and probes are real paid
+    calls that prove it delivers, and are said once beside them, never counted
+    as customers (a reviewer read "Paid 44" on Range-1 as demand, 13 Nov).
+  */
   const done = (s: string | null) => s === "SUBMITTED" || s === "COMPLETED";
+  const theirJobs = siteJobs.filter((j) => !isTeam(j.client));
+  const theirCalls = ownCalls.filter((c) => !isTeam(c.payer) && !c.sponsored);
+  const ourJobs = siteJobs.filter((j) => isTeam(j.client) && j.status !== "OPEN");
+  const ourCalls = ownCalls.filter((c) => (isTeam(c.payer) || c.sponsored) && c.paid);
   const record = {
-    paid: siteJobs.filter((j) => j.status !== "OPEN").length + paidJobs.length + ownCalls.filter((c) => c.paid).length,
-    delivered: siteJobs.filter((j) => done(j.status)).length + paidJobs.filter((h) => done(h.status)).length + ownCalls.filter((c) => c.paid && c.delivered).length,
-    paidOut: siteJobs.filter((j) => j.status === "COMPLETED").length + paidJobs.filter((h) => h.status === "COMPLETED").length + ownCalls.filter((c) => c.paid && c.delivered).length,
-    refunded: siteJobs.filter((j) => j.status === "EXPIRED").length + paidJobs.filter((h) => h.status === "EXPIRED").length,
-    disputed: siteJobs.filter((j) => j.status === "REJECTED").length + paidJobs.filter((h) => h.status === "REJECTED").length,
+    paid: theirJobs.filter((j) => j.status !== "OPEN").length + paidJobs.length + theirCalls.filter((c) => c.paid).length,
+    delivered: theirJobs.filter((j) => done(j.status)).length + paidJobs.filter((h) => done(h.status)).length + theirCalls.filter((c) => c.paid && c.delivered).length,
+    paidOut: theirJobs.filter((j) => j.status === "COMPLETED").length + paidJobs.filter((h) => h.status === "COMPLETED").length + theirCalls.filter((c) => c.paid && c.delivered).length,
+    refunded: theirJobs.filter((j) => j.status === "EXPIRED").length + paidJobs.filter((h) => h.status === "EXPIRED").length,
+    disputed: theirJobs.filter((j) => j.status === "REJECTED").length + paidJobs.filter((h) => h.status === "REJECTED").length,
     failed: ownCalls.filter((c) => c.paid && !c.delivered && c.fault !== "ours").length,
+    buyers: new Set([...theirJobs.filter((j) => j.status !== "OPEN").map((j) => j.client.toLowerCase()), ...theirCalls.filter((c) => c.paid).map((c) => c.payer.toLowerCase())]).size,
   };
+  const probes = { paid: ourJobs.length + ourCalls.length, delivered: ourJobs.filter((j) => done(j.status)).length + ourCalls.filter((c) => c.delivered).length };
   // How fast, for the panel: its jobs here, else its answer to our call.
   const speed = deliveredIn
     ? `${inWords(deliveredIn.seconds)}${deliveredIn.jobs > 1 ? `, median of ${deliveredIn.jobs}` : ""}`
@@ -327,11 +339,12 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
               <h2 className="k-h3" id="h-record">
                 Track record
               </h2>
-              <span className="k-src">Paid work through Mandate, read from the chain</span>
+              <span className="k-src">Paid by wallets we do not operate, read from the chain</span>
             </div>
             <dl className="mk-record">
               {(
                 [
+                  ["Buyers", record.buyers],
                   ["Paid", record.paid],
                   ["Delivered", record.delivered],
                   ["Paid out", record.paidOut],
@@ -355,7 +368,12 @@ export default async function AgentPage({ params }: { params: Promise<{ tokenId:
                 Plus {hires === 1 ? "one job with capital" : `${hires} jobs with capital`} held on our market, which its settled work below counts too.
               </p>
             ) : null}
-            {!record.paid && !hires ? <p className="k-small">No paid work through Mandate yet. Every hire made here is recorded on chain and counted on this page.</p> : null}
+            {!record.paid && !hires ? <p className="k-small">No buyer has paid it through Mandate yet. Every hire made here is recorded on chain and counted on this page.</p> : null}
+            {probes.paid ? (
+              <p className="k-small">
+                Our own tests: {probes.paid} paid {probes.paid === 1 ? "call" : "calls"} from wallets we operate, {probes.delivered} delivered. They show it works and are not counted above.
+              </p>
+            ) : null}
           </section>
 
           {/* -------------------------------------------------- what it can do */}

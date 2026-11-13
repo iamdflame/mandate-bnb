@@ -328,7 +328,7 @@ async function build(): Promise<Box[]> {
     claim: "/api/status is 200 and has a public history.",
     state: up && up.samples > 0 ? (up.last?.ok ? "done" : "partly") : "partly",
     detail: up && up.samples
-      ? `${up.samples} samples in fourteen days, ${(100 * (up.ratio ?? 0)).toFixed(1)}% with every beat green; last sample ${up.last?.ok ? "green" : "red"}.`
+      ? `${up.samples} samples in fourteen days, ${(100 * (up.siteRatio ?? 0)).toFixed(1)}% with the site and hiring working, ${(100 * (up.ratio ?? 0)).toFixed(1)}% with our upkeep green too; last sample ${up.last?.ok ? "green" : "red"}.`
       : "The endpoint answers, but no sampled history has been recorded yet: the external pinger is not running.",
     link: "/api/status",
   });
