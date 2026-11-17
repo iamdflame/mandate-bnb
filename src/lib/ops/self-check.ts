@@ -42,6 +42,9 @@ import { archive } from "@/lib/campaign/qualify";
 import { DEMO_ADDRESS } from "@/lib/demo";
 import type { Address } from "viem";
 
+/** A refusal that was the seller's server failing before any payment was asked for. */
+export const SELLER_DOWN = /answered 5\d\d without asking for payment/;
+
 export interface Dependency {
   group: "mainnet RPC" | "log provider" | "testnet RPC" | "IPFS gateway" | "archive node";
   name: string;
@@ -198,7 +201,8 @@ async function readNumbers(): Promise<Reading> {
     cardsUnread: probes.results.filter((r) => /card did not resolve/.test(r.error ?? "")).length,
     registryUnread: unread?.n ?? 0,
     paidCalls24h: recent.length,
-    paidOurFault24h: recent.filter((c) => c.fault === "ours").length,
+    // A seller's server that answered 5xx before any payment is the seller down, not a failure of ours (GuardRail, 16 Nov); it counts against nobody either way.
+    paidOurFault24h: recent.filter((c) => c.fault === "ours" && !SELLER_DOWN.test(c.refused ?? "")).length,
     conformanceFail: [...conformance.values()].filter((c) => c.verdict === "fail").length,
   };
 }

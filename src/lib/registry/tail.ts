@@ -208,6 +208,13 @@ export async function storeCrawlMints(agents: IndexedAgent[]): Promise<void> {
   for (let i = 0; i < agents.length; i += 100) await upsertMany(agents.slice(i, i + 100).map((a) => ({ ...a, source: "crawl" as const })), true);
 }
 
+/** Mints found later for agents the tail first met through a card update rather than their mint: each keeps where it came from. */
+export async function storeMints(agents: IndexedAgent[]): Promise<void> {
+  if (!pg || !agents.length) return;
+  await ensureTables();
+  for (let i = 0; i < agents.length; i += 100) await upsertMany(agents.slice(i, i + 100), true);
+}
+
 /** The registry's mint of one token among a transaction's logs: its owner at mint, or null. Pure, for tests. */
 export function mintIn(logs: readonly { address: string; topics: readonly (string | null)[] }[], tokenId: string): string | null {
   const log = logs.find(

@@ -16,6 +16,10 @@ import { bscClient } from "@/lib/chain/rpc";
 import { COUNTER_SLOT } from "@/lib/registry/count";
 import { IDENTITY_REGISTRY } from "@/lib/config";
 import { SITE } from "@/lib/site";
+import { CAMPAIGN_ENDS } from "@/lib/campaign/rules";
+
+// After Set and Earn closed, /quest is its record: the hire packs come off on purpose.
+const CLOSED = Date.now() >= Date.parse(CAMPAIGN_ENDS);
 
 const baseIdx = process.argv.indexOf("--base");
 const BASE = (baseIdx > -1 ? process.argv[baseIdx + 1]! : process.env.SMOKE_BASE ?? SITE).replace(/\/$/, "");
@@ -206,9 +210,13 @@ async function main() {
     { name: "all four jobs are offered", test: (h) => (h.match(/class="bd-qjob(?: bd-qjob--done)?"/g) ?? []).length >= 4 || "fewer than four job cards" },
     { name: "every job has an agent to hire", test: (h) => !h.includes("Nobody can be hired for this job right now") || "a job with nobody to hire" },
     { name: "BNB's rules and its registration are stated", test: (h) => (h.includes("forms.gle/jzTajVNZEgukeoYT9") && h.includes("different agents")) || "no campaign rules or registration link" },
-    // Most people arrive here to hire: two of the three, in one confirmation, before picking one job at a time.
-    { name: "the two-hire pack comes before the single hires", test: (h) => (h.includes('class="bd-pack"') && h.indexOf('class="bd-pack"') < h.indexOf('class="bd-qjobs"')) || "no pack ahead of the job list" },
-    { name: "the same two hires are offered free on testnet", test: (h) => h.includes("free on testnet") || "no testnet pack" },
+    ...(CLOSED
+      ? [{ name: "says it has closed, and links the final record", test: (h: string) => (h.includes("Set and Earn has closed") && h.includes('href="/quest/record"')) || "no closed notice or record link" }]
+      : [
+          // Most people arrive here to hire: two of the three, in one confirmation, before picking one job at a time.
+          { name: "the two-hire pack comes before the single hires", test: (h: string) => (h.includes('class="bd-pack"') && h.indexOf('class="bd-pack"') < h.indexOf('class="bd-qjobs"')) || "no pack ahead of the job list" },
+          { name: "the same two hires are offered free on testnet", test: (h: string) => h.includes("free on testnet") || "no testnet pack" },
+        ]),
   ]);
   // A builder learns whether people can hire their agent here.
   await page("/check?q=344119", [{ name: "says whether people can hire it here", test: (h) => h.includes("Can people hire it here?") || "no hire box" }]);
@@ -280,7 +288,7 @@ async function main() {
       record("/api/v1/testnet/agents", false, `expected JSON, got ${r.status}`);
     }
   }
-  await page("/quest", [{ name: "other builders' testnet agents are offered", test: (h) => (h.includes('id="testnet"') && /more agents, free on testnet/.test(h)) || "no testnet section" }]);
+  if (!CLOSED) await page("/quest", [{ name: "other builders' testnet agents are offered", test: (h) => (h.includes('id="testnet"') && /more agents, free on testnet/.test(h)) || "no testnet section" }]);
 
   // The seller's door: a real token placed on the ladder, with the next step named.
   await page("/list?id=342379", [

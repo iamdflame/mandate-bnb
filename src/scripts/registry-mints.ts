@@ -8,7 +8,11 @@
  * registry minting that very token. Where the hint is missing or wrong, the
  * blocks around it are searched for the mint instead.
  *
- *   npm run registry-mints            every classified crawl agent without one
+ * The tail can also meet an agent first through an update to its card
+ * (URIUpdated) and so never see its mint: those are looked up the same way
+ * (RangeReset #324818 and Dumb #682, Nov 2026).
+ *
+ *   npm run registry-mints            every classified agent without one
  *   npm run registry-mints -- --dry   say what would be stored, write nothing
  */
 
@@ -17,7 +21,7 @@ import { bsc } from "viem/chains";
 import { IDENTITY_REGISTRY } from "@/lib/config";
 import { fileIndex, getAgentIndex, type IndexedAgent } from "@/lib/data/agents";
 import { getAgent } from "@/lib/sources/scan";
-import { mintIn, storeCrawlMints, TRANSFER_TOPIC, warmRegistry } from "@/lib/registry/tail";
+import { mintIn, storeCrawlMints, storeMints, TRANSFER_TOPIC, warmRegistry } from "@/lib/registry/tail";
 
 const dry = process.argv.includes("--dry");
 // Receipts from March are gone from most free providers, which prune old blocks; BNB Chain's own seed keeps them.
@@ -53,8 +57,8 @@ async function main() {
   */
   await warmRegistry();
   const crawl = new Set(fileIndex().agents.map((a) => a.tokenId));
-  const targets = getAgentIndex().agents.filter((a) => crawl.has(a.tokenId) && a.category && !a.registeredTx);
-  console.log(`${targets.length} classified crawl agents without a mint transaction${dry ? " (dry run)" : ""}`);
+  const targets = getAgentIndex().agents.filter((a) => a.category && !a.registeredTx);
+  console.log(`${targets.length} classified agents without a mint transaction (${targets.filter((a) => crawl.has(a.tokenId)).length} from the crawl)${dry ? " (dry run)" : ""}`);
   const found: IndexedAgent[] = [];
   const missing: string[] = [];
   let n = 0;
@@ -75,7 +79,10 @@ async function main() {
     }),
   );
   console.log(`${found.length} confirmed on chain; not found: ${missing.join(", ") || "none"}`);
-  if (!dry) await storeCrawlMints(found);
+  if (!dry) {
+    await storeCrawlMints(found.filter((a) => crawl.has(a.tokenId)));
+    await storeMints(found.filter((a) => !crawl.has(a.tokenId)));
+  }
 }
 
 main().then(
