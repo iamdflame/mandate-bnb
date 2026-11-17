@@ -100,8 +100,12 @@ async function main() {
     { name: "costs, keys and what is not true yet", test: (h) => ["A figure you can report", "What it costs to run", "Every key, and what it can do", "What is not true yet", "Handing it over"].every((t) => h.includes(t)) },
     { name: "the owner is read from the chain", test: (h) => h.includes("Owner of our market contract now") || "the market contract was not read" },
   ]);
-  // The wallet someone just checked travels into the hire.
-  await page(`/agents/344123?about=${DEMO}`, [{ name: "the checked wallet is carried to the agent", test: (h) => h.includes("the one you just checked") }]);
+  // The wallet someone just checked travels into the hire, read in the browser so agent pages stay cached.
+  {
+    const r = await fetch(`${BASE}/agents/344123`, { headers: { "user-agent": "mandate-smoke" } }).catch(() => null);
+    const cc = r?.headers.get("cache-control") ?? "";
+    record("/agents/344123: the agent page is served from cache", Boolean(r?.ok) && !/no-store/.test(cc), `cache-control: ${cc || "none"}`);
+  }
 
   const proof = await get("/api/v1/proof");
   try {

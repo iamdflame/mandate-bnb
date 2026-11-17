@@ -15,6 +15,7 @@ import NeedHelp from "./NeedHelp";
 import { useWallet } from "@/lib/chain/wallet";
 import { track } from "@/lib/ops/funnel-client";
 import type { CallInput } from "@/lib/market/inputs";
+import { readAbout } from "./AboutLine";
 
 /**
  * Putting an agent to work, in five steps: review, permissions, confirm,
@@ -125,7 +126,13 @@ export default function HireDrawer({ offer, openOn, onDone, subject }: { offer: 
   const [lastPrice, setLastPrice] = useState<string | undefined>(undefined);
   const { address } = useWallet();
   // Starts from any example the agent's card gives, so a structured task arrives in the form it reads.
-  const [values, setValues] = useState<Record<string, string>>(() => withSubject(offer.inputs, Object.fromEntries(offer.inputs.filter((i) => i.example).map((i) => [i.name, i.example!])), subject));
+  const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(offer.inputs.filter((i) => i.example).map((i) => [i.name, i.example!])));
+
+  // The wallet or position the visitor came from checking (`?about=`), ahead of the connected wallet, which may be another one.
+  useEffect(() => {
+    const about = subject ?? readAbout(window.location.search);
+    if (about) setValues((v) => withSubject(offer.inputs, v, about));
+  }, [subject, offer.inputs]);
 
   // A wallet input starts as the connected wallet: the question is usually about your own account.
   useEffect(() => {

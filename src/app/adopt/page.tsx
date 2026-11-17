@@ -12,7 +12,7 @@ import { live } from "@/lib/data/live";
 import { bscscanAddress } from "@/lib/demo";
 import { ESCROW } from "@/lib/escrow/contracts";
 import { outsideByWeek } from "@/lib/market/weekly";
-import { gasPerJob, RUNNING } from "@/lib/ops/adopt";
+import { CAPACITY, gasPerJob, RUNNING } from "@/lib/ops/adopt";
 import type { Box } from "@/lib/ops/definition-of-done";
 
 export const metadata: Metadata = {
@@ -150,6 +150,45 @@ export default async function AdoptPage() {
             <p className="k-note k-note--warn">The receipts could not be read just now, so no fee is shown.</p>
           )}
           <p className="k-src">From the latest settled jobs buyers paid for. A first-time buyer also approves $U once, which is not in the first row.</p>
+        </section>
+
+        <section aria-labelledby="ad-load">
+          <h2 id="ad-load" className="k-h2">
+            Under load
+          </h2>
+          <p className="k-body">One Next.js app on Vercel, which adds servers as visitors arrive, with public pages served from its edge cache. Measured, not claimed:</p>
+          {CAPACITY.map((c) => (
+            <div key={c.at} className="k-table-wrap">
+              <table className="k-table tr-rec__weeks">
+                <thead>
+                  <tr>
+                    <th scope="col">Visitors at once</th>
+                    <th scope="col">Requests</th>
+                    <th scope="col">Per second</th>
+                    <th scope="col">95% within</th>
+                    <th scope="col">Errors</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {c.stages.map((s) => (
+                    <tr key={s.users}>
+                      <td className="k-table__main">
+                        {s.users}
+                        {s.ours ? null : <span className="k-src tr-rec__sub">limited by the test line</span>}
+                      </td>
+                      <td className="k-num">{s.requests.toLocaleString("en-GB")}</td>
+                      <td className="k-num">{s.perSecond}</td>
+                      <td className="k-num">{(s.p95 / 1000).toFixed(2)} s</td>
+                      <td className="k-num">{s.errors}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+          <p className="k-src">
+            {CAPACITY[0]!.at}, from {CAPACITY[0]!.from}. {CAPACITY[0]!.note}
+          </p>
         </section>
 
         <section aria-labelledby="ad-keys">

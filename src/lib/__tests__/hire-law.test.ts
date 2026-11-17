@@ -272,3 +272,13 @@ describe("what a hire is about", () => {
     expect(hireHref("7", v)).toBe("/agents/7#call");
   });
 });
+
+describe("the wallet carried from a check", () => {
+  it("reads a wallet or a position from ?about=, and nothing else", async () => {
+    const { readAbout } = await import("../../components/x/AboutLine");
+    expect(readAbout("?about=0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90")).toBe("0x54c06cC2623aAA2Dcc38B17fA07aD2e99b363C90");
+    expect(readAbout("?about=7546488")).toBe("7546488");
+    expect(readAbout("?about=<script>")).toBeUndefined();
+    expect(readAbout("")).toBeUndefined();
+  });
+});
